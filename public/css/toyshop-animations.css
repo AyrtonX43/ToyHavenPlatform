@@ -1,0 +1,228 @@
+/* ToyHaven Platform - Toys and Joy style (Template Monster 471052 inspired) */
+
+/* Override Bootstrap 5 primary = cyan/teal */
+:root {
+    --bs-primary: #0891b2;
+    --bs-primary-rgb: 8, 145, 178;
+}
+
+/* ===== Design Tokens (Toys and Joy - clean, modern toy store) ===== */
+:root {
+    --primary: #0891b2;
+    --primary-dark: #0e7490;
+    --primary-light: #22d3ee;
+    --accent: #f97316;
+    --accent-light: #fb923c;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    
+    --toy-cyan: #0891b2;
+    --toy-cyan-soft: #ecfeff;
+    --toy-orange: #f97316;
+    --toy-orange-soft: #fff7ed;
+    --toy-coral: #fb7185;
+    --toy-coral-soft: #fff1f2;
+    --toy-mint: #10b981;
+    --toy-mint-soft: #d1fae5;
+    --toy-sky: #0ea5e9;
+    --toy-sky-soft: #e0f2fe;
+    --toy-violet: #8b5cf6;
+    --toy-violet-soft: #ede9fe;
+    
+    --warm-900: #1e293b;
+    --warm-800: #334155;
+    --warm-600: #64748b;
+    --warm-500: #94a3b8;
+    --warm-200: #e2e8f0;
+    --warm-100: #f8fafc;
+    --warm-50: #f8fafc;
+    
+    --slate-900: #1e293b;
+    --slate-800: #334155;
+    --slate-600: #64748b;
+    --slate-500: #94a3b8;
+    --slate-400: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --slate-50: #f8fafc;
+    
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+    --shadow-md: 0 4px 20px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.1);
+    --radius-card: 16px;
+    --radius-btn: 12px;
+    
+    --primary-color: var(--primary);
+    --gradient-primary: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    --gradient-accent: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    --gradient-hero: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 50%, #fef3c7 100%);
+    --dark-color: var(--slate-900);
+    --light-color: var(--slate-50);
+}
+
+/* ===== Base ===== */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ===== Animations (Subtle) ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+.animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
+
+/* ===== Navbar (layout overrides in toyshop.blade) ===== */
+.navbar {
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 0.2s ease;
+}
+
+.navbar.scrolled {
+    box-shadow: var(--shadow-lg);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.025em;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.nav-link:hover {
+    color: white !important;
+}
+
+/* ===== Cards ===== */
+.card {
+    border: 2px solid var(--slate-200);
+    border-radius: var(--radius-card);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+}
+
+.card-header {
+    background: var(--warm-50);
+    border-bottom: 2px solid var(--slate-200);
+    font-weight: 700;
+    color: var(--warm-900);
+}
+
+/* ===== Buttons ===== */
+.btn {
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* ===== Form Elements ===== */
+.form-control,
+.form-select {
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.2);
+}
+
+/* ===== Product Cards ===== */
+.product-card {
+    border: 2px solid var(--slate-200);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, border-color 0.2s ease;
+}
+
+.product-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    border: 2px solid var(--slate-200);
+    border-radius: var(--radius-card);
+    transition: box-shadow 0.25s ease, border-color 0.2s ease;
+}
+
+.feature-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+}
+
+/* ===== Badges ===== */
+.badge {
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+/* ===== Alerts ===== */
+.alert {
+    border-radius: 10px;
+    border: 1px solid transparent;
+}
+
+/* ===== Footer (layout overrides) ===== */
+footer {
+    background: var(--warm-900) !important;
+}
+
+/* ===== Scroll Reveal ===== */
+.reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.animate-delay-1 { animation-delay: 0.05s; }
+.animate-delay-2 { animation-delay: 0.1s; }
+.animate-delay-3 { animation-delay: 0.15s; }
+.animate-delay-4 { animation-delay: 0.2s; }

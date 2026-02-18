@@ -1,0 +1,297 @@
+/* ToyHaven Platform – Formal email theme */
+/* Brand: dark blue #1e3a5f, accent #b8860b (gold) */
+
+body,
+body *:not(html):not(style):not(br):not(tr):not(code) {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+}
+
+body {
+    -webkit-text-size-adjust: none;
+    background-color: #ffffff;
+    color: #334155;
+    height: 100%;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    width: 100% !important;
+}
+
+p,
+ul,
+ol,
+blockquote {
+    line-height: 1.65;
+    text-align: left;
+    margin: 0 0 1em;
+}
+
+p:last-child {
+    margin-bottom: 0;
+}
+
+a {
+    color: #1e3a5f;
+    text-decoration: none;
+}
+
+a img {
+    border: none;
+}
+
+/* Typography – clear hierarchy */
+
+h1 {
+    color: #1e293b;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    line-height: 1.35;
+    text-align: left;
+}
+
+h2 {
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+h3 {
+    color: #334155;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 20px 0 10px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.65;
+    margin: 0 0 14px;
+    color: #334155;
+    text-align: left;
+}
+
+p.sub {
+    font-size: 14px;
+    color: #64748b;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* Layout */
+
+.wrapper {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.content {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/* Header */
+
+.header {
+    padding: 32px 44px 24px;
+    text-align: center;
+}
+
+.header a {
+    color: #1e293b;
+    font-size: 19px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.logo {
+    max-height: 56px;
+    width: auto;
+    height: auto;
+}
+
+/* Body */
+
+.body {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.inner-body {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 600px;
+    background-color: #ffffff;
+    margin: 0 auto;
+    padding: 0;
+    width: 600px;
+}
+
+.inner-body a {
+    word-break: break-all;
+}
+
+.content-cell {
+    max-width: 100%;
+    padding: 40px 44px;
+    font-size: 16px;
+    line-height: 1.65;
+    color: #334155;
+}
+
+/* Subcopy – secondary info */
+
+.subcopy {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 28px;
+    padding-top: 24px;
+}
+
+.subcopy p {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+/* Footer – handled in footer.blade.php with inline styles */
+
+/* Tables */
+
+.table table {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 24px 0;
+    width: 100%;
+}
+
+.table th {
+    border-bottom: 1px solid #e2e8f0;
+    margin: 0;
+    padding: 8px 12px 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    text-align: left;
+}
+
+.table td {
+    color: #334155;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Buttons – primary action, professional */
+
+.action {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 26px 0;
+    padding: 0;
+    text-align: center;
+    width: 100%;
+}
+
+.button {
+    -webkit-text-size-adjust: none;
+    border-radius: 6px;
+    color: #ffffff !important;
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    padding: 14px 28px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.button-blue,
+.button-primary {
+    background-color: #1e3a5f;
+    border: 1px solid #1e3a5f;
+}
+
+.button-green,
+.button-success {
+    background-color: #0d9488;
+    border: 1px solid #0d9488;
+}
+
+.button-red,
+.button-error {
+    background-color: #b91c1c;
+    border: 1px solid #b91c1c;
+}
+
+/* Panels – for callouts */
+
+.panel {
+    border-left: 4px solid #1e3a5f;
+    margin: 20px 0;
+    background-color: #f8fafc;
+}
+
+.panel-content {
+    background-color: #f8fafc;
+    color: #334155;
+    padding: 16px 20px;
+}
+
+.panel-content p {
+    color: #334155;
+    margin: 0;
+}
+
+.panel-item {
+    padding: 0;
+}
+
+.panel-item p:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Utilities */
+
+.break-all {
+    word-break: break-all;
+}
+
+/* List styling for readability */
+
+ul, ol {
+    padding-left: 20px;
+    margin: 0 0 14px;
+}
+
+li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+}

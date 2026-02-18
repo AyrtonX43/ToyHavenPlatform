@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Http\Controllers\Seller;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\Order;
+use App\Models\OrderItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
+class PosController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('role:seller,admin');
+    }
+
+    public function index()
+    {
+        $seller = Auth::user()->seller;
+
+        if (!$seller || $seller->verification_status !== 'approved') {
+            return redirect()->route('seller.dashboard')
+                ->with('error', 'You need to be an approved seller to access POS.');
+        }
+
+        // Get active products for POS
+        $products = Product::where('seller_id', $seller->id)
+            ->where('status', 'active')
+            ->where('stock_quantity', '>', 0)
+            ->with('images')
+            ->orderBy('name')
+            ->get();
+
+        return view('seller.pos.index', compact('products', 'seller'));
+    }
+
+    public function processOrder(Request $request)
+    {
+        $seller = Auth::user()->seller;
+
+        if (!$seller || $seller->verification_status !== 'approved') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'customer_name' => 'nullable|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'payment_method' => 'required|in:cash,card,digital',
+        ]);
+
+        $items = $request->items;
+        $total = 0;
+        $orderItems = [];
+
+        // Validate stock and calculate total
+        foreach ($items as $item) {
+            $product = Product::where('seller_id', $seller->id)
+                ->where('id', $item['product_id'])
+                ->firstOrFail();
+
+            if ($product->stock_quantity < $item['quantity']) {
+                return response()->json([
+                    'error' => "Insufficient stock for {$product->name}. Available: {$product->stock_quantity}"
+                ], 400);
+            }
+
+            $subtotal = $product->price * $item['quantity'];
+            $total += $subtotal;
+
+            $orderItems[] = [
+                'product' => $product,
+                'quantity' => $item['quantity'],
+                'price' => $product->price,
+                'subtotal' => $subtotal,
+            ];
+        }
+
+        // Create order
+        $order = Order::create([
+            'order_number' => 'POS-' . strtoupper(Str::random(8)),
+            'user_id' => null, // POS orders may not have a registered user
+            'seller_id' => $seller->id,
+            'total_amount' => $total,
+            'shipping_fee' => 0,
+            'total' => $total,
+            'status' => 'completed', // POS orders are immediately completed
+            'payment_status' => 'paid',
+            'payment_method' => $request->payment_method,
+            'shipping_address' => $request->customer_address ?? 'Walk-in Customer',
+            'shipping_city' => $seller->city ?? '',
+            'shipping_province' => $seller->province ?? '',
+            'shipping_postal_code' => $seller->postal_code ?? '',
+            'shipping_phone' => $request->customer_phone ?? $seller->phone ?? '',
+            'notes' => 'POS Order - Customer: ' . ($request->customer_name ?? 'Walk-in'),
+        ]);
+
+        // Create order items and update stock
+        foreach ($orderItems as $itemData) {
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $itemData['product']->id,
+                'product_name' => $itemData['product']->name,
+                'quantity' => $itemData['quantity'],
+                'price' => $itemData['price'],
+                'subtotal' => $itemData['subtotal'],
+            ]);
+
+            // Update stock
+            $itemData['product']->decrement('stock_quantity', $itemData['quantity']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'order' => $order,
+            'message' => 'Order processed successfully!'
+        ]);
+    }
+}
