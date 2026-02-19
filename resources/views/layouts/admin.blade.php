@@ -30,7 +30,7 @@
 
         .admin-sidebar {
             height: 100vh;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0e7490 100%);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
             color: white;
             width: 260px;
             position: fixed;
@@ -38,7 +38,6 @@
             top: 0;
             z-index: 1000;
             border-right: 3px solid #0891b2;
-            animation: slideInLeft 0.5s ease-out;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -157,7 +156,10 @@
         .sidebar-link i {
             transition: transform 0.3s ease;
         }
-
+        
+        .sidebar-link:hover i {
+            transform: translateX(4px);
+        }
 
         .admin-content {
             margin-left: 260px;
@@ -185,12 +187,7 @@
             margin-bottom: 25px;
             border-radius: 16px;
             animation: slideDown 0.5s ease-out;
-            border: 2px solid #e2e8f0;
-            transition: box-shadow 0.3s ease, border-color 0.3s ease;
-        }
-        .admin-navbar:hover {
-            box-shadow: 0 4px 20px rgba(8, 145, 178, 0.1);
-            border-color: #e2e8f0;
+            border: 1px solid #e2e8f0;
         }
         
         .admin-navbar h5 {
@@ -226,20 +223,18 @@
         }
 
         .card {
-            border: 2px solid #e2e8f0;
+            border: 1px solid #e2e8f0;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             border-radius: 16px;
             overflow: hidden;
             background: #fff;
             margin-bottom: 20px;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: box-shadow 0.2s, border-color 0.2s;
         }
 
         .card:hover {
-            box-shadow: 0 8px 24px rgba(8, 145, 178, 0.15);
-            border-color: #0891b2;
-            transform: translateY(-2px);
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            border-color: #22d3ee;
         }
 
         .card-header {
@@ -437,10 +432,12 @@
             scroll-behavior: smooth;
         }
 
-        /* Page Content Animation - Auction style reveal */
+        /* Page Content Animation - Auction style */
         .page-content {
             animation: fadeInUp 0.6s ease-out;
         }
+        
+        /* Staggered card entrance */
         .page-content .card {
             animation: fadeInUp 0.5s ease-out both;
         }
@@ -448,8 +445,6 @@
         .page-content .card:nth-child(2) { animation-delay: 0.1s; }
         .page-content .card:nth-child(3) { animation-delay: 0.15s; }
         .page-content .card:nth-child(4) { animation-delay: 0.2s; }
-        .page-content .card:nth-child(5) { animation-delay: 0.25s; }
-        .page-content .card:nth-child(6) { animation-delay: 0.3s; }
 
         .card.text-white.bg-primary { background: linear-gradient(135deg, #0891b2, #06b6d4); }
         .card.text-white.bg-success { background: #10b981; }
@@ -518,7 +513,7 @@
         
         .form-control:focus, .form-select:focus {
             border-color: #0891b2;
-            box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.25);
+            box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.2);
         }
         
         /* Alert Improvements */
@@ -566,7 +561,7 @@
             }
         }
         
-        /* Mobile Menu Toggle - Auction color scheme */
+        /* Mobile Menu Toggle - Auction style (cyan/teal) */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -579,11 +574,11 @@
             padding: 10px 15px;
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
         .sidebar-toggle:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.45);
+            box-shadow: 0 6px 24px rgba(8, 145, 178, 0.45);
         }
         
         @media (max-width: 992px) {
@@ -701,7 +696,7 @@
                 <div class="admin-user-info">
                     <div class="d-flex align-items-center gap-2">
                         <div class="text-end">
-                            <div style="font-weight: 600; color: #0891b2;">{{ Auth::user()->name }}</div>
+                            <div style="font-weight: 600; color: #1e293b;">{{ Auth::user()->name }}</div>
                             <small class="text-muted">Administrator</small>
                         </div>
                             <span class="badge bg-primary" style="font-size: 0.75rem;">Admin</span>

@@ -48,12 +48,6 @@ Route::prefix('toyshop')->name('toyshop.')->group(function () {
     Route::get('/business/{slug}', [\App\Http\Controllers\Toyshop\BusinessPageController::class, 'show'])->name('business.show');
 });
 
-// Auction Routes - Public (guests can browse; bidding requires membership)
-Route::prefix('auctions')->name('auctions.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
-    Route::get('/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('show');
-});
-
 // Seller business email verification (public signed URL from email link)
 Route::get('/seller/verify-business-email', [\App\Http\Controllers\Seller\BusinessPageController::class, 'verifyBusinessEmail'])
     ->name('seller.business-page.verify-email')
@@ -162,10 +156,12 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
     });
 
-    // Auction Routes - Authenticated (my-bids, bid submission)
+    // Auction Routes - Public index (teaser allowed for non-members)
     Route::prefix('auctions')->name('auctions.')->group(function () {
-        Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->name('my-bids');
-        Route::post('/{auction}/bids', [\App\Http\Controllers\Auction\BidController::class, 'store'])->middleware(['membership'])->name('bids.store');
+        Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
+        Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->middleware('auth')->name('my-bids');
+        Route::get('/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('show');
+        Route::post('/{auction}/bids', [\App\Http\Controllers\Auction\BidController::class, 'store'])->middleware(['auth', 'membership'])->name('bids.store');
     });
 
     // Seller Routes
