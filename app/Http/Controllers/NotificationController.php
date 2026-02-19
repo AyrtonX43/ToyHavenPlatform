@@ -175,6 +175,16 @@ class NotificationController extends Controller
     }
 
     /**
+     * Delete all notifications for the current user
+     */
+    public function destroyAll()
+    {
+        Auth::user()->notifications()->delete();
+        
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Get notification icon based on type
      */
     private function getNotificationIcon($type, $data = [])

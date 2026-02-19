@@ -113,6 +113,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/recent', [\App\Http\Controllers\NotificationController::class, 'recent'])->name('recent');
         Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');
         Route::post('/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+        Route::delete('/clear-all', [\App\Http\Controllers\NotificationController::class, 'destroyAll'])->name('destroy-all');
         Route::delete('/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
     });
 

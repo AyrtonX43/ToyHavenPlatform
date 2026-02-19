@@ -542,7 +542,8 @@ Use this when your Hostinger site was uploaded via FTP or File Manager and `git 
 | `--products` | Delete toyshop products only |
 | `--trades` | Delete trade lists and user products only |
 | `--conversations` | Delete all chat conversations only |
-| `--all` | Delete everything (default) |
+| `--notifications` | Delete all notifications for all users |
+| `--all` | Delete everything including notifications (default) |
 | `--force` | Skip confirmation prompt |
 | `--skip-storage` | Do not delete image/attachment files from storage |
 

@@ -25,7 +25,8 @@ class ResetHostingerData extends Command
                             {--products : Delete toyshop products}
                             {--trades : Delete trade lists and user products}
                             {--conversations : Delete all chat conversations}
-                            {--all : Delete products, trades, and conversations (default)}
+                            {--notifications : Delete all notifications for all users}
+                            {--all : Delete products, trades, conversations, and notifications (default)}
                             {--force : Skip confirmation}
                             {--skip-storage : Do not delete files from storage}';
 
@@ -36,15 +37,17 @@ class ResetHostingerData extends Command
         $doProducts = $this->option('products') || $this->option('all');
         $doTrades = $this->option('trades') || $this->option('all');
         $doConversations = $this->option('conversations') || $this->option('all');
+        $doNotifications = $this->option('notifications') || $this->option('all');
 
-        if (!$doProducts && !$doTrades && !$doConversations) {
-            $doProducts = $doTrades = $doConversations = true;
+        if (!$doProducts && !$doTrades && !$doConversations && !$doNotifications) {
+            $doProducts = $doTrades = $doConversations = $doNotifications = true;
         }
 
         $actions = collect([
             $doProducts && 'toyshop products',
             $doTrades && 'trade lists and user products',
             $doConversations && 'all chat conversations',
+            $doNotifications && 'all notifications (for all users)',
         ])->filter()->implode(', ');
 
         if (!$this->option('force') && !$this->confirm("This will permanently delete: {$actions}. Continue?")) {
@@ -66,6 +69,10 @@ class ResetHostingerData extends Command
 
             if ($doProducts) {
                 $this->deleteProducts($skipStorage);
+            }
+
+            if ($doNotifications) {
+                $this->deleteAllNotifications();
             }
 
             DB::commit();
@@ -211,5 +218,13 @@ class ResetHostingerData extends Command
 
         $count = $deletableProducts->count();
         $this->line("  Deleted {$count} products.");
+    }
+
+    protected function deleteAllNotifications(): void
+    {
+        $this->info('Deleting all notifications for all users...');
+        $count = DB::table('notifications')->count();
+        DB::table('notifications')->truncate();
+        $this->line("  Deleted {$count} notifications.");
     }
 }

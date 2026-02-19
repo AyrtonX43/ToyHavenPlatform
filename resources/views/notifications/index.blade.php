@@ -4,36 +4,53 @@
 
 @push('styles')
 <style>
+    .notifications-page {
+        min-height: 60vh;
+    }
+    
     .notifications-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
         color: white;
-        padding: 2rem 0;
+        padding: 2.25rem 0;
         margin-bottom: 2rem;
         border-radius: 0 0 24px 24px;
-        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.3);
+        box-shadow: 0 12px 48px rgba(15, 23, 42, 0.25);
     }
     
     .notifications-header h1 {
         font-weight: 700;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em;
+        font-size: 1.75rem;
+    }
+    
+    .notifications-header .opacity-90 {
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+    
+    .notifications-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
     }
     
     .notification-filters {
         display: flex;
-        gap: 0.75rem;
-        margin-bottom: 2rem;
+        gap: 0.5rem;
+        margin-bottom: 1.75rem;
         flex-wrap: wrap;
     }
     
     .filter-btn {
-        padding: 0.6rem 1.25rem;
-        border-radius: 12px;
-        border: 2px solid #e2e8f0;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
         background: white;
         color: #64748b;
         font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.25s ease;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
         text-decoration: none;
     }
     
@@ -47,23 +64,28 @@
         background: #0f172a;
         color: white;
         border-color: #0f172a;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+    }
+    
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
     
     .notification-item {
         background: white;
-        border-radius: 14px;
+        border-radius: 12px;
         padding: 0;
-        margin-bottom: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        transition: all 0.25s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        transition: all 0.2s ease;
         border: 1px solid #f1f5f9;
         position: relative;
         overflow: hidden;
     }
     
     .notification-item:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         border-color: #e2e8f0;
     }
     
@@ -82,8 +104,8 @@
         left: 14px;
         top: 50%;
         transform: translateY(-50%);
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
         background: #0d9488;
         border-radius: 50%;
         z-index: 1;
@@ -92,24 +114,24 @@
     .notification-item-link {
         display: flex;
         align-items: flex-start;
-        padding: 1.25rem 1.5rem;
+        padding: 1rem 1.25rem 1rem 1.5rem;
         text-decoration: none;
         color: inherit;
-        transition: background 0.2s ease;
+        transition: background 0.15s ease;
     }
     
     .notification-item-link:hover {
-        background: #fafafa;
+        background: #fafbfc;
     }
     
     .notification-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         margin-right: 1rem;
         flex-shrink: 0;
     }
@@ -120,20 +142,21 @@
     }
     
     .notification-title {
-        font-size: 0.95rem;
+        font-size: 0.9375rem;
         font-weight: 600;
         color: #1e293b;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.2rem;
+        line-height: 1.4;
     }
     
     .notification-message {
-        font-size: 0.85rem;
+        font-size: 0.8125rem;
         color: #64748b;
-        margin-bottom: 0.35rem;
+        margin-bottom: 0.3rem;
     }
     
     .notification-time {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #94a3b8;
     }
     
@@ -145,15 +168,15 @@
     
     .notification-delete-btn {
         position: absolute;
-        top: 0.75rem;
-        right: 0.75rem;
-        padding: 0.4rem 0.5rem;
+        top: 0.625rem;
+        right: 0.625rem;
+        padding: 0.35rem 0.45rem;
         border: none;
         background: transparent;
         color: #94a3b8;
-        border-radius: 8px;
+        border-radius: 6px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease;
     }
     
     .notification-delete-btn:hover {
@@ -163,34 +186,57 @@
     
     .empty-state {
         text-align: center;
-        padding: 4rem 2rem;
+        padding: 3.5rem 2rem;
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        border-radius: 14px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         border: 1px solid #f1f5f9;
     }
     
     .empty-state-icon {
-        font-size: 3.5rem;
+        font-size: 3rem;
         color: #cbd5e1;
         margin-bottom: 1rem;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.125rem;
+        color: #334155;
+    }
+    
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
     }
     
     .mark-all-read-btn {
         background: #0d9488;
         color: white;
-        border: none;
-        padding: 0.6rem 1.25rem;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.25s ease;
     }
     
     .mark-all-read-btn:hover {
         background: #0f766e;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+        color: white;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+    }
+    
+    .clear-all-btn {
+        background: transparent;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .clear-all-btn:hover {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
     }
     
     .profile-reminder-section {
@@ -272,9 +318,10 @@
 @endpush
 
 @section('content')
+<div class="notifications-page">
 <div class="notifications-header">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
             <div>
                 <h1 class="mb-2">
                     <i class="bi bi-bell me-2"></i>Notifications
@@ -283,13 +330,20 @@
             </div>
             @php
                 $unreadCount = auth()->user()->unreadNotifications()->count();
-                $totalUnread = $unreadCount + count($profileWarnings ?? []);
+                $totalCount = auth()->user()->notifications()->count();
             @endphp
-            @if($unreadCount > 0)
-                <button class="mark-all-read-btn" onclick="markAllAsRead()">
-                    <i class="bi bi-check-all me-2"></i>Mark All as Read
-                </button>
-            @endif
+            <div class="notifications-toolbar">
+                @if($unreadCount > 0)
+                    <button type="button" class="btn-action mark-all-read-btn" onclick="markAllAsRead()">
+                        <i class="bi bi-check-all"></i> Mark All Read
+                    </button>
+                @endif
+                @if($totalCount > 0)
+                    <button type="button" class="btn-action clear-all-btn" onclick="clearAllNotifications()">
+                        <i class="bi bi-trash"></i> Clear All
+                    </button>
+                @endif
+            </div>
         </div>
     </div>
 </div>
@@ -299,8 +353,9 @@
         <a href="{{ route('notifications.index') }}" class="filter-btn {{ !request('filter') ? 'active' : '' }}">
             <i class="bi bi-list-ul me-2"></i>All
         </a>
+        @php $totalUnread = $unreadCount + count($profileWarnings ?? []); @endphp
         <a href="{{ route('notifications.index', ['filter' => 'unread']) }}" class="filter-btn {{ request('filter') === 'unread' ? 'active' : '' }}">
-            <i class="bi bi-circle-fill me-2"></i>Unread ({{ $unreadCount + count($profileWarnings ?? []) }})
+            <i class="bi bi-circle-fill me-2"></i>Unread ({{ $totalUnread }})
         </a>
         <a href="{{ route('notifications.index', ['filter' => 'read']) }}" class="filter-btn {{ request('filter') === 'read' ? 'active' : '' }}">
             <i class="bi bi-check-circle me-2"></i>Read
@@ -440,9 +495,10 @@
         <div class="empty-state">
             <i class="bi bi-bell-slash empty-state-icon"></i>
             <h4 class="fw-bold mb-2">No notifications</h4>
-            <p class="text-muted">You're all caught up! We'll notify you when there's something new.</p>
+            <p class="text-muted mb-0">You're all caught up! We'll notify you when there's something new.</p>
         </div>
     @endif
+</div>
 </div>
 
 @push('scripts')
@@ -523,6 +579,35 @@
             }
         }).then(() => {
             location.reload();
+        });
+    }
+    
+    function clearAllNotifications() {
+        if (!confirm('Are you sure you want to delete ALL notifications? This cannot be undone.')) {
+            return;
+        }
+        fetch('/notifications/clear-all', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                if (typeof showFlashNotification === 'function') {
+                    showFlashNotification('All notifications have been deleted.', 'success');
+                }
+                updateNotificationCount();
+                location.reload();
+            } else {
+                if (typeof showFlashNotification === 'function') {
+                    showFlashNotification('Unable to clear notifications. Please try again.', 'error');
+                }
+            }
+        }).catch(() => {
+            if (typeof showFlashNotification === 'function') {
+                showFlashNotification('Unable to clear notifications. Please try again.', 'error');
+            }
         });
     }
     
