@@ -299,6 +299,45 @@
         background: #e2e8f0;
         color: #64748b;
     }
+    .how-it-row .card a.card:hover { border-color: #22d3ee; }
+    .how-it-row .card a.card .btn { pointer-events: none; }
+
+    /* Featured Auctions - match auction page styling */
+    .auction-card-home {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+        border: 2px solid #e2e8f0;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+    }
+    .auction-card-home:hover {
+        border-color: #0891b2;
+        box-shadow: 0 12px 40px rgba(8, 145, 178, 0.15);
+        transform: translateY(-6px);
+        color: inherit;
+    }
+    .auction-card-home .auction-image-wrap {
+        height: 180px;
+        background: #f8fafc;
+        overflow: hidden;
+        position: relative;
+    }
+    .auction-card-home .auction-image-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .auction-card-home:hover .auction-image-wrap img {
+        transform: scale(1.06);
+    }
+    .auction-card-home .auction-price { font-size: 1.25rem; font-weight: 800; color: #0891b2; }
 
     @media (max-width: 768px) {
         .hero-section { padding: 3rem 0 4rem; }
@@ -352,14 +391,47 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card reveal">
-                <div class="icon-wrap" style="background: #e2e8f0; color: #64748b;"><i class="bi bi-hammer"></i></div>
+            <a href="{{ route('auctions.index') }}" class="card reveal text-decoration-none" style="color: inherit; display: block;">
+                <div class="icon-wrap"><i class="bi bi-hammer"></i></div>
                 <h3>Auction</h3>
-                <p>Bid on rare and collectible items. Coming soon.</p>
-                <button class="btn btn-secondary w-100" disabled>Coming Soon</button>
-            </div>
+                <p>Bid on rare and collectible items. Join membership to place bids on exclusive auctions.</p>
+                <span class="btn btn-primary w-100">View Auctions</span>
+            </a>
         </div>
     </div>
+
+    <!-- Featured Auctions - clickable direct to auction -->
+    @if($featuredAuctions->isNotEmpty())
+        <div class="category-block reveal mb-5">
+            <h3>
+                Live Auctions
+                <a href="{{ route('auctions.index') }}">View All Auctions <i class="bi bi-arrow-right"></i></a>
+            </h3>
+            <div class="row g-4">
+                @foreach($featuredAuctions as $index => $auction)
+                    <div class="col-6 col-md-4">
+                        <a href="{{ route('auctions.show', $auction) }}" class="auction-card-home">
+                            <div class="auction-image-wrap">
+                                @if($imgUrl = $auction->getPrimaryImageUrl())
+                                    <img src="{{ $imgUrl }}" alt="{{ $auction->title }}">
+                                @else
+                                    <div class="d-flex align-items-center justify-content-center h-100"><i class="bi bi-image text-secondary" style="font-size: 2.5rem;"></i></div>
+                                @endif
+                                @if($auction->is_members_only)
+                                    <span class="position-absolute top-0 end-0 m-2 badge" style="background: rgba(245,158,11,0.95); color: white; font-size: 0.7rem;">Members Only</span>
+                                @endif
+                            </div>
+                            <div class="p-3 flex-grow-1 d-flex flex-column">
+                                <h5 class="fw-bold mb-2 text-truncate" title="{{ $auction->title }}">{{ Str::limit($auction->title, 35) }}</h5>
+                                <div class="auction-price mb-2">₱{{ number_format($auction->getCurrentPrice(), 0) }}</div>
+                                <div class="mt-auto text-muted small"><i class="bi bi-clock me-1"></i>Ends {{ $auction->end_at?->diffForHumans() ?? 'TBD' }}</div>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <!-- All products (minimum 5) for guest homepage -->
     @if($featuredProducts->count() >= 5)

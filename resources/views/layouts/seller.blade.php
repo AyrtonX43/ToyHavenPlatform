@@ -30,7 +30,7 @@
 
         .seller-sidebar {
             height: 100vh;
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0e7490 100%);
             color: white;
             width: 280px;
             position: fixed;
@@ -178,7 +178,7 @@
             }
         }
 
-        /* Navbar - ToyStore style */
+        /* Navbar - Auction style */
         .seller-navbar {
             background: #fff;
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -186,7 +186,11 @@
             margin-bottom: 25px;
             border-radius: 16px;
             animation: slideDown 0.5s ease-out;
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .seller-navbar:hover {
+            box-shadow: 0 4px 20px rgba(8, 145, 178, 0.1);
         }
         
         .seller-navbar h5 {
@@ -221,12 +225,12 @@
             }
         }
 
-        /* Cards - ToyStore style */
+        /* Cards - Auction style */
         .card {
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             border-radius: 16px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
             animation: fadeInUp 0.6s ease-out;
             animation-fill-mode: both;
@@ -240,8 +244,9 @@
         .card:nth-child(4) { animation-delay: 0.4s; }
 
         .card:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            border-color: #22d3ee;
+            box-shadow: 0 8px 24px rgba(8, 145, 178, 0.15);
+            border-color: #0891b2;
+            transform: translateY(-2px);
         }
 
         .card-header {
@@ -513,6 +518,20 @@
         .pulse {
             animation: pulse 2s infinite;
         }
+
+        /* Page Content - Auction style stagger animation */
+        .page-content {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .page-content .card {
+            animation: fadeInUp 0.5s ease-out both;
+        }
+        .page-content .card:nth-child(1) { animation-delay: 0.05s; }
+        .page-content .card:nth-child(2) { animation-delay: 0.1s; }
+        .page-content .card:nth-child(3) { animation-delay: 0.15s; }
+        .page-content .card:nth-child(4) { animation-delay: 0.2s; }
+        .page-content .card:nth-child(5) { animation-delay: 0.25s; }
+        .page-content .card:nth-child(6) { animation-delay: 0.3s; }
     </style>
     @stack('styles')
 </head>

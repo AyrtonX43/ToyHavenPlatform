@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Auction;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -28,9 +29,17 @@ class HomeController extends Controller
             ->limit(12)
             ->get();
 
+        // Featured live auctions for homepage (clickable, direct to auction)
+        $featuredAuctions = Auction::live()
+            ->with(['category', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(1)])
+            ->orderBy('end_at')
+            ->limit(6)
+            ->get();
+
         return view('welcome', [
             'categories' => $categories,
             'featuredProducts' => $featuredProducts,
+            'featuredAuctions' => $featuredAuctions,
         ]);
     }
 }
