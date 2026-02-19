@@ -25,6 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'google_id',
+        'paymongo_customer_id',
         'phone',
         'phone_verified_at',
         'address',
@@ -146,6 +147,28 @@ class User extends Authenticatable implements MustVerifyEmail
     public function userProducts()
     {
         return $this->hasMany(UserProduct::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class)->orderByDesc('created_at');
+    }
+
+    public function activeSubscription()
+    {
+        return $this->subscriptions()->active()->first();
+    }
+
+    public function hasActiveMembership(): bool
+    {
+        return $this->subscriptions()->active()->exists();
+    }
+
+    public function currentPlan(): ?Plan
+    {
+        $sub = $this->activeSubscription();
+
+        return $sub?->plan;
     }
 
     public function hasSelectedCategories(): bool

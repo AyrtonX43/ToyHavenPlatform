@@ -192,6 +192,8 @@ class NotificationController extends Controller
         $type = $data['type'] ?? $type;
         $icons = [
             'order_status' => 'bi-box-seam',
+            'auction_won' => 'bi-trophy',
+            'auction_outbid' => 'bi-hammer',
             'trade_offer_received' => 'bi-arrow-left-right',
             'trade_offer_accepted' => 'bi-check-circle',
             'trade_status_updated' => 'bi-arrow-repeat',
@@ -215,6 +217,8 @@ class NotificationController extends Controller
         $type = $data['type'] ?? $type;
         $colors = [
             'order_status' => 'primary',
+            'auction_won' => 'success',
+            'auction_outbid' => 'warning',
             'trade_offer_received' => 'info',
             'trade_offer_accepted' => 'success',
             'trade_status_updated' => 'info',
@@ -258,6 +262,10 @@ class NotificationController extends Controller
             
             case 'profile_update':
                 return route('profile.edit');
+
+            case 'auction_won':
+            case 'auction_outbid':
+                return isset($data['auction_id']) ? route('auctions.show', $data['auction_id']) : route('auctions.index');
             
             default:
                 return route('notifications.index');

@@ -12,11 +12,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/paymongo',
+        ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'banned' => \App\Http\Middleware\CheckBannedUser::class,
             'redirect.admin.from.customer' => \App\Http\Middleware\RedirectAdminFromCustomerRoutes::class,
             'seller.approved' => \App\Http\Middleware\CheckSellerApproved::class,
+            'membership' => \App\Http\Middleware\MembershipRequired::class,
         ]);
         
         // Apply banned check to all web routes (after authentication)

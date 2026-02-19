@@ -21,6 +21,9 @@ Route::get('/search', [\App\Http\Controllers\SearchController::class, 'search'])
 // Real-time search suggest (products + business pages)
 Route::get('/search/suggest', [\App\Http\Controllers\SearchController::class, 'suggest'])->name('search.suggest');
 
+// PayMongo Webhook (no auth, no CSRF)
+Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhook\PayMongoWebhookController::class, 'handle'])->name('webhooks.paymongo');
+
 // Google OAuth Routes
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.auth');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
@@ -142,6 +145,23 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/create', [\App\Http\Controllers\Toyshop\ReportController::class, 'showForm'])->name('create');
         Route::post('/', [\App\Http\Controllers\Toyshop\ReportController::class, 'create'])->name('store');
+    });
+
+    // Membership Routes
+    Route::prefix('membership')->name('membership.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Membership\PlanController::class, 'index'])->name('index');
+        Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
+        Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
+        Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
+        Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
+    });
+
+    // Auction Routes - Public index (teaser allowed for non-members)
+    Route::prefix('auctions')->name('auctions.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
+        Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->middleware('auth')->name('my-bids');
+        Route::get('/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('show');
+        Route::post('/{auction}/bids', [\App\Http\Controllers\Auction\BidController::class, 'store'])->middleware(['auth', 'membership'])->name('bids.store');
     });
 
     // Seller Routes
@@ -363,6 +383,29 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::prefix('settings')->name('settings.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('index');
             Route::post('/', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('update');
+        });
+
+        Route::prefix('auctions')->name('auctions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AuctionController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AuctionController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AuctionController::class, 'store'])->name('store');
+            Route::get('/{auction}', [\App\Http\Controllers\Admin\AuctionController::class, 'show'])->name('show');
+            Route::get('/{auction}/edit', [\App\Http\Controllers\Admin\AuctionController::class, 'edit'])->name('edit');
+            Route::put('/{auction}', [\App\Http\Controllers\Admin\AuctionController::class, 'update'])->name('update');
+            Route::post('/{auction}/approve', [\App\Http\Controllers\Admin\AuctionController::class, 'approve'])->name('approve');
+            Route::post('/{auction}/reject', [\App\Http\Controllers\Admin\AuctionController::class, 'reject'])->name('reject');
+            Route::post('/{auction}/cancel', [\App\Http\Controllers\Admin\AuctionController::class, 'cancel'])->name('cancel');
+            Route::delete('/{auction}', [\App\Http\Controllers\Admin\AuctionController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('plans')->name('plans.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\PlanController::class, 'index'])->name('index');
+            Route::get('/{plan}/edit', [\App\Http\Controllers\Admin\PlanController::class, 'edit'])->name('edit');
+            Route::put('/{plan}', [\App\Http\Controllers\Admin\PlanController::class, 'update'])->name('update');
+        });
+
+        Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index'])->name('index');
         });
 
         Route::prefix('trades')->name('trades.')->group(function () {

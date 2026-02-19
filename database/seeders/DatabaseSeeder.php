@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         // Seed test users (admin and seller)
         $this->call([
             TestUsersSeeder::class,
+            PlanSeeder::class,
         ]);
 
         // User::factory(10)->create();

@@ -69,9 +69,39 @@ class CheckoutController extends Controller
             return $item->product->price * $item->quantity;
         });
 
-        $shippingFee = 0; // Can be calculated based on location
+        // Membership tier benefits: toyshop discount and free shipping
+        $membershipDiscount = 0;
+        $membershipDiscountPercent = 0;
+        $freeShippingMin = null;
+        $user = Auth::user();
+        if ($user && $user->hasActiveMembership()) {
+            $plan = $user->currentPlan();
+            if ($plan) {
+                $membershipDiscountPercent = $plan->getToyshopDiscount();
+                if ($membershipDiscountPercent > 0) {
+                    $membershipDiscount = $subtotal * ($membershipDiscountPercent / 100);
+                }
+                $freeShippingMin = $plan->getFreeShippingMin();
+            }
+        }
 
-        return view('toyshop.checkout.index', compact('cartItems', 'itemsBySeller', 'subtotal', 'shippingFee'));
+        $subtotalAfterDiscount = $subtotal - $membershipDiscount;
+
+        $shippingFee = 0; // Can be calculated based on location
+        if ($freeShippingMin !== null && $subtotalAfterDiscount >= $freeShippingMin) {
+            $shippingFee = 0; // Free shipping for members
+        }
+
+        return view('toyshop.checkout.index', compact(
+            'cartItems',
+            'itemsBySeller',
+            'subtotal',
+            'subtotalAfterDiscount',
+            'membershipDiscount',
+            'membershipDiscountPercent',
+            'freeShippingMin',
+            'shippingFee'
+        ));
     }
 
     public function process(CheckoutRequest $request)
@@ -107,13 +137,28 @@ class CheckoutController extends Controller
         try {
             // Group items by seller (one order per seller)
             $itemsBySeller = $cartItems->groupBy('product.seller_id');
+            $totalSubtotal = $cartItems->sum(fn ($item) => $item->product->price * $item->quantity);
+
+            // Membership toyshop discount
+            $membershipDiscountPct = 0;
+            $user = Auth::user();
+            if ($user && $user->hasActiveMembership()) {
+                $plan = $user->currentPlan();
+                if ($plan) {
+                    $membershipDiscountPct = $plan->getToyshopDiscount();
+                }
+            }
+            $totalDiscount = $totalSubtotal * ($membershipDiscountPct / 100);
             $createdOrders = [];
 
             foreach ($itemsBySeller as $sellerId => $sellerItems) {
                 // Calculate base amount (sum of product prices)
-                $baseAmount = $sellerItems->sum(function ($item) {
+                $sellerSubtotal = $sellerItems->sum(function ($item) {
                     return $item->product->price * $item->quantity;
                 });
+                // Apply membership discount proportionally
+                $sellerDiscount = $totalSubtotal > 0 ? $totalDiscount * ($sellerSubtotal / $totalSubtotal) : 0;
+                $baseAmount = $sellerSubtotal - $sellerDiscount;
 
                 // Calculate commission, tax, and final price
                 $priceCalculation = $this->priceService->calculatePrice($baseAmount);

@@ -625,6 +625,15 @@
             <a href="{{ route('admin.trades.index') }}" class="sidebar-link {{ request()->routeIs('admin.trades.index') || request()->routeIs('admin.trades.show') ? 'active' : '' }}">
                 <i class="bi bi-bag-check me-2"></i> Trades
             </a>
+            <a href="{{ route('admin.auctions.index') }}" class="sidebar-link {{ request()->routeIs('admin.auctions.*') ? 'active' : '' }}">
+                <i class="bi bi-hammer me-2"></i> Auctions
+            </a>
+            <a href="{{ route('admin.plans.index') }}" class="sidebar-link {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
+                <i class="bi bi-gem me-2"></i> Plans
+            </a>
+            <a href="{{ route('admin.subscriptions.index') }}" class="sidebar-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card me-2"></i> Subscriptions
+            </a>
             <a href="{{ route('admin.reports.index') }}" class="sidebar-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                 <i class="bi bi-flag me-2"></i> Report Management
             </a>

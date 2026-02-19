@@ -228,6 +228,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('auctions.*') ? 'active' : '' }}" href="{{ route('auctions.index') }}">
+                            <i class="bi bi-hammer me-1"></i>Auctions
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ route('home') }}#about">
                             <i class="bi bi-info-circle me-1"></i>About
                         </a>
@@ -397,7 +402,7 @@
                                             @foreach($recentNotifications as $notification)
                                                 @php
                                                     $data = $notification->data;
-                                                    $type = $notification->type;
+                                                    $type = $data['type'] ?? class_basename($notification->type);
                                                     $isUnread = is_null($notification->read_at);
                                                     
                                                     $icons = [
@@ -411,6 +416,8 @@
                                                         'account_banned' => 'bi-ban',
                                                         'account_suspended' => 'bi-pause-circle',
                                                         'profile_update' => 'bi-person-check',
+                                                        'auction_won' => 'bi-trophy',
+                                                        'auction_outbid' => 'bi-hammer',
                                                     ];
                                                     
                                                     $colors = [
@@ -424,6 +431,8 @@
                                                         'account_banned' => 'danger',
                                                         'account_suspended' => 'warning',
                                                         'profile_update' => 'primary',
+                                                        'auction_won' => 'success',
+                                                        'auction_outbid' => 'warning',
                                                     ];
                                                     
                                                     $icon = $icons[$type] ?? 'bi-bell';
@@ -448,6 +457,10 @@
                                                             break;
                                                         case 'profile_update':
                                                             $url = route('profile.edit');
+                                                            break;
+                                                        case 'auction_won':
+                                                        case 'auction_outbid':
+                                                            $url = isset($data['auction_id']) ? route('auctions.show', $data['auction_id']) : route('auctions.index');
                                                             break;
                                                     }
                                                 @endphp
@@ -522,6 +535,7 @@
                                 <li><a class="dropdown-item" href="{{ route('wishlist.index') }}"><i class="bi bi-heart me-2"></i>My Wishlist</a></li>
                                 <li><a class="dropdown-item" href="{{ route('notifications.index') }}"><i class="bi bi-bell me-2"></i>Notifications</a></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-person me-2"></i>Profile Settings</a></li>
+                                <li><a class="dropdown-item" href="{{ route('membership.index') }}"><i class="bi bi-gem me-2"></i>Membership</a></li>
                                 @if(Auth::user()->isSeller() && Auth::user()->seller)
                                     <li><hr class="dropdown-divider"></li>
                                     <li><h6 class="dropdown-header text-primary"><i class="bi bi-shop me-2"></i>Business</h6></li>
