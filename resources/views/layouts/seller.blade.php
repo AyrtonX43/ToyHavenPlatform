@@ -157,19 +157,14 @@
         }
 
         .sidebar-link:hover i {
-            transform: translateX(4px);
+            transform: translateX(4px) scale(1.05);
         }
 
         .seller-content {
             margin-left: 280px;
             padding: 24px;
             min-height: 100vh;
-            background: #fefcf8;
-        }
-        
-        /* Page Content Animation - Auction style */
-        .page-content {
-            animation: fadeInUp 0.6s ease-out;
+            background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 50%, #ecfeff 100%);
         }
 
         @keyframes fadeInUp {
@@ -240,9 +235,10 @@
         }
 
         .card:nth-child(1) { animation-delay: 0.1s; }
-        .card:nth-child(2) { animation-delay: 0.2s; }
-        .card:nth-child(3) { animation-delay: 0.3s; }
-        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(n+5) { animation-delay: 0.3s; }
 
         .card:hover {
             box-shadow: 0 8px 24px rgba(0,0,0,0.08);
@@ -468,7 +464,13 @@
             border: none;
             padding: 10px 15px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(8,145,178,0.35);
+            box-shadow: 0 4px 16px rgba(8,145,178,0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .sidebar-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(8,145,178,0.5);
         }
         
         @media (max-width: 992px) {
@@ -477,6 +479,11 @@
             }
         }
 
+        /* Page Content Animation */
+        .page-content {
+            animation: fadeInUp 0.6s ease-out both;
+        }
+        
         /* Quick Action Cards */
         .quick-action-card {
             border-radius: 12px;

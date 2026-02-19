@@ -154,18 +154,15 @@
         }
 
         .sidebar-link i {
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .sidebar-link:hover i {
-            transform: translateX(4px);
-        }
+
 
         .admin-content {
             margin-left: 260px;
             padding: 24px;
             min-height: 100vh;
-            background: #fefcf8;
+            background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 50%, #ecfeff 100%);
         }
 
         @keyframes fadeInUp {
@@ -402,8 +399,8 @@
         }
 
         .form-control:focus, .form-select:focus {
-            transform: scale(1.02);
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            border-color: #0891b2;
+            box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.25);
         }
 
         /* Modal Animations */
@@ -432,19 +429,15 @@
             scroll-behavior: smooth;
         }
 
-        /* Page Content Animation - Auction style */
+        /* Page Content Animation */
         .page-content {
-            animation: fadeInUp 0.6s ease-out;
+            animation: fadeInUp 0.6s ease-out both;
         }
         
-        /* Staggered card entrance */
-        .page-content .card {
-            animation: fadeInUp 0.5s ease-out both;
+        /* Sidebar icon hover animation */
+        .sidebar-link:hover i {
+            transform: translateX(4px);
         }
-        .page-content .card:nth-child(1) { animation-delay: 0.05s; }
-        .page-content .card:nth-child(2) { animation-delay: 0.1s; }
-        .page-content .card:nth-child(3) { animation-delay: 0.15s; }
-        .page-content .card:nth-child(4) { animation-delay: 0.2s; }
 
         .card.text-white.bg-primary { background: linear-gradient(135deg, #0891b2, #06b6d4); }
         .card.text-white.bg-success { background: #10b981; }
@@ -561,7 +554,7 @@
             }
         }
         
-        /* Mobile Menu Toggle - Auction style (cyan/teal) */
+        /* Mobile Menu Toggle */
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -573,12 +566,13 @@
             border: none;
             padding: 10px 15px;
             border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(8,145,178,0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+        
         .sidebar-toggle:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(8, 145, 178, 0.45);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(8,145,178,0.5);
         }
         
         @media (max-width: 992px) {
@@ -696,7 +690,7 @@
                 <div class="admin-user-info">
                     <div class="d-flex align-items-center gap-2">
                         <div class="text-end">
-                            <div style="font-weight: 600; color: #1e293b;">{{ Auth::user()->name }}</div>
+                            <div style="font-weight: 600; color: #0891b2;">{{ Auth::user()->name }}</div>
                             <small class="text-muted">Administrator</small>
                         </div>
                             <span class="badge bg-primary" style="font-size: 0.75rem;">Admin</span>

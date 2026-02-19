@@ -22,6 +22,13 @@
         pointer-events: none;
     }
     .hero-content { position: relative; z-index: 2; }
+    .hero-badge, .hero-title, .hero-subtitle, .hero-cta {
+        animation: fadeInUp 0.6s ease-out both;
+    }
+    .hero-badge { animation-delay: 0.1s; }
+    .hero-title { animation-delay: 0.2s; }
+    .hero-subtitle { animation-delay: 0.35s; }
+    .hero-cta { animation-delay: 0.5s; }
     .hero-badge {
         display: inline-block;
         background: linear-gradient(135deg, #0891b2, #06b6d4);
@@ -255,14 +262,18 @@
         border-radius: 16px;
         padding: 2rem;
         height: 100%;
-        transition: transform 0.2s, border-color 0.2s;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         background: #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: block;
     }
     .how-it-row .card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-6px);
         border-color: #22d3ee;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        box-shadow: 0 12px 32px rgba(8,145,178,0.2);
+    }
+    .how-it-row a.card .btn {
+        pointer-events: none;
     }
     .how-it-row .card .icon-wrap {
         width: 64px;
@@ -300,6 +311,11 @@
         color: #64748b;
     }
 
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
     @media (max-width: 768px) {
         .hero-section { padding: 3rem 0 4rem; }
         .hero-title { font-size: 2rem; }
@@ -352,10 +368,10 @@
             </div>
         </div>
         <div class="col-md-4">
-            <a href="{{ route('auctions.index') }}" class="card reveal text-decoration-none d-block" style="color: inherit;">
+            <a href="{{ route('auctions.index') }}" class="card reveal text-decoration-none text-dark">
                 <div class="icon-wrap"><i class="bi bi-hammer"></i></div>
                 <h3>Auction</h3>
-                <p>Bid on rare and collectible items. Win limited editions and exclusive toys.</p>
+                <p>Bid on rare and collectible items. Place your bids and win unique toys.</p>
                 <span class="btn btn-primary w-100">Bid Now</span>
             </a>
         </div>
