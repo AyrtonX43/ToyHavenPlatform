@@ -113,30 +113,134 @@ Find it in **Files** → **File Manager** or in the site summary.
 
 ## Part 3: Connect Hostinger to Git
 
+You have two ways to connect your GitHub repo to Hostinger:
+
+| Option | Best for | Auto runs composer, npm, migrate? |
+|--------|----------|-----------------------------------|
+| **A: Hostinger Built-in Git** | Simple sites, quick setup | No — run manually via SSH after each deploy |
+| **B: GitHub Actions** | Laravel, full automation | Yes — runs automatically on every push |
+
+---
+
 ### Option A: Hostinger Built-in Git (Simpler)
 
-1. In website dashboard: **Git** (left sidebar)
-2. **Create a New Repository**:
-   - **Repository Address:** `https://github.com/YOUR_USERNAME/ToyHavenPlatform.git`
-   - **Branch:** `main`
-   - **Install Path:** Leave empty (deploys to root) or set custom path
-3. If repo is private:
-   - Click **Add SSH Key** / **Manage Keys**
-   - Generate SSH key in Hostinger
-   - Add that key as a **Deploy Key** in GitHub: Repo → Settings → Deploy keys → Add
-4. Click **Deploy**
-5. Enable **Auto Deployment** and copy the **Webhook URL**
-6. In GitHub: Repo → **Settings** → **Webhooks** → **Add webhook**:
-   - Payload URL: paste Hostinger webhook URL
-   - Content type: `application/json` or `application/x-www-form-urlencoded` (check Hostinger docs)
-   - Events: **Just the push event**
-   - Save
+Hostinger can clone or pull your Git repository and deploy files automatically when you push. You run Laravel commands (composer, npm, migrate) yourself via SSH.
 
-**Limitation:** Hostinger’s Git mainly clones/pulls. It does **not** run `composer install`, `npm run build`, or `php artisan migrate` automatically on shared hosting. You must run these via SSH after each deploy (or use Option B).
+#### Step 3A.1: Open Git Settings in hPanel
+
+1. Log in to [hPanel](https://hpanel.hostinger.com)
+2. Go to **Websites** → click **Manage** next to your domain
+3. In the left sidebar, search for **Git** or look under **Advanced** or **Deployment**
+4. Click **Git** to open the Git management page
+
+#### Step 3A.2: Add Your Repository
+
+1. In **Create a New Repository** (or **Add Repository**), fill in:
+   - **Repository Address:**
+     - HTTPS: `https://github.com/YOUR_USERNAME/ToyHavenPlatform.git`
+     - Or SSH: `git@github.com:YOUR_USERNAME/ToyHavenPlatform.git` (needs SSH key setup in Step 3A.3)
+   - **Branch:** `main` (or your default branch)
+   - **Install Path:**
+     - Leave **empty** to deploy to your account root (e.g. `/home/u12345678/domains/yourdomain.com`)
+     - Or enter a subfolder (e.g. `public_html/site`) to deploy only there
+
+2. Click **Create** or **Add Repository**
+
+#### Step 3A.3: Private Repository — Add SSH Deploy Key
+
+For private GitHub repos, Hostinger must authenticate using an SSH deploy key.
+
+**In Hostinger (Git section):**
+
+1. Find **Manage Keys**, **Add SSH Key**, or **Deploy Keys**
+2. Click **Generate** or **Create new key**
+3. Copy the **public key** (starts with `ssh-rsa` or `ssh-ed25519`). Save it; it may not be shown again.
+
+**In GitHub:**
+
+1. Open your repo → **Settings** → **Deploy keys** (under Security)
+2. Click **Add deploy key**
+3. **Title:** e.g. `Hostinger production`
+4. **Key:** paste the full public key from Hostinger
+5. Leave **Allow write access** unchecked (read-only is enough for deploy)
+6. Click **Add key**
+
+**Back in Hostinger:**
+
+- Use the SSH repo URL: `git@github.com:YOUR_USERNAME/ToyHavenPlatform.git`
+
+#### Step 3A.4: Deploy for the First Time
+
+1. In the Git section, find your repository
+2. Click **Deploy** (or **Pull**)
+3. Wait for the deploy to finish; check the build/output log if available
+4. Files from the repo will appear at the Install Path (or root if empty)
+
+#### Step 3A.5: Enable Auto Deployment (Webhook)
+
+To deploy automatically on every `git push`:
+
+**In Hostinger:**
+
+1. In the Git section, find your repository
+2. Click **Auto Deployment** or **Manage**
+3. Turn on **Auto Deployment**
+4. Copy the **Webhook URL** (similar to `https://...hostinger.../deploy/...`). Save it.
+
+**In GitHub:**
+
+1. Open your repo → **Settings** → **Webhooks**
+2. Click **Add webhook**
+3. Set:
+   - **Payload URL:** paste the Hostinger webhook URL
+   - **Content type:** `application/json` (if offered) or `application/x-www-form-urlencoded` — follow Hostinger’s instructions
+   - **Secret:** leave empty unless Hostinger provides one
+   - **Which events:** select **Just the push event**
+4. Click **Add webhook**
+5. GitHub sends a test ping; check for a green checkmark. If it fails, verify URL and content type.
+
+#### Step 3A.6: Verify Webhook
+
+1. Make a small local change (e.g. add a comment)
+2. Commit and push: `git push origin main`
+3. In Hostinger’s Git section, check the deploy log — a new deploy should appear
+4. If not, in GitHub → **Settings** → **Webhooks** → click your webhook → **Recent Deliveries** to inspect delivery and response
+
+#### Option A Limitation
+
+Hostinger’s Git only clones/pulls files. It does **not** run:
+
+- `composer install`
+- `npm install` / `npm run build`
+- `php artisan migrate`
+
+After each deploy, SSH in and run these yourself (see Part 5 for commands).
+
+---
 
 ### Option B: GitHub Actions + SSH (Recommended for Laravel)
 
-This runs `composer install`, `npm run build`, and `php artisan migrate` on every push.
+GitHub Actions runs a workflow on each push: builds the app (composer, npm), deploys to Hostinger via SSH, and runs `php artisan migrate` and cache commands. No manual SSH deploy steps needed.
+
+#### How It Works
+
+1. You push to `main` on GitHub
+2. The workflow runs
+3. It installs dependencies, builds assets, copies files to Hostinger via SSH/SCP, then runs deploy commands on the server
+
+#### When to Use Option B
+
+- You want full automation (composer, npm, migrate) on every push
+- You’re okay adding a workflow file and GitHub secrets
+- You have Hostinger SSH access (Business plan or higher)
+
+#### Setup Overview
+
+1. Add GitHub **Secrets** for Hostinger (host, user, password or SSH key)
+2. Add the workflow file `.github/workflows/deploy.yml` (see Part 6)
+3. Push to `main` — the first deployment runs automatically
+
+Part 6 has the complete GitHub Actions workflow and setup.
 
 ---
 
@@ -146,11 +250,90 @@ Before auto-deploy, do a one-time manual setup.
 
 ### Step 4.1: Connect via SSH
 
-Use PuTTY (Windows) or Terminal (Mac/Linux):
+You need SSH access to run commands directly on your Hostinger server. SSH credentials are **different** from your Hostinger account login.
 
-- **Host:** `ssh.u12345678@yourdomain.com` (or the host from Hostinger)
-- **Port:** 65002 (or the one shown in hPanel)
-- **Username/Password:** From SSH Access settings
+#### Where to Find Your SSH Credentials in Hostinger
+
+1. Log in to [hPanel](https://hpanel.hostinger.com)
+2. Go to **Websites** → click **Manage** next to your domain
+3. In the left sidebar, go to **Advanced** → **SSH Access**
+4. Ensure **SSH Access** is **Enabled** (toggle on if off)
+5. You will see (or can set):
+   - **Hostname** — e.g. `ssh.u12345678.yourdomain.hostingersite.com` or `yourdomain.com`
+   - **Port** — usually `65002` (Hostinger uses a non-standard port)
+   - **Username** — e.g. `u12345678` (your account ID)
+   - **Password** — set this here if you haven’t already; you’ll use it to log in via SSH
+
+If SSH is disabled, enable it, set a strong password, and save.
+
+#### Option A: PuTTY (Windows)
+
+1. **Download PuTTY**
+   - [https://www.putty.org/](https://www.putty.org/) → download the Windows installer
+   - Or use Windows Terminal / PowerShell with OpenSSH if you prefer
+
+2. **Open PuTTY** and enter:
+   - **Host Name:** `ssh.u12345678.yourdomain.hostingersite.com` (use the exact host from hPanel)
+   - **Port:** `65002` (or the port shown in hPanel)
+   - **Connection type:** SSH
+
+3. Click **Open**
+
+4. If prompted **“The server’s host key is not cached in the registry”**:
+   - Click **Yes** to trust the server (first-time only)
+
+5. When prompted **“login as:”** — type your SSH username (e.g. `u12345678`)
+
+6. When prompted **“password:”** — type your SSH password (nothing will appear as you type; this is normal)
+
+7. On success, you’ll see a shell prompt such as:
+   ```
+   u12345678@server:~$
+   ```
+
+#### Option B: Windows Terminal / PowerShell (Windows 10/11)
+
+1. Open **Terminal** or **PowerShell**
+
+2. Run (replace with your host, port, and username):
+   ```powershell
+   ssh -p 65002 u12345678@ssh.u12345678.yourdomain.hostingersite.com
+   ```
+
+3. Enter your SSH password when prompted.
+
+#### Option C: Terminal (Mac / Linux)
+
+1. Open **Terminal**
+
+2. Run (replace with your host, port, and username):
+   ```bash
+   ssh -p 65002 u12345678@ssh.u12345678.yourdomain.hostingersite.com
+   ```
+
+3. If asked **“Are you sure you want to continue connecting?”** — type `yes` and press Enter.
+
+4. Enter your SSH password when prompted.
+
+#### Verifying the Connection
+
+Once connected, run:
+
+```bash
+pwd
+```
+
+You should be in your home directory (e.g. `/home/u12345678`). You can then `cd` to your site directory in Step 4.2.
+
+#### Troubleshooting SSH Connection
+
+| Problem | What to try |
+|---------|--------------|
+| **Connection refused** | Confirm SSH is enabled in hPanel, and use the correct port (often 65002) |
+| **Connection timed out** | Check firewall/antivirus; ensure your host and port match hPanel |
+| **Access denied / invalid password** | Reset SSH password in hPanel → SSH Access |
+| **Host key verification failed** | Remove the old key: `ssh-keygen -R ssh.u12345678.yourdomain.hostingersite.com` |
+| **PuTTY: “No supported authentication methods”** | Verify username and that password authentication is allowed in Hostinger SSH settings |
 
 ### Step 4.2: Go to Site Directory
 
@@ -224,7 +407,7 @@ php artisan db:seed   # if you use seeders
 
 Hostinger often disables `symlink()`. Use a hard link instead:
 
-```bash
+   ```bash
 ln -s /home/u12345678/domains/yourdomain.com/storage/app/public /home/u12345678/domains/yourdomain.com/public/storage
 ```
 
