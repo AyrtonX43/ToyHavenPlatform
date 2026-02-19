@@ -935,6 +935,32 @@
             });
         });
         
+        // Show flash notification dynamically (e.g. after AJAX delete)
+        function showFlashNotification(message, type) {
+            type = type || 'success';
+            const titles = { success: 'Success', error: 'Error', info: 'Information', warning: 'Warning' };
+            const icons = {
+                success: 'bi-check-circle-fill',
+                error: 'bi-exclamation-triangle-fill',
+                info: 'bi-info-circle-fill',
+                warning: 'bi-exclamation-circle-fill'
+            };
+            const container = document.getElementById('flashNotifications');
+            if (!container) return;
+            const div = document.createElement('div');
+            div.className = 'flash-notification flash-' + type;
+            div.setAttribute('data-auto-dismiss', '5000');
+            div.innerHTML = '<div class="flash-icon"><i class="bi ' + icons[type] + '"></i></div>' +
+                '<div class="flash-content"><div class="flash-title">' + titles[type] + '</div><div class="flash-message">' + message + '</div></div>' +
+                '<button type="button" class="flash-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>';
+            container.appendChild(div);
+            div.style.setProperty('--dismiss-time', '5000ms');
+            setTimeout(() => {
+                div.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => div.remove(), 300);
+            }, 5000);
+        }
+        
         // Notification functions
         function markNotificationAsRead(notificationId, event) {
             event.preventDefault();

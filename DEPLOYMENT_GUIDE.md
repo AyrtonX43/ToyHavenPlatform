@@ -468,6 +468,105 @@ chown -R u12345678:u12345678 storage bootstrap/cache
    php artisan view:cache
    ```
 
+### Reset Products, Trades & Chat (data:reset-hostinger)
+
+To delete toyshop products, trade lists, and all chat conversations on production:
+
+```bash
+cd /home/u334258035/domains/toyhaven.online
+php artisan data:reset-hostinger --force
+```
+
+**If you see** `There are no commands defined in the "data" namespace`, your Hostinger site was deployed via FTP/File Manager, not Git. Use Option 1 below.
+
+#### Option 1: Manual File Upload (No Git on Hostinger) — 2026 Instructions
+
+Use this when your Hostinger site was uploaded via FTP or File Manager and `git pull` gives "not a git repository".
+
+**Step 1 — Save your local file**
+
+1. In Cursor/VS Code, open `app/Console/Commands/ResetHostingerData.php`
+2. Press **Ctrl+S** to save
+3. Confirm the file exists at: `c:\xampp\htdocs\ToyHavenPlatform\app\Console\Commands\ResetHostingerData.php`
+
+**Step 2 — Open Hostinger File Manager**
+
+1. Log in to [hPanel](https://hpanel.hostinger.com)
+2. Click **Websites** → select **toyhaven.online**
+3. Click **File Manager** (or **Files** → **File Manager**)
+4. Navigate to the site root: `domains` → `toyhaven.online`
+
+**Step 3 — Locate or create the Commands folder**
+
+1. Open the `app` folder
+2. Open the `Console` folder
+3. If `Commands` folder does **not** exist:
+   - Click **+ Folder**
+   - Name it: `Commands`
+   - Click **Create**
+4. Open the `Commands` folder
+
+**Step 4 — Upload the file**
+
+1. Click **Upload** (top toolbar)
+2. Click **Select files** or drag and drop
+3. Choose from your PC: `c:\xampp\htdocs\ToyHavenPlatform\app\Console\Commands\ResetHostingerData.php`
+4. Wait for the upload to finish
+5. Confirm `ResetHostingerData.php` appears in the `Commands` folder
+
+**Step 5 — Run the command via SSH**
+
+1. In hPanel: **Advanced** → **SSH Access** (or use PuTTY/Terminal)
+2. Connect with your Hostinger SSH credentials
+3. Run:
+
+   ```bash
+   cd /home/u334258035/domains/toyhaven.online
+   php artisan data:reset-hostinger --force
+   ```
+
+4. You should see output like: `Data reset completed successfully.`
+
+**Path reference (adjust if your domain/path differs):**
+
+| Where | Path |
+|-------|------|
+| Local (Windows) | `c:\xampp\htdocs\ToyHavenPlatform\app\Console\Commands\ResetHostingerData.php` |
+| Hostinger target | `domains/toyhaven.online/app/Console/Commands/ResetHostingerData.php` |
+| Your Hostinger user | Replace `u334258035` in paths with your actual username |
+
+**Command options:**
+
+| Option | Description |
+|--------|-------------|
+| `--products` | Delete toyshop products only |
+| `--trades` | Delete trade lists and user products only |
+| `--conversations` | Delete all chat conversations only |
+| `--all` | Delete everything (default) |
+| `--force` | Skip confirmation prompt |
+| `--skip-storage` | Do not delete image/attachment files from storage |
+
+#### Option 2: Git-based deployment
+
+If your Hostinger site is a Git clone, deploy the command by pushing from local and pulling on the server:
+
+```powershell
+# On your PC
+cd c:\xampp\htdocs\ToyHavenPlatform
+git add app/Console/Commands/ResetHostingerData.php
+git commit -m "Add data reset command"
+git push origin main
+```
+
+```bash
+# On Hostinger (SSH)
+cd /home/u334258035/domains/toyhaven.online
+git pull origin main
+php artisan data:reset-hostinger --force
+```
+
+---
+
 ### Database Schema Sync (Not Data)
 
 - **Schema:** Handled by `php artisan migrate`. Run it on Hostinger after each deploy.

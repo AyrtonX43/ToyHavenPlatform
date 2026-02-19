@@ -5,111 +5,160 @@
 @push('styles')
 <style>
     .notifications-header {
-        background: #0f172a;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: white;
         padding: 2rem 0;
         margin-bottom: 2rem;
-        border-radius: 0 0 20px 20px;
+        border-radius: 0 0 24px 24px;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.3);
+    }
+    
+    .notifications-header h1 {
+        font-weight: 700;
+        letter-spacing: -0.02em;
     }
     
     .notification-filters {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
     }
     
     .filter-btn {
-        padding: 0.5rem 1.5rem;
-        border-radius: 25px;
-        border: 2px solid #e5e7eb;
+        padding: 0.6rem 1.25rem;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
         background: white;
         color: #64748b;
         font-weight: 500;
-        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        transition: all 0.25s ease;
         text-decoration: none;
     }
     
-    .filter-btn:hover, .filter-btn.active {
+    .filter-btn:hover {
+        background: #f8fafc;
+        border-color: #0d9488;
+        color: #0d9488;
+    }
+    
+    .filter-btn.active {
         background: #0f172a;
         color: white;
-        border-color: transparent;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+        border-color: #0f172a;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
     }
     
     .notification-item {
         background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
+        border-radius: 14px;
+        padding: 0;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
-        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        transition: all 0.25s ease;
+        border: 1px solid #f1f5f9;
         position: relative;
+        overflow: hidden;
     }
     
     .notification-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-color: #e2e8f0;
     }
     
     .notification-item.unread {
-        background: #f0fdfa;
-        border-left-color: #0d9488;
+        background: linear-gradient(to right, #f0fdfa 0%, #ffffff 100%);
+        border-left: 4px solid #0d9488;
     }
     
-    .notification-item.unread::before {
-        content: '';
+    .notification-item.unread .notification-dot {
+        display: block;
+    }
+    
+    .notification-dot {
+        display: none;
         position: absolute;
-        left: 0;
+        left: 14px;
         top: 50%;
         transform: translateY(-50%);
         width: 8px;
         height: 8px;
         background: #0d9488;
         border-radius: 50%;
+        z-index: 1;
+    }
+    
+    .notification-item-link {
+        display: flex;
+        align-items: flex-start;
+        padding: 1.25rem 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+    }
+    
+    .notification-item-link:hover {
+        background: #fafafa;
     }
     
     .notification-icon {
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         margin-right: 1rem;
         flex-shrink: 0;
     }
     
     .notification-content {
         flex: 1;
+        min-width: 0;
     }
     
     .notification-title {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: #1e293b;
         margin-bottom: 0.25rem;
     }
     
     .notification-message {
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         color: #64748b;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.35rem;
     }
     
     .notification-time {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         color: #94a3b8;
     }
     
     .notification-actions {
         display: flex;
+        align-items: center;
         gap: 0.5rem;
-        margin-left: auto;
+    }
+    
+    .notification-delete-btn {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        padding: 0.4rem 0.5rem;
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .notification-delete-btn:hover {
+        background: #fee2e2;
+        color: #dc2626;
     }
     
     .empty-state {
@@ -117,36 +166,40 @@
         padding: 4rem 2rem;
         background: white;
         border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        border: 1px solid #f1f5f9;
     }
     
     .empty-state-icon {
-        font-size: 4rem;
+        font-size: 3.5rem;
         color: #cbd5e1;
         margin-bottom: 1rem;
     }
     
     .mark-all-read-btn {
-        background: #0f172a;
+        background: #0d9488;
         color: white;
         border: none;
-        padding: 0.5rem 1.5rem;
-        border-radius: 8px;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
         font-weight: 600;
-        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        transition: all 0.25s ease;
     }
     
     .mark-all-read-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+        background: #0f766e;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
     }
     
     .profile-reminder-section {
-        background: #fffbf0;
+        background: linear-gradient(to right, #fffbeb 0%, #ffffff 100%);
         border: 1px solid #fde68a;
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 1.5rem;
         margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     
     .profile-reminder-header {
@@ -155,36 +208,36 @@
         justify-content: space-between;
         margin-bottom: 1rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid #fde68a;
+        border-bottom: 1px solid #fde68a;
     }
     
     .profile-reminder-item {
         background: white;
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 1.25rem;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        transition: all 0.3s ease;
-        border-left: 4px solid;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        transition: all 0.25s ease;
+        border: 1px solid #f1f5f9;
+        border-left-width: 4px;
         text-decoration: none;
         color: inherit;
         display: block;
     }
     
     .profile-reminder-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         text-decoration: none;
         color: inherit;
     }
     
     .profile-reminder-item.warning {
-        border-left-color: #f59e0b;
+        border-left: 4px solid #f59e0b;
         background: #fffbeb;
     }
     
     .profile-reminder-item.info {
-        border-left-color: #3b82f6;
+        border-left: 4px solid #3b82f6;
         background: #eff6ff;
     }
     
@@ -352,8 +405,9 @@
                     }
                 @endphp
                 
-                <a href="{{ $url }}" class="notification-item {{ $isUnread ? 'unread' : '' }}" onclick="markAsRead('{{ $notification->id }}', event)">
-                    <div class="d-flex align-items-start">
+                <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}">
+                    <span class="notification-dot"></span>
+                    <a href="{{ $url }}" class="notification-item-link" onclick="markAsRead('{{ $notification->id }}', event)">
                         <div class="notification-icon bg-{{ $color }} text-white">
                             <i class="bi {{ $icon }}"></i>
                         </div>
@@ -368,11 +422,14 @@
                         </div>
                         <div class="notification-actions">
                             @if($isUnread)
-                                <span class="badge bg-primary">New</span>
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
                             @endif
                         </div>
-                    </div>
-                </a>
+                    </a>
+                    <button type="button" class="notification-delete-btn" onclick="deleteNotification('{{ $notification->id }}', event)" title="Delete notification" aria-label="Delete notification">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             @endforeach
         </div>
 
@@ -390,6 +447,49 @@
 
 @push('scripts')
 <script>
+    function deleteNotification(notificationId, event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!confirm('Are you sure you want to delete this notification? This cannot be undone.')) {
+            return;
+        }
+        fetch(`/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                if (item) {
+                    item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateX(20px)';
+                    setTimeout(() => item.remove(), 300);
+                }
+                if (typeof showFlashNotification === 'function') {
+                    showFlashNotification('Notification deleted successfully.', 'success');
+                } else {
+                    alert('Notification deleted successfully.');
+                }
+                updateNotificationCount();
+            } else {
+                if (typeof showFlashNotification === 'function') {
+                    showFlashNotification('Unable to delete notification. Please try again.', 'error');
+                } else {
+                    alert('Unable to delete notification.');
+                }
+            }
+        }).catch(() => {
+            if (typeof showFlashNotification === 'function') {
+                showFlashNotification('Something went wrong. Please try again.', 'error');
+            } else {
+                alert('Something went wrong.');
+            }
+        });
+    }
+    
     function markAsRead(notificationId, event) {
         // Don't prevent default if it's already read
         fetch(`/notifications/${notificationId}/read`, {
@@ -400,10 +500,14 @@
             }
         }).then(() => {
             // Update UI
-            const item = event.currentTarget;
-            item.classList.remove('unread');
-            const badge = item.querySelector('.badge');
-            if (badge) badge.remove();
+            const item = event.currentTarget.closest('.notification-item');
+            if (item) {
+                item.classList.remove('unread');
+                const badge = item.querySelector('.badge');
+                if (badge) badge.remove();
+                const dot = item.querySelector('.notification-dot');
+                if (dot) dot.style.display = 'none';
+            }
             
             // Update count
             updateNotificationCount();
