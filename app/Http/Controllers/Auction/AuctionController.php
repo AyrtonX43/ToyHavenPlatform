@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
+use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,13 +28,14 @@ class AuctionController extends Controller
 
         $user = Auth::user();
         $auctions = $query->orderBy('end_at')->paginate(12);
-
-        $user = Auth::user();
         $hasMembership = $user?->hasActiveMembership() ?? false;
+
+        $plans = $hasMembership ? collect() : Plan::active()->ordered()->get();
 
         return view('auctions.index', [
             'auctions' => $auctions,
             'hasMembership' => $hasMembership,
+            'plans' => $plans,
         ]);
     }
 
