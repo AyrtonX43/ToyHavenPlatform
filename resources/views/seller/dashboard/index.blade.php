@@ -4,6 +4,10 @@
 
 @section('page-title', 'Dashboard Overview')
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+@endpush
+
 @section('content')
 <!-- Status Alert -->
 @if(session('pending_approval') || $seller->verification_status === 'pending')
@@ -19,7 +23,6 @@
         </p>
         <ul class="mb-2">
             <li>Upload Products (Toyshop, Trading, Auction)</li>
-            <li>Point of Sale (POS) – Sell in-person</li>
             <li>View Business Page</li>
             <li>Product Tracking</li>
             <li>Chat / Messages</li>
@@ -70,45 +73,44 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
-                <small class="text-muted">Manage your store efficiently</small>
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-lg col-md-4 col-sm-6">
-                        <a href="{{ route('seller.pos.index') }}" class="quick-action-card card border text-decoration-none">
-                            <i class="bi bi-cash-register text-success"></i>
-                            <h6 class="text-dark">Point of Sale</h6>
-                            <small class="text-muted">Process walk-in sales</small>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ route('seller.products.create') }}" class="quick-action-card card border">
+                            <i class="bi bi-plus-circle-fill"></i>
+                            <h6>Add New Product</h6>
+                            <small class="text-muted">Create a new listing</small>
                         </a>
                     </div>
-                    <div class="col-lg col-md-4 col-sm-6">
-                        <a href="{{ route('seller.products.create') }}" class="quick-action-card card border text-decoration-none">
-                            <i class="bi bi-plus-circle-fill text-primary"></i>
-                            <h6 class="text-dark">Add Product</h6>
-                            <small class="text-muted">Create new listing</small>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ route('seller.products.index') }}" class="quick-action-card card border">
+                            <i class="bi bi-box-seam"></i>
+                            <h6>Manage Products</h6>
+                            <small class="text-muted">View all products</small>
                         </a>
                     </div>
-                    <div class="col-lg col-md-4 col-sm-6">
-                        <a href="{{ route('seller.products.index') }}" class="quick-action-card card border text-decoration-none">
-                            <i class="bi bi-box-seam text-info"></i>
-                            <h6 class="text-dark">Manage Products</h6>
-                            <small class="text-muted">View & edit products</small>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ route('seller.orders.index') }}" class="quick-action-card card border">
+                            <i class="bi bi-cart-check"></i>
+                            <h6>View Orders</h6>
+                            <small class="text-muted">Manage orders</small>
                         </a>
                     </div>
-                    <div class="col-lg col-md-4 col-sm-6">
-                        <a href="{{ route('seller.orders.index') }}" class="quick-action-card card border text-decoration-none">
-                            <i class="bi bi-cart-check text-warning"></i>
-                            <h6 class="text-dark">Orders</h6>
-                            <small class="text-muted">Track & fulfill</small>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ route('seller.business-page.index') }}" class="quick-action-card card border">
+                            <i class="bi bi-gear"></i>
+                            <h6>Business Settings</h6>
+                            <small class="text-muted">Configure your store</small>
                         </a>
                     </div>
-                    <div class="col-lg col-md-4 col-sm-6">
-                        <a href="{{ route('seller.business-page.index') }}" class="quick-action-card card border text-decoration-none">
-                            <i class="bi bi-gear text-secondary"></i>
-                            <h6 class="text-dark">Business Settings</h6>
-                            <small class="text-muted">Configure store</small>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{{ route('seller.pos.index') }}" class="quick-action-card card border">
+                            <i class="bi bi-cash-register"></i>
+                            <h6>Point of Sale</h6>
+                            <small class="text-muted">Process walk-in orders</small>
                         </a>
                     </div>
                 </div>
@@ -150,33 +152,73 @@
     </div>
 </div>
 
-<!-- Additional Statistics Row -->
+<!-- Charts Section -->
+@if($seller->verification_status === 'approved')
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Revenue Trend</h5>
+                <small class="text-muted">Last 7 Days</small>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-cart-check me-2 text-info"></i>Orders Trend</h5>
+                <small class="text-muted">Last 7 Days</small>
+            </div>
+            <div class="card-body">
+                <canvas id="ordersChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- Secondary Stats Row -->
 <div class="row mb-4">
     <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-clock-history text-warning" style="font-size: 2.5rem;"></i>
-                <h3 class="mt-3 mb-1">{{ $stats['pending_orders'] }}</h3>
-                <p class="text-muted mb-0">Pending Orders</p>
+        <div class="card h-100 border-start border-warning border-4">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <i class="bi bi-clock-history text-warning" style="font-size: 2.5rem;"></i>
+                </div>
+                <div>
+                    <h3 class="mb-1 counter-number" data-count="{{ $stats['pending_orders'] }}">{{ $stats['pending_orders'] }}</h3>
+                    <p class="text-muted mb-0 small">Pending Orders</p>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-check2-circle text-success" style="font-size: 2.5rem;"></i>
-                <h3 class="mt-3 mb-1">{{ $stats['completed_orders'] }}</h3>
-                <p class="text-muted mb-0">Completed Orders</p>
+        <div class="card h-100 border-start border-success border-4">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <i class="bi bi-check2-circle text-success" style="font-size: 2.5rem;"></i>
+                </div>
+                <div>
+                    <h3 class="mb-1 counter-number" data-count="{{ $stats['completed_orders'] }}">{{ $stats['completed_orders'] }}</h3>
+                    <p class="text-muted mb-0 small">Completed Orders</p>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="bi bi-calendar-day text-info" style="font-size: 2.5rem;"></i>
-                <h3 class="mt-3 mb-1">{{ $stats['today_orders'] }}</h3>
-                <p class="text-muted mb-0">Today's Orders</p>
-                <small class="text-success">₱{{ number_format($stats['today_sales'], 2) }} sales</small>
+        <div class="card h-100 border-start border-info border-4">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <i class="bi bi-calendar-day text-info" style="font-size: 2.5rem;"></i>
+                </div>
+                <div>
+                    <h3 class="mb-1 counter-number" data-count="{{ $stats['today_orders'] }}">{{ $stats['today_orders'] }}</h3>
+                    <p class="text-muted mb-0 small">Today's Orders</p>
+                    <small class="text-success fw-bold">₱{{ number_format($stats['today_sales'], 2) }}</small>
+                </div>
             </div>
         </div>
     </div>
@@ -342,41 +384,89 @@
     </div>
 </div>
 
-<!-- Sales Summary Card -->
-@if($seller->verification_status === 'approved' && $stats['total_sales'] > 0)
+<!-- Sales Summary -->
+@if($seller->verification_status === 'approved')
 <div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Sales Summary</h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <i class="bi bi-calendar-day text-primary" style="font-size: 2rem;"></i>
-                            <h4 class="mt-2 mb-1">₱{{ number_format($stats['today_sales'], 2) }}</h4>
-                            <p class="text-muted mb-0">Today's Sales</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <i class="bi bi-calendar-month text-success" style="font-size: 2rem;"></i>
-                            <h4 class="mt-2 mb-1">₱{{ number_format($stats['month_sales'], 2) }}</h4>
-                            <p class="text-muted mb-0">This Month</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <i class="bi bi-graph-up-arrow text-info" style="font-size: 2rem;"></i>
-                            <h4 class="mt-2 mb-1">₱{{ number_format($stats['total_sales'], 2) }}</h4>
-                            <p class="text-muted mb-0">All Time Sales</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="col-md-4 mb-4">
+        <div class="stat-card bg-primary">
+            <i class="bi bi-calendar-day stat-icon"></i>
+            <div class="stat-label">Today's Sales</div>
+            <div class="stat-value">₱{{ number_format($stats['today_sales'], 2) }}</div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="stat-card bg-success">
+            <i class="bi bi-calendar-month stat-icon"></i>
+            <div class="stat-label">This Month</div>
+            <div class="stat-value">₱{{ number_format($stats['month_sales'], 2) }}</div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="stat-card bg-info">
+            <i class="bi bi-graph-up-arrow stat-icon"></i>
+            <div class="stat-label">All Time Sales</div>
+            <div class="stat-value">₱{{ number_format($stats['total_sales'], 2) }}</div>
         </div>
     </div>
 </div>
+@endif
+
+@if($seller->verification_status === 'approved' && isset($revenueData) && isset($ordersData))
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('revenueChart')) {
+        new Chart(document.getElementById('revenueChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: {!! json_encode(array_column($revenueData, 'date')) !!},
+                datasets: [{
+                    label: 'Revenue (₱)',
+                    data: {!! json_encode(array_column($revenueData, 'revenue')) !!},
+                    borderColor: '#0891b2',
+                    backgroundColor: 'rgba(8, 145, 178, 0.15)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => '₱' + v.toLocaleString() }
+                    }
+                }
+            }
+        });
+    }
+    if (document.getElementById('ordersChart')) {
+        new Chart(document.getElementById('ordersChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {!! json_encode(array_column($ordersData, 'date')) !!},
+                datasets: [{
+                    label: 'Orders',
+                    data: {!! json_encode(array_column($ordersData, 'count')) !!},
+                    backgroundColor: 'rgba(14, 165, 233, 0.6)',
+                    borderColor: '#0ea5e9',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+});
+</script>
+@endpush
 @endif
 @endsection

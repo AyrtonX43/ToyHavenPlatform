@@ -34,7 +34,48 @@ class PosController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('seller.pos.index', compact('products', 'seller'));
+        // POS stats - use shipping_notes to identify POS orders (contain 'POS Order')
+        $posOrdersQuery = Order::where('seller_id', $seller->id)->where('shipping_notes', 'like', 'POS Order%');
+        $stats = [
+            'today_pos_sales' => (float) (clone $posOrdersQuery)->whereDate('created_at', today())->sum('total_amount'),
+            'today_pos_orders' => (clone $posOrdersQuery)->whereDate('created_at', today())->count(),
+            'week_pos_sales' => (float) (clone $posOrdersQuery)->where('created_at', '>=', now()->startOfWeek())->sum('total_amount'),
+            'week_pos_orders' => (clone $posOrdersQuery)->where('created_at', '>=', now()->startOfWeek())->count(),
+        ];
+
+        // Chart data - Last 7 days POS sales
+        $salesChartData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $salesChartData[] = [
+                'date' => $date->format('M d'),
+                'sales' => (float) Order::where('seller_id', $seller->id)
+                    ->where('shipping_notes', 'like', 'POS Order%')
+                    ->whereDate('created_at', $date)
+                    ->sum('total_amount'),
+                'orders' => Order::where('seller_id', $seller->id)
+                    ->where('shipping_notes', 'like', 'POS Order%')
+                    ->whereDate('created_at', $date)
+                    ->count()
+            ];
+        }
+
+        // Payment method breakdown (last 30 days POS orders)
+        $paymentBreakdown = Order::where('seller_id', $seller->id)
+            ->where('shipping_notes', 'like', 'POS Order%')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->selectRaw('payment_method, count(*) as count, sum(total_amount) as total')
+            ->groupBy('payment_method')
+            ->get();
+
+        // Recent POS transactions
+        $recentPosOrders = Order::where('seller_id', $seller->id)
+            ->where('shipping_notes', 'like', 'POS Order%')
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get();
+
+        return view('seller.pos.index', compact('products', 'seller', 'stats', 'salesChartData', 'paymentBreakdown', 'recentPosOrders'));
     }
 
     public function processOrder(Request $request)

@@ -51,6 +51,26 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('seller.dashboard.index', compact('seller', 'stats', 'recentOrders', 'lowStockProducts'));
+        // Chart data - Last 7 days revenue and orders
+        $revenueData = [];
+        $ordersData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $revenueData[] = [
+                'date' => $date->format('M d'),
+                'revenue' => (float) Order::where('seller_id', $seller->id)
+                    ->where('payment_status', 'paid')
+                    ->whereDate('created_at', $date)
+                    ->sum('total_amount')
+            ];
+            $ordersData[] = [
+                'date' => $date->format('M d'),
+                'count' => Order::where('seller_id', $seller->id)
+                    ->whereDate('created_at', $date)
+                    ->count()
+            ];
+        }
+
+        return view('seller.dashboard.index', compact('seller', 'stats', 'recentOrders', 'lowStockProducts', 'revenueData', 'ordersData'));
     }
 }
