@@ -103,7 +103,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-person-circle me-2 text-muted"></i>
-                                        {{ $order->user->name }}
+                                        {{ $order->user?->name ?? 'Walk-in Customer' }}
                                     </div>
                                 </td>
                                 <td>

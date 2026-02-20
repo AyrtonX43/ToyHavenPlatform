@@ -97,7 +97,7 @@ class PosController extends Controller
             'shipping_province' => $seller->province ?? '',
             'shipping_postal_code' => $seller->postal_code ?? '',
             'shipping_phone' => $request->customer_phone ?? $seller->phone ?? '',
-            'notes' => 'POS Order - Customer: ' . ($request->customer_name ?? 'Walk-in'),
+            'shipping_notes' => 'POS Order - Customer: ' . ($request->customer_name ?? 'Walk-in'),
         ]);
 
         // Create order items and update stock
