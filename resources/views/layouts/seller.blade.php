@@ -389,6 +389,19 @@
             border-radius: 6px;
         }
 
+        /* Breadcrumbs */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+        }
+        .breadcrumb-item a {
+            color: #0891b2;
+            text-decoration: none;
+        }
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+
 
         /* Alerts */
         .alert {
@@ -543,36 +556,44 @@
         </div>
         <nav>
             <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Dashboard</small>
+                <small class="text-white-50 text-uppercase fw-bold">Main</small>
             </div>
             <a href="{{ route('seller.dashboard') }}" class="sidebar-link {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2 me-2"></i> Overview
+                <i class="bi bi-speedometer2 me-2"></i> Dashboard
             </a>
+
             <hr class="text-white-50 my-3">
             <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Products</small>
+                <small class="text-white-50 text-uppercase fw-bold">Products</small>
             </div>
-            <a href="{{ route('seller.products.index') }}" class="sidebar-link {{ request()->routeIs('seller.products.*') ? 'active' : '' }}">
+            <a href="{{ route('seller.products.index') }}" class="sidebar-link {{ request()->routeIs('seller.products.index') || request()->routeIs('seller.products.show') || request()->routeIs('seller.products.edit') ? 'active' : '' }}">
                 <i class="bi bi-box-seam me-2"></i> My Products
             </a>
             <a href="{{ route('seller.products.create') }}" class="sidebar-link {{ request()->routeIs('seller.products.create') ? 'active' : '' }}">
                 <i class="bi bi-plus-circle me-2"></i> Add Product
             </a>
+
             <hr class="text-white-50 my-3">
             <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Orders</small>
+                <small class="text-white-50 text-uppercase fw-bold">Sales & Orders</small>
             </div>
             <a href="{{ route('seller.orders.index') }}" class="sidebar-link {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
                 <i class="bi bi-cart-check me-2"></i> Order Management
             </a>
             @if(Auth::user()->seller && Auth::user()->seller->verification_status === 'approved')
                 <a href="{{ route('seller.pos.index') }}" class="sidebar-link {{ request()->routeIs('seller.pos.*') ? 'active' : '' }}">
-                    <i class="bi bi-cash-register me-2"></i> Point of Sale (POS)
+                    <i class="bi bi-cash-register me-2"></i> Point of Sale
                 </a>
+            @else
+                <span class="sidebar-link text-white-50 d-flex align-items-center" title="Available after admin approval" style="opacity: 0.7; pointer-events: none;">
+                    <i class="bi bi-cash-register me-2"></i> Point of Sale
+                    <span class="badge bg-secondary ms-auto" style="font-size: 0.65rem;">Pending</span>
+                </span>
             @endif
+
             <hr class="text-white-50 my-3">
             <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Business</small>
+                <small class="text-white-50 text-uppercase fw-bold">Business</small>
             </div>
             <a href="{{ route('seller.business-page.index') }}" class="sidebar-link {{ request()->routeIs('seller.business-page.*') ? 'active' : '' }}">
                 <i class="bi bi-gear me-2"></i> Business Settings
@@ -582,21 +603,19 @@
                     <i class="bi bi-eye me-2"></i> View Business Page
                 </a>
             @endif
+
             <hr class="text-white-50 my-3">
             <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Account</small>
+                <small class="text-white-50 text-uppercase fw-bold">Account</small>
             </div>
             @if(Auth::user()->seller && !Auth::user()->seller->is_verified_shop)
                 <a href="{{ route('seller.shop-upgrade.index') }}" class="sidebar-link {{ request()->routeIs('seller.shop-upgrade.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-check me-2"></i> Upgrade to Trusted Shop
                 </a>
             @endif
-            <hr class="text-white-50 my-3">
-            <div class="px-3">
-                <a href="{{ route('home') }}" class="sidebar-link">
-                    <i class="bi bi-house me-2"></i> Back to Store
-                </a>
-            </div>
+            <a href="{{ route('home') }}" class="sidebar-link">
+                <i class="bi bi-house me-2"></i> Back to Store
+            </a>
         </nav>
     </div>
 

@@ -19,6 +19,7 @@
         </p>
         <ul class="mb-2">
             <li>Upload Products (Toyshop, Trading, Auction)</li>
+            <li>Point of Sale (POS) – Sell in-person</li>
             <li>View Business Page</li>
             <li>Product Tracking</li>
             <li>Chat / Messages</li>
@@ -69,44 +70,45 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
+                <small class="text-muted">Manage your store efficiently</small>
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.products.create') }}" class="quick-action-card card border">
-                            <i class="bi bi-plus-circle-fill"></i>
-                            <h6>Add New Product</h6>
-                            <small class="text-muted">Create a new listing</small>
+                    <div class="col-lg col-md-4 col-sm-6">
+                        <a href="{{ route('seller.pos.index') }}" class="quick-action-card card border text-decoration-none">
+                            <i class="bi bi-cash-register text-success"></i>
+                            <h6 class="text-dark">Point of Sale</h6>
+                            <small class="text-muted">Process walk-in sales</small>
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.products.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-box-seam"></i>
-                            <h6>Manage Products</h6>
-                            <small class="text-muted">View all products</small>
+                    <div class="col-lg col-md-4 col-sm-6">
+                        <a href="{{ route('seller.products.create') }}" class="quick-action-card card border text-decoration-none">
+                            <i class="bi bi-plus-circle-fill text-primary"></i>
+                            <h6 class="text-dark">Add Product</h6>
+                            <small class="text-muted">Create new listing</small>
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.orders.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-cart-check"></i>
-                            <h6>View Orders</h6>
-                            <small class="text-muted">Manage orders</small>
+                    <div class="col-lg col-md-4 col-sm-6">
+                        <a href="{{ route('seller.products.index') }}" class="quick-action-card card border text-decoration-none">
+                            <i class="bi bi-box-seam text-info"></i>
+                            <h6 class="text-dark">Manage Products</h6>
+                            <small class="text-muted">View & edit products</small>
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.business-page.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-gear"></i>
-                            <h6>Business Settings</h6>
-                            <small class="text-muted">Configure your store</small>
+                    <div class="col-lg col-md-4 col-sm-6">
+                        <a href="{{ route('seller.orders.index') }}" class="quick-action-card card border text-decoration-none">
+                            <i class="bi bi-cart-check text-warning"></i>
+                            <h6 class="text-dark">Orders</h6>
+                            <small class="text-muted">Track & fulfill</small>
                         </a>
                     </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.pos.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-cash-register"></i>
-                            <h6>Point of Sale</h6>
-                            <small class="text-muted">Process walk-in orders</small>
+                    <div class="col-lg col-md-4 col-sm-6">
+                        <a href="{{ route('seller.business-page.index') }}" class="quick-action-card card border text-decoration-none">
+                            <i class="bi bi-gear text-secondary"></i>
+                            <h6 class="text-dark">Business Settings</h6>
+                            <small class="text-muted">Configure store</small>
                         </a>
                     </div>
                 </div>

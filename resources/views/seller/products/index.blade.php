@@ -6,14 +6,21 @@
 
 @section('content')
 <!-- Header Actions -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
         <h4 class="mb-1">My Products</h4>
         <p class="text-muted mb-0">Manage your product listings</p>
     </div>
-    <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle me-1"></i> Add New Product
-    </a>
+    <div class="d-flex gap-2">
+        @if(Auth::user()->seller && Auth::user()->seller->verification_status === 'approved')
+            <a href="{{ route('seller.pos.index') }}" class="btn btn-outline-success">
+                <i class="bi bi-cash-register me-1"></i> Point of Sale
+            </a>
+        @endif
+        <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Add New Product
+        </a>
+    </div>
 </div>
 
 <!-- Filters -->

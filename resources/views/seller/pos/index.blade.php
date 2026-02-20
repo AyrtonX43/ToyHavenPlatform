@@ -5,6 +5,24 @@
 @section('page-title', 'Point of Sale (POS)')
 
 @section('content')
+<!-- Breadcrumb & Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('seller.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Point of Sale</li>
+        </ol>
+    </nav>
+    <div class="d-flex gap-2">
+        <a href="{{ route('seller.products.index') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-box-seam me-1"></i> Manage Products
+        </a>
+        <a href="{{ route('seller.products.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> Add Product
+        </a>
+    </div>
+</div>
+
 <div class="row">
     <!-- Products List -->
     <div class="col-lg-8 mb-4">
@@ -48,8 +66,17 @@
                 </div>
                 @if($products->isEmpty())
                     <div class="text-center py-5">
-                        <i class="bi bi-box-seam text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-3">No active products available for POS</p>
+                        <i class="bi bi-box-seam text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3 mb-2">No products available for POS</h5>
+                        <p class="text-muted mb-4">Add active products with stock to sell them at the point of sale.</p>
+                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                            <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Add Your First Product
+                            </a>
+                            <a href="{{ route('seller.products.index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-box-seam me-1"></i> Manage Products
+                            </a>
+                        </div>
                     </div>
                 @endif
             </div>
