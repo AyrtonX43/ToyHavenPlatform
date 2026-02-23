@@ -14,6 +14,7 @@ class WishlistController extends Controller
     {
         $wishlists = Wishlist::with('product.images', 'product.seller')
             ->where('user_id', Auth::id())
+            ->whereHas('product')
             ->latest()
             ->paginate(12);
 

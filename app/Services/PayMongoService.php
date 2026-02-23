@@ -111,6 +111,44 @@ class PayMongoService
     }
 
     /**
+     * Attach a payment method to a payment intent (server-side, uses secret key)
+     */
+    public function attachPaymentMethod(string $paymentIntentId, string $paymentMethodId, ?string $returnUrl = null): ?array
+    {
+        try {
+            $attrs = [
+                'payment_method' => $paymentMethodId,
+            ];
+            if ($returnUrl) {
+                $attrs['return_url'] = $returnUrl;
+            }
+
+            $response = Http::withBasicAuth($this->secretKey, '')
+                ->post("{$this->baseUrl}/payment_intents/{$paymentIntentId}/attach", [
+                    'data' => [
+                        'attributes' => $attrs,
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                return $response->json()['data'];
+            }
+
+            Log::error('PayMongo Attach Error', [
+                'response' => $response->json(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('PayMongo Attach Exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
      * Retrieve payment intent
      */
     public function getPaymentIntent($id)

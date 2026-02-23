@@ -4,25 +4,31 @@
 
 @push('styles')
 <style>
-    .payment-method-option { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s; }
+    .payment-method-option { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; }
     .payment-method-option:hover { border-color: #06b6d4; background: #f0fdfa; }
-    .payment-method-option.selected { border-color: #06b6d4; background: #ecfeff; }
-    .payment-method-option input { display: none; }
+    .payment-method-option.selected { border-color: #0891b2; background: #ecfeff; box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2); }
+    .payment-method-option input { margin-right: 0.75rem; accent-color: #0891b2; }
+    .card-form-section { background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; }
+    .card-form-section .form-control { background: #fff; }
+    .pay-amount { font-size: 1.25rem; color: #0891b2; }
 </style>
 @endpush
 
 @section('content')
-<div class="container">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Complete Payment</h5>
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
+                <div class="card-header bg-white py-4" style="border-bottom: 1px solid #e2e8f0;">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-credit-card-2-front me-2 text-primary"></i>Complete Payment</h5>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <h6 class="mb-1">Order Number: {{ $order->order_number }}</h6>
-                        <p class="mb-0">Total Amount: <strong>₱{{ number_format($order->total, 2) }}</strong></p>
+                <div class="card-body p-4">
+                    <div class="alert alert-light border mb-4 d-flex align-items-center" style="background: #f0fdfa; border-color: #99f6e4 !important;">
+                        <i class="bi bi-receipt-cutoff fs-4 me-3 text-primary"></i>
+                        <div>
+                            <strong>Order {{ $order->order_number }}</strong>
+                            <span class="pay-amount fw-bold ms-2">₱{{ number_format($order->total, 2) }}</span>
+                        </div>
                     </div>
 
                     @if(!$publicKey)
@@ -70,25 +76,26 @@
                             </div>
                         </div>
 
-                        <!-- Card form (shown for card) -->
-                        <div id="card-form" class="mb-4">
+                        <!-- Card form (shown for card) - visible by default -->
+                        <div id="card-form" class="card-form-section mb-4">
+                            <h6 class="fw-semibold mb-3"><i class="bi bi-credit-card-2-back me-2"></i>Card Details</h6>
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label">Card Number</label>
-                                    <input type="text" id="card_number" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19" autocomplete="cc-number">
-                                    <small class="text-muted">Test: 4242 4242 4242 4242</small>
+                                    <label class="form-label fw-semibold">Card Number <span class="text-danger">*</span></label>
+                                    <input type="text" id="card_number" class="form-control form-control-lg" placeholder="4242 4242 4242 4242" maxlength="19" autocomplete="cc-number" inputmode="numeric">
+                                    <small class="text-muted">Test card: 4242 4242 4242 4242</small>
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label">Exp Month</label>
+                                    <label class="form-label fw-semibold">Exp Month <span class="text-danger">*</span></label>
                                     <input type="number" id="exp_month" class="form-control" placeholder="12" min="1" max="12" autocomplete="cc-exp-month">
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label">Exp Year</label>
-                                    <input type="number" id="exp_year" class="form-control" placeholder="2028" min="{{ date('Y') }}" autocomplete="cc-exp-year">
+                                    <label class="form-label fw-semibold">Exp Year <span class="text-danger">*</span></label>
+                                    <input type="number" id="exp_year" class="form-control" placeholder="{{ date('Y') + 2 }}" min="{{ date('Y') }}" max="{{ date('Y') + 10 }}" autocomplete="cc-exp-year">
                                 </div>
                                 <div class="col-4">
-                                    <label class="form-label">CVC</label>
-                                    <input type="text" id="cvc" class="form-control" placeholder="123" maxlength="4" autocomplete="cc-csc">
+                                    <label class="form-label fw-semibold">CVC <span class="text-danger">*</span></label>
+                                    <input type="text" id="cvc" class="form-control" placeholder="123" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
                                 </div>
                             </div>
                         </div>
@@ -105,7 +112,7 @@
                             <p class="mt-2 mb-0">Processing payment...</p>
                         </div>
 
-                        <button type="button" id="pay-btn" class="btn btn-primary btn-lg w-100">
+                        <button type="button" id="pay-btn" class="btn btn-primary btn-lg w-100 py-3" style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); border: none; font-weight: 600; border-radius: 12px;">
                             <i class="bi bi-lock-fill me-2"></i>Pay ₱{{ number_format($order->total, 2) }}
                         </button>
                     @endif
@@ -224,61 +231,54 @@
 
     async function attachPaymentMethod(paymentMethodId) {
         const method = document.querySelector('input[name="pay_method"]:checked').value;
-        const body = {
-            data: {
-                attributes: {
-                    client_key: clientKey,
-                    payment_method: paymentMethodId
-                }
-            }
+        returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+        const attachPayload = {
+            order_number: orderNumber,
+            payment_intent_id: paymentIntentId,
+            payment_method_id: paymentMethodId
         };
         if (method === 'gcash' || method === 'paymaya') {
-            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-            body.data.attributes.return_url = returnUrl.toString();
+            attachPayload.return_url = returnUrl.toString();
         }
 
-        const res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
+        const res = await fetch('{{ route("checkout.attach-payment-method") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa(publicKey + ':')
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify(attachPayload)
         });
 
         const data = await res.json();
-        const pi = data.data;
-        if (!pi) {
-            const err = data.errors?.[0]?.detail || data.message || 'Failed to process payment';
-            throw new Error(err);
+        if (!res.ok) {
+            throw new Error(data.error || data.message || 'Failed to process payment');
         }
 
-        const status = pi.attributes?.status;
-        const nextAction = pi.attributes?.next_action;
+        const status = data.status;
+        const redirectUrl = data.redirect_url;
 
         if (status === 'succeeded') {
-            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
             window.location.href = returnUrl.toString();
             return;
         }
 
-        if (status === 'awaiting_next_action' && nextAction?.redirect?.url) {
-            window.location.href = nextAction.redirect.url;
+        if (status === 'awaiting_next_action' && redirectUrl) {
+            window.location.href = redirectUrl;
             return;
         }
 
         if (status === 'awaiting_payment_method') {
-            const err = pi.attributes?.last_payment_error?.message || 'Payment failed. Please check your details.';
-            throw new Error(err);
+            throw new Error('Payment failed. Please check your card details and try again.');
         }
 
         if (status === 'processing') {
-            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
             window.location.href = returnUrl.toString();
             return;
         }
 
-        throw new Error('Unexpected payment status: ' + status);
+        throw new Error('Unexpected payment status. Please try again.');
     }
 
     document.getElementById('pay-btn').addEventListener('click', async function() {
