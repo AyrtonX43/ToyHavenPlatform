@@ -172,9 +172,6 @@
     @if($wishlists->count() > 0)
         <div class="row g-4">
             @foreach($wishlists as $wishlist)
-                @if(!$wishlist->product)
-                    @continue
-                @endif
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="card wishlist-item-card reveal" style="animation-delay: {{ min($loop->index, 5) * 0.1 }}s;">
                         <div class="wishlist-image-wrapper">

@@ -93,9 +93,4 @@ return [
         'from_number' => env('NEXMO_FROM_NUMBER'),
     ],
 
-    'lbc' => [
-        'base_rate' => env('LBC_BASE_RATE', 99),
-        'per_kg_rate' => env('LBC_PER_KG_RATE', 35),
-    ],
-
 ];

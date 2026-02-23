@@ -5,131 +5,145 @@
 @push('styles')
 <style>
     .cart-header {
-        background: white;
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
         border-radius: 16px;
         padding: 1.5rem 2rem;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 4px 20px rgba(8, 145, 178, 0.25);
     }
-    
+    .cart-header h2 { color: white; margin: 0; font-weight: 700; }
+
     .cart-item-card {
         background: white;
         border-radius: 14px;
         padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        border: 1px solid #f0e6dc;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 1px solid #e2e8f0;
         margin-bottom: 1.5rem;
         transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
-    
+
     .cart-item-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-color: #f0e6dc;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border-color: #cbd5e1;
     }
-    
+
     .cart-item-image {
-        width: 120px;
-        height: 120px;
+        width: 110px;
+        height: 110px;
         object-fit: cover;
         border-radius: 12px;
-        border: 2px solid #e5e7eb;
+        border: 1px solid #e2e8f0;
     }
-    
+
     .cart-item-title {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 600;
-        color: #2d2a26;
+        color: #1e293b;
         margin-bottom: 0.5rem;
     }
-    
+
     .cart-item-price {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
         font-weight: 700;
-        color: #ff6b6b;
+        color: #0891b2;
     }
-    
+
     .quantity-control {
         display: flex;
         align-items: center;
-        border: 2px solid #e5e7eb;
+        border: 1.5px solid #e2e8f0;
         border-radius: 10px;
         overflow: hidden;
         width: fit-content;
     }
-    
+
     .quantity-btn {
         background: #f8fafc;
         border: none;
         padding: 0.5rem 0.75rem;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
+        color: #475569;
     }
-    
+
     .quantity-btn:hover {
-        background: #e5e7eb;
+        background: #e2e8f0;
+        color: #0891b2;
     }
-    
+
     .quantity-input {
         border: none;
-        width: 60px;
+        width: 50px;
         text-align: center;
         font-weight: 600;
         padding: 0.5rem;
+        font-size: 0.9375rem;
     }
-    
+
     .summary-card {
         background: white;
-        border-radius: 14px;
-        padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        border: 1px solid #f0e6dc;
+        border-radius: 16px;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         position: sticky;
         top: 100px;
+        border: 1px solid #e2e8f0;
     }
-    
+
     .summary-card h5 {
-        font-size: 1.125rem;
+        font-size: 1.1rem;
         font-weight: 700;
-        color: #2d2a26;
-        letter-spacing: -0.01em;
+        color: #1e293b;
     }
-    
+
     .summary-row {
         display: flex;
         justify-content: space-between;
-        padding: 0.75rem 0;
-        border-bottom: 1px solid #e5e7eb;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9375rem;
     }
-    
-    .summary-row:last-of-type {
-        border-bottom: none;
-    }
-    
+
+    .summary-row:last-of-type { border-bottom: none; }
+
     .summary-total {
-        font-size: 1.5rem;
+        font-size: 1.35rem;
         font-weight: 700;
-        color: #ff6b6b;
+        color: #0891b2;
     }
-    
+
     .empty-cart {
         text-align: center;
         padding: 4rem 2rem;
         background: white;
-        border-radius: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-        border: 1px solid #f0e6dc;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 1px solid #e2e8f0;
     }
-    
+
     .empty-cart-icon {
         font-size: 4rem;
         color: #cbd5e1;
         margin-bottom: 1.25rem;
     }
-    
+
     .empty-cart h4 {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #2d2a26;
+        color: #1e293b;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0891b2, #06b6d4);
+        border: none;
+        font-weight: 600;
+        border-radius: 10px;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0e7490, #0891b2);
+        border: none;
     }
 </style>
 @endpush

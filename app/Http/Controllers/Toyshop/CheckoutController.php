@@ -8,7 +8,6 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTracking;
-use App\Services\LbcShippingService;
 use App\Services\PayMongoService;
 use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
@@ -19,13 +18,11 @@ class CheckoutController extends Controller
 {
     protected $payMongoService;
     protected $priceService;
-    protected $lbcShipping;
 
     public function __construct()
     {
         $this->payMongoService = app(PayMongoService::class);
         $this->priceService = app(PriceCalculationService::class);
-        $this->lbcShipping = app(LbcShippingService::class);
     }
 
     public function index()
@@ -90,28 +87,11 @@ class CheckoutController extends Controller
 
         $subtotalAfterDiscount = $subtotal - $membershipDiscount;
 
-        $user = Auth::user();
-        $defaultAddress = $user->defaultAddress;
-        $addressData = [
-            'shipping_address' => old('shipping_address', $defaultAddress?->address ?? $user->address),
-            'shipping_city' => old('shipping_city', $defaultAddress?->city ?? $user->city),
-            'shipping_province' => old('shipping_province', $defaultAddress?->province ?? $user->province),
-            'shipping_postal_code' => old('shipping_postal_code', $defaultAddress?->postal_code ?? $user->postal_code),
-            'shipping_phone' => old('shipping_phone', $user->phone ? (preg_match('/^\+?63/', $user->phone) ? $user->phone : '+63' . preg_replace('/\D/', '', $user->phone)) : ''),
-            'shipping_notes' => old('shipping_notes', ''),
-        ];
-
-        $weightKg = $this->lbcShipping->calculateCartWeight($cartItems);
-        $province = $addressData['shipping_province'] ?: 'Metro Manila';
-        $city = $addressData['shipping_city'] ?: 'Manila';
-        $estimatedShipping = $this->lbcShipping->estimate($province, $city, $weightKg);
-
+        // Shipping fee set to 0 - no logistics integrated yet
         $shippingFee = 0;
-        if ($freeShippingMin !== null && $subtotalAfterDiscount >= $freeShippingMin) {
-            $shippingFee = 0;
-        } else {
-            $shippingFee = $estimatedShipping;
-        }
+
+        // Get user's default address for auto-fill (from profile addresses)
+        $defaultAddress = Auth::user()?->defaultAddress ?? Auth::user()?->addresses()->first();
 
         return view('toyshop.checkout.index', compact(
             'cartItems',
@@ -122,8 +102,7 @@ class CheckoutController extends Controller
             'membershipDiscountPercent',
             'freeShippingMin',
             'shippingFee',
-            'addressData',
-            'weightKg'
+            'defaultAddress'
         ));
     }
 
@@ -162,15 +141,13 @@ class CheckoutController extends Controller
             $itemsBySeller = $cartItems->groupBy('product.seller_id');
             $totalSubtotal = $cartItems->sum(fn ($item) => $item->product->price * $item->quantity);
 
-            // Membership toyshop discount and free shipping
+            // Membership toyshop discount
             $membershipDiscountPct = 0;
-            $freeShippingMin = null;
             $user = Auth::user();
             if ($user && $user->hasActiveMembership()) {
                 $plan = $user->currentPlan();
                 if ($plan) {
                     $membershipDiscountPct = $plan->getToyshopDiscount();
-                    $freeShippingMin = $plan->getFreeShippingMin();
                 }
             }
             $totalDiscount = $totalSubtotal * ($membershipDiscountPct / 100);
@@ -189,18 +166,6 @@ class CheckoutController extends Controller
                 $priceCalculation = $this->priceService->calculatePrice($baseAmount);
 
                 // Create order with commission and tax breakdown
-                $sellerCount = $itemsBySeller->count();
-                $weightKg = $this->lbcShipping->calculateCartWeight($cartItems);
-                $shippingFeeForOrder = 0;
-                if ($freeShippingMin === null || $totalSubtotal - $totalDiscount < $freeShippingMin) {
-                    $totalShipping = $this->lbcShipping->estimate(
-                        $request->shipping_province,
-                        $request->shipping_city,
-                        $weightKg
-                    );
-                    $shippingFeeForOrder = round($totalShipping / $sellerCount, 2);
-                }
-
                 $order = Order::create([
                     'order_number' => 'TH' . time() . rand(1000, 9999),
                     'user_id' => Auth::id(),
@@ -212,7 +177,7 @@ class CheckoutController extends Controller
                     'tax_rate' => $priceCalculation['tax_rate'],
                     'transaction_fee' => $priceCalculation['transaction_fee'],
                     'seller_earnings' => $priceCalculation['seller_earnings'],
-                    'shipping_fee' => $shippingFeeForOrder,
+                    'shipping_fee' => 0, // Calculate based on location
                     'status' => 'pending',
                     'payment_status' => 'pending',
                     'payment_method' => $request->payment_method,
@@ -285,46 +250,6 @@ class CheckoutController extends Controller
         $publicKey = config('services.paymongo.public_key');
 
         return view('toyshop.checkout.payment', compact('order', 'publicKey'));
-    }
-
-    /**
-     * Attach payment method to intent (server-side - uses secret key)
-     */
-    public function attachPaymentMethod(Request $request)
-    {
-        $request->validate([
-            'order_number' => 'required|string',
-            'payment_intent_id' => 'required|string',
-            'payment_method_id' => 'required|string',
-            'return_url' => 'nullable|url',
-        ]);
-
-        $order = Order::where('order_number', $request->order_number)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
-
-        if ($order->payment_status === 'paid') {
-            return response()->json(['error' => 'Order already paid'], 400);
-        }
-
-        $result = $this->payMongoService->attachPaymentMethod(
-            $request->payment_intent_id,
-            $request->payment_method_id,
-            $request->return_url
-        );
-
-        if (! $result) {
-            return response()->json(['error' => 'Failed to attach payment method'], 500);
-        }
-
-        $status = $result['attributes']['status'] ?? null;
-        $nextAction = $result['attributes']['next_action'] ?? null;
-
-        return response()->json([
-            'status' => $status,
-            'next_action' => $nextAction,
-            'redirect_url' => $nextAction['redirect']['url'] ?? null,
-        ]);
     }
 
     /**

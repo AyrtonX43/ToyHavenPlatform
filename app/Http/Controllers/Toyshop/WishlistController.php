@@ -14,7 +14,7 @@ class WishlistController extends Controller
     {
         $wishlists = Wishlist::with('product.images', 'product.seller')
             ->where('user_id', Auth::id())
-            ->whereHas('product')
+            ->whereHas('product') // Exclude soft-deleted or missing products
             ->latest()
             ->paginate(12);
 

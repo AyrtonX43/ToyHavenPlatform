@@ -5,28 +5,24 @@
 @push('styles')
 <style>
     .checkout-header {
-        background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
         border-radius: 16px;
-        padding: 1.5rem 2rem;
-        box-shadow: 0 2px 16px rgba(8, 145, 178, 0.08);
+        padding: 1.75rem 2rem;
         margin-bottom: 2rem;
-        border: 1px solid rgba(8, 145, 178, 0.1);
+        color: white;
+        box-shadow: 0 4px 20px rgba(8, 145, 178, 0.25);
     }
-    
+    .checkout-header h2 { color: white; margin: 0; font-weight: 700; }
+
     .checkout-step {
-        background: #fff;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+        background: white;
+        border-radius: 14px;
+        padding: 1.75rem 2rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         margin-bottom: 1.5rem;
         border: 1px solid #e2e8f0;
-        transition: box-shadow 0.2s ease;
     }
-    
-    .checkout-step:hover {
-        box-shadow: 0 4px 24px rgba(8, 145, 178, 0.08);
-    }
-    
+
     .step-header {
         display: flex;
         align-items: center;
@@ -35,12 +31,12 @@
         padding-bottom: 1rem;
         border-bottom: 2px solid #e2e8f0;
     }
-    
+
     .step-icon {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        background: linear-gradient(135deg, #0891b2, #06b6d4);
         color: white;
         display: flex;
         align-items: center;
@@ -48,60 +44,57 @@
         font-weight: 700;
         font-size: 1.1rem;
     }
-    
+
     .step-title {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
         font-weight: 700;
-        color: #0f172a;
+        color: #1e293b;
         margin: 0;
     }
-    
+
     .form-label {
         font-weight: 600;
-        color: #334155;
+        color: #475569;
         margin-bottom: 0.5rem;
+        font-size: 0.9375rem;
     }
-    
+
     .form-control, .form-select {
-        border: 2px solid #e2e8f0;
+        border: 1.5px solid #e2e8f0;
         border-radius: 10px;
-        padding: 0.75rem 1rem;
+        padding: 0.65rem 1rem;
         transition: border-color 0.2s, box-shadow 0.2s;
     }
-    
+
     .form-control:focus, .form-select:focus {
         border-color: #0891b2;
         box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
         outline: none;
     }
-    
+
     .payment-option {
-        border: 2px solid #e2e8f0;
+        border: 1.5px solid #e2e8f0;
         border-radius: 12px;
         padding: 1rem 1.25rem;
         margin-bottom: 0.75rem;
         cursor: pointer;
         transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
     }
-    
+
     .payment-option:hover {
         border-color: #06b6d4;
         background: #f0fdfa;
     }
-    
+
     .payment-option:has(input:checked) {
         border-color: #0891b2;
         background: #ecfeff;
-        box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2);
     }
-    
-    .payment-option input[type="radio"] {
-        margin-right: 0.75rem;
-        accent-color: #0891b2;
+
+    .payment-option input[type="radio"]:checked + label {
+        color: #0891b2;
     }
-    
+
     .order-item {
         display: flex;
         align-items: center;
@@ -109,63 +102,51 @@
         padding: 1rem 0;
         border-bottom: 1px solid #f1f5f9;
     }
-    
-    .order-item:last-child {
-        border-bottom: none;
-    }
-    
+
+    .order-item:last-child { border-bottom: none; }
+
     .order-item-image {
         width: 72px;
         height: 72px;
         object-fit: cover;
         border-radius: 10px;
         border: 1px solid #e2e8f0;
-        flex-shrink: 0;
     }
-    
+
     .summary-card {
-        background: #fff;
+        background: white;
         border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 4px 24px rgba(8, 145, 178, 0.1);
+        padding: 1.75rem 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         position: sticky;
         top: 100px;
         border: 1px solid #e2e8f0;
     }
-    
+
     .summary-row {
         display: flex;
         justify-content: space-between;
-        padding: 0.75rem 0;
+        padding: 0.6rem 0;
         border-bottom: 1px solid #f1f5f9;
-        font-size: 0.95rem;
+        font-size: 0.9375rem;
     }
-    
+
     .summary-total {
-        font-size: 1.5rem;
+        font-size: 1.35rem;
         font-weight: 700;
         color: #0891b2;
     }
-    
-    .btn-place-order {
-        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0891b2, #06b6d4);
         border: none;
+        padding: 0.75rem 1.5rem;
         font-weight: 600;
-        padding: 0.875rem 1.5rem;
-        border-radius: 12px;
-        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 10px;
     }
-    
-    .btn-place-order:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(8, 145, 178, 0.3);
-        background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0e7490, #0891b2);
         border: none;
-    }
-    
-    .shipping-badge {
-        font-size: 0.75rem;
-        color: #64748b;
     }
 </style>
 @endpush
@@ -173,8 +154,7 @@
 @section('content')
 <div class="container py-4">
     <div class="checkout-header reveal">
-        <h2 class="fw-bold mb-0"><i class="bi bi-bag-check me-2 text-primary"></i>Checkout</h2>
-        <p class="text-muted mb-0 mt-2 small">Complete your order with secure payment</p>
+        <h2 class="fw-bold mb-0"><i class="bi bi-credit-card me-2"></i>Checkout</h2>
     </div>
 
     <form action="{{ route('checkout.process') }}" method="POST">
@@ -188,25 +168,40 @@
                         <h3 class="step-title">Shipping Information</h3>
                     </div>
                     
+                    @php
+                        $addr = $defaultAddress ?? null;
+                        $prefillAddress = old('shipping_address') ?? ($addr?->address ?? '');
+                        $prefillCity = old('shipping_city') ?? ($addr?->city ?? '');
+                        $prefillProvince = old('shipping_province') ?? ($addr?->province ?? '');
+                        $prefillPostal = old('shipping_postal_code') ?? ($addr?->postal_code ?? '');
+                        $userPhone = auth()->user()->phone ?? '';
+                        $raw = preg_replace('/\D/', '', $userPhone);
+                        $phoneDigits = preg_match('/^63(\d{10})$/', $raw, $pm) ? $pm[1] : (strlen($raw) >= 10 ? substr($raw, -10) : '');
+                        $prefillPhoneDisplay = old('shipping_phone') ? (preg_match('/^\+63(\d{10})$/', old('shipping_phone'), $om) ? $om[1] : '') : $phoneDigits;
+                        $prefillPhone = old('shipping_phone') ?: ($phoneDigits ? '+63' . $phoneDigits : '');
+                    @endphp
                     <div class="mb-3">
                         <label class="form-label">Full Address <span class="text-danger">*</span></label>
-                        <textarea name="shipping_address" id="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $addressData['shipping_address'] ?? old('shipping_address') }}</textarea>
+                        <textarea name="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $prefillAddress }}</textarea>
                         @error('shipping_address')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        @if($defaultAddress ?? null)
+                            <small class="text-muted"><i class="bi bi-check-circle me-1"></i>Pre-filled from your saved address</small>
+                        @endif
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">City <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_city" id="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $addressData['shipping_city'] ?? old('shipping_city') }}" required placeholder="City">
+                            <input type="text" name="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
                             @error('shipping_city')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Province <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_province" id="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $addressData['shipping_province'] ?? old('shipping_province') }}" required placeholder="Province">
+                            <input type="text" name="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
                             @error('shipping_province')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -216,7 +211,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $addressData['shipping_postal_code'] ?? old('shipping_postal_code') }}" required placeholder="Postal Code">
+                            <input type="text" name="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
                             @error('shipping_postal_code')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -225,13 +220,9 @@
                             <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
-                                @php
-                                    $phoneVal = $addressData['shipping_phone'] ?? old('shipping_phone');
-                                    $phoneDisplay = $phoneVal && preg_match('/^\+63(\d{10})$/', $phoneVal, $pm) ? $pm[1] : ($phoneVal ? preg_replace('/\D/', '', substr($phoneVal, -10)) : '');
-                                @endphp
-                                <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $phoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
+                                <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
                             </div>
-                            <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ (isset($phoneDisplay) && strlen($phoneDisplay) === 10) ? '+63' . $phoneDisplay : old('shipping_phone') }}">
+                            <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
                             @error('shipping_phone')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -241,7 +232,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">Delivery Notes (Optional)</label>
-                        <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions (e.g., gate code, landmark, preferred time)">{{ $addressData['shipping_notes'] ?? old('shipping_notes') }}</textarea>
+                        <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
                     </div>
                 </div>
 
@@ -334,7 +325,7 @@
                         </div>
                     @else
                         <div class="summary-row">
-                            <span class="text-muted">Shipping <span class="shipping-badge">(LBC)</span>:</span>
+                            <span class="text-muted">Shipping:</span>
                             <span class="fw-semibold">₱{{ number_format($shippingFee, 2) }}</span>
                         </div>
                     @endif
@@ -345,8 +336,8 @@
                     </div>
                     
                     <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg btn-place-order">
-                            <i class="bi bi-lock-fill me-2"></i>Place Order
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle me-2"></i>Place Order
                         </button>
                         <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i>Back to Cart
