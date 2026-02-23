@@ -31,18 +31,27 @@ class PayMongoService
     }
 
     /**
-     * Create a payment intent
+     * Create a payment intent for one-time payments (orders)
      */
     public function createPaymentIntent($amount, $currency = 'PHP', $metadata = [])
     {
         try {
+            $amountCentavos = (int) round($amount * 100);
+            if ($amountCentavos < 2000) {
+                $amountCentavos = 2000; // PayMongo minimum
+            }
+
+            // Metadata values must be strings
+            $metadataStrings = array_map(fn ($v) => (string) $v, $metadata);
+
             $response = Http::withBasicAuth($this->secretKey, '')
                 ->post("{$this->baseUrl}/payment_intents", [
                     'data' => [
                         'attributes' => [
-                            'amount' => $amount * 100, // Convert to centavos
+                            'amount' => $amountCentavos,
                             'currency' => $currency,
-                            'metadata' => $metadata,
+                            'payment_method_allowed' => ['card', 'gcash', 'paymaya', 'grab_pay', 'shopee_pay'],
+                            'metadata' => $metadataStrings,
                         ],
                     ],
                 ]);

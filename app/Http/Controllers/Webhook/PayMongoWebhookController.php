@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\OrderTracking;
 use App\Models\Subscription;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
@@ -36,6 +38,8 @@ class PayMongoWebhookController extends Controller
 
         try {
             match ($eventType) {
+                'payment.paid' => $this->handlePaymentPaid($payload),
+                'payment.failed' => $this->handlePaymentFailed($payload),
                 'subscription.activated' => $this->handleSubscriptionActivated($payload),
                 'subscription.updated' => $this->handleSubscriptionUpdated($payload),
                 'subscription.invoice.paid' => $this->handleInvoicePaid($payload),
@@ -53,6 +57,94 @@ class PayMongoWebhookController extends Controller
         }
 
         return response()->json(['received' => true], 200);
+    }
+
+    protected function handlePaymentPaid(array $payload): void
+    {
+        $paymentData = $payload['data']['attributes']['data'] ?? null;
+        if (! $paymentData) {
+            return;
+        }
+
+        $attrs = $paymentData['attributes'] ?? $paymentData;
+        $paymentIntentId = $attrs['payment_intent_id'] ?? null;
+
+        if (! $paymentIntentId) {
+            return;
+        }
+
+        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
+        if (! $intent) {
+            return;
+        }
+
+        $intentAttrs = $intent['attributes'] ?? $intent;
+        $metadata = $intentAttrs['metadata'] ?? [];
+        $orderNumber = $metadata['order_number'] ?? null;
+        $orderId = $metadata['order_id'] ?? null;
+
+        if (! $orderNumber && ! $orderId) {
+            return;
+        }
+
+        $order = $orderId
+            ? Order::find($orderId)
+            : Order::where('order_number', $orderNumber)->first();
+
+        if (! $order || $order->payment_status === 'paid') {
+            return;
+        }
+
+        $order->update([
+            'payment_status' => 'paid',
+            'payment_reference' => $paymentIntentId,
+        ]);
+
+        OrderTracking::create([
+            'order_id' => $order->id,
+            'status' => 'payment_confirmed',
+            'description' => 'Payment confirmed via webhook.',
+            'updated_by' => $order->user_id,
+        ]);
+    }
+
+    protected function handlePaymentFailed(array $payload): void
+    {
+        $paymentData = $payload['data']['attributes']['data'] ?? null;
+        if (! $paymentData) {
+            return;
+        }
+
+        $attrs = $paymentData['attributes'] ?? $paymentData;
+        $paymentIntentId = $attrs['payment_intent_id'] ?? null;
+
+        if (! $paymentIntentId) {
+            return;
+        }
+
+        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
+        if (! $intent) {
+            return;
+        }
+
+        $intentAttrs = $intent['attributes'] ?? $intent;
+        $metadata = $intentAttrs['metadata'] ?? [];
+        $orderNumber = $metadata['order_number'] ?? null;
+        $orderId = $metadata['order_id'] ?? null;
+
+        if (! $orderNumber && ! $orderId) {
+            return;
+        }
+
+        $order = $orderId
+            ? Order::find($orderId)
+            : Order::where('order_number', $orderNumber)->first();
+
+        if (! $order || $order->payment_status === 'paid') {
+            return;
+        }
+
+        $order->update(['payment_status' => 'failed']);
     }
 
     protected function getSubscriptionData(array $payload): ?array

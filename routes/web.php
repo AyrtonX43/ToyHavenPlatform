@@ -125,6 +125,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'index'])->name('index');
         Route::post('/process', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'process'])->name('process');
         Route::get('/payment/{order_number}', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'payment'])->name('payment');
+        Route::post('/create-payment-intent', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'createPaymentIntent'])->name('create-payment-intent');
+        Route::get('/return', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'paymentReturn'])->name('return');
         Route::post('/callback', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'paymentCallback'])->name('callback');
     });
 
