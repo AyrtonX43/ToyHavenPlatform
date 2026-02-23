@@ -89,7 +89,9 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        return redirect()->route('membership.manage')->with('success', 'Subscription created. Complete your payment to activate.');
+        // Still redirect to payment page to show order summary and benefits
+        return redirect()->route('membership.payment', ['subscription' => $subscription->id])
+            ->with('success', 'Subscription created. Complete your payment to activate.');
     }
 
     /**
