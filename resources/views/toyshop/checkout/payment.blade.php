@@ -103,28 +103,16 @@
                             </div>
                         </div>
 
-                        <!-- E-wallet: PayMongo redirect OR Seller QR (shown for gcash/paymaya) -->
+                        <!-- E-wallet: PayMongo QR Ph or redirect (shown for gcash/paymaya) -->
                         <div id="ewallet-notice" class="alert alert-light border d-none mb-4">
                             <i class="bi bi-info-circle me-2"></i>
                             You will be redirected to complete payment in the app.
                         </div>
-                        @if(($seller ?? null) && (($seller->gcash_qr_code ?? null) || ($seller->paymaya_qr_code ?? null)))
-                        <div id="seller-qr-section" class="d-none mb-4 p-4 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
-                            <h6 class="fw-bold mb-3"><i class="bi bi-qr-code me-2"></i>Scan to Pay (Seller QR)</h6>
-                            @if($seller->gcash_qr_code ?? null)
-                            <div id="qr-gcash-wrap" class="text-center d-none">
-                                <img src="{{ asset('storage/' . $seller->gcash_qr_code) }}" alt="GCash QR" class="img-fluid rounded" style="max-width: 200px;">
-                                <p class="mt-2 small text-muted">Scan with GCash app · Amount: ₱{{ number_format($order->total, 2) }}</p>
-                            </div>
-                            @endif
-                            @if($seller->paymaya_qr_code ?? null)
-                            <div id="qr-paymaya-wrap" class="text-center d-none">
-                                <img src="{{ asset('storage/' . $seller->paymaya_qr_code) }}" alt="PayMaya QR" class="img-fluid rounded" style="max-width: 200px;">
-                                <p class="mt-2 small text-muted">Scan with PayMaya app · Amount: ₱{{ number_format($order->total, 2) }}</p>
-                            </div>
-                            @endif
+                        <div id="paymongo-qr-section" class="d-none mb-4 p-4 rounded text-center" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-qr-code me-2"></i>Scan with GCash or PayMaya</h6>
+                            <img id="paymongo-qr-img" src="" alt="PayMongo QR" class="img-fluid rounded" style="max-width: 220px;">
+                            <p class="mt-2 small text-muted">Scan with your GCash or PayMaya app · Amount: ₱{{ number_format($order->total, 2) }}</p>
                         </div>
-                        @endif
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
                         <div id="pay-loading" class="d-none text-center py-3">
@@ -171,19 +159,32 @@
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
     }
 
-    const sellerQrSection = document.getElementById('seller-qr-section');
-    const qrGcashWrap = document.getElementById('qr-gcash-wrap');
-    const qrPaymayaWrap = document.getElementById('qr-paymaya-wrap');
+    let qrPollInterval = null;
+    function startQrPaymentPolling() {
+        if (qrPollInterval) clearInterval(qrPollInterval);
+        qrPollInterval = setInterval(async function() {
+            try {
+                const r = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '?client_key=' + encodeURIComponent(clientKey), {
+                    headers: { 'Authorization': 'Basic ' + btoa(publicKey + ':') }
+                });
+                const d = await r.json();
+                const status = d.data?.attributes?.status;
+                if (status === 'succeeded') {
+                    if (qrPollInterval) { clearInterval(qrPollInterval); qrPollInterval = null; }
+                    returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+                    window.location.href = returnUrl.toString();
+                }
+            } catch (e) {}
+        }, 3000);
+    }
+
+    const paymongoQrSection = document.getElementById('paymongo-qr-section');
+    const paymongoQrImg = document.getElementById('paymongo-qr-img');
 
     function togglePaymentUi(method) {
         document.getElementById('card-form').classList.toggle('d-none', method !== 'card');
-        var showSellerQr = sellerQrSection && (method === 'gcash' || method === 'paymaya');
-        if (sellerQrSection) {
-            sellerQrSection.classList.toggle('d-none', !showSellerQr);
-            if (qrGcashWrap) qrGcashWrap.classList.toggle('d-none', method !== 'gcash');
-            if (qrPaymayaWrap) qrPaymayaWrap.classList.toggle('d-none', method !== 'paymaya');
-        }
-        document.getElementById('ewallet-notice').classList.toggle('d-none', method === 'card' || showSellerQr);
+        document.getElementById('ewallet-notice').classList.toggle('d-none', method !== 'gcash' && method !== 'paymaya');
+        if (paymongoQrSection) paymongoQrSection.classList.add('d-none');
     }
 
     document.querySelectorAll('.payment-method-option').forEach(function(el) {
@@ -192,10 +193,11 @@
             this.classList.add('selected');
             this.querySelector('input').checked = true;
             togglePaymentUi(this.dataset.method);
+            clientKey = null;
+            paymentIntentId = null;
         });
     });
     document.getElementById('ewallet-notice').classList.add('d-none');
-    if (sellerQrSection) sellerQrSection.classList.add('d-none');
 
     async function createPaymentIntent() {
         const res = await fetch('{{ route("checkout.create-payment-intent") }}', {
@@ -218,9 +220,10 @@
 
     async function createPaymentMethod() {
         const method = document.querySelector('input[name="pay_method"]:checked').value;
+        const payMethodType = (method === 'gcash' || method === 'paymaya') ? 'qrph' : method;
 
         const attrs = {
-            type: method,
+            type: payMethodType,
             billing: {
                 name: @json(auth()->user()->name ?? 'Customer'),
                 email: @json(auth()->user()->email ?? ''),
@@ -295,6 +298,7 @@
 
         const status = pi.attributes?.status;
         const nextAction = pi.attributes?.next_action;
+        const method = document.querySelector('input[name="pay_method"]:checked').value;
 
         if (status === 'succeeded') {
             returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
@@ -302,13 +306,25 @@
             return;
         }
 
-        if (status === 'awaiting_next_action' && nextAction?.redirect?.url) {
-            window.location.href = nextAction.redirect.url;
-            return;
+        if (status === 'awaiting_next_action' && nextAction) {
+            if (nextAction.type === 'consume_qr' && nextAction.code?.image_url && (method === 'gcash' || method === 'paymaya')) {
+                paymongoQrImg.src = nextAction.code.image_url;
+                if (paymongoQrSection) paymongoQrSection.classList.remove('d-none');
+                document.getElementById('ewallet-notice').classList.add('d-none');
+                setLoading(false);
+                startQrPaymentPolling();
+                return;
+            }
+            if (nextAction.redirect?.url) {
+                window.location.href = nextAction.redirect.url;
+                return;
+            }
         }
 
         if (status === 'awaiting_payment_method') {
-            const err = pi.attributes?.last_payment_error?.message || 'Payment failed. Please check your details.';
+            clientKey = null;
+            paymentIntentId = null;
+            const err = pi.attributes?.last_payment_error?.message || 'Payment failed. Delete payment method and try again.';
             throw new Error(err);
         }
 
@@ -324,6 +340,7 @@
     document.getElementById('pay-btn').addEventListener('click', async function() {
         clearError();
         setLoading(true);
+        if (paymongoQrSection) paymongoQrSection.classList.add('d-none');
         try {
             if (!clientKey || !paymentIntentId) {
                 await createPaymentIntent();
@@ -331,7 +348,9 @@
             const pmId = await createPaymentMethod();
             await attachPaymentMethod(pmId);
         } catch (e) {
-            setError(e.message || 'Payment failed. Please try again.');
+            clientKey = null;
+            paymentIntentId = null;
+            setError(e.message || 'Payment failed. Delete payment method and try again.');
             setLoading(false);
         }
     });

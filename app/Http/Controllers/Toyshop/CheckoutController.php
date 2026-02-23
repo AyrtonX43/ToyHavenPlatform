@@ -276,7 +276,7 @@ class CheckoutController extends Controller
 
     public function payment($orderNumber)
     {
-        $order = Order::with('seller')->where('order_number', $orderNumber)
+        $order = Order::where('order_number', $orderNumber)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -286,9 +286,8 @@ class CheckoutController extends Controller
         }
 
         $publicKey = config('services.paymongo.public_key');
-        $seller = $order->seller;
 
-        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'seller'));
+        return view('toyshop.checkout.payment', compact('order', 'publicKey'));
     }
 
     /**

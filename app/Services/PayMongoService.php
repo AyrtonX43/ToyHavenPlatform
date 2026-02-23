@@ -50,7 +50,7 @@ class PayMongoService
                         'attributes' => [
                             'amount' => $amountCentavos,
                             'currency' => $currency,
-                            'payment_method_allowed' => ['card', 'gcash', 'paymaya', 'grab_pay', 'shopee_pay'],
+                            'payment_method_allowed' => ['card', 'gcash', 'paymaya', 'qrph', 'grab_pay', 'shopee_pay'],
                             'metadata' => $metadataStrings,
                         ],
                     ],
