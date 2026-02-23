@@ -104,14 +104,14 @@
         </div>
 
         <!-- Order Tracking -->
-        @if($order->trackings && $order->trackings->count() > 0)
+        @if($order->tracking && $order->tracking->count() > 0)
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Order Tracking</h5>
             </div>
             <div class="card-body">
                 <div class="timeline">
-                    @foreach($order->trackings->sortBy('created_at') as $tracking)
+                    @foreach($order->tracking->sortBy('created_at') as $tracking)
                         <div class="timeline-item mb-3 pb-3 border-bottom">
                             <div class="d-flex">
                                 <div class="flex-shrink-0">

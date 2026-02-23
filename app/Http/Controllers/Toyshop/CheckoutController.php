@@ -25,14 +25,25 @@ class CheckoutController extends Controller
         $this->priceService = app(PriceCalculationService::class);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $cartItems = CartItem::with(['product.images', 'product.seller'])
-            ->where('user_id', Auth::id())
-            ->get();
+        $query = CartItem::with(['product.images', 'product.seller'])
+            ->where('user_id', Auth::id());
+
+        $selectedIds = $request->input('cart_items', []);
+        if (is_string($selectedIds)) {
+            $selectedIds = array_filter(array_map('intval', explode(',', $selectedIds)));
+        }
+        $selectedIds = array_values((array) $selectedIds);
+
+        if (!empty($selectedIds)) {
+            $query->whereIn('id', $selectedIds);
+        }
+
+        $cartItems = $query->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            return redirect()->route('cart.index')->with('error', 'Please select at least one item to checkout.');
         }
 
         // Validate all items are from active sellers
@@ -93,6 +104,16 @@ class CheckoutController extends Controller
         // Get user's default address for auto-fill (from profile addresses)
         $defaultAddress = Auth::user()?->defaultAddress ?? Auth::user()?->addresses()->first();
 
+        // VAT and price breakdown (using PriceCalculationService)
+        $priceBreakdown = $this->priceService->calculatePrice($subtotalAfterDiscount);
+        $vatAmount = $priceBreakdown['tax_amount'];
+        $vatRate = $priceBreakdown['tax_rate'];
+        $totalWithVat = $subtotalAfterDiscount + $shippingFee + $priceBreakdown['admin_commission'] + $priceBreakdown['tax_amount'] + $priceBreakdown['transaction_fee'];
+
+        // Expected delivery: 3-5 business days from now
+        $minDeliveryDate = now()->addWeekdays(3);
+        $maxDeliveryDate = now()->addWeekdays(5);
+
         return view('toyshop.checkout.index', compact(
             'cartItems',
             'itemsBySeller',
@@ -102,18 +123,31 @@ class CheckoutController extends Controller
             'membershipDiscountPercent',
             'freeShippingMin',
             'shippingFee',
-            'defaultAddress'
+            'defaultAddress',
+            'priceBreakdown',
+            'vatAmount',
+            'vatRate',
+            'totalWithVat',
+            'minDeliveryDate',
+            'maxDeliveryDate',
+            'selectedIds'
         ));
     }
 
     public function process(CheckoutRequest $request)
     {
-        $cartItems = CartItem::with('product')
-            ->where('user_id', Auth::id())
-            ->get();
+        $query = CartItem::with('product')
+            ->where('user_id', Auth::id());
+
+        $selectedIds = $request->input('cart_item_ids', []);
+        if (!empty($selectedIds)) {
+            $query->whereIn('id', $selectedIds);
+        }
+
+        $cartItems = $query->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
+            return redirect()->route('cart.index')->with('error', 'Please select at least one item to checkout.');
         }
 
         // Validate all items are from active sellers and have stock
@@ -165,6 +199,9 @@ class CheckoutController extends Controller
                 // Calculate commission, tax, and final price
                 $priceCalculation = $this->priceService->calculatePrice($baseAmount);
 
+                // Expected delivery: 3-5 business days
+                $estimatedDelivery = now()->addWeekdays(4);
+
                 // Create order with commission and tax breakdown
                 $order = Order::create([
                     'order_number' => 'TH' . time() . rand(1000, 9999),
@@ -177,7 +214,8 @@ class CheckoutController extends Controller
                     'tax_rate' => $priceCalculation['tax_rate'],
                     'transaction_fee' => $priceCalculation['transaction_fee'],
                     'seller_earnings' => $priceCalculation['seller_earnings'],
-                    'shipping_fee' => 0, // Calculate based on location
+                    'shipping_fee' => 0,
+                    'estimated_delivery_date' => $estimatedDelivery,
                     'status' => 'pending',
                     'payment_status' => 'pending',
                     'payment_method' => $request->payment_method,
@@ -215,8 +253,8 @@ class CheckoutController extends Controller
                 $createdOrders[] = $order;
             }
 
-            // Clear cart
-            CartItem::where('user_id', Auth::id())->delete();
+            // Remove only the purchased items from cart
+            CartItem::whereIn('id', $cartItems->pluck('id'))->delete();
 
             DB::commit();
 
@@ -238,7 +276,7 @@ class CheckoutController extends Controller
 
     public function payment($orderNumber)
     {
-        $order = Order::where('order_number', $orderNumber)
+        $order = Order::with('seller')->where('order_number', $orderNumber)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -248,8 +286,9 @@ class CheckoutController extends Controller
         }
 
         $publicKey = config('services.paymongo.public_key');
+        $seller = $order->seller;
 
-        return view('toyshop.checkout.payment', compact('order', 'publicKey'));
+        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'seller'));
     }
 
     /**
@@ -327,6 +366,9 @@ class CheckoutController extends Controller
                 'description' => 'Payment confirmed.',
                 'updated_by' => Auth::id(),
             ]);
+
+            // Notify seller that order has been paid
+            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
 
             return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful!');
         }

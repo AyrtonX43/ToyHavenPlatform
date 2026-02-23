@@ -192,6 +192,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::post('/settings', [\App\Http\Controllers\Seller\BusinessPageController::class, 'updateSettings'])->name('settings.update');
             Route::post('/contact', [\App\Http\Controllers\Seller\BusinessPageController::class, 'updateContact'])->name('contact.update');
             Route::post('/social-links', [\App\Http\Controllers\Seller\BusinessPageController::class, 'updateSocialLinks'])->name('social-links.update');
+            Route::post('/payment-qr', [\App\Http\Controllers\Seller\BusinessPageController::class, 'updatePaymentQr'])->name('payment-qr.update');
             Route::get('/preview', [\App\Http\Controllers\Seller\BusinessPageController::class, 'preview'])->name('preview');
         });
 

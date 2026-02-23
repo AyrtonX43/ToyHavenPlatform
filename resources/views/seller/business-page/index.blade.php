@@ -58,6 +58,11 @@
             <i class="bi bi-share me-1"></i> Social Media Links
         </button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link {{ (session('tab') ?? '') === 'payment-qr' ? 'active' : '' }}" id="payment-qr-tab" data-bs-toggle="tab" data-bs-target="#payment-qr" type="button" role="tab">
+            <i class="bi bi-qr-code me-1"></i> Payment QR Codes
+        </button>
+    </li>
 </ul>
 
     <!-- Tab Content -->
@@ -424,6 +429,58 @@
                             </a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-1"></i> Save Social Links
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment QR Codes Tab -->
+        <div class="tab-pane fade {{ (session('tab') ?? '') === 'payment-qr' ? 'show active' : '' }}" id="payment-qr" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>Payment QR Codes</h5>
+                    <p class="text-muted small mb-0 mt-1">Upload your GCash and PayMaya QR codes. They will be shown to customers during checkout when they choose e-wallet payment.</p>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('seller.business-page.payment-qr.update') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">GCash QR Code</label>
+                                <input type="file" class="form-control @error('gcash_qr_code') is-invalid @enderror" 
+                                       name="gcash_qr_code" accept="image/*">
+                                @error('gcash_qr_code')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                @if($seller->gcash_qr_code ?? null)
+                                    <div class="mt-2">
+                                        <img src="{{ asset('storage/' . $seller->gcash_qr_code) }}" alt="GCash QR" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                        <small class="d-block text-muted">Current GCash QR</small>
+                                    </div>
+                                @endif
+                                <small class="text-muted">PNG, JPG, max 2MB</small>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">PayMaya QR Code</label>
+                                <input type="file" class="form-control @error('paymaya_qr_code') is-invalid @enderror" 
+                                       name="paymaya_qr_code" accept="image/*">
+                                @error('paymaya_qr_code')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                @if($seller->paymaya_qr_code ?? null)
+                                    <div class="mt-2">
+                                        <img src="{{ asset('storage/' . $seller->paymaya_qr_code) }}" alt="PayMaya QR" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                        <small class="d-block text-muted">Current PayMaya QR</small>
+                                    </div>
+                                @endif
+                                <small class="text-muted">PNG, JPG, max 2MB</small>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Save QR Codes
                             </button>
                         </div>
                     </form>

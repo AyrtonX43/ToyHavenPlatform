@@ -231,4 +231,45 @@ class BusinessPageController extends Controller
             ->with('success', 'Your business email has been verified. Please log in to continue.');
     }
 
+    /**
+     * Update payment QR codes (GCash, PayMaya). Shown on checkout when customer pays via e-wallet.
+     */
+    public function updatePaymentQr(Request $request): RedirectResponse
+    {
+        $seller = Auth::user()->seller;
+
+        if (!$seller) {
+            return redirect()->route('seller.register')->with('error', 'Please complete your seller registration first.');
+        }
+
+        $request->validate([
+            'gcash_qr_code' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'paymaya_qr_code' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+        ]);
+
+        $updates = [];
+
+        if ($request->hasFile('gcash_qr_code')) {
+            if ($seller->gcash_qr_code) {
+                Storage::disk('public')->delete($seller->gcash_qr_code);
+            }
+            $updates['gcash_qr_code'] = $request->file('gcash_qr_code')->store('sellers/qr', 'public');
+        }
+
+        if ($request->hasFile('paymaya_qr_code')) {
+            if ($seller->paymaya_qr_code) {
+                Storage::disk('public')->delete($seller->paymaya_qr_code);
+            }
+            $updates['paymaya_qr_code'] = $request->file('paymaya_qr_code')->store('sellers/qr', 'public');
+        }
+
+        if (!empty($updates)) {
+            $seller->update($updates);
+        }
+
+        return redirect()->route('seller.business-page.index')
+            ->with('success', 'Payment QR codes updated successfully.')
+            ->with('tab', 'payment-qr');
+    }
+
 }

@@ -159,120 +159,17 @@
 
     <form action="{{ route('checkout.process') }}" method="POST">
         @csrf
+        @foreach($selectedIds ?? $cartItems->pluck('id') as $cid)
+            <input type="hidden" name="cart_item_ids[]" value="{{ $cid }}">
+        @endforeach
         <div class="row">
             <div class="col-lg-8">
-                <!-- Shipping Information -->
+                <!-- 1. Order Products -->
                 <div class="checkout-step reveal">
                     <div class="step-header">
                         <div class="step-icon">1</div>
-                        <h3 class="step-title">Shipping Information</h3>
-                    </div>
-                    
-                    @php
-                        $addr = $defaultAddress ?? null;
-                        $prefillAddress = old('shipping_address') ?? ($addr?->address ?? '');
-                        $prefillCity = old('shipping_city') ?? ($addr?->city ?? '');
-                        $prefillProvince = old('shipping_province') ?? ($addr?->province ?? '');
-                        $prefillPostal = old('shipping_postal_code') ?? ($addr?->postal_code ?? '');
-                        $userPhone = auth()->user()->phone ?? '';
-                        $raw = preg_replace('/\D/', '', $userPhone);
-                        $phoneDigits = preg_match('/^63(\d{10})$/', $raw, $pm) ? $pm[1] : (strlen($raw) >= 10 ? substr($raw, -10) : '');
-                        $prefillPhoneDisplay = old('shipping_phone') ? (preg_match('/^\+63(\d{10})$/', old('shipping_phone'), $om) ? $om[1] : '') : $phoneDigits;
-                        $prefillPhone = old('shipping_phone') ?: ($phoneDigits ? '+63' . $phoneDigits : '');
-                    @endphp
-                    <div class="mb-3">
-                        <label class="form-label">Full Address <span class="text-danger">*</span></label>
-                        <textarea name="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $prefillAddress }}</textarea>
-                        @error('shipping_address')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        @if($defaultAddress ?? null)
-                            <small class="text-muted"><i class="bi bi-check-circle me-1"></i>Pre-filled from your saved address</small>
-                        @endif
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">City <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
-                            @error('shipping_city')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Province <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
-                            @error('shipping_province')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
-                            @error('shipping_postal_code')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Phone Number <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
-                                <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
-                            </div>
-                            <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
-                            @error('shipping_phone')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted">Philippines +63, 10 digits.</small>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Delivery Notes (Optional)</label>
-                        <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
-                    </div>
-                </div>
-
-                <!-- Payment Method -->
-                <div class="checkout-step reveal" style="animation-delay: 0.1s;">
-                    <div class="step-header">
-                        <div class="step-icon">2</div>
-                        <h3 class="step-title">Payment Method</h3>
-                    </div>
-                    
-                    <div class="payment-option">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card" {{ old('payment_method', 'card') == 'card' ? 'checked' : '' }} required>
-                        <label class="form-check-label ms-2" for="payment_card" style="cursor: pointer; font-weight: 600;">
-                            <i class="bi bi-credit-card me-2"></i>Credit/Debit Card
-                        </label>
-                    </div>
-                    <div class="payment-option">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_gcash" value="gcash" {{ old('payment_method') == 'gcash' ? 'checked' : '' }}>
-                        <label class="form-check-label ms-2" for="payment_gcash" style="cursor: pointer; font-weight: 600;">
-                            <i class="bi bi-phone me-2"></i>GCash
-                        </label>
-                    </div>
-                    <div class="payment-option">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_paymaya" value="paymaya" {{ old('payment_method') == 'paymaya' ? 'checked' : '' }}>
-                        <label class="form-check-label ms-2" for="payment_paymaya" style="cursor: pointer; font-weight: 600;">
-                            <i class="bi bi-phone me-2"></i>PayMaya
-                        </label>
-                    </div>
-                    @error('payment_method')
-                        <div class="text-danger small mt-2">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <!-- Order Items -->
-                <div class="checkout-step reveal" style="animation-delay: 0.2s;">
-                    <div class="step-header">
-                        <div class="step-icon">3</div>
                         <h3 class="step-title">Order Items</h3>
                     </div>
-                    
                     @foreach($itemsBySeller as $sellerId => $items)
                         <div class="mb-4">
                             <h6 class="fw-bold mb-3 text-muted">
@@ -301,6 +198,121 @@
                         </div>
                     @endforeach
                 </div>
+
+                <!-- 2. Expected Delivery -->
+                <div class="checkout-step reveal" style="animation-delay: 0.05s;">
+                    <div class="step-header">
+                        <div class="step-icon">2</div>
+                        <h3 class="step-title">Expected Delivery</h3>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 p-3 rounded" style="background: #f0fdfa;">
+                        <i class="bi bi-truck fs-2 text-primary"></i>
+                        <div>
+                            <p class="mb-1 fw-semibold">{{ $minDeliveryDate->format('M d, Y') }} – {{ $maxDeliveryDate->format('M d, Y') }}</p>
+                            <p class="mb-0 text-muted small">Estimated 3–5 business days after payment confirmation</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Payment Method -->
+                <div class="checkout-step reveal" style="animation-delay: 0.1s;">
+                    <div class="step-header">
+                        <div class="step-icon">3</div>
+                        <h3 class="step-title">Payment Method</h3>
+                    </div>
+                    <div class="payment-option">
+                        <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card" {{ old('payment_method', 'card') == 'card' ? 'checked' : '' }} required>
+                        <label class="form-check-label ms-2" for="payment_card" style="cursor: pointer; font-weight: 600;">
+                            <i class="bi bi-credit-card me-2"></i>Credit/Debit Card
+                        </label>
+                    </div>
+                    <div class="payment-option">
+                        <input class="form-check-input" type="radio" name="payment_method" id="payment_gcash" value="gcash" {{ old('payment_method') == 'gcash' ? 'checked' : '' }}>
+                        <label class="form-check-label ms-2" for="payment_gcash" style="cursor: pointer; font-weight: 600;">
+                            <i class="bi bi-phone me-2"></i>GCash
+                        </label>
+                    </div>
+                    <div class="payment-option">
+                        <input class="form-check-input" type="radio" name="payment_method" id="payment_paymaya" value="paymaya" {{ old('payment_method') == 'paymaya' ? 'checked' : '' }}>
+                        <label class="form-check-label ms-2" for="payment_paymaya" style="cursor: pointer; font-weight: 600;">
+                            <i class="bi bi-phone me-2"></i>PayMaya
+                        </label>
+                    </div>
+                    @error('payment_method')
+                        <div class="text-danger small mt-2">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- 4. Shipping Information -->
+                <div class="checkout-step reveal" style="animation-delay: 0.15s;">
+                    <div class="step-header">
+                        <div class="step-icon">4</div>
+                        <h3 class="step-title">Shipping Information</h3>
+                    </div>
+                    @php
+                        $addr = $defaultAddress ?? null;
+                        $prefillAddress = old('shipping_address') ?? ($addr?->address ?? '');
+                        $prefillCity = old('shipping_city') ?? ($addr?->city ?? '');
+                        $prefillProvince = old('shipping_province') ?? ($addr?->province ?? '');
+                        $prefillPostal = old('shipping_postal_code') ?? ($addr?->postal_code ?? '');
+                        $userPhone = auth()->user()->phone ?? '';
+                        $raw = preg_replace('/\D/', '', $userPhone);
+                        $phoneDigits = preg_match('/^63(\d{10})$/', $raw, $pm) ? $pm[1] : (strlen($raw) >= 10 ? substr($raw, -10) : '');
+                        $prefillPhoneDisplay = old('shipping_phone') ? (preg_match('/^\+63(\d{10})$/', old('shipping_phone'), $om) ? $om[1] : '') : $phoneDigits;
+                        $prefillPhone = old('shipping_phone') ?: ($phoneDigits ? '+63' . $phoneDigits : '');
+                    @endphp
+                    <div class="mb-3">
+                        <label class="form-label">Full Address <span class="text-danger">*</span></label>
+                        <textarea name="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $prefillAddress }}</textarea>
+                        @error('shipping_address')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        @if($defaultAddress ?? null)
+                            <small class="text-muted"><i class="bi bi-check-circle me-1"></i>Pre-filled from your saved address</small>
+                        @endif
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">City <span class="text-danger">*</span></label>
+                            <input type="text" name="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
+                            @error('shipping_city')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Province <span class="text-danger">*</span></label>
+                            <input type="text" name="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
+                            @error('shipping_province')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Postal Code <span class="text-danger">*</span></label>
+                            <input type="text" name="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
+                            @error('shipping_postal_code')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
+                                <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
+                            </div>
+                            <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
+                            @error('shipping_phone')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Philippines +63, 10 digits.</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Delivery Notes (Optional)</label>
+                        <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- Order Summary -->
@@ -318,6 +330,10 @@
                             <span class="fw-semibold">-₱{{ number_format($membershipDiscount, 2) }}</span>
                         </div>
                     @endif
+                    <div class="summary-row">
+                        <span class="text-muted">VAT ({{ $vatRate ?? 12 }}%):</span>
+                        <span class="fw-semibold">₱{{ number_format($vatAmount ?? 0, 2) }}</span>
+                    </div>
                     @if(isset($freeShippingMin) && $subtotalAfterDiscount >= $freeShippingMin)
                         <div class="summary-row text-success">
                             <span class="text-muted">Shipping:</span>
@@ -332,7 +348,7 @@
                     <hr class="my-3">
                     <div class="summary-row">
                         <span class="fw-bold">Total:</span>
-                        <span class="summary-total">₱{{ number_format(($subtotalAfterDiscount ?? $subtotal) + $shippingFee, 2) }}</span>
+                        <span class="summary-total">₱{{ number_format($totalWithVat ?? ($subtotal + $shippingFee), 2) }}</span>
                     </div>
                     
                     <div class="d-grid gap-2 mt-4">

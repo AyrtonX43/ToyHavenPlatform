@@ -22,6 +22,8 @@ class CheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'cart_item_ids' => 'nullable|array',
+            'cart_item_ids.*' => 'integer|exists:cart_items,id',
             'shipping_address' => 'required|string|max:500',
             'shipping_phone' => ['required', 'string', 'regex:/^\+63[0-9]{10}$/'],
             'shipping_city' => 'required|string|max:100',

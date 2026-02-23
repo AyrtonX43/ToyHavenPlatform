@@ -23,6 +23,8 @@ class Seller extends Model
         'city',
         'province',
         'postal_code',
+        'gcash_qr_code',
+        'paymaya_qr_code',
         'toy_category_ids',
         'verification_status',
         'rejection_reason',

@@ -94,14 +94,37 @@
                                     <label class="form-label">CVC</label>
                                     <input type="text" id="cvc" class="form-control" placeholder="123" maxlength="4" autocomplete="cc-csc">
                                 </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="save_card" name="save_card" value="1">
+                                        <label class="form-check-label" for="save_card">Save this card for future purchases (optional)</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- E-wallet notice (shown for gcash/paymaya) -->
+                        <!-- E-wallet: PayMongo redirect OR Seller QR (shown for gcash/paymaya) -->
                         <div id="ewallet-notice" class="alert alert-light border d-none mb-4">
                             <i class="bi bi-info-circle me-2"></i>
                             You will be redirected to complete payment in the app.
                         </div>
+                        @if(($seller ?? null) && (($seller->gcash_qr_code ?? null) || ($seller->paymaya_qr_code ?? null)))
+                        <div id="seller-qr-section" class="d-none mb-4 p-4 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-qr-code me-2"></i>Scan to Pay (Seller QR)</h6>
+                            @if($seller->gcash_qr_code ?? null)
+                            <div id="qr-gcash-wrap" class="text-center d-none">
+                                <img src="{{ asset('storage/' . $seller->gcash_qr_code) }}" alt="GCash QR" class="img-fluid rounded" style="max-width: 200px;">
+                                <p class="mt-2 small text-muted">Scan with GCash app · Amount: ₱{{ number_format($order->total, 2) }}</p>
+                            </div>
+                            @endif
+                            @if($seller->paymaya_qr_code ?? null)
+                            <div id="qr-paymaya-wrap" class="text-center d-none">
+                                <img src="{{ asset('storage/' . $seller->paymaya_qr_code) }}" alt="PayMaya QR" class="img-fluid rounded" style="max-width: 200px;">
+                                <p class="mt-2 small text-muted">Scan with PayMaya app · Amount: ₱{{ number_format($order->total, 2) }}</p>
+                            </div>
+                            @endif
+                        </div>
+                        @endif
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
                         <div id="pay-loading" class="d-none text-center py-3">
@@ -148,18 +171,31 @@
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
     }
 
-    // Payment method selection
+    const sellerQrSection = document.getElementById('seller-qr-section');
+    const qrGcashWrap = document.getElementById('qr-gcash-wrap');
+    const qrPaymayaWrap = document.getElementById('qr-paymaya-wrap');
+
+    function togglePaymentUi(method) {
+        document.getElementById('card-form').classList.toggle('d-none', method !== 'card');
+        var showSellerQr = sellerQrSection && (method === 'gcash' || method === 'paymaya');
+        if (sellerQrSection) {
+            sellerQrSection.classList.toggle('d-none', !showSellerQr);
+            if (qrGcashWrap) qrGcashWrap.classList.toggle('d-none', method !== 'gcash');
+            if (qrPaymayaWrap) qrPaymayaWrap.classList.toggle('d-none', method !== 'paymaya');
+        }
+        document.getElementById('ewallet-notice').classList.toggle('d-none', method === 'card' || showSellerQr);
+    }
+
     document.querySelectorAll('.payment-method-option').forEach(function(el) {
         el.addEventListener('click', function() {
             document.querySelectorAll('.payment-method-option').forEach(function(o) { o.classList.remove('selected'); });
             this.classList.add('selected');
             this.querySelector('input').checked = true;
-            const method = this.dataset.method;
-            document.getElementById('card-form').classList.toggle('d-none', method !== 'card');
-            document.getElementById('ewallet-notice').classList.toggle('d-none', method === 'card');
+            togglePaymentUi(this.dataset.method);
         });
     });
     document.getElementById('ewallet-notice').classList.add('d-none');
+    if (sellerQrSection) sellerQrSection.classList.add('d-none');
 
     async function createPaymentIntent() {
         const res = await fetch('{{ route("checkout.create-payment-intent") }}', {

@@ -176,11 +176,21 @@
     @endif
 
     @if($cartItems->count() > 0)
+        <form id="cart-checkout-form" action="{{ route('checkout.index') }}" method="GET">
         <div class="row">
             <div class="col-lg-8">
                 @foreach($cartItems as $item)
-                    <div class="cart-item-card reveal" style="animation-delay: {{ min($loop->index, 3) * 0.1 }}s;">
-                        <div class="d-flex gap-3">
+                    @php
+                        $adj = $item->variation ? (float)$item->variation->price_adjustment : 0;
+                        $unitPrice = $item->product->price + $adj;
+                        $lineTotal = $unitPrice * $item->quantity;
+                    @endphp
+                    <div class="cart-item-card reveal" style="animation-delay: {{ min($loop->index, 3) * 0.1 }}s;" data-item-id="{{ $item->id }}" data-line-total="{{ $lineTotal }}">
+                        <div class="d-flex gap-3 align-items-start">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input cart-item-select" type="checkbox" name="cart_items[]" value="{{ $item->id }}" id="cart_item_{{ $item->id }}" checked>
+                                <label class="form-check-label visually-hidden" for="cart_item_{{ $item->id }}">Select for checkout</label>
+                            </div>
                             @if($item->product->images->first())
                                 <img src="{{ asset('storage/' . $item->product->images->first()->image_path) }}" 
                                      class="cart-item-image" 
@@ -247,10 +257,14 @@
             <div class="col-lg-4">
                 <div class="summary-card reveal" style="animation-delay: 0.2s;">
                     <h5 class="fw-bold mb-4"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
-                    
+                    <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i>Select items above to include in checkout</p>
                     <div class="summary-row">
                         <span class="text-muted">Subtotal:</span>
-                        <span class="fw-semibold">₱{{ number_format($subtotal, 2) }}</span>
+                        <span class="fw-semibold" id="summary-subtotal">₱{{ number_format($subtotal, 2) }}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">VAT ({{ $taxRate ?? 12 }}%):</span>
+                        <span class="fw-semibold" id="summary-vat">₱{{ number_format($vat ?? 0, 2) }}</span>
                     </div>
                     <div class="summary-row">
                         <span class="text-muted">Shipping:</span>
@@ -259,13 +273,13 @@
                     <hr class="my-3">
                     <div class="summary-row">
                         <span class="fw-bold">Total:</span>
-                        <span class="summary-total">₱{{ number_format($subtotal, 2) }}</span>
+                        <span class="summary-total" id="summary-total">₱{{ number_format($totalWithVat ?? $subtotal, 2) }}</span>
                     </div>
                     
                     <div class="d-grid gap-2 mt-4">
-                        <a href="{{ route('checkout.index') }}" class="btn btn-primary btn-lg">
+                        <button type="submit" form="cart-checkout-form" class="btn btn-primary btn-lg">
                             <i class="bi bi-credit-card me-2"></i>Proceed to Checkout
-                        </a>
+                        </button>
                         <a href="{{ route('toyshop.products.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i>Continue Shopping
                         </a>
@@ -273,6 +287,7 @@
                 </div>
             </div>
         </div>
+        </form>
     @else
         <div class="empty-cart reveal">
             <i class="bi bi-cart-x empty-cart-icon"></i>
@@ -287,6 +302,34 @@
 
 @push('scripts')
 <script>
+(function() {
+    var taxRate = {{ $taxRate ?? 12 }};
+    var cartItems = @json($cartItems->mapWithKeys(function($item) {
+        $adj = $item->variation ? (float)$item->variation->price_adjustment : 0;
+        return [$item->id => ($item->product->price + $adj) * $item->quantity];
+    })->toArray());
+
+    function updateCartSummary() {
+        var checked = document.querySelectorAll('.cart-item-select:checked');
+        var subtotal = 0;
+        checked.forEach(function(cb) {
+            var id = parseInt(cb.value, 10);
+            if (cartItems[id] !== undefined) subtotal += cartItems[id];
+        });
+        var commissionRate = {{ $commissionRate ?? 5 }} / 100;
+        var commission = subtotal * commissionRate;
+        var vat = (subtotal + commission) * (taxRate / 100);
+        var total = subtotal + commission + vat;
+        document.getElementById('summary-subtotal') && (document.getElementById('summary-subtotal').textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2}));
+        document.getElementById('summary-vat') && (document.getElementById('summary-vat').textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2}));
+        document.getElementById('summary-total') && (document.getElementById('summary-total').textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2}));
+    }
+
+    document.querySelectorAll('.cart-item-select').forEach(function(cb) {
+        cb.addEventListener('change', updateCartSummary);
+    });
+})();
+
     function increaseQuantity(itemId) {
         const input = document.getElementById('quantity-' + itemId);
         const max = parseInt(input.max);

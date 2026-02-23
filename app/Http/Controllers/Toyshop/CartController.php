@@ -6,11 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariation;
+use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
+    protected $priceService;
+
+    public function __construct(PriceCalculationService $priceService)
+    {
+        $this->priceService = $priceService;
+    }
     public function index()
     {
         $cartItems = CartItem::with(['product.images', 'product.seller', 'variation'])
@@ -36,15 +43,25 @@ class CartController extends Controller
             ->get();
 
         $subtotal = $cartItems->sum(function ($item) {
-            return $item->product->price * $item->quantity;
+            $price = $item->product->price;
+            if ($item->variation) {
+                $price += (float) $item->variation->price_adjustment;
+            }
+            return $price * $item->quantity;
         });
+
+        $calc = $this->priceService->calculatePrice($subtotal);
+        $taxRate = $calc['tax_rate'];
+        $commissionRate = $calc['admin_commission_rate'];
+        $vat = $calc['tax_amount'];
+        $totalWithVat = $calc['final_price'];
 
         $message = null;
         if (!empty($removedItems)) {
             $message = 'Some items were removed from your cart because the seller is no longer active.';
         }
 
-        return view('toyshop.cart.index', compact('cartItems', 'subtotal', 'message'));
+        return view('toyshop.cart.index', compact('cartItems', 'subtotal', 'message', 'taxRate', 'commissionRate', 'vat', 'totalWithVat'));
     }
 
     public function add(Request $request)
