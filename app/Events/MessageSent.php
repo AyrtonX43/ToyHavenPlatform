@@ -31,9 +31,10 @@ class MessageSent implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
-        $this->message->load(['sender', 'attachments']);
-        $createdAt = $this->message->created_at->timezone(config('app.timezone'));
-        return [
+        $this->message->load(['sender', 'attachments', 'tradeListing.images']);
+        $tz = config('app.timezone', 'Asia/Manila');
+        $createdAt = $this->message->created_at->timezone($tz);
+        $payload = [
             'id' => $this->message->id,
             'conversation_id' => $this->message->conversation_id,
             'sender_id' => $this->message->sender_id,
@@ -52,5 +53,20 @@ class MessageSent implements ShouldBroadcastNow
                 'is_video' => $a->isVideo(),
             ])->toArray(),
         ];
+        if ($this->message->tradeListing) {
+            $listing = $this->message->tradeListing;
+            $firstImg = $listing->images->first();
+            $imgPath = $listing->image_path ?? ($firstImg?->image_path ?? null);
+            $payload['offered_listing'] = [
+                'id' => $listing->id,
+                'title' => $listing->title,
+                'condition' => $listing->condition,
+                'image_url' => $imgPath ? url('storage/' . $imgPath) : null,
+                'url' => route('trading.listings.show', $listing->id),
+            ];
+        } else {
+            $payload['offered_listing'] = null;
+        }
+        return $payload;
     }
 }

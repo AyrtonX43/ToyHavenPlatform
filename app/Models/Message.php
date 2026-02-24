@@ -14,6 +14,7 @@ class Message extends Model
     protected $fillable = [
         'conversation_id',
         'sender_id',
+        'trade_listing_id',
         'message',
         'is_read',
         'delivered_at',
@@ -34,6 +35,11 @@ class Message extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function tradeListing(): BelongsTo
+    {
+        return $this->belongsTo(TradeListing::class);
     }
 
     public function attachments(): HasMany
@@ -60,7 +66,7 @@ class Message extends Model
             return 'Just now';
         }
         
-        $tz = config('app.timezone', 'UTC');
+        $tz = config('app.timezone', 'Asia/Manila');
         $dt = $this->created_at->timezone($tz);
         $today = Carbon::now($tz)->startOfDay();
         $yesterday = $today->copy()->subDay();

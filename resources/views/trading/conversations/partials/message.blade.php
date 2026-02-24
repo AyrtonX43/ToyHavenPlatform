@@ -7,6 +7,25 @@
     @if(!$isMine)
         <div class="msg-sender">{{ $msg->sender?->name }}</div>
     @endif
+    @if($msg->tradeListing)
+        <a href="{{ route('trading.listings.show', $msg->tradeListing->id) }}" class="msg-offered-product d-block text-decoration-none text-dark rounded p-2 mb-2" style="background: rgba(0,0,0,0.06);">
+            <div class="d-flex align-items-center gap-2">
+                @php $img = $msg->tradeListing->image_path ?? $msg->tradeListing->images->first()?->image_path; @endphp
+                @if($img)
+                    <img src="{{ asset('storage/' . $img) }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;">
+                @else
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-image text-muted"></i></div>
+                @endif
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-semibold small text-truncate">{{ $msg->tradeListing->title }}</div>
+                    @if($msg->tradeListing->condition)
+                        <span class="badge bg-secondary" style="font-size:0.65rem;">{{ $msg->tradeListing->condition }}</span>
+                    @endif
+                    <div class="text-primary small mt-0"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</div>
+                </div>
+            </div>
+        </a>
+    @endif
     @if($msg->message)
         <div class="msg-text">{{ $msg->message }}</div>
     @endif

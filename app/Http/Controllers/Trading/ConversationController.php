@@ -44,7 +44,7 @@ class ConversationController extends Controller
     {
         $this->authorize('view', $conversation);
 
-        $conversation->load(['user1', 'user2', 'trade', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments'])->orderByDesc('id')->limit(100)]);
+        $conversation->load(['user1', 'user2', 'trade', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
         $messages = $conversation->messages->sortBy('id')->values();
 
         // Mark others' messages as delivered (if not already) and seen when opening the chat
@@ -68,7 +68,15 @@ class ConversationController extends Controller
 
         $other = $conversation->getOtherUser(Auth::id());
 
-        return view('trading.conversations.show', compact('conversation', 'messages', 'other'));
+        // For product offering: load current user's listings (and other's) so they can offer products to each other
+        $myListings = $other
+            ? TradeListing::active()->where('user_id', Auth::id())->with('images')->orderByDesc('updated_at')->limit(20)->get()
+            : collect();
+        $otherListings = $other
+            ? TradeListing::active()->where('user_id', $other->id)->with('images')->orderByDesc('updated_at')->limit(20)->get()
+            : collect();
+
+        return view('trading.conversations.show', compact('conversation', 'messages', 'other', 'myListings', 'otherListings'));
     }
 
     public function storeFromListing(Request $request, $id)
@@ -86,7 +94,7 @@ class ConversationController extends Controller
     {
         $this->authorize('view', $conversation);
 
-        $query = $conversation->messages()->with(['sender', 'attachments'])->orderBy('created_at');
+        $query = $conversation->messages()->with(['sender', 'attachments', 'tradeListing.images'])->orderBy('created_at');
         $beforeId = $request->integer('before_id');
         if ($beforeId) {
             $query->where('id', '<', $beforeId);
@@ -111,16 +119,26 @@ class ConversationController extends Controller
 
         $validated = $request->validate([
             'message' => ['nullable', 'string', 'max:5000'],
+            'offered_listing_id' => ['nullable', 'integer', 'exists:trade_listings,id'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:jpeg,jpg,png,gif,webp,mp4,mov,webm', 'max:25600'], // 25MB
         ]);
 
-        if (empty(trim($validated['message'] ?? '')) && empty($validated['attachments'] ?? [])) {
-            return response()->json(['error' => 'Message or attachment required.'], 422);
+        if (empty(trim($validated['message'] ?? '')) && empty($validated['attachments'] ?? []) && empty($validated['offered_listing_id'] ?? null)) {
+            return response()->json(['error' => 'Message, attachment, or product offer required.'], 422);
+        }
+
+        $offeredListingId = $validated['offered_listing_id'] ?? null;
+        if ($offeredListingId) {
+            $listing = TradeListing::find($offeredListingId);
+            if (!$listing || $listing->user_id !== Auth::id()) {
+                return response()->json(['error' => 'You can only offer your own listings.'], 422);
+            }
         }
 
         $message = $conversation->messages()->create([
             'sender_id' => Auth::id(),
+            'trade_listing_id' => $offeredListingId,
             'message' => trim($validated['message'] ?? '') ?: '',
             'delivered_at' => now(), // Auto-mark as delivered to sender immediately
         ]);
@@ -139,11 +157,38 @@ class ConversationController extends Controller
         $conversation->update(['last_message_at' => $message->created_at]);
 
         // Reload message with relationships before broadcasting
-        $message->load(['sender', 'attachments']);
+        $message->load(['sender', 'attachments', 'tradeListing.images']);
         
         $this->safeBroadcast(new MessageSent($message));
 
-        return response()->json(['message' => $message]);
+        $messageData = [
+            'id' => $message->id,
+            'message' => $message->message,
+            'created_at' => $message->created_at->timezone(config('app.timezone', 'Asia/Manila'))->toIso8601String(),
+            'formatted_created_at' => $message->formatted_created_at,
+            'attachments' => $message->attachments->map(fn ($a) => [
+                'id' => $a->id,
+                'url' => $a->url,
+                'file_name' => $a->file_name,
+                'is_image' => $a->isImage(),
+                'is_video' => $a->isVideo(),
+            ])->toArray(),
+            'offered_listing' => null,
+        ];
+        if ($message->tradeListing) {
+            $listing = $message->tradeListing;
+            $firstImg = $listing->images->first();
+            $imgPath = $listing->image_path ?? ($firstImg?->image_path ?? null);
+            $messageData['offered_listing'] = [
+                'id' => $listing->id,
+                'title' => $listing->title,
+                'condition' => $listing->condition,
+                'image_url' => $imgPath ? asset('storage/' . $imgPath) : null,
+                'url' => route('trading.listings.show', $listing->id),
+            ];
+        }
+
+        return response()->json(['message' => $messageData]);
     }
 
     public function markDelivered(Request $request, Conversation $conversation)

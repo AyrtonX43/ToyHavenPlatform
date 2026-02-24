@@ -152,18 +152,90 @@
 
                 {{-- Payment section --}}
                 <div class="payment-actions">
-                    @if($paymentIntentId && $publicKey)
+                    @if($paymentIntentId && $publicKey && $clientKey)
                         <p class="text-muted small mb-3">
                             <i class="bi bi-credit-card me-1"></i>
                             Complete your payment below. Payment integration with PayMongo will process your subscription securely.
                         </p>
-                        {{-- PayMongo payment form placeholder - integrate when ready --}}
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('membership.manage') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Back to Membership
-                            </a>
-                            <span class="text-muted small align-self-center">Payment form integration can be added here.</span>
+
+                        {{-- Payment method selection --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Payment Method</label>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <div class="payment-method-option-member selected" data-method="card" style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; cursor: pointer;">
+                                    <input type="radio" name="pay_method" value="card" id="pm_card" checked style="display: none;">
+                                    <label for="pm_card" class="mb-0 d-flex align-items-center" style="cursor: pointer;">
+                                        <i class="bi bi-credit-card-2-front fs-4 me-2 text-primary"></i>
+                                        <span><strong>Card</strong></span>
+                                    </label>
+                                </div>
+                                <div class="payment-method-option-member" data-method="gcash" style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; cursor: pointer;">
+                                    <input type="radio" name="pay_method" value="gcash" id="pm_gcash" style="display: none;">
+                                    <label for="pm_gcash" class="mb-0 d-flex align-items-center" style="cursor: pointer;">
+                                        <i class="bi bi-phone fs-4 me-2 text-success"></i>
+                                        <span><strong>GCash</strong></span>
+                                    </label>
+                                </div>
+                                <div class="payment-method-option-member" data-method="paymaya" style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; cursor: pointer;">
+                                    <input type="radio" name="pay_method" value="paymaya" id="pm_paymaya" style="display: none;">
+                                    <label for="pm_paymaya" class="mb-0 d-flex align-items-center" style="cursor: pointer;">
+                                        <i class="bi bi-wallet2 fs-4 me-2 text-primary"></i>
+                                        <span><strong>PayMaya</strong></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+
+                        {{-- Card form --}}
+                        <div id="member-card-form" class="mb-3">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="form-label">Card Number</label>
+                                    <input type="text" id="member_card_number" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19" autocomplete="cc-number">
+                                    <small class="text-muted">Test: 4242 4242 4242 4242</small>
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Exp Month</label>
+                                    <input type="number" id="member_exp_month" class="form-control" placeholder="12" min="1" max="12">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">Exp Year</label>
+                                    <input type="number" id="member_exp_year" class="form-control" placeholder="2028" min="{{ date('Y') }}">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label">CVC</label>
+                                    <input type="text" id="member_cvc" class="form-control" placeholder="123" maxlength="4">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="member-ewallet-notice" class="alert alert-light border d-none mb-3">
+                            <i class="bi bi-info-circle me-2"></i>You will be redirected to complete payment in the app.
+                        </div>
+                        <div id="member-qr-section" class="d-none mb-3 p-3 rounded text-center" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-qr-code me-2"></i>Scan with GCash or PayMaya</h6>
+                            <img id="member-qr-img" src="" alt="QR" class="img-fluid rounded" style="max-width: 200px;">
+                        </div>
+
+                        <div id="member-pay-error" class="alert alert-danger d-none mb-2"></div>
+                        <div id="member-pay-loading" class="d-none text-center py-2">
+                            <div class="spinner-border spinner-border-sm text-primary"></div>
+                            <span class="ms-2">Processing...</span>
+                        </div>
+
+                        <button type="button" id="member-pay-btn" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
+                            <i class="bi bi-lock-fill me-1"></i>Pay ₱{{ number_format($subscription->plan->price, 0) }}
+                        </button>
+                        <a href="{{ route('membership.manage') }}" class="btn btn-outline-secondary w-100 mt-2">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Membership
+                        </a>
+                    @elseif($paymentIntentId && $publicKey)
+                        <div class="alert alert-warning mb-2">
+                            Could not load payment details. Please try again or contact support.
+                        </div>
+                        <a href="{{ route('membership.manage') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Membership
+                        </a>
                     @else
                         <p class="text-muted small mb-3">
                             <i class="bi bi-info-circle me-1"></i>
@@ -179,3 +251,187 @@
     </div>
 </div>
 @endsection
+
+@if($paymentIntentId && $publicKey && ($clientKey ?? null))
+@push('scripts')
+<script>
+(function() {
+    const subscriptionId = @json($subscription->id);
+    const paymentIntentId = @json($paymentIntentId);
+    const clientKey = @json($clientKey);
+    const publicKey = @json($publicKey);
+    const returnUrl = new URL('{{ route("membership.payment.return") }}', window.location.origin);
+    returnUrl.searchParams.set('subscription_id', subscriptionId);
+    returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+
+    const cardForm = document.getElementById('member-card-form');
+    const ewalletNotice = document.getElementById('member-ewallet-notice');
+    const qrSection = document.getElementById('member-qr-section');
+    const qrImg = document.getElementById('member-qr-img');
+    const payError = document.getElementById('member-pay-error');
+    const payLoading = document.getElementById('member-pay-loading');
+    const payBtn = document.getElementById('member-pay-btn');
+
+    function setError(msg) {
+        payError.textContent = msg;
+        payError.classList.remove('d-none');
+    }
+    function clearError() {
+        payError.classList.add('d-none');
+    }
+    function setLoading(show) {
+        payBtn.disabled = show;
+        payLoading.classList.toggle('d-none', !show);
+    }
+
+    let qrPollInterval = null;
+    function startQrPolling() {
+        if (qrPollInterval) clearInterval(qrPollInterval);
+        qrPollInterval = setInterval(async function() {
+            try {
+                const r = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '?client_key=' + encodeURIComponent(clientKey), {
+                    headers: { 'Authorization': 'Basic ' + btoa(publicKey + ':') }
+                });
+                const d = await r.json();
+                const status = d.data?.attributes?.status;
+                if (status === 'succeeded') {
+                    clearInterval(qrPollInterval);
+                    qrPollInterval = null;
+                    window.location.href = returnUrl.toString();
+                }
+            } catch (e) {}
+        }, 3000);
+    }
+
+    document.querySelectorAll('.payment-method-option-member').forEach(function(el) {
+        el.addEventListener('click', function() {
+            document.querySelectorAll('.payment-method-option-member').forEach(function(o) {
+                o.classList.remove('selected');
+                o.style.borderColor = '#e2e8f0';
+            });
+            this.classList.add('selected');
+            this.style.borderColor = '#0891b2';
+            this.querySelector('input').checked = true;
+            const method = this.dataset.method;
+            cardForm.classList.toggle('d-none', method !== 'card');
+            ewalletNotice.classList.toggle('d-none', method !== 'gcash' && method !== 'paymaya');
+            qrSection.classList.add('d-none');
+        });
+    });
+
+    async function createPaymentMethod() {
+        const method = document.querySelector('input[name="pay_method"]:checked').value;
+        const payMethodType = (method === 'gcash' || method === 'paymaya') ? 'qrph' : method;
+        const attrs = {
+            type: payMethodType,
+            billing: {
+                name: @json(auth()->user()->name ?? 'Customer'),
+                email: @json(auth()->user()->email ?? ''),
+                phone: @json(auth()->user()->phone ?? ''),
+            }
+        };
+        if (method === 'card') {
+            const cardNumber = document.getElementById('member_card_number').value.replace(/\s/g, '');
+            const expMonth = parseInt(document.getElementById('member_exp_month').value, 10);
+            const expYear = parseInt(document.getElementById('member_exp_year').value, 10);
+            const cvc = document.getElementById('member_cvc').value;
+            if (!cardNumber || !expMonth || !expYear || !cvc) {
+                throw new Error('Please fill in all card details.');
+            }
+            attrs.details = { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc };
+        }
+
+        const res = await fetch('https://api.paymongo.com/v1/payment_methods', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + btoa(publicKey + ':')
+            },
+            body: JSON.stringify({ data: { attributes: attrs } })
+        });
+        const data = await res.json();
+        const pm = data.data;
+        if (!pm || !pm.id) {
+            const err = data.errors?.[0]?.detail || data.message || 'Failed to create payment method';
+            throw new Error(err);
+        }
+        return pm.id;
+    }
+
+    async function attachPaymentMethod(paymentMethodId) {
+        const method = document.querySelector('input[name="pay_method"]:checked').value;
+        const body = {
+            data: {
+                attributes: {
+                    client_key: clientKey,
+                    payment_method: paymentMethodId
+                }
+            }
+        };
+        if (method === 'gcash' || method === 'paymaya') {
+            body.data.attributes.return_url = returnUrl.toString();
+        }
+
+        const res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + btoa(publicKey + ':')
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        const pi = data.data;
+        if (!pi) {
+            const err = data.errors?.[0]?.detail || data.message || 'Failed to process payment';
+            throw new Error(err);
+        }
+
+        const status = pi.attributes?.status;
+        const nextAction = pi.attributes?.next_action;
+
+        if (status === 'succeeded') {
+            window.location.href = returnUrl.toString();
+            return;
+        }
+        if (status === 'awaiting_next_action' && nextAction) {
+            if (nextAction.type === 'consume_qr' && nextAction.code?.image_url && (method === 'gcash' || method === 'paymaya')) {
+                qrImg.src = nextAction.code.image_url;
+                qrSection.classList.remove('d-none');
+                ewalletNotice.classList.add('d-none');
+                setLoading(false);
+                startQrPolling();
+                return;
+            }
+            if (nextAction.redirect?.url) {
+                window.location.href = nextAction.redirect.url;
+                return;
+            }
+        }
+        if (status === 'awaiting_payment_method') {
+            const err = pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again.';
+            throw new Error(err);
+        }
+        if (status === 'processing') {
+            window.location.href = returnUrl.toString();
+            return;
+        }
+        throw new Error('Unexpected status: ' + status);
+    }
+
+    payBtn.addEventListener('click', async function() {
+        clearError();
+        setLoading(true);
+        qrSection.classList.add('d-none');
+        try {
+            const pmId = await createPaymentMethod();
+            await attachPaymentMethod(pmId);
+        } catch (e) {
+            setError(e.message || 'Payment failed. Please try again.');
+            setLoading(false);
+        }
+    });
+})();
+</script>
+@endpush
+@endif

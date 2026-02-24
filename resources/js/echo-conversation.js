@@ -88,7 +88,7 @@ if (typeof window !== 'undefined' && window.CONVERSATION_ID && window.ECHO_CONFI
         });
     });
 
-    // Presence heartbeat - every 15s for more real-time online status
+    // Presence heartbeat - every 10s for real-time online status
     const presenceInterval = setInterval(() => {
         if (!document.hidden) {
             fetch(window.ECHO_CONFIG.presenceUrl || ('/trading/conversations/' + window.CONVERSATION_ID + '/presence'), {
@@ -100,6 +100,6 @@ if (typeof window !== 'undefined' && window.CONVERSATION_ID && window.ECHO_CONFI
                 },
             }).catch(() => {});
         }
-    }, 15000);
+    }, 10000);
     window.addEventListener('beforeunload', () => clearInterval(presenceInterval));
 }

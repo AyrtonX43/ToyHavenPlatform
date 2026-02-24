@@ -105,12 +105,64 @@ class SubscriptionController extends Controller
 
         $paymentIntentId = $request->get('payment_intent');
         $publicKey = config('services.paymongo.public_key');
+        $clientKey = null;
+
+        if ($paymentIntentId) {
+            $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
+            if ($intent) {
+                $attrs = $intent['attributes'] ?? $intent;
+                $clientKey = $attrs['client_key'] ?? null;
+            }
+        }
 
         return view('membership.payment', [
             'subscription' => $subscription,
             'paymentIntentId' => $paymentIntentId,
+            'clientKey' => $clientKey,
             'publicKey' => $publicKey,
         ]);
+    }
+
+    /**
+     * Handle return from PayMongo after subscription payment (redirect from GCash/3DS etc)
+     */
+    public function paymentReturn(Request $request)
+    {
+        $subscriptionId = $request->input('subscription_id');
+        $paymentIntentId = $request->input('payment_intent_id');
+
+        if (! $subscriptionId || ! $paymentIntentId) {
+            return redirect()->route('membership.manage')->with('error', 'Invalid payment return.');
+        }
+
+        $subscription = Subscription::where('id', $subscriptionId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (! $subscription) {
+            return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
+        }
+
+        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
+        $attrs = $intent['attributes'] ?? $intent ?? [];
+        $status = $attrs['status'] ?? null;
+
+        if ($status === 'succeeded' || $status === 'processing') {
+            return redirect()->route('membership.manage')
+                ->with('success', 'Payment successful! Your membership is now active.');
+        }
+
+        if ($status === 'awaiting_payment_method') {
+            return redirect()->route('membership.payment', [
+                'subscription' => $subscription,
+                'payment_intent' => $paymentIntentId,
+            ])->with('error', 'Payment could not be completed. Please try again.');
+        }
+
+        return redirect()->route('membership.payment', [
+            'subscription' => $subscription,
+            'payment_intent' => $paymentIntentId,
+        ])->with('error', 'Payment status could not be verified. Please try again.');
     }
 
     /**

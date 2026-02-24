@@ -83,6 +83,9 @@
     .chat-body-product .product-view { font-size: 0.75rem; color: #0891b2; margin-top: 0.15rem; }
     .chat-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
     .chat-actions .btn-report { font-size: 0.85rem; color: #64748b; }
+    .msg-offered-product { transition: background 0.2s, box-shadow 0.2s; }
+    .msg-offered-product:hover { background: rgba(0,0,0,0.08) !important; }
+    .offer-product-btn { font-size: 0.85rem; }
 </style>
 @endpush
 
@@ -174,6 +177,18 @@
     <div class="chat-footer">
         <form id="messageForm" class="d-flex flex-column gap-2">
             @csrf
+            @if($myListings->isNotEmpty())
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="small text-muted">Offer your product:</span>
+                    <select id="offerProductSelect" class="form-select form-select-sm" style="max-width:220px;">
+                        <option value="">-- Select listing to offer --</option>
+                        @foreach($myListings as $listing)
+                            <option value="{{ $listing->id }}">{{ Str::limit($listing->title, 35) }}</option>
+                        @endforeach
+                    </select>
+                    <span id="selectedOfferPreview" class="small text-success" style="display:none;"></span>
+                </div>
+            @endif
             <div class="d-flex gap-2 align-items-end">
                 <input type="text" name="message" id="messageInput" class="form-control rounded-3" placeholder="Type a message..." maxlength="5000" autocomplete="off">
                 <label class="btn btn-outline-secondary btn-sm mb-0 rounded-3" title="Image or video">
@@ -193,6 +208,7 @@
 window.CONVERSATION_ID = {{ $conversation->id }};
 window.AUTH_ID = {{ Auth::id() }};
 window.OTHER_USER = @json($other ? ['id' => $other->id, 'name' => $other->name] : null);
+window.APP_TIMEZONE = @json(config('app.timezone', 'Asia/Manila'));
 @if(config('broadcasting.default') !== 'null')
 @php
     $driver = config('broadcasting.default');
@@ -274,13 +290,16 @@ window.ECHO_CONFIG = @json($echoConfig);
         e.preventDefault();
         var msg = input.value.trim();
         var files = selectedFiles.length > 0 ? selectedFiles : Array.from(attachmentInput.files || []);
-        if (!msg && files.length === 0) return;
+        var offerSelect = document.getElementById('offerProductSelect');
+        var offeredId = (offerSelect && offerSelect.value) ? parseInt(offerSelect.value, 10) : 0;
+        if (!msg && files.length === 0 && !offeredId) return;
 
         sendBtn.disabled = true;
         sendBtn.classList.add('sending');
         var fd = new FormData();
         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content || document.querySelector('input[name="_token"]').value);
         fd.append('message', msg);
+        if (offeredId) fd.append('offered_listing_id', offeredId);
         files.forEach(function(file) { fd.append('attachments[]', file); });
 
         fetch('{{ route("trading.conversations.messages.store", $conversation) }}', {
@@ -295,6 +314,9 @@ window.ECHO_CONFIG = @json($echoConfig);
                 bubble.className = 'msg-bubble mine';
                 bubble.dataset.messageId = data.message.id;
                 var html = '';
+                if (data.message.offered_listing) {
+                    html += renderOfferedListing(data.message.offered_listing);
+                }
                 if (data.message.message) {
                     html += '<div class="msg-text">' + escapeHtml(data.message.message) + '</div>';
                 }
@@ -318,6 +340,7 @@ window.ECHO_CONFIG = @json($echoConfig);
             attachmentInput.value = '';
             attachmentPreview.innerHTML = '';
             selectedFiles = [];
+            if (offerSelect) { offerSelect.value = ''; }
         })
         .catch(function(err) { 
             console.error('Failed to send message:', err);
@@ -326,6 +349,11 @@ window.ECHO_CONFIG = @json($echoConfig);
         .finally(function() { sendBtn.disabled = false; sendBtn.classList.remove('sending'); });
     });
 
+    function renderOfferedListing(listing) {
+        if (!listing || !listing.url) return '';
+        var img = listing.image_url ? '<img src="' + escapeHtml(listing.image_url) + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;">' : '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-image text-muted"></i></div>';
+        return '<a href="' + escapeHtml(listing.url) + '" class="msg-offered-product d-block text-decoration-none text-dark rounded p-2 mb-2" style="background:rgba(0,0,0,0.06);"><div class="d-flex align-items-center gap-2">' + img + '<div class="flex-grow-1 min-w-0"><div class="fw-semibold small text-truncate">' + escapeHtml(listing.title || '') + '</div>' + (listing.condition ? '<span class="badge bg-secondary" style="font-size:0.65rem;">' + escapeHtml(listing.condition) + '</span>' : '') + '<div class="text-primary small mt-0"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</div></div></div></a>';
+    }
     function escapeHtml(s) {
         if (!s) return '';
         var div = document.createElement('div');
@@ -334,17 +362,22 @@ window.ECHO_CONFIG = @json($echoConfig);
     }
     function formatMessageTime(isoOrFormatted) {
         if (!isoOrFormatted) return 'Just now';
+        var tz = window.APP_TIMEZONE || 'Asia/Manila';
         var d = new Date(isoOrFormatted);
         if (isNaN(d.getTime())) return isoOrFormatted;
+        var opts = { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true };
+        var dateOpts = { timeZone: tz, month: 'short', day: 'numeric' };
         var now = new Date();
-        var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var todayStart = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+        todayStart.setHours(0, 0, 0, 0);
         var yesterdayStart = new Date(todayStart);
         yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-        var msgDateStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        var timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        var msgDateStart = new Date(d.toLocaleString('en-US', { timeZone: tz }));
+        msgDateStart.setHours(0, 0, 0, 0);
+        var timeStr = d.toLocaleTimeString('en-PH', opts);
         if (msgDateStart.getTime() === todayStart.getTime()) return 'Today, ' + timeStr;
         if (msgDateStart.getTime() === yesterdayStart.getTime()) return 'Yesterday, ' + timeStr;
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + timeStr;
+        return d.toLocaleDateString('en-PH', dateOpts) + ', ' + timeStr;
     }
 
     window.conversationScrollToBottom = scrollToBottom;
@@ -354,6 +387,9 @@ window.ECHO_CONFIG = @json($echoConfig);
         bubble.className = 'msg-bubble theirs';
         bubble.dataset.messageId = payload.id;
         var html = '<div class="msg-sender">' + escapeHtml(payload.sender_name || '') + '</div>';
+        if (payload.offered_listing) {
+            html += renderOfferedListing(payload.offered_listing);
+        }
         if (payload.message) {
             html += '<div class="msg-text">' + escapeHtml(payload.message) + '</div>';
         }
@@ -499,9 +535,9 @@ window.ECHO_CONFIG = @json($echoConfig);
     refreshPresence();
     updateMyPresence();
     
-    // More frequent updates for better real-time feel (every 5 seconds for other user status)
-    var presenceRefreshInterval = setInterval(refreshPresence, 5000);
-    var myPresenceInterval = setInterval(updateMyPresence, 10000);
+    // Real-time presence: poll every 3s when WebSockets may be unavailable; Echo updates instantly when available
+    var presenceRefreshInterval = setInterval(refreshPresence, 3000);
+    var myPresenceInterval = setInterval(updateMyPresence, 8000);
     
     // Update presence when user interacts
     chatBody.addEventListener('scroll', function() { updateMyPresence(); }, { passive: true });
