@@ -15,6 +15,7 @@ use App\Models\MessageAttachment;
 use App\Models\TradeListing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -299,9 +300,52 @@ class ConversationController extends Controller
         $this->authorize('view', $conversation);
 
         $typing = (bool) $request->input('typing', true);
+        $key = 'chat_typing:'.$conversation->id.':'.Auth::id();
+        if ($typing) {
+            Cache::put($key, ['name' => Auth::user()->name], now()->addSeconds(4));
+        } else {
+            Cache::forget($key);
+        }
         $this->safeBroadcast(new UserTyping($conversation->id, Auth::id(), Auth::user()->name, $typing));
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Get whether the other user is currently typing (for polling when WebSockets unavailable).
+     */
+    public function typingStatus(Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+        $other = $conversation->getOtherUser(Auth::id());
+        if (! $other) {
+            return response()->json(['typing' => false, 'user_name' => null]);
+        }
+        $key = 'chat_typing:'.$conversation->id.':'.$other->id;
+        $data = Cache::get($key);
+
+        return response()->json([
+            'typing' => (bool) $data,
+            'user_name' => $data['name'] ?? $other->name,
+        ]);
+    }
+
+    /**
+     * Get delivered/seen status of my messages in this conversation (for polling when WebSockets unavailable).
+     */
+    public function messageStatuses(Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+        $statuses = Message::where('conversation_id', $conversation->id)
+            ->where('sender_id', Auth::id())
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($m) => [
+                'id' => $m->id,
+                'status' => $m->seen_at ? 'seen' : ($m->delivered_at ? 'delivered' : 'sent'),
+            ]);
+
+        return response()->json(['statuses' => $statuses]);
     }
 
     public function presence(Conversation $conversation)

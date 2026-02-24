@@ -282,6 +282,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/conversations/{conversation}/delivered', [\App\Http\Controllers\Trading\ConversationController::class, 'markDelivered'])->name('conversations.mark-delivered');
         Route::post('/conversations/{conversation}/seen', [\App\Http\Controllers\Trading\ConversationController::class, 'markSeen'])->name('conversations.mark-seen');
         Route::post('/conversations/{conversation}/typing', [\App\Http\Controllers\Trading\ConversationController::class, 'typing'])->name('conversations.typing');
+        Route::get('/conversations/{conversation}/typing-status', [\App\Http\Controllers\Trading\ConversationController::class, 'typingStatus'])->name('conversations.typing-status');
+        Route::get('/conversations/{conversation}/message-statuses', [\App\Http\Controllers\Trading\ConversationController::class, 'messageStatuses'])->name('conversations.message-statuses');
         Route::post('/conversations/{conversation}/presence', [\App\Http\Controllers\Trading\ConversationController::class, 'presence'])->name('conversations.presence');
         Route::get('/conversations/{conversation}/other-status', [\App\Http\Controllers\Trading\ConversationController::class, 'otherStatus'])->name('conversations.other-status');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');

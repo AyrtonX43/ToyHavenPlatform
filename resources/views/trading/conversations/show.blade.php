@@ -176,7 +176,7 @@
         @endforeach
         <div id="typingIndicator" class="typing-indicator" style="display:none;">
             <span class="typing-dots"><span></span><span></span><span></span></span>
-            <span id="typingUserName"></span> is typing...
+            <span id="typingUserName"></span> is replying...
         </div>
     </div>
 
@@ -363,6 +363,7 @@ window.ECHO_CONFIG = @json($echoConfig);
                 bubble.innerHTML = html;
                 chatBody.appendChild(bubble);
                 animateNewBubble(bubble);
+                if (typeof lastStatusByMessage !== 'undefined') lastStatusByMessage[data.message.id] = 'sent';
                 requestAnimationFrame(function() { requestAnimationFrame(scrollToBottom); });
             }
             input.value = '';
@@ -530,6 +531,8 @@ window.ECHO_CONFIG = @json($echoConfig);
     };
     var otherStatusUrl = '{{ route("trading.conversations.other-status", $conversation) }}';
     var presenceUrl = '{{ route("trading.conversations.presence", $conversation) }}';
+    var messageStatusesUrl = '{{ route("trading.conversations.message-statuses", $conversation) }}';
+    var typingStatusUrl = '{{ route("trading.conversations.typing-status", $conversation) }}';
     function refreshPresence() {
         if (document.hidden) return;
         fetch(otherStatusUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
@@ -611,6 +614,45 @@ window.ECHO_CONFIG = @json($echoConfig);
     var pollInterval = setInterval(pollMessages, 2000);
     setTimeout(pollMessages, 500);
     
+    // Poll message statuses (seen/delivered) so sender sees updates in real-time without WebSockets
+    var lastStatusByMessage = {};
+    chatBody.querySelectorAll('.msg-bubble.mine[data-message-id]').forEach(function(bubble) {
+        var mid = bubble.getAttribute('data-message-id');
+        var statusEl = bubble.querySelector('.msg-status[data-status]');
+        if (mid && statusEl) lastStatusByMessage[mid] = statusEl.getAttribute('data-status');
+    });
+    function pollMessageStatuses() {
+        if (document.hidden) return;
+        fetch(messageStatusesUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data || !data.statuses) return;
+                data.statuses.forEach(function(s) {
+                    if (lastStatusByMessage[s.id] !== s.status && typeof window.conversationUpdateStatus === 'function') {
+                        window.conversationUpdateStatus(s.id, s.status);
+                        lastStatusByMessage[s.id] = s.status;
+                    }
+                });
+            })
+            .catch(function() {});
+    }
+    var statusPollInterval = setInterval(pollMessageStatuses, 2500);
+    setTimeout(pollMessageStatuses, 800);
+    
+    // Poll typing indicator so "X is typing..." shows in real-time without WebSockets
+    function pollTypingStatus() {
+        if (document.hidden) return;
+        fetch(typingStatusUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (data && typeof window.conversationShowTyping === 'function')
+                    window.conversationShowTyping(data.user_name || '', !!data.typing);
+            })
+            .catch(function() {});
+    }
+    var typingPollInterval = setInterval(pollTypingStatus, 1000);
+    setTimeout(pollTypingStatus, 400);
+    
     // Update presence when user interacts
     chatBody.addEventListener('scroll', function() { updateMyPresence(); }, { passive: true });
     input.addEventListener('focus', function() { updateMyPresence(); });
@@ -620,6 +662,8 @@ window.ECHO_CONFIG = @json($echoConfig);
         clearInterval(presenceRefreshInterval);
         clearInterval(myPresenceInterval);
         clearInterval(pollInterval);
+        clearInterval(statusPollInterval);
+        clearInterval(typingPollInterval);
     });
     
     // Initial scroll to bottom after page load
