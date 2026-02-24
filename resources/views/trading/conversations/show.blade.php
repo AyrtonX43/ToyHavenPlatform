@@ -13,7 +13,7 @@
     .chat-status.online .status-dot { animation: onlinePulse 2s ease-in-out infinite; }
     @keyframes onlinePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     .chat-status.offline { color: #94a3b8; }
-    .chat-body { background: white; border-radius: 14px; border: 1px solid #e2e8f0; min-height: 380px; max-height: 55vh; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; scroll-behavior: smooth; }
+    .chat-body { background: white; border-radius: 14px; border: 1px solid #e2e8f0; min-height: 400px; max-height: 60vh; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; scroll-behavior: smooth; }
     .msg-bubble { max-width: 75%; padding: 0.6rem 1rem; border-radius: 14px; position: relative; transition: transform 0.2s ease, opacity 0.2s ease; }
     .msg-bubble.mine { background: #0891b2; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
     .msg-bubble.theirs { background: #f1f5f9; color: #0f172a; margin-right: auto; border-bottom-left-radius: 4px; }
@@ -568,6 +568,43 @@ window.ECHO_CONFIG = @json($echoConfig);
     var presenceRefreshInterval = setInterval(refreshPresence, 3000);
     var myPresenceInterval = setInterval(updateMyPresence, 8000);
     
+    // Poll for new messages every 4s when Echo may not be connected (fallback for real-time)
+    var lastMessageId = 0;
+    chatBody.querySelectorAll('[data-message-id]').forEach(function(el) {
+        var id = parseInt(el.getAttribute('data-message-id'), 10);
+        if (id > lastMessageId) lastMessageId = id;
+    });
+    function normalizePolledMessage(m) {
+        var atts = (m.attachments || []).map(function(a) {
+            return { url: a.url || (a.file_path ? ('/storage/' + a.file_path) : ''), is_image: a.is_image || (a.file_type && a.file_type.indexOf('image/') === 0), is_video: a.is_video || (a.file_type && a.file_type.indexOf('video/') === 0), file_name: a.file_name };
+        });
+        var listing = m.trade_listing || m.tradeListing;
+        var offered = null;
+        if (listing) {
+            var img = listing.image_path || (listing.images && listing.images[0] ? listing.images[0].image_path : null);
+            offered = { id: listing.id, title: listing.title, condition: listing.condition, image_url: img ? ('/storage/' + img) : null, url: '/trading/listings/' + listing.id };
+        }
+        return { id: m.id, sender_id: m.sender_id, sender_name: (m.sender && m.sender.name) || m.sender_name || '', message: m.message, created_at: m.created_at, formatted_created_at: m.formatted_created_at || m.created_at_formatted || m.created_at, attachments: atts, offered_listing: offered };
+    }
+    var pollMessages = function() {
+        if (document.hidden) return;
+        fetch('{{ route("trading.conversations.messages.index", $conversation) }}?after_id=' + lastMessageId, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (data && data.messages && data.messages.length > 0) {
+                    data.messages.forEach(function(m) {
+                        if (m.id > lastMessageId) lastMessageId = m.id;
+                        if (m.sender_id !== window.AUTH_ID && !chatBody.querySelector('[data-message-id="' + m.id + '"]')) {
+                            var payload = normalizePolledMessage(m);
+                            if (typeof window.conversationAppendMessage === 'function') window.conversationAppendMessage(payload);
+                        }
+                    });
+                }
+            })
+            .catch(function() {});
+    };
+    var pollInterval = setInterval(pollMessages, 4000);
+    
     // Update presence when user interacts
     chatBody.addEventListener('scroll', function() { updateMyPresence(); }, { passive: true });
     input.addEventListener('focus', function() { updateMyPresence(); });
@@ -576,6 +613,7 @@ window.ECHO_CONFIG = @json($echoConfig);
     window.addEventListener('beforeunload', function() {
         clearInterval(presenceRefreshInterval);
         clearInterval(myPresenceInterval);
+        clearInterval(pollInterval);
     });
     
     // Initial scroll to bottom after page load
@@ -604,7 +642,7 @@ window.ECHO_CONFIG = @json($echoConfig);
             var modalInstance = bootstrap.Modal.getInstance(unsendModal);
             if (modalInstance) modalInstance.hide();
             var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
-            fetch('{{ route("trading.conversations.messages.unsend", [$conversation, "__ID__"]) }}'.replace('__ID__', msgId), {
+            fetch('/trading/conversations/{{ $conversation->id }}/messages/' + msgId, {
                 method: 'DELETE',
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token || '', 'X-Requested-With': 'XMLHttpRequest' }
             }).then(function(r) {

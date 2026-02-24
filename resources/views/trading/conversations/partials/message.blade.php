@@ -1,6 +1,7 @@
 @php
     $isMine = $msg->sender_id === Auth::id();
-    $isUnsent = $msg->isUnsent();
+    $attrs = $msg->getAttributes();
+    $isUnsent = isset($attrs['unsent_at']) && $attrs['unsent_at'] !== null;
     $status = $msg->seen_at ? 'Seen' : ($msg->delivered_at ? 'Delivered' : 'Sent');
     if (!$isMine) $status = '';
 @endphp

@@ -13,7 +13,6 @@ use App\Models\ConversationReport;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\TradeListing;
-use Illuminate\Broadcasting\BroadcastException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +40,7 @@ class ConversationController extends Controller
         return view('trading.conversations.index', compact('conversations'));
     }
 
-    public function show(Request $request, Conversation $conversation)
+    public function show(Conversation $conversation)
     {
         $this->authorize('view', $conversation);
 
@@ -77,80 +76,7 @@ class ConversationController extends Controller
             ? TradeListing::active()->where('user_id', $other->id)->with('images')->orderByDesc('updated_at')->limit(20)->get()
             : collect();
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'conversation' => [
-                    'id' => $conversation->id,
-                    'trade_listing_id' => $conversation->trade_listing_id,
-                    'trade_id' => $conversation->trade_id,
-                    'trade_listing' => $conversation->tradeListing ? [
-                        'id' => $conversation->tradeListing->id,
-                        'title' => $conversation->tradeListing->title,
-                        'description' => $conversation->tradeListing->description,
-                        'condition' => $conversation->tradeListing->condition,
-                        'image_path' => $conversation->tradeListing->image_path,
-                        'image_url' => $conversation->tradeListing->images->first() ? asset('storage/' . $conversation->tradeListing->images->first()->image_path) : null,
-                    ] : null,
-                ],
-                'other' => $other ? ['id' => $other->id, 'name' => $other->name, 'is_online' => $other->isOnline(), 'last_seen_at' => $other->last_seen_at?->toIso8601String()] : null,
-                'messages' => $messages->map(fn ($m) => $this->messageToArray($m))->values(),
-                'my_listings' => $myListings->map(fn ($l) => [
-                    'id' => $l->id,
-                    'title' => $l->title,
-                    'condition' => $l->condition,
-                    'image_url' => $l->images->first() ? asset('storage/' . $l->images->first()->image_path) : null,
-                ])->values(),
-                'routes' => [
-                    'messages_store' => route('trading.conversations.messages.store', $conversation),
-                    'messages_index' => route('trading.conversations.messages.index', $conversation),
-                    'mark_delivered' => route('trading.conversations.mark-delivered', $conversation),
-                    'mark_seen' => route('trading.conversations.mark-seen', $conversation),
-                    'typing' => route('trading.conversations.typing', $conversation),
-                    'presence' => route('trading.conversations.presence', $conversation),
-                    'other_status' => route('trading.conversations.other-status', $conversation),
-                    'unsend' => route('trading.conversations.messages.unsend', [$conversation, '__ID__']),
-                    'report_form' => route('trading.conversations.report-form', $conversation),
-                ],
-            ]);
-        }
-
-        // Direct link to a conversation: redirect to unified messages page with hash so it opens without full refresh
-        return redirect(route('trading.conversations.index') . '#c' . $conversation->id);
-    }
-
-    private function messageToArray(Message $m): array
-    {
-        $listing = $m->tradeListing;
-        $offeredListing = null;
-        if ($listing) {
-            $img = $listing->image_path ?? $listing->images->first()?->image_path;
-            $offeredListing = [
-                'id' => $listing->id,
-                'title' => $listing->title,
-                'condition' => $listing->condition,
-                'image_url' => $img ? asset('storage/' . $img) : null,
-                'url' => route('trading.listings.show', $listing->id),
-            ];
-        }
-        return [
-            'id' => $m->id,
-            'sender_id' => $m->sender_id,
-            'sender_name' => $m->sender?->name,
-            'message' => $m->message,
-            'created_at' => $m->created_at->timezone(config('app.timezone'))->toIso8601String(),
-            'formatted_created_at' => $m->formatted_created_at,
-            'seen_at' => $m->seen_at?->toIso8601String(),
-            'delivered_at' => $m->delivered_at?->toIso8601String(),
-            'is_unsent' => $m->isUnsent(),
-            'attachments' => $m->attachments->map(fn ($a) => [
-                'id' => $a->id,
-                'url' => $a->url,
-                'file_name' => $a->file_name,
-                'is_image' => $a->isImage(),
-                'is_video' => $a->isVideo(),
-            ])->toArray(),
-            'offered_listing' => $offeredListing,
-        ];
+        return view('trading.conversations.show', compact('conversation', 'messages', 'other', 'myListings', 'otherListings'));
     }
 
     public function storeFromListing(Request $request, $id)
@@ -160,7 +86,7 @@ class ConversationController extends Controller
             return redirect()->route('trading.listings.show', $id)->with('error', 'You cannot message yourself.');
         }
         $conversation = Conversation::firstOrCreateForListing($listing->id, Auth::id(), $listing->user_id);
-        return redirect(route('trading.conversations.index') . '#c' . $conversation->id)
+        return redirect()->route('trading.conversations.show', $conversation)
             ->with('success', 'Conversation started.');
     }
 
@@ -177,17 +103,15 @@ class ConversationController extends Controller
         if ($afterId) {
             $query->where('id', '>', $afterId);
         }
-        $messages = $query->limit($afterId ? 50 : 50)->get();
+        $messages = $query->limit(50)->get();
 
-        if (! $afterId) {
-            $otherIds = $messages->where('sender_id', '!=', Auth::id())->pluck('id');
-            if ($otherIds->isNotEmpty()) {
-                Message::whereIn('id', $otherIds)->update([
-                    'is_read' => true,
-                    'delivered_at' => DB::raw('COALESCE(delivered_at, NOW())'),
-                    'seen_at' => now(),
-                ]);
-            }
+        $otherIds = $messages->where('sender_id', '!=', Auth::id())->pluck('id');
+        if ($otherIds->isNotEmpty()) {
+            Message::whereIn('id', $otherIds)->update([
+                'is_read' => true,
+                'delivered_at' => DB::raw('COALESCE(delivered_at, NOW())'),
+                'seen_at' => now(),
+            ]);
         }
 
         return response()->json(['messages' => $messages]);
@@ -426,7 +350,7 @@ class ConversationController extends Controller
     {
         try {
             broadcast($event)->toOthers();
-        } catch (BroadcastException $e) {
+        } catch (\Throwable $e) {
             Log::warning('Broadcast failed (is Reverb/Pusher running?): ' . $e->getMessage());
         }
     }
