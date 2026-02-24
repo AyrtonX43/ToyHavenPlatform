@@ -412,6 +412,8 @@ window.ECHO_CONFIG = @json($echoConfig);
     window.conversationScrollToBottom = scrollToBottom;
     window.conversationAppendMessage = function(payload) {
         if (payload.sender_id === window.AUTH_ID) return;
+        if (chatBody.querySelector('[data-message-id="' + payload.id + '"]')) return;
+        if (typeof window.conversationUpdateLastMessageId === 'function') window.conversationUpdateLastMessageId(payload.id);
         var bubble = document.createElement('div');
         bubble.className = 'msg-bubble theirs';
         bubble.dataset.messageId = payload.id;
@@ -568,12 +570,15 @@ window.ECHO_CONFIG = @json($echoConfig);
     var presenceRefreshInterval = setInterval(refreshPresence, 3000);
     var myPresenceInterval = setInterval(updateMyPresence, 8000);
     
-    // Poll for new messages every 4s when Echo may not be connected (fallback for real-time)
+    // Poll for new messages every 2s so you never need to refresh (Echo is instant when Reverb runs)
     var lastMessageId = 0;
     chatBody.querySelectorAll('[data-message-id]').forEach(function(el) {
         var id = parseInt(el.getAttribute('data-message-id'), 10);
         if (id > lastMessageId) lastMessageId = id;
     });
+    window.conversationUpdateLastMessageId = function(id) {
+        if (id > lastMessageId) lastMessageId = id;
+    };
     function normalizePolledMessage(m) {
         var atts = (m.attachments || []).map(function(a) {
             return { url: a.url || (a.file_path ? ('/storage/' + a.file_path) : ''), is_image: a.is_image || (a.file_type && a.file_type.indexOf('image/') === 0), is_video: a.is_video || (a.file_type && a.file_type.indexOf('video/') === 0), file_name: a.file_name };
@@ -603,7 +608,8 @@ window.ECHO_CONFIG = @json($echoConfig);
             })
             .catch(function() {});
     };
-    var pollInterval = setInterval(pollMessages, 4000);
+    var pollInterval = setInterval(pollMessages, 2000);
+    setTimeout(pollMessages, 500);
     
     // Update presence when user interacts
     chatBody.addEventListener('scroll', function() { updateMyPresence(); }, { passive: true });

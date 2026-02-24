@@ -40,6 +40,43 @@ class ConversationController extends Controller
         return view('trading.conversations.index', compact('conversations'));
     }
 
+    /**
+     * Return unread message count for the current user (for nav badge and notifications).
+     */
+    public function unreadCount(Request $request)
+    {
+        $count = Message::whereHas('conversation', function ($q) {
+            $q->where('user1_id', Auth::id())->orWhere('user2_id', Auth::id());
+        })
+            ->where('sender_id', '!=', Auth::id())
+            ->whereNull('seen_at')
+            ->count();
+
+        $conversationsWithUnread = Conversation::query()
+            ->where(function ($q) {
+                $q->where('user1_id', Auth::id())->orWhere('user2_id', Auth::id());
+            })
+            ->withCount(['messages as unread' => function ($q) {
+                $q->where('sender_id', '!=', Auth::id())->whereNull('seen_at');
+            }])
+            ->having('unread', '>', 0)
+            ->with(['user1', 'user2'])
+            ->get()
+            ->map(function ($c) {
+                $other = $c->getOtherUser(Auth::id());
+                return [
+                    'id' => $c->id,
+                    'other_name' => $other ? $other->name : 'User',
+                    'unread' => $c->unread,
+                ];
+            });
+
+        return response()->json([
+            'count' => $count,
+            'conversations' => $conversationsWithUnread,
+        ]);
+    }
+
     public function show(Conversation $conversation)
     {
         $this->authorize('view', $conversation);

@@ -281,11 +281,9 @@
                             })->where('sender_id', '!=', auth()->id())->whereNull('seen_at')->count();
                         @endphp
                         <li class="nav-item me-2">
-                            <a class="nav-link position-relative {{ request()->routeIs('trading.conversations.*') ? 'active' : '' }}" href="{{ route('trading.conversations.index') }}" title="Messages">
+                            <a id="navMessagesLink" class="nav-link position-relative {{ request()->routeIs('trading.conversations.*') ? 'active' : '' }}" href="{{ route('trading.conversations.index') }}" title="Messages">
                                 <i class="bi bi-chat-dots fs-5"></i>
-                                @if($unreadChatCount > 0)
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">{{ $unreadChatCount > 99 ? '99+' : $unreadChatCount }}</span>
-                                @endif
+                                <span id="chatUnreadBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; display: {{ $unreadChatCount > 0 ? 'inline-block' : 'none' }};">{{ $unreadChatCount > 99 ? '99+' : $unreadChatCount }}</span>
                             </a>
                         </li>
                         <!-- Notifications Dropdown -->
@@ -1097,6 +1095,66 @@
             });
         })();
     </script>
+    @auth
+    <!-- Toast container for chat notifications -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="chatToastContainer"></div>
+    </div>
+    <script>
+    (function() {
+        var unreadUrl = '{{ route("trading.conversations.unread") }}';
+        var badgeEl = document.getElementById('chatUnreadBadge');
+        var lastCount = {{ $unreadChatCount ?? 0 }};
+        var currentConversationId = {{ (request()->routeIs('trading.conversations.show') && isset($conversation)) ? $conversation->id : 'null' }};
+        function updateBadge(count) {
+            if (!badgeEl) return;
+            if (count > 0) {
+                badgeEl.textContent = count > 99 ? '99+' : count;
+                badgeEl.style.display = 'inline-block';
+            } else {
+                badgeEl.style.display = 'none';
+            }
+        }
+        function showChatToast(message, link) {
+            var container = document.getElementById('chatToastContainer');
+            if (!container) return;
+            var id = 'toast-' + Date.now();
+            var toastHtml = '<div id="' + id + '" class="toast align-items-center text-bg-primary border-0" role="alert"><div class="d-flex"><div class="toast-body"><i class="bi bi-chat-dots-fill me-2"></i>' + (message || 'New message') + '</div>' + (link ? '<a href="' + link + '" class="btn btn-sm btn-light m-2">View</a>' : '') + '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>';
+            container.insertAdjacentHTML('beforeend', toastHtml);
+            var toastEl = document.getElementById(id);
+            if (toastEl && typeof bootstrap !== 'undefined') {
+                var t = new bootstrap.Toast(toastEl, { delay: 5000 });
+                t.show();
+                toastEl.addEventListener('hidden.bs.toast', function() { toastEl.remove(); });
+            }
+        }
+        function pollUnread() {
+            if (document.hidden) return;
+            fetch(unreadUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(data) {
+                    if (!data) return;
+                    var count = data.count || 0;
+                    if (count > lastCount && lastCount >= 0) {
+                        var convos = data.conversations || [];
+                        var onActiveChat = currentConversationId && convos.some(function(c) { return c.id === currentConversationId; });
+                        if (!onActiveChat && convos.length > 0) {
+                            var first = convos[0];
+                            var msg = first.other_name ? 'New message from ' + first.other_name : 'You have new messages';
+                            var link = '/trading/conversations/' + first.id;
+                            showChatToast(msg, link);
+                        }
+                    }
+                    lastCount = count;
+                    updateBadge(count);
+                })
+                .catch(function() {});
+        }
+        setInterval(pollUnread, 3000);
+        setTimeout(pollUnread, 1000);
+    })();
+    </script>
+    @endauth
     @stack('scripts')
 </body>
 </html>
