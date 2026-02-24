@@ -43,6 +43,13 @@ if (typeof window !== 'undefined' && window.CONVERSATION_ID && window.ECHO_CONFI
         }
     });
 
+    channel.listen('.MessageUnsent', (e) => {
+        console.log('MessageUnsent event received:', e);
+        if (typeof window.conversationHandleUnsent === 'function' && e.message_id) {
+            window.conversationHandleUnsent(e.message_id);
+        }
+    });
+
     channel.listen('.UserTyping', (e) => {
         console.log('UserTyping event received:', e);
         if (e.user_id === window.AUTH_ID) return;

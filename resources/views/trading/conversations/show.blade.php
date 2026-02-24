@@ -56,9 +56,9 @@
     .msg-attachments img { max-width: 200px; max-height: 180px; border-radius: 8px; object-fit: cover; }
     .msg-attachments video { max-width: 280px; max-height: 200px; border-radius: 8px; }
     .msg-attachments a { font-size: 0.8rem; color: inherit; text-decoration: underline; }
-    /* Typing indicator with bouncing dots */
-    .typing-indicator { font-size: 0.85rem; color: #64748b; padding: 0.35rem 0; display: flex; align-items: center; gap: 0.35rem; animation: typingFadeIn 0.25s ease; }
-    @keyframes typingFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    /* Typing indicator with bouncing dots and reply animation */
+    .typing-indicator { font-size: 0.85rem; color: #64748b; padding: 0.35rem 0; display: flex; align-items: center; gap: 0.35rem; animation: typingFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes typingFadeIn { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
     .typing-dots { display: inline-flex; gap: 4px; align-items: center; }
     .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; animation: typingBounce 1.4s ease-in-out infinite both; }
     .typing-dots span:nth-child(1) { animation-delay: 0s; }
@@ -86,6 +86,12 @@
     .msg-offered-product { transition: background 0.2s, box-shadow 0.2s; }
     .msg-offered-product:hover { background: rgba(0,0,0,0.08) !important; }
     .offer-product-btn { font-size: 0.85rem; }
+    .msg-unsent { background: rgba(0,0,0,0.06) !important; color: #64748b; }
+    .msg-unsent.mine { background: rgba(8, 145, 178, 0.15) !important; color: #64748b; }
+    .msg-unsent-text { font-size: 0.85rem; font-style: italic; }
+    .msg-unsend-btn { opacity: 0.6; text-decoration: none !important; }
+    .msg-unsend-btn:hover { opacity: 1; }
+    .msg-bubble:hover .msg-unsend-btn { opacity: 0.8; }
 </style>
 @endpush
 
@@ -201,6 +207,27 @@
             </div>
             <div id="attachmentPreview" class="d-flex flex-wrap gap-2"></div>
         </form>
+    </div>
+
+    <!-- Unsend confirmation modal -->
+    <div class="modal fade" id="unsendModal" tabindex="-1" aria-labelledby="unsendModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="unsendModalLabel"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Remove message?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to remove this message? This action cannot be undone. The message will be replaced with &quot;You removed this message&quot; for you and the other person.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="unsendConfirmBtn">
+                        <i class="bi bi-trash3 me-1"></i> Remove message
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -330,7 +357,9 @@ window.ECHO_CONFIG = @json($echoConfig);
                     html += '</div>';
                 }
                 var timeStr = formatMessageTime(data.message.created_at) || data.message.formatted_created_at || 'Just now';
-                html += '<div class="msg-time">' + escapeHtml(timeStr) + ' <span class="msg-status msg-status-sent">Sent</span></div>';
+                html += '<div class="msg-time d-flex align-items-center gap-1 flex-wrap">' + escapeHtml(timeStr);
+                html += ' <button type="button" class="msg-unsend-btn btn btn-link btn-sm p-0 ms-1" data-message-id="' + data.message.id + '" title="Remove message" aria-label="Remove message"><i class="bi bi-trash3 text-danger" style="font-size: 0.75rem;"></i></button>';
+                html += ' <span class="msg-status msg-status-sent">Sent</span></div>';
                 bubble.innerHTML = html;
                 chatBody.appendChild(bubble);
                 animateNewBubble(bubble);
@@ -551,6 +580,62 @@ window.ECHO_CONFIG = @json($echoConfig);
     
     // Initial scroll to bottom after page load
     setTimeout(scrollToBottom, 100);
+
+    // Unsend: event delegation for msg-unsend-btn
+    var unsendModal = document.getElementById('unsendModal');
+    var unsendConfirmBtn = document.getElementById('unsendConfirmBtn');
+    var pendingUnsendId = null;
+    chatBody.addEventListener('click', function(e) {
+        var btn = e.target.closest('.msg-unsend-btn');
+        if (!btn) return;
+        e.preventDefault();
+        var msgId = btn.getAttribute('data-message-id');
+        var bubble = chatBody.querySelector('[data-message-id="' + msgId + '"]');
+        if (!bubble || bubble.getAttribute('data-unsent') === '1') return;
+        pendingUnsendId = msgId;
+        var modalInstance = bootstrap.Modal.getOrCreateInstance(unsendModal);
+        modalInstance.show();
+    });
+    if (unsendConfirmBtn && unsendModal) {
+        unsendConfirmBtn.addEventListener('click', function() {
+            if (!pendingUnsendId) return;
+            var msgId = pendingUnsendId;
+            pendingUnsendId = null;
+            var modalInstance = bootstrap.Modal.getInstance(unsendModal);
+            if (modalInstance) modalInstance.hide();
+            var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
+            fetch('{{ route("trading.conversations.messages.unsend", [$conversation, "__ID__"]) }}'.replace('__ID__', msgId), {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token || '', 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(function(r) {
+                if (r.ok) applyUnsentToBubble(msgId);
+                else r.json().then(function(d) { alert(d.error || 'Failed to remove message.'); });
+            }).catch(function() { alert('Failed to remove message. Please try again.'); });
+        });
+    }
+
+    function applyUnsentToBubble(msgId) {
+        var bubble = chatBody.querySelector('[data-message-id="' + msgId + '"]');
+        if (!bubble) return;
+        bubble.setAttribute('data-unsent', '1');
+        bubble.classList.add('msg-unsent');
+        var isMine = bubble.classList.contains('mine');
+        [].forEach.call(bubble.querySelectorAll('.msg-offered-product, .msg-text, .msg-attachments'), function(el) { el.remove(); });
+        var unsentDiv = document.createElement('div');
+        unsentDiv.className = 'msg-unsent-text';
+        unsentDiv.innerHTML = '<i class="bi bi-x-circle me-1"></i> ' + (isMine ? 'You removed this message' : 'This message was removed');
+        var msgTime = bubble.querySelector('.msg-time');
+        if (msgTime) bubble.insertBefore(unsentDiv, msgTime);
+        else bubble.appendChild(unsentDiv);
+        var timeEl = bubble.querySelector('.msg-time');
+        if (timeEl) {
+            var unsendBtn = timeEl.querySelector('.msg-unsend-btn');
+            if (unsendBtn) unsendBtn.remove();
+            var statusEl = timeEl.querySelector('.msg-status');
+            if (statusEl) statusEl.remove();
+        }
+    }
+    window.conversationHandleUnsent = function(messageId) { applyUnsentToBubble(messageId); };
 })();
 </script>
 @endsection

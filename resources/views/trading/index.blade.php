@@ -276,6 +276,21 @@
 
 @section('content')
 <div class="container py-4">
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-4"></i>
+            <div>
+                <strong>Success!</strong> {{ session('success') }}
+                <p class="mb-0 small mt-1">Your product will be processed for admin approval. You will receive a notification by email once it has been reviewed.</p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     <!-- Marketplace Header -->
     <div class="marketplace-header">
         <div class="row align-items-center">

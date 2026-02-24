@@ -364,6 +364,9 @@
                 alert('Please upload at most ' + MAX + ' images.');
                 return;
             }
+            if (!confirm('Your product will be processed for admin approval. You will receive a notification once it has been reviewed. Do you want to submit now?')) {
+                return;
+            }
             var submitBtn = form.querySelector('button[type="submit"]');
             var origBtnText = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {

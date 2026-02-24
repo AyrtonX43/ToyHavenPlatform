@@ -19,13 +19,20 @@ class Message extends Model
         'is_read',
         'delivered_at',
         'seen_at',
+        'unsent_at',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
         'delivered_at' => 'datetime',
         'seen_at' => 'datetime',
+        'unsent_at' => 'datetime',
     ];
+
+    public function isUnsent(): bool
+    {
+        return $this->unsent_at !== null;
+    }
 
     public function conversation(): BelongsTo
     {

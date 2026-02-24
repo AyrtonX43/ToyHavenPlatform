@@ -277,6 +277,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/listings/{id}/conversation', [\App\Http\Controllers\Trading\ConversationController::class, 'storeFromListing'])->name('conversations.store-from-listing.post');
         Route::get('/conversations/{conversation}/messages', [\App\Http\Controllers\Trading\ConversationController::class, 'getMessages'])->name('conversations.messages.index');
         Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\Trading\ConversationController::class, 'sendMessage'])->name('conversations.messages.store');
+        Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::post('/conversations/{conversation}/delivered', [\App\Http\Controllers\Trading\ConversationController::class, 'markDelivered'])->name('conversations.mark-delivered');
         Route::post('/conversations/{conversation}/seen', [\App\Http\Controllers\Trading\ConversationController::class, 'markSeen'])->name('conversations.mark-seen');
         Route::post('/conversations/{conversation}/typing', [\App\Http\Controllers\Trading\ConversationController::class, 'typing'])->name('conversations.typing');

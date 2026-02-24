@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Trading;
 
 use App\Events\MessageSent;
 use App\Events\MessageStatusUpdated;
+use App\Events\MessageUnsent;
 use App\Events\UserPresenceUpdated;
 use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
@@ -189,6 +190,25 @@ class ConversationController extends Controller
         }
 
         return response()->json(['message' => $messageData]);
+    }
+
+    public function unsendMessage(Conversation $conversation, Message $message)
+    {
+        $this->authorize('view', $conversation);
+
+        if ($message->conversation_id !== $conversation->id || $message->sender_id !== Auth::id()) {
+            return response()->json(['error' => 'You can only unsend your own messages.'], 403);
+        }
+
+        if ($message->isUnsent()) {
+            return response()->json(['error' => 'Message already unsent.'], 422);
+        }
+
+        $message->update(['unsent_at' => now()]);
+
+        $this->safeBroadcast(new MessageUnsent($conversation->id, $message->id));
+
+        return response()->json(['ok' => true]);
     }
 
     public function markDelivered(Request $request, Conversation $conversation)
