@@ -53,7 +53,13 @@
         100% { opacity: 1; transform: scale(1); }
     }
     .msg-attachments { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .msg-attachments img { max-width: 200px; max-height: 180px; border-radius: 8px; object-fit: cover; }
+    .msg-attachments img { max-width: 200px; max-height: 180px; border-radius: 8px; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
+    .msg-attachments img:hover { opacity: 0.9; }
+    .chat-image-fullscreen { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; padding: 1rem; cursor: pointer; }
+    .chat-image-fullscreen.show { display: flex; }
+    .chat-image-fullscreen img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; pointer-events: none; }
+    .chat-image-fullscreen .chat-image-close { position: absolute; top: 1rem; right: 1rem; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; color: #fff; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1; }
+    .chat-image-fullscreen .chat-image-close:hover { background: rgba(255,255,255,0.3); }
     .msg-attachments video { max-width: 280px; max-height: 200px; border-radius: 8px; }
     .msg-attachments a { font-size: 0.8rem; color: inherit; text-decoration: underline; }
     /* Typing indicator with bouncing dots and reply animation */
@@ -228,6 +234,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Full-screen image viewer -->
+    <div id="chatImageFullscreen" class="chat-image-fullscreen" aria-hidden="true">
+        <img id="chatImageFullscreenImg" src="" alt="Full size">
+        <button type="button" class="chat-image-close" id="chatImageFullscreenClose" aria-label="Close"><i class="bi bi-x-lg"></i></button>
     </div>
 </div>
 
@@ -668,6 +680,40 @@ window.ECHO_CONFIG = @json($echoConfig);
     
     // Initial scroll to bottom after page load
     setTimeout(scrollToBottom, 100);
+
+    // Full-screen image: click any chat image to view full size
+    var fullscreenOverlay = document.getElementById('chatImageFullscreen');
+    var fullscreenImg = document.getElementById('chatImageFullscreenImg');
+    var fullscreenClose = document.getElementById('chatImageFullscreenClose');
+    function openChatImageFullscreen(src) {
+        if (!fullscreenImg || !fullscreenOverlay) return;
+        fullscreenImg.src = src;
+        fullscreenOverlay.classList.add('show');
+        fullscreenOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeChatImageFullscreen() {
+        if (!fullscreenOverlay) return;
+        fullscreenOverlay.classList.remove('show');
+        fullscreenOverlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+    chatBody.addEventListener('click', function(e) {
+        var img = e.target.closest('.msg-attachments img');
+        if (img && img.src) {
+            e.preventDefault();
+            openChatImageFullscreen(img.src);
+        }
+    });
+    if (fullscreenOverlay) {
+        fullscreenOverlay.addEventListener('click', function(e) {
+            if (e.target === fullscreenOverlay || e.target.id === 'chatImageFullscreenClose' || e.target.closest('#chatImageFullscreenClose')) closeChatImageFullscreen();
+        });
+    }
+    if (fullscreenClose) fullscreenClose.addEventListener('click', closeChatImageFullscreen);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && fullscreenOverlay && fullscreenOverlay.classList.contains('show')) closeChatImageFullscreen();
+    });
 
     // Unsend: event delegation for msg-unsend-btn
     var unsendModal = document.getElementById('unsendModal');
