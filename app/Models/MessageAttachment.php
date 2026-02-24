@@ -24,7 +24,7 @@ class MessageAttachment extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::url($this->file_path);
+        return $this->file_path ? Storage::url($this->file_path) : '';
     }
 
     public function isImage(): bool
