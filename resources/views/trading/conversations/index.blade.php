@@ -348,7 +348,6 @@
         </div>
     </div>
 </div>
-@endsection
 
 @push('scripts')
 <script>
@@ -356,22 +355,17 @@ window.AUTH_ID = {{ Auth::id() }};
 window.APP_TIMEZONE = @json(config('app.timezone', 'Asia/Manila'));
 window.CONVERSATIONS_INDEX_URL = @json(route('trading.conversations.index'));
 window.BASE_URL = @json(url('/'));
+@if(config('broadcasting.default') !== 'null')
 @php
-    $broadcastDriver = config('broadcasting.default');
-    $conn = $broadcastDriver ? config('broadcasting.connections.' . $broadcastDriver) : null;
-    $echoKey = $conn && isset($conn['key']) ? $conn['key'] : (isset($conn['options']['key']) ? $conn['options']['key'] : null);
-    $hasEcho = $echoKey !== null;
-@endphp
-@if($hasEcho)
-@php
-    $opts = $conn['options'] ?? [];
+    $driver = config('broadcasting.default');
+    $conn = config('broadcasting.connections.' . $driver);
     $echoConfig = [
-        'key' => $conn['key'] ?? $opts['key'] ?? null,
-        'cluster' => $opts['cluster'] ?? 'mt1',
-        'wsHost' => $opts['host'] ?? null,
-        'wsPort' => $opts['port'] ?? null,
-        'wssPort' => $opts['port'] ?? null,
-        'scheme' => $opts['scheme'] ?? 'https',
+        'key' => $conn['key'] ?? $conn['options']['key'] ?? null,
+        'cluster' => $conn['options']['cluster'] ?? 'mt1',
+        'wsHost' => $conn['options']['host'] ?? null,
+        'wsPort' => $conn['options']['port'] ?? null,
+        'wssPort' => $conn['options']['port'] ?? null,
+        'scheme' => $conn['options']['scheme'] ?? 'https',
         'authEndpoint' => url('/broadcasting/auth'),
     ];
 @endphp
