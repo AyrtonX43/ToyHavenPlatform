@@ -275,6 +275,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/conversations/{conversation}', [\App\Http\Controllers\Trading\ConversationController::class, 'show'])->name('conversations.show');
         Route::get('/listings/{id}/conversation', [\App\Http\Controllers\Trading\ConversationController::class, 'storeFromListing'])->name('conversations.store-from-listing');
         Route::post('/listings/{id}/conversation', [\App\Http\Controllers\Trading\ConversationController::class, 'storeFromListing'])->name('conversations.store-from-listing.post');
+        Route::get('/conversations/{conversation}/payload', [\App\Http\Controllers\Trading\ConversationController::class, 'getPayload'])->name('conversations.payload');
         Route::get('/conversations/{conversation}/messages', [\App\Http\Controllers\Trading\ConversationController::class, 'getMessages'])->name('conversations.messages.index');
         Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\Trading\ConversationController::class, 'sendMessage'])->name('conversations.messages.store');
         Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');

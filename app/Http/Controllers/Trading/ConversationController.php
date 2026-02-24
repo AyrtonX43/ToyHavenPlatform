@@ -23,7 +23,7 @@ use Illuminate\Validation\Rule;
 
 class ConversationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $conversations = Conversation::query()
             ->where(function ($q) {
@@ -36,48 +36,22 @@ class ConversationController extends Controller
             }])
             ->orderByDesc('last_message_at')
             ->orderByDesc('updated_at')
-            ->paginate(20);
+            ->paginate(30);
 
-        return view('trading.conversations.index', compact('conversations'));
+        $openId = $request->integer('open');
+
+        return view('trading.conversations.index', compact('conversations', 'openId'));
     }
 
-    public function show(Conversation $conversation)
+    public function show(Request $request, Conversation $conversation)
     {
         $this->authorize('view', $conversation);
 
-        $conversation->load(['user1', 'user2', 'trade', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
-        $messages = $conversation->messages->sortBy('id')->values();
-
-        // Mark others' messages as delivered (if not already) and seen when opening the chat
-        $otherMessageIds = Message::where('conversation_id', $conversation->id)
-            ->where('sender_id', '!=', Auth::id())
-            ->pluck('id');
-        if ($otherMessageIds->isNotEmpty()) {
-            Message::whereIn('id', $otherMessageIds)->update([
-                'is_read' => true,
-                'delivered_at' => DB::raw('COALESCE(delivered_at, NOW())'),
-                'seen_at' => now(),
-            ]);
-            foreach ($otherMessageIds as $messageId) {
-                $this->safeBroadcast(new MessageStatusUpdated($conversation->id, $messageId, 'seen'));
-            }
+        if ($request->expectsJson() || $request->ajax()) {
+            return $this->getPayload($conversation);
         }
 
-        // Update presence
-        Auth::user()->update(['last_seen_at' => now()]);
-        $this->safeBroadcast(new UserPresenceUpdated(Auth::user(), $conversation->id));
-
-        $other = $conversation->getOtherUser(Auth::id());
-
-        // For product offering: load current user's listings (and other's) so they can offer products to each other
-        $myListings = $other
-            ? TradeListing::active()->where('user_id', Auth::id())->with('images')->orderByDesc('updated_at')->limit(20)->get()
-            : collect();
-        $otherListings = $other
-            ? TradeListing::active()->where('user_id', $other->id)->with('images')->orderByDesc('updated_at')->limit(20)->get()
-            : collect();
-
-        return view('trading.conversations.show', compact('conversation', 'messages', 'other', 'myListings', 'otherListings'));
+        return redirect()->route('trading.conversations.index', ['open' => $conversation->id]);
     }
 
     public function storeFromListing(Request $request, $id)
@@ -87,7 +61,7 @@ class ConversationController extends Controller
             return redirect()->route('trading.listings.show', $id)->with('error', 'You cannot message yourself.');
         }
         $conversation = Conversation::firstOrCreateForListing($listing->id, Auth::id(), $listing->user_id);
-        return redirect()->route('trading.conversations.show', $conversation)
+        return redirect()->route('trading.conversations.index', ['open' => $conversation->id])
             ->with('success', 'Conversation started.');
     }
 
@@ -97,10 +71,14 @@ class ConversationController extends Controller
 
         $query = $conversation->messages()->with(['sender', 'attachments', 'tradeListing.images'])->orderBy('created_at');
         $beforeId = $request->integer('before_id');
+        $afterId = $request->integer('after_id');
         if ($beforeId) {
             $query->where('id', '<', $beforeId);
         }
-        $messages = $query->limit(50)->get();
+        if ($afterId) {
+            $query->where('id', '>', $afterId);
+        }
+        $messages = $query->limit($afterId ? 50 : 50)->get();
 
         $otherIds = $messages->where('sender_id', '!=', Auth::id())->pluck('id');
         if ($otherIds->isNotEmpty()) {
@@ -111,7 +89,107 @@ class ConversationController extends Controller
             ]);
         }
 
-        return response()->json(['messages' => $messages]);
+        $payload = $messages->map(fn ($m) => $this->messageToPayload($m));
+        return response()->json(['messages' => $payload]);
+    }
+
+    /**
+     * Get full conversation payload for SPA chat panel (no page refresh).
+     */
+    public function getPayload(Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        $conversation->load(['tradeListing.images']);
+        $other = $conversation->getOtherUser(Auth::id());
+        $messages = $conversation->messages()
+            ->with(['sender', 'attachments', 'tradeListing.images'])
+            ->orderBy('id')
+            ->limit(100)
+            ->get();
+
+        $otherMessageIds = $messages->where('sender_id', '!=', Auth::id())->pluck('id');
+        if ($otherMessageIds->isNotEmpty()) {
+            Message::whereIn('id', $otherMessageIds)->update([
+                'is_read' => true,
+                'delivered_at' => DB::raw('COALESCE(delivered_at, NOW())'),
+                'seen_at' => now(),
+            ]);
+        }
+
+        Auth::user()->update(['last_seen_at' => now()]);
+        $this->safeBroadcast(new UserPresenceUpdated(Auth::user(), $conversation->id));
+
+        $myListings = $other
+            ? TradeListing::active()->where('user_id', Auth::id())->with('images')->orderByDesc('updated_at')->limit(20)->get()
+            : collect();
+
+        $listingPayload = null;
+        if ($conversation->tradeListing) {
+            $l = $conversation->tradeListing;
+            $img = $l->image_path ?? $l->images->first()?->image_path;
+            $listingPayload = [
+                'id' => $l->id,
+                'title' => $l->title,
+                'description' => $l->description,
+                'condition' => $l->condition,
+                'image_url' => $img ? asset('storage/' . $img) : null,
+                'url' => route('trading.listings.show', $l->id),
+            ];
+        }
+
+        return response()->json([
+            'conversation' => [
+                'id' => $conversation->id,
+                'trade_id' => $conversation->trade_id,
+                'trade_listing' => $listingPayload,
+            ],
+            'other' => $other ? [
+                'id' => $other->id,
+                'name' => $other->name,
+                'is_online' => $other->isOnline(),
+                'last_seen_relative' => $other->last_seen_at?->timezone(config('app.timezone'))->diffForHumans(),
+            ] : null,
+            'messages' => $messages->map(fn ($m) => $this->messageToPayload($m))->values()->toArray(),
+            'my_listings' => $myListings->map(fn ($l) => [
+                'id' => $l->id,
+                'title' => $l->title,
+            ])->toArray(),
+        ]);
+    }
+
+    private function messageToPayload(Message $m): array
+    {
+        $payload = [
+            'id' => $m->id,
+            'sender_id' => $m->sender_id,
+            'sender_name' => $m->sender?->name,
+            'message' => $m->message,
+            'created_at' => $m->created_at->timezone(config('app.timezone', 'Asia/Manila'))->toIso8601String(),
+            'formatted_created_at' => $m->formatted_created_at,
+            'is_unsent' => $m->isUnsent(),
+            'status' => $m->seen_at ? 'Seen' : ($m->delivered_at ? 'Delivered' : 'Sent'),
+            'attachments' => $m->attachments->map(fn ($a) => [
+                'id' => $a->id,
+                'url' => $a->url,
+                'file_name' => $a->file_name,
+                'is_image' => $a->isImage(),
+                'is_video' => $a->isVideo(),
+            ])->toArray(),
+            'offered_listing' => null,
+        ];
+        if ($m->tradeListing && !$m->isUnsent()) {
+            $l = $m->tradeListing;
+            $img = $l->image_path ?? $l->images->first()?->image_path;
+            $payload['offered_listing'] = [
+                'id' => $l->id,
+                'title' => $l->title,
+                'condition' => $l->condition,
+                'image_url' => $img ? asset('storage/' . $img) : null,
+                'url' => route('trading.listings.show', $l->id),
+            ];
+        }
+        return $payload;
     }
 
     public function sendMessage(Request $request, Conversation $conversation)

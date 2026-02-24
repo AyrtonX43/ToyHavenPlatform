@@ -31,7 +31,8 @@ class Message extends Model
 
     public function isUnsent(): bool
     {
-        return $this->unsent_at !== null;
+        return array_key_exists('unsent_at', $this->getAttributes())
+            && $this->unsent_at !== null;
     }
 
     public function conversation(): BelongsTo
