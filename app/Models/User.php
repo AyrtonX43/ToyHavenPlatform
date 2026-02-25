@@ -25,7 +25,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'google_id',
-        'paymongo_customer_id',
         'phone',
         'phone_verified_at',
         'address',

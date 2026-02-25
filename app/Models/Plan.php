@@ -16,7 +16,6 @@ class Plan extends Model
         'description',
         'benefits',
         'features',
-        'paymongo_plan_id',
         'sort_order',
         'is_active',
     ];

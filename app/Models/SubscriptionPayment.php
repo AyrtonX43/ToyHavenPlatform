@@ -10,7 +10,6 @@ class SubscriptionPayment extends Model
     protected $fillable = [
         'subscription_id',
         'amount',
-        'paymongo_payment_id',
         'status',
         'paid_at',
     ];

@@ -12,8 +12,6 @@ class Subscription extends Model
         'user_id',
         'plan_id',
         'status',
-        'paymongo_subscription_id',
-        'paymongo_customer_id',
         'current_period_start',
         'current_period_end',
         'cancelled_at',
