@@ -4,46 +4,113 @@
 
 @push('styles')
 <style>
-    .payment-header { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); color: white; border-radius: 14px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; }
+    .payment-order-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 2px solid #e2e8f0;
+        overflow: hidden;
+    }
+    .payment-order-header {
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+    }
+    .payment-order-header h2 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    .payment-order-header .order-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.25);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+    .order-details-section {
+        padding: 1.5rem 2rem;
+    }
+    .order-details-section h4 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .order-summary-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+    }
+    .order-summary-box .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.1rem;
+    }
+    .order-summary-box .price-row .total {
+        font-weight: 800;
+        color: #0891b2;
+        font-size: 1.35rem;
+    }
+    .payment-actions {
+        padding: 1.5rem 2rem;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
     .payment-method-option { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s; }
     .payment-method-option:hover { border-color: #06b6d4; background: #f0fdfa; }
     .payment-method-option.selected { border-color: #0891b2; background: #ecfeff; }
     .payment-method-option input { display: none; }
-    .form-control:focus { border-color: #0891b2; box-shadow: 0 0 0 3px rgba(8,145,178,0.15); }
-    .btn-primary { background: linear-gradient(135deg, #0891b2, #06b6d4); border: none; }
-    .btn-primary:hover { background: linear-gradient(135deg, #0e7490, #0891b2); border: none; }
 </style>
 @endpush
 
 @section('content')
 <div class="container py-4">
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0" style="border-radius: 14px; overflow: hidden;">
-                <div class="card-header payment-header border-0">
-                    <h5 class="mb-0 fw-bold"><i class="bi bi-credit-card-2-front me-2"></i>Complete Payment</h5>
+        <div class="col-lg-8">
+            <div class="payment-order-card mb-4">
+                {{-- Order header --}}
+                <div class="payment-order-header">
+                    <h2><i class="bi bi-credit-card-2-front me-2"></i>Complete Payment</h2>
+                    <span class="order-badge">Order #{{ $order->order_number }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <h6 class="mb-1">Order Number: {{ $order->order_number }}</h6>
-                        <p class="mb-0">Total Amount: <strong>₱{{ number_format($order->total, 2) }}</strong></p>
-                    </div>
 
-                    @if(!($publicKey ?? false) || !($paymentIntentId ?? false))
-                        <div class="alert alert-warning">
-                            <p class="mb-0">Could not initialize payment. Please try refreshing the page or contact support.</p>
+                {{-- Order details --}}
+                <div class="order-details-section">
+                    <h4><i class="bi bi-receipt text-primary"></i> Order Summary</h4>
+                    <div class="order-summary-box">
+                        <div class="price-row mb-1">
+                            <span>Order Total</span>
+                            <span class="total">₱{{ number_format($order->total, 2) }}</span>
                         </div>
-                        <a href="{{ route('checkout.payment', $order->order_number) }}" class="btn btn-primary w-100 mb-3">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Retry Payment
-                        </a>
-                    @else
-                        <!-- Payment method selection -->
+                        <p class="mb-0 small text-muted mt-2">
+                            Secure payment powered by PayMongo. Your card details are never stored on our servers.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Payment section --}}
+                <div class="payment-actions">
+                    @if(($publicKey ?? false) && ($paymentIntentId ?? false))
+                        {{-- Payment method selection --}}
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Select Payment Method</label>
                             <div class="payment-method-option selected" data-method="card">
@@ -78,7 +145,7 @@
                             </div>
                         </div>
 
-                        <!-- Card form -->
+                        {{-- Card form --}}
                         <div id="card-form" class="mb-4">
                             <div class="row g-3">
                                 <div class="col-12">
@@ -101,7 +168,7 @@
                             </div>
                         </div>
 
-                        <!-- E-wallet notice -->
+                        {{-- E-wallet notice --}}
                         <div id="ewallet-notice" class="alert alert-light border d-none mb-4">
                             <i class="bi bi-info-circle me-2"></i>
                             You will be redirected to complete payment in the app.
@@ -113,13 +180,29 @@
                             <p class="mt-2 mb-0">Processing payment...</p>
                         </div>
 
-                        <button type="button" id="pay-btn" class="btn btn-primary btn-lg w-100">
+                        <button type="button" id="pay-btn" class="btn btn-primary btn-lg w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
                             <i class="bi bi-lock-fill me-2"></i>Pay ₱{{ number_format($order->total, 2) }}
                         </button>
-                    @endif
 
-                    <hr class="my-4">
-                    <a href="{{ route('orders.show', $order->id) }}" class="btn btn-outline-secondary w-100">View Order Details</a>
+                        <div class="mt-3 text-center">
+                            <a href="{{ route('orders.show', $order->id) }}" class="text-muted small">
+                                <i class="bi bi-arrow-left me-1"></i>View Order Details
+                            </a>
+                        </div>
+                    @else
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Could not initialize payment. Please try again or contact support.
+                        </div>
+                        <a href="{{ route('checkout.payment', $order->order_number) }}" class="btn btn-primary w-100 mb-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Retry Payment
+                        </a>
+                        <div class="mt-2 text-center">
+                            <a href="{{ route('orders.show', $order->id) }}" class="text-muted small">
+                                <i class="bi bi-arrow-left me-1"></i>View Order Details
+                            </a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -131,15 +214,17 @@
 @if(($publicKey ?? false) && ($paymentIntentId ?? false))
 <script>
 (function() {
-    var publicKey = @json($publicKey);
-    var paymentIntentId = @json($paymentIntentId);
-    var clientKey = @json($clientKey ?? '');
-    var orderNumber = @json($order->order_number);
-    var returnUrl = new URL('/checkout/return', window.location.origin);
+    const publicKey = @json($publicKey);
+    const paymentIntentId = @json($paymentIntentId);
+    const orderNumber = @json($order->order_number);
+    const orderId = @json($order->id);
+    const returnUrl = new URL('/checkout/return', window.location.origin);
     returnUrl.searchParams.set('order_number', orderNumber);
 
+    let clientKey = @json($clientKey ?? null);
+
     function setError(msg) {
-        var el = document.getElementById('pay-error');
+        const el = document.getElementById('pay-error');
         el.textContent = msg;
         el.classList.remove('d-none');
     }
@@ -156,66 +241,66 @@
 
     document.querySelectorAll('.payment-method-option').forEach(function(el) {
         el.addEventListener('click', function() {
-            document.querySelectorAll('.payment-method-option').forEach(function(o) { o.classList.remove('selected'); });
+            document.querySelectorAll('.payment-method-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
             this.querySelector('input').checked = true;
             togglePaymentUi(this.dataset.method);
         });
     });
 
-    function fetchClientKey() {
-        if (clientKey) return Promise.resolve();
-        return fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '?client_key=', {
+    async function fetchClientKey() {
+        if (clientKey) return;
+        const res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '?client_key=', {
             headers: { 'Authorization': 'Basic ' + btoa(publicKey + ':') }
-        }).then(function(r) { return r.json(); }).then(function(d) {
-            clientKey = d.data && d.data.attributes && d.data.attributes.client_key || '';
         });
+        const data = await res.json();
+        clientKey = data.data?.attributes?.client_key;
     }
 
-    function createPaymentMethod() {
-        var method = document.querySelector('input[name="pay_method"]:checked').value;
-        var attrs = {
+    async function createPaymentMethod() {
+        const method = document.querySelector('input[name="pay_method"]:checked').value;
+        const attrs = {
             type: method,
             billing: {
                 name: @json(auth()->user()->name ?? 'Customer'),
                 email: @json(auth()->user()->email ?? ''),
-                phone: @json($order->shipping_phone ?? '')
             }
         };
 
         if (method === 'card') {
-            var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
-            var expMonth = parseInt(document.getElementById('exp_month').value, 10);
-            var expYear = parseInt(document.getElementById('exp_year').value, 10);
-            var cvc = document.getElementById('cvc').value;
+            const cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
+            const expMonth = parseInt(document.getElementById('exp_month').value, 10);
+            const expYear = parseInt(document.getElementById('exp_year').value, 10);
+            const cvc = document.getElementById('cvc').value;
             if (!cardNumber || !expMonth || !expYear || !cvc) {
-                return Promise.reject(new Error('Please fill in all card details.'));
+                throw new Error('Please fill in all card details.');
             }
             attrs.details = { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc };
         }
 
-        return fetch('https://api.paymongo.com/v1/payment_methods', {
+        const res = await fetch('https://api.paymongo.com/v1/payment_methods', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Basic ' + btoa(publicKey + ':')
             },
             body: JSON.stringify({ data: { attributes: attrs } })
-        }).then(function(r) { return r.json(); }).then(function(data) {
-            if (!data.data || !data.data.id) {
-                throw new Error((data.errors && data.errors[0] && data.errors[0].detail) || 'Failed to create payment method');
-            }
-            return data.data.id;
         });
+
+        const data = await res.json();
+        if (!data.data?.id) {
+            throw new Error(data.errors?.[0]?.detail || 'Failed to create payment method');
+        }
+        return data.data.id;
     }
 
-    function attachPaymentMethod(paymentMethodId) {
-        var method = document.querySelector('input[name="pay_method"]:checked').value;
-        var body = {
+    async function attachPaymentMethod(paymentMethodId) {
+        const method = document.querySelector('input[name="pay_method"]:checked').value;
+        const body = {
             data: {
                 attributes: {
                     client_key: clientKey,
-                    payment_method: paymentMethodId
+                    payment_method: paymentMethodId,
                 }
             }
         };
@@ -225,58 +310,61 @@
             body.data.attributes.return_url = returnUrl.toString();
         }
 
-        return fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
+        const res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Basic ' + btoa(publicKey + ':')
             },
             body: JSON.stringify(body)
-        }).then(function(r) { return r.json(); }).then(function(data) {
-            var pi = data.data;
-            if (!pi) {
-                throw new Error((data.errors && data.errors[0] && data.errors[0].detail) || 'Failed to process payment');
-            }
-
-            var status = pi.attributes && pi.attributes.status;
-            var nextAction = pi.attributes && pi.attributes.next_action;
-
-            if (status === 'succeeded') {
-                returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-                window.location.href = returnUrl.toString();
-                return;
-            }
-
-            if (status === 'awaiting_next_action' && nextAction && nextAction.redirect && nextAction.redirect.url) {
-                window.location.href = nextAction.redirect.url;
-                return;
-            }
-
-            if (status === 'awaiting_payment_method') {
-                throw new Error((pi.attributes && pi.attributes.last_payment_error && pi.attributes.last_payment_error.message) || 'Payment failed. Please try again.');
-            }
-
-            if (status === 'processing') {
-                returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-                window.location.href = returnUrl.toString();
-                return;
-            }
-
-            throw new Error('Unexpected payment status: ' + status);
         });
+
+        const data = await res.json();
+        const pi = data.data;
+        if (!pi) {
+            throw new Error(data.errors?.[0]?.detail || 'Failed to process payment');
+        }
+
+        const status = pi.attributes?.status;
+        const nextAction = pi.attributes?.next_action;
+
+        if (status === 'succeeded') {
+            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+            window.location.href = returnUrl.toString();
+            return;
+        }
+
+        if (status === 'awaiting_next_action' && nextAction?.redirect?.url) {
+            window.location.href = nextAction.redirect.url;
+            return;
+        }
+
+        if (status === 'awaiting_payment_method') {
+            throw new Error(pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again.');
+        }
+
+        if (status === 'processing') {
+            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+            window.location.href = returnUrl.toString();
+            return;
+        }
+
+        throw new Error('Unexpected payment status: ' + status);
     }
 
-    document.getElementById('pay-btn').addEventListener('click', function() {
+    document.getElementById('pay-btn').addEventListener('click', async function() {
         clearError();
         setLoading(true);
-
-        fetchClientKey()
-            .then(function() { return createPaymentMethod(); })
-            .then(function(pmId) { return attachPaymentMethod(pmId); })
-            .catch(function(e) {
-                setError(e.message || 'Payment failed. Please try again.');
-                setLoading(false);
-            });
+        try {
+            if (!clientKey) {
+                await fetchClientKey();
+            }
+            const pmId = await createPaymentMethod();
+            await attachPaymentMethod(pmId);
+        } catch (e) {
+            setError(e.message || 'Payment failed. Please try again.');
+            setLoading(false);
+        }
     });
 
     fetchClientKey().catch(function() {});

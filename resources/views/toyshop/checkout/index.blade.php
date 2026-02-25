@@ -214,33 +214,20 @@
                     </div>
                 </div>
 
-                <!-- 3. Payment Method -->
+                <!-- 3. Payment -->
                 <div class="checkout-step reveal" style="animation-delay: 0.1s;">
                     <div class="step-header">
                         <div class="step-icon">3</div>
-                        <h3 class="step-title">Payment Method</h3>
+                        <h3 class="step-title">Payment</h3>
                     </div>
-                    <div class="payment-option">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card" {{ old('payment_method', 'card') == 'card' ? 'checked' : '' }} required>
-                        <label class="form-check-label ms-2" for="payment_card" style="cursor: pointer; font-weight: 600;">
-                            <i class="bi bi-credit-card me-2"></i>Credit/Debit Card
-                        </label>
+                    <input type="hidden" name="payment_method" value="card">
+                    <div class="d-flex align-items-center gap-3 p-3 rounded" style="background: #f0fdfa;">
+                        <i class="bi bi-shield-lock fs-2 text-primary"></i>
+                        <div>
+                            <p class="mb-1 fw-semibold">Secure Payment via PayMongo</p>
+                            <p class="mb-0 text-muted small">After placing your order, you'll be taken to the payment page where you can pay with <strong>Credit/Debit Card</strong>, <strong>GCash</strong>, or <strong>Maya (PayMaya)</strong>.</p>
+                        </div>
                     </div>
-                    <div class="payment-option">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_gcash" value="gcash" {{ old('payment_method') == 'gcash' ? 'checked' : '' }}>
-                        <label class="form-check-label ms-2" for="payment_gcash" style="cursor: pointer; font-weight: 600;">
-                            <i class="bi bi-phone me-2"></i>GCash
-                        </label>
-                    </div>
-                    <div class="payment-option">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_paymaya" value="paymaya" {{ old('payment_method') == 'paymaya' ? 'checked' : '' }}>
-                        <label class="form-check-label ms-2" for="payment_paymaya" style="cursor: pointer; font-weight: 600;">
-                            <i class="bi bi-phone me-2"></i>PayMaya
-                        </label>
-                    </div>
-                    @error('payment_method')
-                        <div class="text-danger small mt-2">{{ $message }}</div>
-                    @enderror
                 </div>
 
                 <!-- 4. Shipping Information -->
@@ -353,7 +340,7 @@
                     
                     <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-check-circle me-2"></i>Place Order
+                            <i class="bi bi-lock me-2"></i>Place Order & Proceed to Payment
                         </button>
                         <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-2"></i>Back to Cart
