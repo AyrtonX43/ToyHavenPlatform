@@ -264,6 +264,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
         
         // Conversations (trade chat)
+        Route::get('/conversations/unread', [\App\Http\Controllers\Trading\ConversationController::class, 'unreadCount'])->name('conversations.unread');
         Route::get('/conversations', [\App\Http\Controllers\Trading\ConversationController::class, 'index'])->name('conversations.index');
         Route::get('/conversations/{conversation}', [\App\Http\Controllers\Trading\ConversationController::class, 'show'])->name('conversations.show');
         Route::get('/listings/{id}/conversation', [\App\Http\Controllers\Trading\ConversationController::class, 'storeFromListing'])->name('conversations.store-from-listing');
