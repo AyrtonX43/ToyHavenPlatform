@@ -291,7 +291,9 @@
         }
     });
 
-    createPaymentIntent().catch(function() {});
+    createPaymentIntent().catch(function(e) {
+        setError(e.message || 'Could not initialize payment. Please refresh the page or try again later.');
+    });
 })();
 </script>
 @endif

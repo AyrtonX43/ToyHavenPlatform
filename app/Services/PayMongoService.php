@@ -13,9 +13,9 @@ class PayMongoService
 
     public function __construct()
     {
-        $this->secretKey = config('services.paymongo.secret_key');
-        $this->publicKey = config('services.paymongo.public_key');
-        $this->baseUrl = config('services.paymongo.base_url', 'https://api.paymongo.com/v1');
+        $this->secretKey = config('services.paymongo.secret_key') ?? '';
+        $this->publicKey = config('services.paymongo.public_key') ?? '';
+        $this->baseUrl = config('services.paymongo.base_url') ?? 'https://api.paymongo.com/v1';
     }
 
     public function isConfigured(): bool
@@ -33,6 +33,12 @@ class PayMongoService
      */
     public function createPaymentIntent(float $amount, string $currency = 'PHP', array $metadata = []): ?array
     {
+        if (! $this->isConfigured()) {
+            Log::error('PayMongo: API keys not configured. Check PAYMONGO_SECRET_KEY and PAYMONGO_PUBLIC_KEY in .env and run php artisan config:clear');
+
+            return null;
+        }
+
         try {
             $amountCentavos = (int) round($amount * 100);
             if ($amountCentavos < 2000) {
