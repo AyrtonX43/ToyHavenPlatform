@@ -255,7 +255,13 @@ class CheckoutController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to process order. Please try again.');
+            \Log::error('Checkout process failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => Auth::id(),
+            ]);
+            return back()->with('error', 'Failed to process order: ' . $e->getMessage());
         }
     }
 
