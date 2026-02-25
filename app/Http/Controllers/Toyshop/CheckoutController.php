@@ -8,7 +8,6 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTracking;
-use App\Services\PayMongoService;
 use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,12 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
 {
-    protected $payMongoService;
     protected $priceService;
 
     public function __construct()
     {
-        $this->payMongoService = app(PayMongoService::class);
         $this->priceService = app(PriceCalculationService::class);
     }
 
@@ -285,109 +282,6 @@ class CheckoutController extends Controller
                 ->with('info', 'This order has already been paid.');
         }
 
-        $publicKey = config('services.paymongo.public_key');
-
-        return view('toyshop.checkout.payment', compact('order', 'publicKey'));
-    }
-
-    /**
-     * Create a PayMongo Payment Intent (AJAX) for the payment page
-     */
-    public function createPaymentIntent(Request $request)
-    {
-        $request->validate(['order_number' => 'required|string']);
-
-        $order = Order::where('order_number', $request->order_number)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
-
-        if ($order->payment_status === 'paid') {
-            return response()->json(['error' => 'Order already paid'], 400);
-        }
-
-        $totalAmount = $order->total;
-
-        $intent = $this->payMongoService->createPaymentIntent(
-            $totalAmount,
-            'PHP',
-            ['order_number' => $order->order_number, 'order_id' => (string) $order->id]
-        );
-
-        if (! $intent) {
-            return response()->json(['error' => 'Failed to create payment'], 500);
-        }
-
-        $attrs = $intent['attributes'] ?? $intent;
-
-        return response()->json([
-            'client_key' => $attrs['client_key'] ?? null,
-            'id' => $intent['id'] ?? null,
-        ]);
-    }
-
-    /**
-     * Handle return from PayMongo (GET - user redirected after GCash/3DS)
-     * Also handles POST from legacy callback (input works for both query and body)
-     */
-    public function paymentReturn(Request $request)
-    {
-        $orderNumber = $request->input('order_number');
-        $paymentIntentId = $request->input('payment_intent_id');
-
-        if (! $orderNumber || ! $paymentIntentId) {
-            return redirect()->route('orders.index')->with('error', 'Invalid payment return.');
-        }
-
-        $order = Order::where('order_number', $orderNumber)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if (! $order) {
-            return redirect()->route('orders.index')->with('error', 'Order not found.');
-        }
-
-        if ($order->payment_status === 'paid') {
-            return redirect()->route('orders.show', $order->id)->with('success', 'Payment already completed.');
-        }
-
-        $intent = $this->payMongoService->getPaymentIntent($paymentIntentId);
-        $attrs = $intent['attributes'] ?? $intent ?? [];
-        $status = $attrs['status'] ?? null;
-
-        if ($status === 'succeeded') {
-            $order->update([
-                'payment_status' => 'paid',
-                'payment_reference' => $paymentIntentId,
-            ]);
-            OrderTracking::create([
-                'order_id' => $order->id,
-                'status' => 'payment_confirmed',
-                'description' => 'Payment confirmed.',
-                'updated_by' => Auth::id(),
-            ]);
-
-            // Notify seller that order has been paid
-            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
-
-            return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful!');
-        }
-
-        if ($status === 'awaiting_payment_method') {
-            $lastError = $attrs['last_payment_error'] ?? null;
-
-            return redirect()
-                ->route('checkout.payment', $order->order_number)
-                ->with('error', $lastError ? 'Payment could not be completed. Please try again.' : 'Payment was cancelled or failed.');
-        }
-
-        return redirect()
-            ->route('checkout.payment', $order->order_number)
-            ->with('error', 'Payment status could not be verified. Please try again.');
-    }
-
-    public function paymentCallback(Request $request)
-    {
-        // Kept for any POST callbacks; main return flow uses paymentReturn (GET)
-        return $this->paymentReturn($request);
+        return view('toyshop.checkout.payment', compact('order'));
     }
 }

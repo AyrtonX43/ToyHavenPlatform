@@ -21,9 +21,6 @@ Route::get('/search', [\App\Http\Controllers\SearchController::class, 'search'])
 // Real-time search suggest (products + business pages)
 Route::get('/search/suggest', [\App\Http\Controllers\SearchController::class, 'suggest'])->name('search.suggest');
 
-// PayMongo Webhook (no auth, no CSRF)
-Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhook\PayMongoWebhookController::class, 'handle'])->name('webhooks.paymongo');
-
 // Google OAuth Routes
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.auth');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
@@ -125,9 +122,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'index'])->name('index');
         Route::post('/process', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'process'])->name('process');
         Route::get('/payment/{order_number}', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'payment'])->name('payment');
-        Route::post('/create-payment-intent', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'createPaymentIntent'])->name('create-payment-intent');
-        Route::get('/return', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'paymentReturn'])->name('return');
-        Route::post('/callback', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'paymentCallback'])->name('callback');
     });
 
     // Order Routes
@@ -155,7 +149,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
-        Route::get('/payment/return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment.return');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
     });
 
@@ -271,19 +264,15 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
         
         // Conversations (trade chat)
-        Route::get('/conversations-unread', [\App\Http\Controllers\Trading\ConversationController::class, 'unreadCount'])->name('conversations.unread');
         Route::get('/conversations', [\App\Http\Controllers\Trading\ConversationController::class, 'index'])->name('conversations.index');
         Route::get('/conversations/{conversation}', [\App\Http\Controllers\Trading\ConversationController::class, 'show'])->name('conversations.show');
         Route::get('/listings/{id}/conversation', [\App\Http\Controllers\Trading\ConversationController::class, 'storeFromListing'])->name('conversations.store-from-listing');
         Route::post('/listings/{id}/conversation', [\App\Http\Controllers\Trading\ConversationController::class, 'storeFromListing'])->name('conversations.store-from-listing.post');
         Route::get('/conversations/{conversation}/messages', [\App\Http\Controllers\Trading\ConversationController::class, 'getMessages'])->name('conversations.messages.index');
         Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\Trading\ConversationController::class, 'sendMessage'])->name('conversations.messages.store');
-        Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::post('/conversations/{conversation}/delivered', [\App\Http\Controllers\Trading\ConversationController::class, 'markDelivered'])->name('conversations.mark-delivered');
         Route::post('/conversations/{conversation}/seen', [\App\Http\Controllers\Trading\ConversationController::class, 'markSeen'])->name('conversations.mark-seen');
         Route::post('/conversations/{conversation}/typing', [\App\Http\Controllers\Trading\ConversationController::class, 'typing'])->name('conversations.typing');
-        Route::get('/conversations/{conversation}/typing-status', [\App\Http\Controllers\Trading\ConversationController::class, 'typingStatus'])->name('conversations.typing-status');
-        Route::get('/conversations/{conversation}/message-statuses', [\App\Http\Controllers\Trading\ConversationController::class, 'messageStatuses'])->name('conversations.message-statuses');
         Route::post('/conversations/{conversation}/presence', [\App\Http\Controllers\Trading\ConversationController::class, 'presence'])->name('conversations.presence');
         Route::get('/conversations/{conversation}/other-status', [\App\Http\Controllers\Trading\ConversationController::class, 'otherStatus'])->name('conversations.other-status');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');
