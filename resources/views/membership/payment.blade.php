@@ -265,7 +265,7 @@
     const publicKey = @json($publicKey);
     const paymentIntentId = @json($paymentIntentId);
     const subscriptionId = @json($subscription->id);
-    const returnUrl = new URL('{{ route("membership.payment-return") }}', window.location.origin);
+    const returnUrl = new URL('/membership/payment-return', window.location.origin);
     returnUrl.searchParams.set('subscription_id', subscriptionId);
 
     let clientKey = null;

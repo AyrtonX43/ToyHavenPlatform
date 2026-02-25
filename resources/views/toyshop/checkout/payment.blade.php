@@ -124,7 +124,7 @@
 (function() {
     const orderNumber = @json($order->order_number);
     const publicKey = @json($publicKey);
-    const returnUrl = new URL('{{ route("checkout.return") }}', window.location.origin);
+    const returnUrl = new URL('/checkout/return', window.location.origin);
     returnUrl.searchParams.set('order_number', orderNumber);
 
     let clientKey = null;
@@ -158,15 +158,21 @@
     });
 
     async function createPaymentIntent() {
-        const res = await fetch('{{ route("checkout.create-payment-intent") }}', {
+        const res = await fetch('/checkout/create-payment-intent', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
                 'Accept': 'application/json',
             },
             body: JSON.stringify({ order_number: orderNumber })
         });
+        if (!res.ok) {
+            const text = await res.text();
+            let msg = 'Failed to initialize payment (status ' + res.status + ')';
+            try { msg = JSON.parse(text).error || msg; } catch(e) {}
+            throw new Error(msg);
+        }
         const data = await res.json();
         if (data.client_key && data.id) {
             clientKey = data.client_key;
