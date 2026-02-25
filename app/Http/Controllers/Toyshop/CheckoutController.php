@@ -272,7 +272,16 @@ class CheckoutController extends Controller
 
         $publicKey = config('services.paymongo.public_key');
 
-        return view('toyshop.checkout.payment', compact('order', 'publicKey'));
+        $intent = $this->payMongoService->createPaymentIntent(
+            $order->total,
+            'PHP',
+            ['order_number' => $order->order_number, 'order_id' => (string) $order->id]
+        );
+
+        $paymentIntentId = $intent['id'] ?? null;
+        $clientKey = data_get($intent, 'attributes.client_key');
+
+        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'paymentIntentId', 'clientKey'));
     }
 
     /**
