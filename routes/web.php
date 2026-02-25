@@ -21,6 +21,9 @@ Route::get('/search', [\App\Http\Controllers\SearchController::class, 'search'])
 // Real-time search suggest (products + business pages)
 Route::get('/search/suggest', [\App\Http\Controllers\SearchController::class, 'suggest'])->name('search.suggest');
 
+// PayMongo Webhook (no auth, no CSRF)
+Route::post('/webhooks/paymongo', [\App\Http\Controllers\Webhook\PayMongoWebhookController::class, 'handle'])->name('webhooks.paymongo');
+
 // Google OAuth Routes
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.auth');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
@@ -122,6 +125,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'index'])->name('index');
         Route::post('/process', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'process'])->name('process');
         Route::get('/payment/{order_number}', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'payment'])->name('payment');
+        Route::post('/create-payment-intent', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'createPaymentIntent'])->name('create-payment-intent');
+        Route::get('/return', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'paymentReturn'])->name('return');
     });
 
     // Order Routes
@@ -149,6 +154,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
+        Route::get('/payment-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment-return');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
     });
 

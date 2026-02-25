@@ -5,22 +5,66 @@ namespace App\Http\Controllers\Membership;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\SubscriptionPayment;
+use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SubscriptionController extends Controller
 {
+    public function __construct(
+        protected PayMongoService $payMongo
+    ) {}
+
     /**
-     * Subscribe to a plan
+     * Subscribe to a plan — creates a local subscription (pending) and a PayMongo payment intent.
      */
     public function subscribe(Request $request)
     {
-        return redirect()->route('membership.index')
-            ->with('error', 'Online payment is not currently configured. Please contact support to arrange membership.');
+        $plan = Plan::where('slug', $request->get('plan', 'basic'))->active()->firstOrFail();
+        $user = Auth::user();
+
+        // Prevent duplicate active subscriptions
+        if ($user->hasActiveMembership()) {
+            return redirect()->route('membership.manage')
+                ->with('info', 'You already have an active subscription.');
+        }
+
+        // Create local subscription in "pending" status until payment succeeds
+        $subscription = Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'status' => 'pending',
+            'current_period_start' => now(),
+            'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
+        ]);
+
+        // Create a PayMongo payment intent for the plan price
+        $intent = $this->payMongo->createPaymentIntent(
+            (float) $plan->price,
+            'PHP',
+            [
+                'subscription_id' => (string) $subscription->id,
+                'plan_id' => (string) $plan->id,
+                'user_id' => (string) $user->id,
+            ]
+        );
+
+        if (! $intent) {
+            $subscription->update(['status' => 'cancelled']);
+
+            return redirect()->route('membership.index')
+                ->with('error', 'Could not initialize payment. Please try again.');
+        }
+
+        return redirect()->route('membership.payment', [
+            'subscription' => $subscription->id,
+            'payment_intent' => $intent['id'],
+        ])->with('success', 'Subscription created. Complete your payment to activate.');
     }
 
     /**
-     * Payment page for subscription
+     * Payment page for subscription.
      */
     public function payment(Request $request, Subscription $subscription)
     {
@@ -28,13 +72,83 @@ class SubscriptionController extends Controller
             abort(403);
         }
 
+        $publicKey = config('services.paymongo.public_key');
+        $paymentIntentId = $request->get('payment_intent');
+
+        // If no payment intent passed, create one
+        if (! $paymentIntentId && $subscription->status === 'pending') {
+            $intent = $this->payMongo->createPaymentIntent(
+                (float) $subscription->plan->price,
+                'PHP',
+                [
+                    'subscription_id' => (string) $subscription->id,
+                    'plan_id' => (string) $subscription->plan_id,
+                    'user_id' => (string) $subscription->user_id,
+                ]
+            );
+            $paymentIntentId = $intent['id'] ?? null;
+        }
+
         return view('membership.payment', [
             'subscription' => $subscription,
+            'paymentIntentId' => $paymentIntentId,
+            'publicKey' => $publicKey,
         ]);
     }
 
     /**
-     * Manage current subscription
+     * Handle return from PayMongo after payment redirect.
+     */
+    public function paymentReturn(Request $request)
+    {
+        $subscriptionId = $request->input('subscription_id');
+        $paymentIntentId = $request->input('payment_intent_id');
+
+        if (! $subscriptionId || ! $paymentIntentId) {
+            return redirect()->route('membership.manage')->with('error', 'Invalid payment return.');
+        }
+
+        $subscription = Subscription::where('id', $subscriptionId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (! $subscription) {
+            return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
+        }
+
+        if ($subscription->status === 'active') {
+            return redirect()->route('membership.manage')->with('success', 'Your subscription is already active.');
+        }
+
+        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
+        $status = data_get($intent, 'attributes.status');
+
+        if ($status === 'succeeded') {
+            $subscription->update([
+                'status' => 'active',
+                'current_period_start' => now(),
+                'current_period_end' => $subscription->plan?->interval === 'yearly'
+                    ? now()->addYear()
+                    : now()->addMonth(),
+            ]);
+
+            SubscriptionPayment::create([
+                'subscription_id' => $subscription->id,
+                'amount' => data_get($intent, 'attributes.amount', 0) / 100,
+                'status' => 'paid',
+                'paid_at' => now(),
+            ]);
+
+            return redirect()->route('membership.manage')
+                ->with('success', 'Payment successful! Your membership is now active.');
+        }
+
+        return redirect()->route('membership.payment', ['subscription' => $subscription->id])
+            ->with('error', 'Payment was not completed. Please try again.');
+    }
+
+    /**
+     * Manage current subscription.
      */
     public function manage()
     {
@@ -48,7 +162,7 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Cancel subscription
+     * Cancel subscription.
      */
     public function cancel(Request $request)
     {
@@ -65,6 +179,7 @@ class SubscriptionController extends Controller
             'cancelled_at' => now(),
         ]);
 
-        return redirect()->route('membership.manage')->with('success', 'Subscription cancelled. You will retain access until the end of your billing period.');
+        return redirect()->route('membership.manage')
+            ->with('success', 'Subscription cancelled. You will retain access until the end of your billing period.');
     }
 }
