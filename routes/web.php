@@ -282,6 +282,9 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/conversations/{conversation}/typing', [\App\Http\Controllers\Trading\ConversationController::class, 'typing'])->name('conversations.typing');
         Route::post('/conversations/{conversation}/presence', [\App\Http\Controllers\Trading\ConversationController::class, 'presence'])->name('conversations.presence');
         Route::get('/conversations/{conversation}/other-status', [\App\Http\Controllers\Trading\ConversationController::class, 'otherStatus'])->name('conversations.other-status');
+        Route::get('/conversations/{conversation}/message-statuses', [\App\Http\Controllers\Trading\ConversationController::class, 'messageStatuses'])->name('conversations.message-statuses');
+        Route::get('/conversations/{conversation}/typing-status', [\App\Http\Controllers\Trading\ConversationController::class, 'typingStatus'])->name('conversations.typing-status');
+        Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');
         Route::post('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'report'])->name('conversations.report');
         
