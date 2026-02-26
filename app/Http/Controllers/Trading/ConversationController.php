@@ -30,6 +30,7 @@ class ConversationController extends Controller
                 $q->where('user1_id', Auth::id())
                     ->orWhere('user2_id', Auth::id());
             })
+            ->has('messages')
             ->with(['user1', 'user2', 'trade', 'tradeListing.images'])
             ->withCount(['messages as unread_count' => function ($q) {
                 $q->where('sender_id', '!=', Auth::id())->whereNull('seen_at');
