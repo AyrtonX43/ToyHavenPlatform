@@ -182,6 +182,13 @@
             border-radius: 0 8px 8px 0;
         }
 
+        /* Search bar wrapper - consistent size for both guest and logged-in */
+        .search-bar-wrapper {
+            flex: 0 1 520px;
+            min-width: 220px;
+            max-width: 520px;
+        }
+
         /* Search bar - prominent and usable */
         .search-input {
             background: #f8fafc;
@@ -304,14 +311,16 @@
         /* Extra large screens (1400px+) */
         @media (min-width: 1400px) {
             .search-bar-wrapper {
-                max-width: 720px !important;
+                flex: 0 1 620px;
+                max-width: 620px;
             }
         }
 
         /* Large-XL screens (1200-1399px) */
         @media (min-width: 1200px) and (max-width: 1399px) {
             .search-bar-wrapper {
-                max-width: 580px !important;
+                flex: 0 1 520px;
+                max-width: 520px;
             }
         }
 
@@ -323,7 +332,9 @@
                 padding: 0.4rem 0.5rem !important;
             }
             .search-bar-wrapper {
-                max-width: 380px !important;
+                flex: 0 1 360px;
+                max-width: 360px;
+                min-width: 200px;
             }
             .search-input {
                 font-size: 0.875rem;
@@ -352,7 +363,9 @@
 
             /* Search bar goes full width in mobile menu */
             .search-bar-wrapper {
+                flex: 1 1 100% !important;
                 max-width: 100% !important;
+                min-width: 100% !important;
                 width: 100%;
                 order: -1;
                 margin-right: 0 !important;
@@ -531,7 +544,7 @@
                         $searchName = 'q';
                     }
                 @endphp
-                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0" style="flex: 1 1 auto; min-width: 0; max-width: 680px;">
+                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0">
                     <form class="d-flex w-100" method="GET" action="{{ $searchAction }}" id="searchForm">
                         <div class="input-group shadow-sm position-relative">
                             <input class="form-control search-input" type="search" name="{{ $searchName }}" id="navbarSearchInput" placeholder="{{ $searchPlaceholder }}" value="{{ request($searchName) }}" autocomplete="off" aria-label="Search">
