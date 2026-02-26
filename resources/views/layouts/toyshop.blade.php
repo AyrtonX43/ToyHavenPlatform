@@ -233,7 +233,7 @@
         /* Extra large screens (1400px+) */
         @media (min-width: 1400px) {
             .search-bar-wrapper {
-                max-width: 560px !important;
+                max-width: 650px !important;
             }
         }
 
@@ -245,7 +245,7 @@
                 padding: 0.4rem 0.5rem !important;
             }
             .search-bar-wrapper {
-                max-width: 300px !important;
+                max-width: 360px !important;
             }
             .search-input {
                 font-size: 0.8125rem;
@@ -439,7 +439,7 @@
                         $searchName = 'q';
                     }
                 @endphp
-                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0" style="flex: 1 1 auto; min-width: 0; max-width: 520px;">
+                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0" style="flex: 1 1 auto; min-width: 0; max-width: 600px;">
                     <form class="d-flex w-100" method="GET" action="{{ $searchAction }}" id="searchForm">
                         <div class="input-group shadow-sm position-relative">
                             <input class="form-control search-input" type="search" name="{{ $searchName }}" id="navbarSearchInput" placeholder="{{ $searchPlaceholder }}" value="{{ request($searchName) }}" autocomplete="off" aria-label="Search">
