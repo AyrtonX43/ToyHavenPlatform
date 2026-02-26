@@ -187,11 +187,11 @@
             background: #f8fafc;
             border: 2px solid #cbd5e1;
             border-right: none;
-            padding: 0.625rem 1rem;
-            font-size: 0.9375rem;
-            border-radius: 10px 0 0 10px;
+            padding: 0.75rem 1.125rem;
+            font-size: 1rem;
+            border-radius: 12px 0 0 12px;
             transition: border-color 0.2s, box-shadow 0.2s;
-            min-height: 44px;
+            min-height: 48px;
         }
         .search-input:focus {
             background: #fff;
@@ -200,15 +200,16 @@
         }
         .search-input::placeholder {
             color: #94a3b8;
-            font-size: 0.875rem;
+            font-size: 0.9375rem;
         }
         .search-btn {
             background: #0891b2;
             color: #fff;
             border: 2px solid #0891b2;
-            border-radius: 0 10px 10px 0;
-            padding: 0.625rem 1rem;
-            min-height: 44px;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1.25rem;
+            min-height: 48px;
+            font-size: 1.0625rem;
             transition: background 0.2s;
         }
         .search-btn:hover, .search-btn:focus {
@@ -216,8 +217,78 @@
             border-color: #0e7490;
             color: #fff;
         }
+
+        /* Search suggestions dropdown */
         .search-suggest-dropdown {
-            border-radius: 12px !important;
+            border-radius: 14px !important;
+            min-width: 100%;
+        }
+        .search-suggest-section-label {
+            padding: 0.5rem 1rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b;
+        }
+        .search-suggest-item {
+            padding: 0.625rem 1rem !important;
+            transition: background 0.15s !important;
+        }
+        .search-suggest-item:hover {
+            background: #f0fdfa !important;
+        }
+        .search-suggest-item img {
+            width: 52px !important;
+            height: 52px !important;
+            object-fit: cover;
+            border-radius: 10px !important;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        .search-suggest-item .suggest-placeholder {
+            width: 52px;
+            height: 52px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .search-suggest-item .suggest-name {
+            font-weight: 600;
+            font-size: 0.9375rem;
+            color: #1e293b;
+            line-height: 1.3;
+        }
+        .search-suggest-item .suggest-price {
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #0891b2;
+        }
+        .search-suggest-item .suggest-store-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ecfeff, #f0fdfa);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.125rem;
+            color: #0891b2;
+        }
+        .search-suggest-item .suggest-store-name {
+            font-weight: 600;
+            font-size: 0.9375rem;
+            color: #1e293b;
+        }
+        .search-suggest-item .suggest-store-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
         }
 
         /* Navbar spacer */
@@ -233,7 +304,14 @@
         /* Extra large screens (1400px+) */
         @media (min-width: 1400px) {
             .search-bar-wrapper {
-                max-width: 650px !important;
+                max-width: 720px !important;
+            }
+        }
+
+        /* Large-XL screens (1200-1399px) */
+        @media (min-width: 1200px) and (max-width: 1399px) {
+            .search-bar-wrapper {
+                max-width: 580px !important;
             }
         }
 
@@ -245,14 +323,20 @@
                 padding: 0.4rem 0.5rem !important;
             }
             .search-bar-wrapper {
-                max-width: 360px !important;
+                max-width: 380px !important;
             }
             .search-input {
-                font-size: 0.8125rem;
+                font-size: 0.875rem;
                 padding: 0.5rem 0.75rem;
+                min-height: 42px;
+            }
+            .search-btn {
+                padding: 0.5rem 0.875rem;
+                min-height: 42px;
+                font-size: 0.9375rem;
             }
             .search-input::placeholder {
-                font-size: 0.75rem;
+                font-size: 0.8125rem;
             }
         }
 
@@ -277,17 +361,25 @@
             .search-input {
                 font-size: 1rem;
                 padding: 0.75rem 1rem;
-                min-height: 48px;
+                min-height: 50px;
             }
             .search-btn {
                 padding: 0.75rem 1.25rem;
-                min-height: 48px;
+                min-height: 50px;
+                font-size: 1.125rem;
             }
             .search-input::placeholder {
                 font-size: 0.9375rem;
             }
             .search-suggest-dropdown {
-                max-height: 50vh !important;
+                max-height: 60vh !important;
+                min-width: 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .search-suggest-item img {
+                width: 48px !important;
+                height: 48px !important;
             }
 
             /* Stack nav items nicely */
@@ -439,14 +531,14 @@
                         $searchName = 'q';
                     }
                 @endphp
-                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0" style="flex: 1 1 auto; min-width: 0; max-width: 600px;">
+                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0" style="flex: 1 1 auto; min-width: 0; max-width: 680px;">
                     <form class="d-flex w-100" method="GET" action="{{ $searchAction }}" id="searchForm">
                         <div class="input-group shadow-sm position-relative">
                             <input class="form-control search-input" type="search" name="{{ $searchName }}" id="navbarSearchInput" placeholder="{{ $searchPlaceholder }}" value="{{ request($searchName) }}" autocomplete="off" aria-label="Search">
                             <button class="btn search-btn" type="submit">
                                 <i class="bi bi-search"></i>
                             </button>
-                            <div id="searchSuggestDropdown" class="search-suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 bg-white rounded-3 shadow-lg border overflow-hidden" style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto;"></div>
+                            <div id="searchSuggestDropdown" class="search-suggest-dropdown position-absolute top-100 start-0 mt-1 bg-white rounded-3 shadow-lg border overflow-hidden" style="display: none; z-index: 1050; max-height: 520px; overflow-y: auto; min-width: 100%; width: max-content; max-width: min(680px, 95vw); right: 0;"></div>
                         </div>
                     </form>
                 </div>
@@ -1242,22 +1334,34 @@
                         let html = '';
                         if (products.length || businesses.length) {
                             if (products.length) {
-                                html += '<div class="px-2 py-1 bg-light border-bottom"><small class="fw-semibold text-muted">Products</small></div>';
+                                html += '<div class="search-suggest-section-label"><i class="bi bi-box-seam me-1"></i>Products</div>';
                                 products.forEach(function(p) {
-                                    html += '<a href="' + (p.url || '#') + '" class="search-suggest-item d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark border-bottom" style="transition: background 0.15s;">';
-                                    if (p.image) html += '<img src="' + p.image + '" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">';
-                                    else html += '<div style="width:40px;height:40px;background:#eee;border-radius:6px;"></div>';
-                                    html += '<div class="flex-grow-1 min-w-0"><div class="text-truncate">' + (p.name || '') + '</div><small class="text-muted">₱' + (parseFloat(p.price).toFixed(2)) + '</small></div></a>';
+                                    html += '<a href="' + (p.url || '#') + '" class="search-suggest-item d-flex align-items-center gap-3 text-decoration-none text-dark border-bottom">';
+                                    if (p.image) html += '<img src="' + p.image + '" alt="">';
+                                    else html += '<div class="suggest-placeholder"><i class="bi bi-image text-muted"></i></div>';
+                                    html += '<div class="flex-grow-1 min-w-0">';
+                                    html += '<div class="suggest-name text-truncate">' + (p.name || '') + '</div>';
+                                    html += '<div class="suggest-price">₱' + (parseFloat(p.price).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})) + '</div>';
+                                    html += '</div>';
+                                    html += '<i class="bi bi-chevron-right text-muted" style="flex-shrink:0;font-size:0.75rem;"></i>';
+                                    html += '</a>';
                                 });
                             }
                             if (businesses.length) {
-                                html += '<div class="px-2 py-1 bg-light border-bottom"><small class="fw-semibold text-muted">Stores</small></div>';
+                                html += '<div class="search-suggest-section-label"><i class="bi bi-shop me-1"></i>Stores &amp; Profiles</div>';
                                 businesses.forEach(function(b) {
-                                    html += '<a href="' + (b.url || '#') + '" class="search-suggest-item d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark" style="transition: background 0.15s;"><i class="bi bi-shop text-primary"></i><span class="text-truncate">' + (b.name || '') + '</span></a>';
+                                    html += '<a href="' + (b.url || '#') + '" class="search-suggest-item d-flex align-items-center gap-3 text-decoration-none text-dark border-bottom">';
+                                    html += '<div class="suggest-store-icon"><i class="bi bi-shop"></i></div>';
+                                    html += '<div class="flex-grow-1 min-w-0">';
+                                    html += '<div class="suggest-store-name text-truncate">' + (b.name || '') + '</div>';
+                                    html += '<div class="suggest-store-label">Verified Store</div>';
+                                    html += '</div>';
+                                    html += '<i class="bi bi-chevron-right text-muted" style="flex-shrink:0;font-size:0.75rem;"></i>';
+                                    html += '</a>';
                                 });
                             }
                         } else {
-                            html = '<div class="px-3 py-3 text-muted text-center">No results. Try different keywords or search all.</div>';
+                            html = '<div class="px-3 py-4 text-muted text-center"><i class="bi bi-search" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>No results found. Try different keywords.</div>';
                         }
                         dropdown.innerHTML = html;
                         dropdown.style.display = 'block';
