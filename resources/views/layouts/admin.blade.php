@@ -32,7 +32,7 @@
             height: 100vh;
             background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
             color: white;
-            width: 260px;
+            width: 280px;
             position: fixed;
             left: 0;
             top: 0;
@@ -42,141 +42,181 @@
             flex-direction: column;
             overflow: hidden;
         }
-        
+
         .admin-sidebar h4 {
             font-weight: 600;
             font-size: 1.25rem;
             margin-bottom: 2px;
         }
-        
+
         .admin-sidebar .sidebar-brand {
-            padding: 25px;
+            padding: 20px 20px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             flex-shrink: 0;
         }
-        
+
         .admin-sidebar nav {
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 20px 0;
-        }
-        
-        /* Custom Scrollbar for Sidebar */
-        .admin-sidebar nav::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .admin-sidebar nav::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-        
-        .admin-sidebar nav::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            transition: background 0.3s ease;
-        }
-        
-        .admin-sidebar nav::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Firefox Scrollbar */
-        .admin-sidebar nav {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+            padding: 12px 0;
         }
 
-        @keyframes slideInLeft {
-            from {
-                transform: translateX(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        .admin-sidebar nav::-webkit-scrollbar { width: 5px; }
+        .admin-sidebar nav::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .admin-sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .admin-sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        .admin-sidebar nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) rgba(255,255,255,0.05); }
+
+        /* ── Section labels ── */
+        .sidebar-section-label {
+            padding: 14px 20px 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.35);
         }
 
+        /* ── Flat link (leaf) ── */
         .sidebar-link {
-            color: rgba(255, 255, 255, 0.85);
-            padding: 14px 25px;
+            color: rgba(255,255,255,0.8);
+            padding: 9px 20px;
             display: flex;
             align-items: center;
             text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
             font-weight: 500;
-            font-size: 0.95rem;
-            margin: 2px 0;
+            font-size: 0.88rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        .sidebar-link i {
-            width: 24px;
-            font-size: 1.1rem;
-            margin-right: 12px;
+        .sidebar-link i.menu-icon {
+            width: 22px;
+            font-size: 1rem;
+            margin-right: 10px;
+            flex-shrink: 0;
+            text-align: center;
         }
-
-        .sidebar-link::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: linear-gradient(180deg, #0891b2, #06b6d4);
-            transform: scaleY(0);
-            transition: transform 0.2s ease;
-        }
-
         .sidebar-link:hover {
-            background: rgba(8, 145, 178, 0.15);
-            color: white;
+            background: rgba(8,145,178,0.15);
+            color: #fff;
             border-left-color: #0891b2;
         }
-
-        .sidebar-link:hover::before {
-            transform: scaleY(1);
-        }
-
         .sidebar-link.active {
-            background: rgba(8, 145, 178, 0.2);
-            color: white;
+            background: rgba(8,145,178,0.22);
+            color: #fff;
             border-left-color: #0891b2;
             font-weight: 700;
         }
 
-        .sidebar-link.active::before {
-            transform: scaleY(1);
+        /* ── Collapsible parent button ── */
+        .sidebar-parent {
+            width: 100%;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            padding: 9px 20px;
+            display: flex;
+            align-items: center;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            text-align: left;
+        }
+        .sidebar-parent i.menu-icon {
+            width: 22px;
+            font-size: 1rem;
+            margin-right: 10px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .sidebar-parent .chevron {
+            margin-left: auto;
+            font-size: 0.7rem;
+            transition: transform 0.25s ease;
+            opacity: 0.5;
+        }
+        .sidebar-parent:hover {
+            background: rgba(8,145,178,0.1);
+            color: #fff;
+            border-left-color: rgba(8,145,178,0.4);
+        }
+        .sidebar-parent.active-section {
+            color: #22d3ee;
+            border-left-color: #0891b2;
+        }
+        .sidebar-parent[aria-expanded="true"] .chevron {
+            transform: rotate(90deg);
         }
 
-        .sidebar-link i {
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* ── Nested sub-menus ── */
+        .sidebar-children {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s ease;
+        }
+        .sidebar-children.open {
+            max-height: 2000px;
         }
 
+        /* Level 1 children */
+        .sidebar-children .sidebar-link {
+            padding-left: 52px;
+            font-size: 0.84rem;
+            font-weight: 500;
+        }
+        .sidebar-children .sidebar-parent {
+            padding-left: 52px;
+            font-size: 0.84rem;
+        }
+
+        /* Level 2 children */
+        .sidebar-children .sidebar-children .sidebar-link {
+            padding-left: 68px;
+            font-size: 0.82rem;
+        }
+        .sidebar-children .sidebar-children .sidebar-parent {
+            padding-left: 68px;
+            font-size: 0.82rem;
+        }
+
+        /* Level 3 children */
+        .sidebar-children .sidebar-children .sidebar-children .sidebar-link {
+            padding-left: 82px;
+            font-size: 0.8rem;
+        }
+        .sidebar-children .sidebar-children .sidebar-children .sidebar-parent {
+            padding-left: 82px;
+            font-size: 0.8rem;
+        }
+
+        /* Level 4 children */
+        .sidebar-children .sidebar-children .sidebar-children .sidebar-children .sidebar-link {
+            padding-left: 96px;
+            font-size: 0.78rem;
+        }
 
         .admin-content {
-            margin-left: 260px;
+            margin-left: 280px;
             padding: 24px;
             min-height: 100vh;
             background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 50%, #ecfeff 100%);
         }
 
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Navbar - ToyStore style */
         .admin-navbar {
             background: #fff;
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -186,13 +226,8 @@
             animation: slideDown 0.5s ease-out;
             border: 1px solid #e2e8f0;
         }
-        
-        .admin-navbar h5 {
-            font-weight: 800;
-            color: #0891b2;
-            font-size: 1.25rem;
-        }
-        
+        .admin-navbar h5 { font-weight: 800; color: #0891b2; font-size: 1.25rem; }
+
         .admin-user-info {
             display: flex;
             align-items: center;
@@ -202,21 +237,11 @@
             border-radius: 12px;
             border: 1px solid #e2e8f0;
         }
-        
-        .admin-user-info span:first-child {
-            font-weight: 500;
-            color: #475569;
-        }
+        .admin-user-info span:first-child { font-weight: 500; color: #475569; }
 
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .card {
@@ -228,11 +253,7 @@
             margin-bottom: 20px;
             transition: box-shadow 0.2s, border-color 0.2s;
         }
-
-        .card:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            border-color: #22d3ee;
-        }
+        .card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: #22d3ee; }
 
         .card-header {
             background: #fefcf8;
@@ -242,20 +263,10 @@
             font-size: 1rem;
             color: #1e293b;
         }
-        
-        .card-body {
-            padding: 20px;
-        }
+        .card-body { padding: 20px; }
+        .card.text-white { border: none; }
+        .card.text-white:hover { transform: translateY(-2px); }
 
-        .card.text-white {
-            border: none;
-        }
-
-        .card.text-white:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Buttons - ToyStore style */
         .btn {
             border-radius: 12px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -265,296 +276,66 @@
             padding: 10px 20px;
             border: none;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0891b2, #06b6d4);
-            border: none;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #0e7490, #0891b2);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.35);
-        }
-        
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 0.875rem;
-        }
-        
-        .btn-outline-danger {
-            border: 2px solid #ef4444;
-            color: #ef4444;
-            background: transparent;
-        }
-        
-        .btn-outline-danger:hover {
-            background: #ef4444;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
+        .btn-primary { background: linear-gradient(135deg, #0891b2, #06b6d4); border: none; }
+        .btn-primary:hover { background: linear-gradient(135deg, #0e7490, #0891b2); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(8,145,178,0.35); }
+        .btn-sm { padding: 8px 16px; font-size: 0.875rem; }
+        .btn-outline-danger { border: 2px solid #ef4444; color: #ef4444; background: transparent; }
+        .btn-outline-danger:hover { background: #ef4444; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .btn:active { transform: translateY(0); }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-        }
+        .table { animation: fadeIn 0.5s ease-in; margin-bottom: 0; }
+        .table thead { background: #fefcf8; border-bottom: 1px solid #e2e8f0; }
+        .table thead th { font-weight: 700; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; color: #1e293b; padding: 15px; }
+        .table tbody tr { transition: all 0.3s ease; border-bottom: 1px solid #e2e8f0; }
+        .table tbody td { padding: 15px; vertical-align: middle; }
+        .table tbody tr:hover { background-color: #ecfeff; }
 
-        .btn:active {
-            transform: translateY(0);
-        }
+        .badge { transition: all 0.3s ease; padding: 6px 12px; font-weight: 500; font-size: 0.8rem; border-radius: 6px; }
 
-        /* Tables */
-        .table {
-            animation: fadeIn 0.5s ease-in;
-            margin-bottom: 0;
-        }
-        
-        .table thead {
-            background: #fefcf8;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .table thead th {
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            color: #1e293b;
-            padding: 15px;
-        }
+        .alert { animation: slideInRight 0.5s ease-out; border-radius: 12px; border-left-width: 5px; padding: 15px 20px; font-weight: 500; }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
 
-        .table tbody tr {
-            transition: all 0.3s ease;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .table tbody td {
-            padding: 15px;
-            vertical-align: middle;
-        }
+        .spinner-border { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .table tbody tr:hover {
-            background-color: #ecfeff;
-        }
+        .counter { display: inline-block; transition: all 0.3s ease; }
 
-        /* Badges */
-        .badge {
-            transition: all 0.3s ease;
-            animation: bounceIn 0.5s ease-out;
-        }
+        .form-control, .form-select { border-radius: 10px; border: 2px solid #e9ecef; padding: 10px 15px; }
+        .form-control:focus, .form-select:focus { border-color: #0891b2; box-shadow: 0 0 0 0.2rem rgba(8,145,178,0.2); }
 
-        @keyframes bounceIn {
-            0% {
-                transform: scale(0);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.1);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
+        .modal.fade .modal-dialog { transition: transform 0.3s ease-out; transform: translate(0, -50px); }
+        .modal.show .modal-dialog { transform: translate(0, 0); }
 
-
-        /* Alerts */
-        .alert {
-            animation: slideInRight 0.5s ease-out;
-            border-radius: 10px;
-            border-left: 4px solid;
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* Loading Spinner */
-        .spinner-border {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Number Counter Animation */
-        .counter {
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-
-        /* Form Elements */
-        .form-control, .form-select {
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #0891b2;
-            box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.25);
-        }
-
-        /* Modal Animations */
-        .modal.fade .modal-dialog {
-            transition: transform 0.3s ease-out;
-            transform: translate(0, -50px);
-        }
-
-        .modal.show .modal-dialog {
-            transform: translate(0, 0);
-        }
-
-        /* Chart Container */
-        canvas {
-            animation: fadeIn 1s ease-in;
-        }
-
-        /* Icon Animations */
-        .bi {
-            transition: all 0.3s ease;
-        }
-
-
-        /* Smooth Scroll */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        /* Page Content Animation */
-        .page-content {
-            animation: fadeInUp 0.6s ease-out both;
-        }
-        
-        /* Sidebar icon hover animation */
-        .sidebar-link:hover i {
-            transform: translateX(4px);
-        }
+        canvas { animation: fadeIn 1s ease-in; }
+        .bi { transition: all 0.3s ease; }
+        html { scroll-behavior: smooth; }
+        .page-content { animation: fadeInUp 0.6s ease-out both; }
 
         .card.text-white.bg-primary { background: linear-gradient(135deg, #0891b2, #06b6d4); }
         .card.text-white.bg-success { background: #10b981; }
         .card.text-white.bg-info { background: #3b82f6; }
         .card.text-white.bg-warning { background: #f59e0b; }
 
-        /* Pulse Animation for Important Elements */
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .pulse { animation: pulse 2s infinite; }
 
-        .pulse {
-            animation: pulse 2s infinite;
-        }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        .shimmer { background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); background-size: 1000px 100%; animation: shimmer 2s infinite; }
 
-        /* Shimmer Effect */
-        @keyframes shimmer {
-            0% {
-                background-position: -1000px 0;
-            }
-            100% {
-                background-position: 1000px 0;
-            }
-        }
-
-        .shimmer {
-            background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.3) 50%,
-                rgba(255, 255, 255, 0) 100%
-            );
-            background-size: 1000px 100%;
-            animation: shimmer 2s infinite;
-        }
-
-        /* Float Animation for Icons */
-        @keyframes float {
-            0%, 100% { 
-                transform: translateY(0px) rotate(0deg); 
-            }
-            50% { 
-                transform: translateY(-10px) rotate(5deg); 
-            }
-        }
-
-        /* Badge Improvements */
-        .badge {
-            padding: 6px 12px;
-            font-weight: 500;
-            font-size: 0.8rem;
-            border-radius: 6px;
-        }
-        
-        /* Form Improvements */
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            padding: 10px 15px;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #0891b2;
-            box-shadow: 0 0 0 0.2rem rgba(8, 145, 178, 0.2);
-        }
-        
-        /* Alert Improvements */
-        .alert {
-            border-radius: 12px;
-            border-left-width: 5px;
-            padding: 15px 20px;
-            font-weight: 500;
-        }
-        
         /* Responsive */
         @media (max-width: 992px) {
-            .admin-sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            
-            .admin-sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .admin-content {
-                margin-left: 0;
-                padding: 20px 15px;
-            }
-            
-            .admin-navbar {
-                padding: 15px;
-            }
+            .admin-sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+            .admin-sidebar.show { transform: translateX(0); }
+            .admin-content { margin-left: 0; padding: 20px 15px; }
+            .admin-navbar { padding: 15px; }
         }
-        
         @media (max-width: 768px) {
-            .admin-content {
-                padding: 15px 10px;
-            }
-            
-            .card-body {
-                padding: 15px;
-            }
-            
-            .admin-user-info {
-                flex-direction: column;
-                gap: 8px;
-                padding: 10px;
-            }
+            .admin-content { padding: 15px 10px; }
+            .card-body { padding: 15px; }
+            .admin-user-info { flex-direction: column; gap: 8px; padding: 10px; }
         }
-        
-        /* Mobile Menu Toggle */
+
         .sidebar-toggle {
             display: none;
             position: fixed;
@@ -569,17 +350,8 @@
             box-shadow: 0 4px 16px rgba(8,145,178,0.4);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        
-        .sidebar-toggle:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(8,145,178,0.5);
-        }
-        
-        @media (max-width: 992px) {
-            .sidebar-toggle {
-                display: block;
-            }
-        }
+        .sidebar-toggle:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(8,145,178,0.5); }
+        @media (max-width: 992px) { .sidebar-toggle { display: block; } }
     </style>
     @stack('styles')
 </head>
@@ -597,82 +369,309 @@
             <small class="text-white-50 d-block mt-1">ToyHaven Platform</small>
         </div>
         <nav>
-            <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Management</small>
-            </div>
-            <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+
+            {{-- ═══════════════════════════════════════════
+                 1. ANALYTICS DASHBOARD
+            ═══════════════════════════════════════════ --}}
+            <a href="{{ route('admin.analytics.index') }}"
+               class="sidebar-link {{ request()->routeIs('admin.analytics.*') || request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <i class="bi bi-graph-up menu-icon"></i> Analytics Dashboard
             </a>
-            <a href="{{ route('admin.sellers.index') }}" class="sidebar-link {{ request()->routeIs('admin.sellers.*') ? 'active' : '' }}">
-                <i class="bi bi-shop me-2"></i> Seller Management
-            </a>
-            <a href="{{ route('admin.business-page-revisions.index') }}" class="sidebar-link {{ request()->routeIs('admin.business-page-revisions.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-check me-2"></i> Business Page Approvals
-            </a>
-            <a href="{{ route('admin.products.index') }}" class="sidebar-link {{ request()->routeIs('admin.products.index') ? 'active' : '' }}">
-                <i class="bi bi-box-seam me-2"></i> Product Moderation
-            </a>
-            <a href="{{ route('admin.products.pending') }}" class="sidebar-link {{ request()->routeIs('admin.products.pending') ? 'active' : '' }}">
-                <i class="bi bi-hourglass-split me-2"></i> Products Requesting Approval
-            </a>
-            <a href="{{ route('admin.products.approved') }}" class="sidebar-link {{ request()->routeIs('admin.products.approved') ? 'active' : '' }}">
-                <i class="bi bi-check2-square me-2"></i> Approved Products by Category
-            </a>
-            <a href="{{ route('admin.products.rejected') }}" class="sidebar-link {{ request()->routeIs('admin.products.rejected') ? 'active' : '' }}">
-                <i class="bi bi-x-circle me-2"></i> Rejected Products
-            </a>
-            <a href="{{ route('admin.orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                <i class="bi bi-cart-check me-2"></i> Orders
-            </a>
-            <a href="{{ route('admin.trades.listings') }}" class="sidebar-link {{ request()->routeIs('admin.trades.listings') && !request()->routeIs('admin.trades.listings.approved') && !request()->routeIs('admin.trades.listings.rejected') ? 'active' : '' }}">
-                <i class="bi bi-arrow-left-right me-2"></i> Trade Listings
-            </a>
-            <a href="{{ route('admin.trades.listings.approved') }}" class="sidebar-link {{ request()->routeIs('admin.trades.listings.approved') ? 'active' : '' }}">
-                <i class="bi bi-check2-square me-2"></i> Approved Trade Listings
-            </a>
-            <a href="{{ route('admin.trades.listings.rejected') }}" class="sidebar-link {{ request()->routeIs('admin.trades.listings.rejected') ? 'active' : '' }}">
-                <i class="bi bi-x-circle me-2"></i> Rejected Trade Listings
-            </a>
-            <a href="{{ route('admin.trades.index') }}" class="sidebar-link {{ request()->routeIs('admin.trades.index') || request()->routeIs('admin.trades.show') ? 'active' : '' }}">
-                <i class="bi bi-bag-check me-2"></i> Trades
-            </a>
-            <a href="{{ route('admin.auctions.index') }}" class="sidebar-link {{ request()->routeIs('admin.auctions.*') ? 'active' : '' }}">
-                <i class="bi bi-hammer me-2"></i> Auctions
-            </a>
-            <a href="{{ route('admin.plans.index') }}" class="sidebar-link {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
-                <i class="bi bi-gem me-2"></i> Plans
-            </a>
-            <a href="{{ route('admin.subscriptions.index') }}" class="sidebar-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
-                <i class="bi bi-credit-card me-2"></i> Subscriptions
-            </a>
-            <a href="{{ route('admin.reports.index') }}" class="sidebar-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                <i class="bi bi-flag me-2"></i> Report Management
-            </a>
-            <a href="{{ route('admin.conversation-reports.index') }}" class="sidebar-link {{ request()->routeIs('admin.conversation-reports.*') ? 'active' : '' }}">
-                <i class="bi bi-chat-dots me-2"></i> Conversation Reports
-            </a>
-            <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <i class="bi bi-people me-2"></i> User Management
-            </a>
-            <a href="{{ route('admin.admins.index') }}" class="sidebar-link {{ request()->routeIs('admin.admins.*') ? 'active' : '' }}">
-                <i class="bi bi-shield-check me-2"></i> Admin Management
-            </a>
-            <a href="{{ route('admin.categories.index') }}" class="sidebar-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                <i class="bi bi-tags me-2"></i> Category Management
-            </a>
-            <hr class="text-white-50 my-3">
-            <div class="px-3 mb-2">
-                <small class="text-white-50 text-uppercase">Analytics & Settings</small>
-            </div>
-            <a href="{{ route('admin.analytics.index') }}" class="sidebar-link {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
-                <i class="bi bi-graph-up me-2"></i> Analytics Dashboard
-            </a>
-            <a href="{{ route('admin.settings.index') }}" class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <i class="bi bi-gear me-2"></i> System Settings
-            </a>
-            <hr class="text-white-50 my-3">
-            <div class="px-3">
-                <small class="text-white-50">
+
+            {{-- ═══════════════════════════════════════════
+                 2. TOYSHOP MANAGEMENT
+            ═══════════════════════════════════════════ --}}
+            <div class="sidebar-section-label">Toyshop</div>
+
+            <button class="sidebar-parent {{ request()->routeIs('admin.sellers.*') || request()->routeIs('admin.business-page-revisions.*') || request()->routeIs('admin.products.*') || request()->routeIs('admin.orders.*') ? 'active-section' : '' }}"
+                    onclick="toggleMenu(this)"
+                    aria-expanded="{{ request()->routeIs('admin.sellers.*') || request()->routeIs('admin.business-page-revisions.*') || request()->routeIs('admin.products.*') || request()->routeIs('admin.orders.*') ? 'true' : 'false' }}">
+                <i class="bi bi-shop menu-icon"></i> Toyshop Management
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <ul class="sidebar-children {{ request()->routeIs('admin.sellers.*') || request()->routeIs('admin.business-page-revisions.*') || request()->routeIs('admin.products.*') || request()->routeIs('admin.orders.*') ? 'open' : '' }}">
+                {{-- Seller Toyshop Management --}}
+                <li>
+                    <a href="{{ route('admin.sellers.index') }}"
+                       class="sidebar-link {{ request()->routeIs('admin.sellers.*') || request()->routeIs('admin.business-page-revisions.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-badge menu-icon"></i> Seller Toyshop Management
+                    </a>
+                </li>
+                {{-- Toyshop Product Management --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.products.*') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.products.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-box-seam menu-icon"></i> Toyshop Product Management
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.products.*') ? 'open' : '' }}">
+                        <li>
+                            <a href="{{ route('admin.products.pending') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.products.pending') ? 'active' : '' }}">
+                                <i class="bi bi-hourglass-split menu-icon"></i> Request Products
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.products.approved') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.products.approved') || request()->routeIs('admin.products.rejected') ? 'active' : '' }}">
+                                <i class="bi bi-check2-square menu-icon"></i> Approved & Rejected Products
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            {{-- ═══════════════════════════════════════════
+                 3. TRADE MANAGEMENT
+            ═══════════════════════════════════════════ --}}
+            <div class="sidebar-section-label">Trading</div>
+
+            <button class="sidebar-parent {{ request()->routeIs('admin.trades.*') ? 'active-section' : '' }}"
+                    onclick="toggleMenu(this)"
+                    aria-expanded="{{ request()->routeIs('admin.trades.*') ? 'true' : 'false' }}">
+                <i class="bi bi-arrow-left-right menu-icon"></i> Trade Management
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <ul class="sidebar-children {{ request()->routeIs('admin.trades.*') ? 'open' : '' }}">
+                {{-- Trade Product Management --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.trades.listings*') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.trades.listings*') ? 'true' : 'false' }}">
+                        <i class="bi bi-box menu-icon"></i> Trade Product Management
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.trades.listings*') ? 'open' : '' }}">
+                        <li>
+                            <a href="{{ route('admin.trades.listings') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.trades.listings') && !request()->routeIs('admin.trades.listings.*') ? 'active' : '' }}">
+                                <i class="bi bi-send menu-icon"></i> Request Listings
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.trades.listings.approved') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.trades.listings.approved') || request()->routeIs('admin.trades.listings.rejected') ? 'active' : '' }}">
+                                <i class="bi bi-check2-square menu-icon"></i> Approved & Rejected Listings
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {{-- Trade Listings --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.trades.index') || request()->routeIs('admin.trades.show') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.trades.index') || request()->routeIs('admin.trades.show') ? 'true' : 'false' }}">
+                        <i class="bi bi-list-ul menu-icon"></i> Trade Listings
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.trades.index') || request()->routeIs('admin.trades.show') ? 'open' : '' }}">
+                        <li>
+                            <a href="{{ route('admin.trades.index') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.trades.index') || request()->routeIs('admin.trades.show') ? 'active' : '' }}">
+                                <i class="bi bi-person menu-icon"></i> User Seller Trade Info
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            {{-- ═══════════════════════════════════════════
+                 4. AUCTION MANAGEMENT
+            ═══════════════════════════════════════════ --}}
+            <div class="sidebar-section-label">Auction</div>
+
+            <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
+                    onclick="toggleMenu(this)"
+                    aria-expanded="{{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
+                <i class="bi bi-hammer menu-icon"></i> Auction Management
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
+                {{-- Auction Product Management --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.auctions.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-box-seam menu-icon"></i> Auction Product Management
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') ? 'open' : '' }}">
+                        <li>
+                            <a href="{{ route('admin.auctions.index') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.auctions.index') || request()->routeIs('admin.auctions.create') ? 'active' : '' }}">
+                                <i class="bi bi-send menu-icon"></i> Auction Request Listing
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.auctions.index') }}?filter=live"
+                               class="sidebar-link">
+                                <i class="bi bi-broadcast menu-icon"></i> Live Bid & Results
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.auctions.index') }}?filter=reviewed"
+                               class="sidebar-link">
+                                <i class="bi bi-check2-square menu-icon"></i> Approved & Rejected Auction Products
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {{-- Membership Management --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-gem menu-icon"></i> Membership Management
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
+                        <li>
+                            <a href="{{ route('admin.plans.index') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
+                                <i class="bi bi-pencil-square menu-icon"></i> Membership Edit Plan
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.subscriptions.index') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
+                                <i class="bi bi-people menu-icon"></i> User Subscriptions by Member Badge
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            {{-- ═══════════════════════════════════════════
+                 5. ADMIN MANAGEMENT
+            ═══════════════════════════════════════════ --}}
+            <div class="sidebar-section-label">Administration</div>
+
+            <button class="sidebar-parent {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'active-section' : '' }}"
+                    onclick="toggleMenu(this)"
+                    aria-expanded="{{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'true' : 'false' }}">
+                <i class="bi bi-shield-lock menu-icon"></i> Admin Management
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <ul class="sidebar-children {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'open' : '' }}">
+                {{-- Toy Categories --}}
+                <li>
+                    <a href="{{ route('admin.categories.index') }}"
+                       class="sidebar-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+                        <i class="bi bi-tags menu-icon"></i> Toy Categories Selections Edit
+                    </a>
+                </li>
+                {{-- Admin Users --}}
+                <li>
+                    <a href="{{ route('admin.admins.index') }}"
+                       class="sidebar-link {{ request()->routeIs('admin.admins.*') ? 'active' : '' }}">
+                        <i class="bi bi-shield-check menu-icon"></i> Admin Users Management
+                    </a>
+                </li>
+                {{-- Report Management --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-flag menu-icon"></i> Report Management
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') ? 'open' : '' }}">
+                        {{-- Toyshop Reports --}}
+                        <li>
+                            <button class="sidebar-parent" onclick="toggleMenu(this)" aria-expanded="false">
+                                <i class="bi bi-shop menu-icon"></i> Toyshop
+                                <i class="bi bi-chevron-right chevron"></i>
+                            </button>
+                            <ul class="sidebar-children">
+                                <li>
+                                    <a href="{{ route('admin.business-page-revisions.index') }}"
+                                       class="sidebar-link {{ request()->routeIs('admin.business-page-revisions.*') ? 'active' : '' }}">
+                                        <i class="bi bi-building menu-icon"></i> Business Toyshop Page
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.products.index') }}"
+                                       class="sidebar-link {{ request()->routeIs('admin.products.index') ? 'active' : '' }}">
+                                        <i class="bi bi-box-seam menu-icon"></i> Products
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.users.index') }}"
+                                       class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                                        <i class="bi bi-people menu-icon"></i> Users (Customer & Seller)
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        {{-- Trading Reports --}}
+                        <li>
+                            <button class="sidebar-parent" onclick="toggleMenu(this)" aria-expanded="false">
+                                <i class="bi bi-arrow-left-right menu-icon"></i> Trading
+                                <i class="bi bi-chevron-right chevron"></i>
+                            </button>
+                            <ul class="sidebar-children">
+                                <li>
+                                    <a href="{{ route('admin.conversation-reports.index') }}"
+                                       class="sidebar-link {{ request()->routeIs('admin.conversation-reports.*') ? 'active' : '' }}">
+                                        <i class="bi bi-chat-dots menu-icon"></i> Chat
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.trades.listings') }}"
+                                       class="sidebar-link">
+                                        <i class="bi bi-card-list menu-icon"></i> Products Listing
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.users.index') }}"
+                                       class="sidebar-link">
+                                        <i class="bi bi-people menu-icon"></i> Users (Customer & Seller)
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        {{-- Auction Reports --}}
+                        <li>
+                            <button class="sidebar-parent" onclick="toggleMenu(this)" aria-expanded="false">
+                                <i class="bi bi-hammer menu-icon"></i> Auction
+                                <i class="bi bi-chevron-right chevron"></i>
+                            </button>
+                            <ul class="sidebar-children">
+                                <li>
+                                    <a href="{{ route('admin.auctions.index') }}"
+                                       class="sidebar-link">
+                                        <i class="bi bi-box menu-icon"></i> Auction Products
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.users.index') }}"
+                                       class="sidebar-link">
+                                        <i class="bi bi-people menu-icon"></i> Users (Individual & Business Seller, Customer)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.conversation-reports.index') }}"
+                                       class="sidebar-link">
+                                        <i class="bi bi-chat-dots menu-icon"></i> Chat
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                {{-- System Settings --}}
+                <li>
+                    <a href="{{ route('admin.settings.index') }}"
+                       class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                        <i class="bi bi-gear menu-icon"></i> System Settings
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="text-white-50 my-2 mx-3">
+            <div class="px-3 pb-3">
+                <small class="text-white-50" style="font-size:0.72rem;">
                     <i class="bi bi-info-circle me-1"></i> Admin accounts are restricted to the Admin Panel only.
                 </small>
             </div>
@@ -732,102 +731,66 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <script>
-        // Number counter animation
-        function animateCounter(element, target, isCurrency = false, duration = 2000) {
-            const start = 0;
-            const increment = target / (duration / 16);
-            let current = start;
-            
+        /* ── Sidebar collapse / expand ── */
+        function toggleMenu(btn) {
+            const list = btn.nextElementSibling;
+            if (!list || !list.classList.contains('sidebar-children')) return;
+            const isOpen = list.classList.contains('open');
+            list.classList.toggle('open');
+            btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        }
+
+        /* ── Mobile sidebar toggle ── */
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('show');
+        }
+
+        /* ── Number counter animation ── */
+        function animateCounter(el, target, isCurrency, duration) {
+            duration = duration || 2000;
+            let current = 0;
+            const inc = target / (duration / 16);
+            const fmt = v => isCurrency
+                ? '₱' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+                : Math.floor(v).toLocaleString();
             const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    if (isCurrency) {
-                        element.textContent = '₱' + target.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    } else {
-                        element.textContent = Math.floor(target).toLocaleString();
-                    }
-                    clearInterval(timer);
-                } else {
-                    if (isCurrency) {
-                        element.textContent = '₱' + current.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    } else {
-                        element.textContent = Math.floor(current).toLocaleString();
-                    }
-                }
+                current += inc;
+                if (current >= target) { el.textContent = fmt(target); clearInterval(timer); }
+                else { el.textContent = fmt(current); }
             }, 16);
         }
 
-        // Animate counters on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Animate number counters
-            document.querySelectorAll('.counter-number').forEach(counter => {
-                const count = parseFloat(counter.getAttribute('data-count'));
-                if (!isNaN(count) && count > 0) {
-                    counter.textContent = '0';
-                    setTimeout(() => {
-                        animateCounter(counter, count, false);
-                    }, 300);
-                }
+            document.querySelectorAll('.counter-number').forEach(c => {
+                const n = parseFloat(c.dataset.count);
+                if (!isNaN(n) && n > 0) { c.textContent = '0'; setTimeout(() => animateCounter(c, n, false), 300); }
+            });
+            document.querySelectorAll('.counter-currency').forEach(c => {
+                const n = parseFloat(c.dataset.count);
+                if (!isNaN(n) && n >= 0) { c.textContent = '₱0.00'; setTimeout(() => animateCounter(c, n, true), 500); }
             });
 
-            // Animate currency counters
-            document.querySelectorAll('.counter-currency').forEach(counter => {
-                const count = parseFloat(counter.getAttribute('data-count'));
-                if (!isNaN(count) && count >= 0) {
-                    counter.textContent = '₱0.00';
-                    setTimeout(() => {
-                        animateCounter(counter, count, true);
-                    }, 500);
-                }
-            });
+            document.querySelectorAll('.card').forEach((card, i) => { card.style.animationDelay = i * 0.1 + 's'; });
 
-            // Add stagger animation to cards
-            const cards = document.querySelectorAll('.card');
-            cards.forEach((card, index) => {
-                card.style.animationDelay = `${index * 0.1}s`;
-            });
-
-            // Add hover sound effect (optional - can be removed)
-            const buttons = document.querySelectorAll('.btn');
-            buttons.forEach(btn => {
-                btn.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-2px) scale(1.05)';
-                });
-                btn.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0) scale(1)';
-                });
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() { this.style.transform = 'translateY(-2px) scale(1.05)'; });
+                btn.addEventListener('mouseleave', function() { this.style.transform = 'translateY(0) scale(1)'; });
             });
         });
 
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', function(e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+                const t = document.querySelector(this.getAttribute('href'));
+                if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
-        
-        // Sidebar toggle for mobile
-        function toggleSidebar() {
-            const sidebar = document.getElementById('adminSidebar');
-            sidebar.classList.toggle('show');
-        }
-        
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
+
+        document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('adminSidebar');
             const toggle = document.querySelector('.sidebar-toggle');
-            
-            if (window.innerWidth <= 992) {
-                if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
-                    sidebar.classList.remove('show');
-                }
+            if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('show');
             }
         });
     </script>
