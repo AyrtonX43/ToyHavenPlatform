@@ -290,10 +290,18 @@
         border-color: #0891b2;
     }
     
+    /* Tablet */
+    @media (max-width: 991px) {
+        .filter-card .card-header { padding: 1rem 1.25rem; }
+        .filter-card .card-body { padding: 1.25rem; }
+        .products-header { padding: 1.25rem; }
+        .products-header h2 { font-size: 1.25rem; }
+    }
+
     @media (max-width: 768px) {
         .filter-sidebar {
             position: static;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .products-header {
@@ -305,22 +313,68 @@
         }
         
         .product-image-wrapper {
-            height: 260px;
+            height: 220px;
         }
         
         .recommended-image-wrapper {
-            height: 180px !important;
+            height: 160px !important;
         }
         
         .recommended-image-placeholder {
-            min-height: 180px !important;
+            min-height: 160px !important;
         }
+
+        .product-card-body { padding: 0.875rem 1rem; }
+        .product-title { font-size: 0.9375rem; margin-bottom: 0.5rem; }
+        .product-description { font-size: 0.8125rem; margin-bottom: 0.75rem; }
+        .product-price { font-size: 1.25rem; }
+        .product-actions .btn { padding: 0.5rem 0.625rem; font-size: 0.8125rem; }
+    }
+
+    /* Small phones */
+    @media (max-width: 575px) {
+        .product-image-wrapper {
+            height: 180px;
+        }
+        .recommended-image-wrapper {
+            height: 140px !important;
+        }
+        .recommended-image-placeholder {
+            min-height: 140px !important;
+        }
+        .product-card-body { padding: 0.625rem 0.75rem; }
+        .product-title { font-size: 0.8125rem; line-height: 1.3; }
+        .product-description { display: none; }
+        .product-price { font-size: 1.0625rem; margin-bottom: 0.25rem; }
+        .product-original-price { font-size: 0.75rem; }
+        .product-rating { margin-bottom: 0.375rem; }
+        .product-rating .rating-stars { font-size: 0.6875rem; }
+        .product-rating .rating-text { font-size: 0.6875rem; }
+        .product-price-section { padding-top: 0.5rem; }
+        .product-actions { gap: 0.25rem; margin-top: 0.5rem; }
+        .product-actions .btn { padding: 0.375rem 0.5rem; font-size: 0.75rem; border-radius: 8px; }
+
+        .products-header { padding: 0.875rem 1rem; border-radius: 12px; margin-bottom: 1rem; }
+        .products-header h2 { font-size: 1.125rem; }
+        .filter-card { border-radius: 12px; }
+        .empty-state { padding: 2.5rem 1.25rem; }
+        .empty-state-icon { font-size: 2.5rem; }
+        .empty-state h4 { font-size: 1.0625rem; }
+    }
+
+    /* Extra small phones */
+    @media (max-width: 399px) {
+        .product-image-wrapper { height: 150px; }
+        .product-card-body { padding: 0.5rem 0.625rem; }
+        .product-title { font-size: 0.75rem; }
+        .product-price { font-size: 0.9375rem; }
+        .product-actions .btn { padding: 0.3rem 0.4rem; font-size: 0.6875rem; }
     }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid py-4 px-3 px-lg-4">
+<div class="container-fluid py-3 py-lg-4 px-2 px-sm-3 px-lg-4">
     <div class="row g-3 g-lg-4">
         <!-- Sidebar Filters -->
         <div class="col-xl-2 col-lg-3 col-md-4 mb-3 mb-lg-0">

@@ -271,6 +271,36 @@
         font-weight: 600;
         padding: 0.625rem 1.5rem;
     }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+        .sidebar-filters { position: static; max-height: none; margin-bottom: 1.5rem; }
+    }
+    @media (max-width: 767px) {
+        .marketplace-header { padding: 1.25rem; border-radius: 12px; }
+        .marketplace-header h2 { font-size: 1.1875rem; }
+        .filter-tabs { gap: 0.375rem; }
+        .filter-tab { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+        .product-image-wrapper { height: 180px; }
+        .product-card-body { padding: 0.875rem; }
+        .product-title { font-size: 0.875rem; }
+        .product-price { font-size: 1.0625rem; }
+        .product-meta { font-size: 0.75rem; padding-top: 0.5rem; }
+        .sidebar-filters { padding: 1.25rem; border-radius: 12px; }
+        .create-listing-card { padding: 1.5rem; border-radius: 12px; }
+        .create-listing-card h5 { font-size: 1.0625rem; }
+    }
+    @media (max-width: 575px) {
+        .marketplace-header { padding: 1rem; }
+        .marketplace-header h2 { font-size: 1.0625rem; }
+        .product-image-wrapper { height: 160px; }
+        .product-card-body { padding: 0.625rem 0.75rem; }
+        .product-title { font-size: 0.8125rem; -webkit-line-clamp: 1; }
+        .product-price { font-size: 0.9375rem; }
+        .product-location { font-size: 0.75rem; margin-bottom: 0.5rem; }
+        .product-meta { font-size: 0.6875rem; }
+        .btn-marketplace { padding: 0.375rem 0.875rem; font-size: 0.8125rem; }
+    }
 </style>
 @endpush
 

@@ -316,10 +316,72 @@
         to { opacity: 1; transform: translateY(0); }
     }
     
-    @media (max-width: 768px) {
+    /* Tablet */
+    @media (max-width: 991px) {
         .hero-section { padding: 3rem 0 4rem; }
-        .hero-title { font-size: 2rem; }
-        .category-block { padding: 1.5rem; }
+        .hero-subtitle { font-size: 1.0625rem; max-width: 100%; }
+        .how-it-row .card { padding: 1.5rem; }
+        .how-it-row .card h3 { font-size: 1.0625rem; }
+        .about-section { padding: 3rem 0; margin: 2rem 0; }
+        .cta-block { padding: 2.5rem 1.5rem; margin: 2rem 0; }
+        .newsletter-section { padding: 2.5rem 1.5rem; margin: 2rem 0; }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section { padding: 2.5rem 0 3rem; }
+        .hero-title { font-size: 1.75rem; }
+        .hero-subtitle { font-size: 1rem; margin-bottom: 1.5rem; }
+        .hero-cta .btn { padding: 0.75rem 1.75rem; font-size: 0.9375rem; }
+        .section-heading { font-size: 1.375rem; }
+        .section-subheading { font-size: 0.9375rem; margin-bottom: 1.5rem; }
+        .category-block { padding: 1.25rem; border-radius: 14px; margin-bottom: 2rem; }
+        .category-block h3 { font-size: 1.25rem; }
+        .toy-card-body { padding: 0.875rem; }
+        .toy-card-title { font-size: 0.875rem; }
+        .toy-card-price { font-size: 1rem; }
+        .about-section { padding: 2rem 1.25rem; margin: 1.5rem 0; border-radius: 16px; }
+        .about-section h2 { font-size: 1.375rem; }
+        .about-section p { font-size: 0.9375rem; max-width: 100%; }
+        .cta-block { padding: 2rem 1.25rem; border-radius: 14px; margin: 1.5rem 0; }
+        .cta-block h2 { font-size: 1.25rem; }
+        .newsletter-section { padding: 2rem 1.25rem; border-radius: 14px; margin: 1.5rem 0; }
+        .newsletter-section h3 { font-size: 1.25rem; }
+        .how-it-row .card { padding: 1.25rem; border-radius: 12px; }
+        .how-it-row .card .icon-wrap { width: 52px; height: 52px; font-size: 1.5rem; border-radius: 12px; }
+    }
+
+    /* Small phones */
+    @media (max-width: 575px) {
+        .hero-section { padding: 2rem 0 2.5rem; }
+        .hero-title { font-size: 1.5rem; }
+        .hero-subtitle { font-size: 0.9375rem; }
+        .hero-badge { font-size: 0.75rem; padding: 0.3rem 0.75rem; }
+        .hero-cta .btn { padding: 0.625rem 1.5rem; font-size: 0.875rem; }
+        .section-label { font-size: 0.75rem; }
+        .section-heading { font-size: 1.1875rem; }
+        .category-block { padding: 1rem; }
+        .category-block h3 { font-size: 1.0625rem; }
+        .category-block h3 a { font-size: 0.8125rem; }
+        .toy-card-body { padding: 0.75rem; }
+        .toy-card-title { font-size: 0.8125rem; line-height: 1.3; }
+        .toy-card-price { font-size: 0.9375rem; }
+        .about-section { padding: 1.5rem 1rem; }
+        .about-section h2 { font-size: 1.1875rem; }
+        .about-section p { font-size: 0.875rem; }
+        .cta-block { padding: 1.5rem 1rem; }
+        .cta-block h2 { font-size: 1.125rem; }
+        .cta-block p { font-size: 0.875rem; }
+        .newsletter-section { padding: 1.5rem 1rem; }
+        .newsletter-section h3 { font-size: 1.125rem; }
+        .newsletter-section p { font-size: 0.875rem; }
+        .newsletter-section .form-control { padding: 0.75rem 1rem; }
+        .newsletter-section .btn { padding: 0.75rem 1.25rem; }
+    }
+
+    /* Extra small phones */
+    @media (max-width: 399px) {
+        .hero-title { font-size: 1.375rem; }
+        .hero-subtitle { font-size: 0.875rem; }
     }
 </style>
 @endpush

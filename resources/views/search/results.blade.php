@@ -21,14 +21,19 @@
     
     .search-tabs {
         display: flex;
-        gap: 1rem;
+        gap: 0.5rem;
         margin-bottom: 2rem;
         border-bottom: 2px solid #e5e7eb;
         padding-bottom: 1rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
+    .search-tabs::-webkit-scrollbar { display: none; }
     
     .search-tab {
-        padding: 0.75rem 1.5rem;
+        padding: 0.625rem 1.25rem;
         border-radius: 10px;
         background: transparent;
         border: none;
@@ -37,6 +42,9 @@
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 0.875rem;
     }
     
     .search-tab:hover {
@@ -210,6 +218,36 @@
     .view-all-link:hover {
         color: #0f766e;
         text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+        .search-header { padding: 2rem 0; }
+        .search-header h1 { font-size: 1.5rem; }
+        .search-results-container { padding: 1.25rem; }
+    }
+    @media (max-width: 767px) {
+        .search-header { padding: 1.5rem 0; margin-bottom: 1rem; }
+        .search-header h1 { font-size: 1.25rem; }
+        .search-results-container { padding: 1rem; border-radius: 12px; }
+        .search-tab { padding: 0.5rem 0.875rem; font-size: 0.8125rem; }
+        .result-section-title { font-size: 1.125rem; flex-wrap: wrap; }
+        .result-count { margin-left: 0; width: 100%; font-size: 0.8125rem; }
+        .result-image-wrapper { height: 160px; }
+        .result-card-body { padding: 1rem; }
+        .result-title { font-size: 0.9375rem; }
+    }
+    @media (max-width: 575px) {
+        .search-header { padding: 1.25rem 0; }
+        .search-header h1 { font-size: 1.125rem; }
+        .search-results-container { padding: 0.75rem; border-radius: 10px; }
+        .search-tab { padding: 0.4rem 0.75rem; font-size: 0.75rem; border-radius: 8px; }
+        .search-tabs { gap: 0.375rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; }
+        .result-image-wrapper { height: 140px; }
+        .result-card-body { padding: 0.75rem; }
+        .result-title { font-size: 0.875rem; }
+        .result-description { font-size: 0.75rem; -webkit-line-clamp: 1; }
+        .result-price { font-size: 1rem; }
     }
 </style>
 @endpush

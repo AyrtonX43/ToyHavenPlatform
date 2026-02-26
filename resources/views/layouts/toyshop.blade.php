@@ -30,7 +30,7 @@
             overflow-x: hidden;
             margin: 0;
         }
-        /* Container fills viewport up to Bootstrap breakpoint max; no horizontal scroll */
+        /* Container fills viewport; responsive max-widths */
         body .container {
             width: 100%;
             max-width: 100%;
@@ -53,6 +53,9 @@
         }
         @media (min-width: 1400px) {
             body .container { max-width: 1320px; }
+        }
+        @media (min-width: 1600px) {
+            body .container { max-width: 1440px; }
         }
         
         body {
@@ -178,11 +181,187 @@
         .input-group .btn {
             border-radius: 0 8px 8px 0;
         }
-        
+
+        /* Search bar - prominent and usable */
+        .search-input {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-right: none;
+            padding: 0.625rem 1rem;
+            font-size: 0.9375rem;
+            border-radius: 10px 0 0 10px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            min-height: 44px;
+        }
+        .search-input:focus {
+            background: #fff;
+            border-color: #0891b2;
+            box-shadow: 0 0 0 3px rgba(8,145,178,0.15);
+        }
+        .search-input::placeholder {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+        .search-btn {
+            background: #0891b2;
+            color: #fff;
+            border: 2px solid #0891b2;
+            border-radius: 0 10px 10px 0;
+            padding: 0.625rem 1rem;
+            min-height: 44px;
+            transition: background 0.2s;
+        }
+        .search-btn:hover, .search-btn:focus {
+            background: #0e7490;
+            border-color: #0e7490;
+            color: #fff;
+        }
+        .search-suggest-dropdown {
+            border-radius: 12px !important;
+        }
+
+        /* Navbar spacer */
         .navbar-spacer { min-height: 118px; }
-        @media (max-width: 767px) {
+
+        /* Navbar icon items - consistent sizing */
+        .navbar-nav .nav-link .bi.fs-5 {
+            font-size: 1.25rem !important;
+        }
+
+        /* ===== Responsive Breakpoints ===== */
+
+        /* Extra large screens (1400px+) */
+        @media (min-width: 1400px) {
+            .search-bar-wrapper {
+                max-width: 560px !important;
+            }
+        }
+
+        /* Large screens (992-1199px) - navbar is expanded */
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .navbar-brand span { display: none; }
+            .nav-link {
+                font-size: 0.8125rem !important;
+                padding: 0.4rem 0.5rem !important;
+            }
+            .search-bar-wrapper {
+                max-width: 300px !important;
+            }
+            .search-input {
+                font-size: 0.8125rem;
+                padding: 0.5rem 0.75rem;
+            }
+            .search-input::placeholder {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Medium and below: navbar collapses */
+        @media (max-width: 991px) {
             .navbar-spacer { min-height: 70px; }
             .navbar-brand { font-size: 1.35rem; }
+
+            .navbar .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            /* Search bar goes full width in mobile menu */
+            .search-bar-wrapper {
+                max-width: 100% !important;
+                width: 100%;
+                order: -1;
+                margin-right: 0 !important;
+                margin-bottom: 0.75rem;
+            }
+            .search-input {
+                font-size: 1rem;
+                padding: 0.75rem 1rem;
+                min-height: 48px;
+            }
+            .search-btn {
+                padding: 0.75rem 1.25rem;
+                min-height: 48px;
+            }
+            .search-input::placeholder {
+                font-size: 0.9375rem;
+            }
+            .search-suggest-dropdown {
+                max-height: 50vh !important;
+            }
+
+            /* Stack nav items nicely */
+            .navbar-collapse {
+                padding: 0.75rem 0;
+                border-top: 1px solid #e2e8f0;
+                margin-top: 0.5rem;
+            }
+            .navbar-nav {
+                gap: 0.125rem;
+            }
+            .navbar-nav .nav-link {
+                padding: 0.625rem 0.75rem !important;
+                border-radius: 10px;
+            }
+
+            /* Icon row in mobile */
+            .navbar-nav.align-items-center {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid #f1f5f9;
+                margin-top: 0.5rem;
+            }
+            .navbar-nav.align-items-center > .nav-item {
+                flex-shrink: 0;
+            }
+
+            /* Notification dropdown - full width on mobile */
+            .notification-dropdown {
+                position: fixed !important;
+                top: auto !important;
+                left: 10px !important;
+                right: 10px !important;
+                width: auto !important;
+                max-width: none !important;
+                min-width: auto !important;
+                max-height: 70vh !important;
+                transform: none !important;
+            }
+            
+            /* User dropdown */
+            .dropdown-menu-end {
+                min-width: 200px !important;
+            }
+        }
+
+        /* Small screens (576-767px) */
+        @media (max-width: 767px) {
+            .navbar-spacer { min-height: 65px; }
+            .navbar-brand { font-size: 1.25rem; }
+            .navbar-brand img { height: 32px; }
+            .navbar { padding: 0.375rem 0; }
+            .top-bar { font-size: 0.75rem; padding: 0.3rem 0; }
+        }
+
+        /* Extra small screens (under 576px) */
+        @media (max-width: 575px) {
+            .navbar-spacer { min-height: 60px; }
+            .navbar-brand { font-size: 1.125rem; gap: 0.35rem !important; }
+            .navbar-brand img { height: 28px; }
+            
+            .container, .container-fluid {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+        }
+
+        /* Very small screens (under 400px) */
+        @media (max-width: 399px) {
+            .navbar-brand span { font-size: 1rem; }
+            .navbar-brand img { height: 26px; }
+            .search-input { font-size: 0.875rem; padding: 0.625rem 0.75rem; }
         }
     </style>
 </head>
@@ -260,14 +439,14 @@
                         $searchName = 'q';
                     }
                 @endphp
-                <div class="search-bar-wrapper position-relative d-flex me-3 mb-2 mb-lg-0" style="flex: 1; max-width: 450px;">
+                <div class="search-bar-wrapper position-relative d-flex mb-2 mb-lg-0" style="flex: 1 1 auto; min-width: 0; max-width: 520px;">
                     <form class="d-flex w-100" method="GET" action="{{ $searchAction }}" id="searchForm">
                         <div class="input-group shadow-sm position-relative">
-                            <input class="form-control border-2 border-secondary" type="search" name="{{ $searchName }}" id="navbarSearchInput" placeholder="{{ $searchPlaceholder }}" value="{{ request($searchName) }}" autocomplete="off" aria-label="Search" style="background: #f8fafc;">
-                            <button class="btn border-2 border-secondary" type="submit" style="background: #0891b2; color: #fff;">
+                            <input class="form-control search-input" type="search" name="{{ $searchName }}" id="navbarSearchInput" placeholder="{{ $searchPlaceholder }}" value="{{ request($searchName) }}" autocomplete="off" aria-label="Search">
+                            <button class="btn search-btn" type="submit">
                                 <i class="bi bi-search"></i>
                             </button>
-                            <div id="searchSuggestDropdown" class="search-suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 bg-white rounded shadow-lg border overflow-hidden" style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto;"></div>
+                            <div id="searchSuggestDropdown" class="search-suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 bg-white rounded-3 shadow-lg border overflow-hidden" style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto;"></div>
                         </div>
                     </form>
                 </div>
@@ -567,7 +746,7 @@
             </div>
         </div>
     </nav>
-    <div class="navbar-spacer" style="height: 70px;"></div>
+    <div class="navbar-spacer"></div>
     @endif
 
     <!-- Main Content -->
@@ -651,7 +830,7 @@
                     <h5 class="mb-3 d-flex align-items-center gap-2">
                         <i class="bi bi-toy"></i> ToyHaven
                     </h5>
-                    <p class="text-light opacity-85 small mb-3" style="max-width: 280px; line-height: 1.65;">Your trusted marketplace for toys and collectibles in the Philippines. Verified sellers, secure checkout.</p>
+                    <p class="text-light opacity-85 small mb-3" style="max-width: 320px; line-height: 1.65;">Your trusted marketplace for toys and collectibles in the Philippines. Verified sellers, secure checkout.</p>
                     <div class="d-flex gap-3">
                         <a href="#" class="text-light opacity-75" style="font-size: 1.15rem;" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                         <a href="#" class="text-light opacity-75" style="font-size: 1.15rem;" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
@@ -887,6 +1066,20 @@
                 right: 10px;
                 left: 10px;
                 max-width: none;
+                top: 70px;
+            }
+            .flash-notification {
+                padding: 0.75rem 1rem;
+            }
+            .flash-icon { font-size: 1.25rem; }
+            .flash-title { font-size: 0.8125rem; }
+            .flash-message { font-size: 0.8125rem; }
+        }
+        @media (max-width: 575px) {
+            .flash-notifications-container {
+                right: 8px;
+                left: 8px;
+                top: 65px;
             }
         }
     </style>

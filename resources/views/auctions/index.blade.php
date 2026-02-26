@@ -255,6 +255,23 @@
         padding: 0.3rem 0.6rem;
         border-radius: 8px;
     }
+
+    /* Responsive */
+    @media (max-width: 767px) {
+        .auction-hero { border-radius: 14px; padding: 2rem 1.25rem; }
+        .auction-hero h1 { font-size: 1.5rem; }
+        .auction-hero p { font-size: 0.9375rem; }
+        .auction-card-body { padding: 1rem; }
+        .auction-card-body h5 { font-size: 0.9375rem; }
+        .auction-price { font-size: 1.1875rem; }
+    }
+    @media (max-width: 575px) {
+        .auction-hero { border-radius: 10px; padding: 1.5rem 1rem; }
+        .auction-hero h1 { font-size: 1.25rem; }
+        .auction-card-body { padding: 0.75rem; }
+        .auction-card-body h5 { font-size: 0.8125rem; }
+        .auction-price { font-size: 1.0625rem; }
+    }
 </style>
 @endpush
 
