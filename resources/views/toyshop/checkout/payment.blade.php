@@ -372,18 +372,21 @@
                 throw new Error('Failed to generate QR code. Please try again.');
             }
 
-            var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
+            var cardNumber = document.getElementById('card_number').value.replace(/\D/g, '');
             var expiry = document.getElementById('card_expiry').value.replace(/\D/g, '');
-            var cvc = document.getElementById('cvc').value;
+            var cvc = document.getElementById('cvc').value.replace(/\D/g, '');
             
             if (!cardNumber || !expiry || !cvc) throw new Error('Please fill in all card details.');
-            if (cardNumber.length < 13 || cardNumber.length > 19) throw new Error('Please enter a valid card number.');
+            if (cardNumber.length < 13 || cardNumber.length > 19) throw new Error('Please enter a valid card number (13-19 digits).');
             if (expiry.length !== 4) throw new Error('Please enter expiry date as MM/YY.');
+            if (cvc.length < 3 || cvc.length > 4) throw new Error('Please enter a valid CVC (3-4 digits).');
             
             var expMonth = parseInt(expiry.substring(0, 2), 10);
             var expYear = parseInt('20' + expiry.substring(2, 4), 10);
             
-            if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month.');
+            if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month (must be 01-12).');
+
+            console.log('Creating payment method with card ending in:', cardNumber.slice(-4));
 
             var pmRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
                 method: 'POST',
@@ -395,6 +398,7 @@
                 }}})
             });
             var pmData = await pmRes.json();
+            console.log('PayMongo response:', pmData.errors || 'Success');
             if (!pmData.data?.id) throw new Error(pmData.errors?.[0]?.detail || 'Failed to create payment method.');
 
             var serverRes = await fetch(processUrl, {
