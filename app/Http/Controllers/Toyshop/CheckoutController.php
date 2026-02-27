@@ -358,11 +358,22 @@ class CheckoutController extends Controller
 
         if ($paymentType === 'qrph') {
             $user = Auth::user();
+            Log::info('Creating QRPh payment method for order', [
+                'order_number' => $order->order_number,
+                'user_name' => $user->name,
+                'user_email' => $user->email,
+            ]);
+            
             $pmId = $this->payMongoService->createQrphPaymentMethod($user->name, $user->email);
             if (! $pmId) {
-                return response()->json(['error' => 'Failed to create QR Ph payment method.'], 500);
+                Log::error('QRPh payment method creation failed for order', ['order_number' => $order->order_number]);
+                return response()->json([
+                    'error' => 'Failed to create QR Ph payment method. Please check your PayMongo account settings or contact support.',
+                    'debug' => 'Payment method creation failed - check Laravel logs'
+                ], 500);
             }
             $paymentMethodId = $pmId;
+            Log::info('QRPh payment method created for order', ['order_number' => $order->order_number, 'pm_id' => $pmId]);
         } else {
             $paymentMethodId = $request->payment_method_id;
         }
@@ -372,10 +383,20 @@ class CheckoutController extends Controller
             'payment_intent_id' => $paymentIntentId,
         ]);
 
+        Log::info('Attaching payment method to intent for order', [
+            'order_number' => $order->order_number,
+            'payment_intent_id' => $paymentIntentId,
+            'payment_method_id' => $paymentMethodId,
+        ]);
+
         $result = $this->payMongoService->attachPaymentMethod($paymentIntentId, $paymentMethodId, $returnUrl);
 
         if (! $result) {
-            return response()->json(['error' => 'Failed to process payment. Please try again.'], 500);
+            Log::error('Attach payment method failed for order', ['order_number' => $order->order_number]);
+            return response()->json([
+                'error' => 'Failed to attach payment method. Please try again or contact support.',
+                'debug' => 'Attach failed - check Laravel logs for PayMongo response'
+            ], 500);
         }
 
         $status = $result['attributes']['status'] ?? 'unknown';
