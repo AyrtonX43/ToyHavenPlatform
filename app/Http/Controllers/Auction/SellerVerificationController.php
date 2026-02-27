@@ -76,7 +76,6 @@ class SellerVerificationController extends Controller
             if ($sellerDocs->has('id')) {
                 $syncedData['documents']['government_id_1'] = [
                     'path' => $sellerDocs['id']->document_path,
-                    'url' => Storage::url($sellerDocs['id']->document_path),
                     'label' => 'Government ID (from ToyShop)',
                 ];
             }
@@ -84,7 +83,6 @@ class SellerVerificationController extends Controller
             if ($sellerDocs->has('bank_account')) {
                 $syncedData['documents']['bank_statement'] = [
                     'path' => $sellerDocs['bank_account']->document_path,
-                    'url' => Storage::url($sellerDocs['bank_account']->document_path),
                     'label' => 'Bank Statement (from ToyShop)',
                 ];
             }
@@ -92,7 +90,6 @@ class SellerVerificationController extends Controller
             if ($type === 'business' && $sellerDocs->has('business_registration')) {
                 $syncedData['documents']['business_permit'] = [
                     'path' => $sellerDocs['business_registration']->document_path,
-                    'url' => Storage::url($sellerDocs['business_registration']->document_path),
                     'label' => 'Business Permit (from ToyShop)',
                 ];
             }

@@ -111,7 +111,7 @@
                                             <i class="bi bi-file-earmark-check text-success me-2"></i>
                                             <span class="small text-success fw-semibold">{{ $syncedData['documents']['government_id_1']['label'] }}</span>
                                         </div>
-                                        <a href="{{ $syncedData['documents']['government_id_1']['url'] }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
+                                        <a href="{{ asset('storage/' . $syncedData['documents']['government_id_1']['path']) }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
                                             <i class="bi bi-eye me-1"></i>View
                                         </a>
                                     </div>
@@ -159,7 +159,7 @@
                                         <i class="bi bi-file-earmark-check text-success me-2"></i>
                                         <span class="small text-success fw-semibold">{{ $syncedData['documents']['bank_statement']['label'] }}</span>
                                     </div>
-                                    <a href="{{ $syncedData['documents']['bank_statement']['url'] }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
+                                    <a href="{{ asset('storage/' . $syncedData['documents']['bank_statement']['path']) }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
                                         <i class="bi bi-eye me-1"></i>View
                                     </a>
                                 </div>
@@ -194,7 +194,7 @@
                                                 <i class="bi bi-file-earmark-check text-success me-2"></i>
                                                 <span class="small text-success fw-semibold">{{ $syncedData['documents']['business_permit']['label'] }}</span>
                                             </div>
-                                            <a href="{{ $syncedData['documents']['business_permit']['url'] }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
+                                            <a href="{{ asset('storage/' . $syncedData['documents']['business_permit']['path']) }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
                                                 <i class="bi bi-eye me-1"></i>View
                                             </a>
                                         </div>
