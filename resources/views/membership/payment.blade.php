@@ -158,18 +158,20 @@
                         </div>
 
                         <div id="card-form" class="mb-4 d-none">
+                            @if(config('services.paymongo.mode') === 'test')
+                                <div class="alert alert-info small mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Test Card:</strong> 4571 7360 0000 0183 | Exp: 12/25 | CVC: 123
+                                </div>
+                            @endif
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label">Card Number</label>
                                     <input type="text" id="card_number" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" inputmode="numeric">
                                 </div>
-                                <div class="col-4">
-                                    <label class="form-label">Exp Month</label>
-                                    <input type="number" id="exp_month" class="form-control" placeholder="MM" min="1" max="12" autocomplete="cc-exp-month" inputmode="numeric">
-                                </div>
-                                <div class="col-4">
-                                    <label class="form-label">Exp Year</label>
-                                    <input type="number" id="exp_year" class="form-control" placeholder="YYYY" min="{{ date('Y') }}" autocomplete="cc-exp-year" inputmode="numeric">
+                                <div class="col-8">
+                                    <label class="form-label">Expiry Date (MM/YY)</label>
+                                    <input type="text" id="card_expiry" class="form-control" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric">
                                 </div>
                                 <div class="col-4">
                                     <label class="form-label">CVC</label>
@@ -327,6 +329,18 @@
         });
     }
 
+    var expiryInput = document.getElementById('card_expiry');
+    if (expiryInput) {
+        expiryInput.addEventListener('input', function() {
+            var val = this.value.replace(/\D/g, '');
+            if (val.length >= 2) {
+                this.value = val.substring(0, 2) + '/' + val.substring(2, 4);
+            } else {
+                this.value = val;
+            }
+        });
+    }
+
     var cancelBtn = document.getElementById('cancel-payment-btn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
@@ -413,11 +427,17 @@
             }
 
             var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
-            var expMonth = parseInt(document.getElementById('exp_month').value, 10);
-            var expYear = parseInt(document.getElementById('exp_year').value, 10);
+            var expiry = document.getElementById('card_expiry').value.replace(/\D/g, '');
             var cvc = document.getElementById('cvc').value;
-            if (!cardNumber || !expMonth || !expYear || !cvc) throw new Error('Please fill in all card details.');
+            
+            if (!cardNumber || !expiry || !cvc) throw new Error('Please fill in all card details.');
             if (cardNumber.length < 13 || cardNumber.length > 19) throw new Error('Please enter a valid card number.');
+            if (expiry.length !== 4) throw new Error('Please enter expiry date as MM/YY.');
+            
+            var expMonth = parseInt(expiry.substring(0, 2), 10);
+            var expYear = parseInt('20' + expiry.substring(2, 4), 10);
+            
+            if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month.');
 
             var pmRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
                 method: 'POST',
