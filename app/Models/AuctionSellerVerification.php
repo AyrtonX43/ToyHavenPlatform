@@ -12,6 +12,7 @@ class AuctionSellerVerification extends Model
         'user_id',
         'seller_id',
         'seller_type',
+        'auction_business_name',
         'status',
         'rejection_reason',
         'phone',
@@ -19,10 +20,16 @@ class AuctionSellerVerification extends Model
         'selfie_path',
         'verified_at',
         'verified_by',
+        'is_suspended',
+        'suspended_at',
+        'suspension_reason',
+        'suspended_by',
     ];
 
     protected $casts = [
         'verified_at' => 'datetime',
+        'suspended_at' => 'datetime',
+        'is_suspended' => 'boolean',
     ];
 
     public const INDIVIDUAL_DOCUMENTS = [
@@ -64,6 +71,11 @@ class AuctionSellerVerification extends Model
         return $this->belongsTo(User::class, 'verified_by');
     }
 
+    public function suspendedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'suspended_by');
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(AuctionSellerDocument::class, 'verification_id');
@@ -77,6 +89,24 @@ class AuctionSellerVerification extends Model
     public function isPending(): bool
     {
         return $this->status === 'pending';
+    }
+
+    public function isSynced(): bool
+    {
+        return $this->seller_id !== null;
+    }
+
+    public function getDisplayName(): string
+    {
+        if ($this->auction_business_name) {
+            return $this->auction_business_name;
+        }
+
+        if ($this->seller && $this->seller->business_name) {
+            return $this->seller->business_name;
+        }
+
+        return $this->user->name ?? 'Unknown';
     }
 
     public function getRequiredDocuments(): array

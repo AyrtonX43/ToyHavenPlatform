@@ -481,22 +481,45 @@
             ═══════════════════════════════════════════ --}}
             <div class="sidebar-section-label">Auction</div>
 
-            <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
+            <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
                     onclick="toggleMenu(this)"
-                    aria-expanded="{{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
                 <i class="bi bi-hammer menu-icon"></i> Auction Management
                 <i class="bi bi-chevron-right chevron"></i>
             </button>
-            <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
+            <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
+                {{-- Auction Seller Management --}}
+                <li>
+                    <button class="sidebar-parent {{ request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.auction-verifications.*') ? 'active-section' : '' }}"
+                            onclick="toggleMenu(this)"
+                            aria-expanded="{{ request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.auction-verifications.*') ? 'true' : 'false' }}">
+                        <i class="bi bi-people menu-icon"></i> Auction Seller Management
+                        <i class="bi bi-chevron-right chevron"></i>
+                    </button>
+                    <ul class="sidebar-children {{ request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.auction-verifications.*') ? 'open' : '' }}">
+                        <li>
+                            <a href="{{ route('admin.auction-sellers.index') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.auction-sellers.*') ? 'active' : '' }}">
+                                <i class="bi bi-person-badge menu-icon"></i> Approved Auction Sellers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.auction-verifications.index') }}"
+                               class="sidebar-link {{ request()->routeIs('admin.auction-verifications.*') ? 'active' : '' }}">
+                                <i class="bi bi-person-check menu-icon"></i> Seller Verification Requests
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 {{-- Auction Product Management --}}
                 <li>
-                    <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') ? 'active-section' : '' }}"
+                    <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') ? 'active-section' : '' }}"
                             onclick="toggleMenu(this)"
-                            aria-expanded="{{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') ? 'true' : 'false' }}">
+                            aria-expanded="{{ request()->routeIs('admin.auctions.*') ? 'true' : 'false' }}">
                         <i class="bi bi-box-seam menu-icon"></i> Auction Product Management
                         <i class="bi bi-chevron-right chevron"></i>
                     </button>
-                    <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') ? 'open' : '' }}">
+                    <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') ? 'open' : '' }}">
                         <li>
                             <a href="{{ route('admin.auctions.index') }}"
                                class="sidebar-link {{ request()->routeIs('admin.auctions.index') || request()->routeIs('admin.auctions.create') ? 'active' : '' }}">
@@ -513,12 +536,6 @@
                             <a href="{{ route('admin.auctions.index') }}?filter=reviewed"
                                class="sidebar-link">
                                 <i class="bi bi-check2-square menu-icon"></i> Approved & Rejected Auction Products
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.auction-verifications.index') }}"
-                               class="sidebar-link {{ request()->routeIs('admin.auction-verifications.*') ? 'active' : '' }}">
-                                <i class="bi bi-person-check menu-icon"></i> Seller Verification Requests
                             </a>
                         </li>
                     </ul>

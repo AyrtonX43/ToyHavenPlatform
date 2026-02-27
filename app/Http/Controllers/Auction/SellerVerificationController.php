@@ -83,6 +83,7 @@ class SellerVerificationController extends Controller
             $rules['government_id_2'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:10240';
             $rules['government_id_3'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240';
         } else {
+            $rules['auction_business_name'] = 'required|string|max:255';
             $rules['business_permit'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:10240';
             $rules['bir_certificate'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:10240';
             $rules['official_receipt_sample'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:10240';
@@ -102,6 +103,7 @@ class SellerVerificationController extends Controller
             'user_id' => $user->id,
             'seller_id' => $user->seller?->id,
             'seller_type' => $sellerType,
+            'auction_business_name' => $sellerType === 'business' ? $request->auction_business_name : null,
             'status' => 'pending',
             'phone' => $request->phone,
             'address' => $request->address,

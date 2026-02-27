@@ -456,6 +456,14 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::post('/{verification}/resubmission', [\App\Http\Controllers\Admin\AuctionVerificationController::class, 'requestResubmission'])->name('resubmission');
         });
 
+        Route::prefix('auction-sellers')->name('auction-sellers.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AuctionSellerController::class, 'index'])->name('index');
+            Route::get('/{seller}', [\App\Http\Controllers\Admin\AuctionSellerController::class, 'show'])->name('show');
+            Route::put('/{seller}/update-name', [\App\Http\Controllers\Admin\AuctionSellerController::class, 'updateBusinessName'])->name('update-name');
+            Route::post('/{seller}/suspend', [\App\Http\Controllers\Admin\AuctionSellerController::class, 'suspend'])->name('suspend');
+            Route::post('/{seller}/activate', [\App\Http\Controllers\Admin\AuctionSellerController::class, 'activate'])->name('activate');
+        });
+
         Route::prefix('auction-payments')->name('auction-payments.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AuctionPaymentAdminController::class, 'index'])->name('index');
             Route::get('/{auctionPayment}', [\App\Http\Controllers\Admin\AuctionPaymentAdminController::class, 'show'])->name('show');

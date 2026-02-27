@@ -30,6 +30,24 @@
                         @csrf
                         <input type="hidden" name="seller_type" value="{{ $type }}">
 
+                        @if($type === 'business')
+                        <h5 class="fw-bold mb-3 mt-2"><i class="bi bi-building me-1"></i>Business Information</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Auction Business Name <span class="text-danger">*</span></label>
+                                <input type="text" name="auction_business_name" class="form-control"
+                                       value="{{ old('auction_business_name', auth()->user()->seller->business_name ?? '') }}"
+                                       placeholder="Enter your business name for auction listings" required>
+                                <small class="text-muted">This name will be displayed on your auction listings. You can change it later.</small>
+                                @error('auction_business_name')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        @endif
+
                         <h5 class="fw-bold mb-3 mt-2"><i class="bi bi-telephone me-1"></i>Contact Information</h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
