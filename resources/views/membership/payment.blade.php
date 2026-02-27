@@ -161,7 +161,8 @@
                             @if(config('services.paymongo.mode') === 'test')
                                 <div class="alert alert-info small mb-3">
                                     <i class="bi bi-info-circle me-1"></i>
-                                    <strong>Test Card:</strong> 4571 7360 0000 0183 | Exp: 12/25 | CVC: 123
+                                    <strong>Test Card (Success):</strong> 4120 0000 0000 0007 | Exp: 12/29 | CVC: 123<br>
+                                    <strong>Test Card (Declined):</strong> 4571 7360 0000 0008 | Exp: 12/29 | CVC: 123
                                 </div>
                             @endif
                             <div class="row g-3">
