@@ -337,8 +337,11 @@ class CheckoutController extends Controller
             return response()->json(['error' => 'Order already paid.'], 400);
         }
 
+        $paymentType = $request->input('payment_type', 'card');
+
         $request->validate([
-            'payment_method_id' => 'required|string',
+            'payment_method_id' => 'required_if:payment_type,card|nullable|string',
+            'payment_type' => 'in:card,qrph',
         ]);
 
         $intent = $this->payMongoService->createPaymentIntent(
@@ -353,16 +356,23 @@ class CheckoutController extends Controller
 
         $paymentIntentId = $intent['id'];
 
+        if ($paymentType === 'qrph') {
+            $user = Auth::user();
+            $pmId = $this->payMongoService->createQrphPaymentMethod($user->name, $user->email);
+            if (! $pmId) {
+                return response()->json(['error' => 'Failed to create QR Ph payment method.'], 500);
+            }
+            $paymentMethodId = $pmId;
+        } else {
+            $paymentMethodId = $request->payment_method_id;
+        }
+
         $returnUrl = url('/checkout/return') . '?' . http_build_query([
             'order_number' => $order->order_number,
             'payment_intent_id' => $paymentIntentId,
         ]);
 
-        $result = $this->payMongoService->attachPaymentMethod(
-            $paymentIntentId,
-            $request->payment_method_id,
-            $returnUrl
-        );
+        $result = $this->payMongoService->attachPaymentMethod($paymentIntentId, $paymentMethodId, $returnUrl);
 
         if (! $result) {
             return response()->json(['error' => 'Failed to process payment. Please try again.'], 500);
@@ -373,18 +383,26 @@ class CheckoutController extends Controller
 
         Log::info('Checkout: processPayment result', [
             'order_number' => $order->order_number,
+            'payment_type' => $paymentType,
             'status' => $status,
             'next_action_json' => json_encode($nextAction),
         ]);
 
         if ($status === 'succeeded') {
-            return response()->json([
-                'status' => 'succeeded',
-                'redirect_url' => $returnUrl,
-            ]);
+            return response()->json(['status' => 'succeeded', 'redirect_url' => $returnUrl]);
         }
 
-        if ($status === 'awaiting_next_action') {
+        if ($status === 'awaiting_next_action' && $nextAction) {
+            $nextActionType = $nextAction['type'] ?? null;
+
+            if ($nextActionType === 'consume_qr') {
+                return response()->json([
+                    'status' => 'awaiting_next_action',
+                    'qr_image' => $nextAction['code']['image_url'] ?? null,
+                    'payment_intent_id' => $paymentIntentId,
+                ]);
+            }
+
             $redirectUrl = $this->extractRedirectUrl($nextAction);
             return response()->json([
                 'status' => 'awaiting_next_action',
@@ -394,10 +412,7 @@ class CheckoutController extends Controller
         }
 
         if ($status === 'processing') {
-            return response()->json([
-                'status' => 'processing',
-                'redirect_url' => $returnUrl,
-            ]);
+            return response()->json(['status' => 'processing', 'redirect_url' => $returnUrl]);
         }
 
         if ($status === 'awaiting_payment_method') {
@@ -407,6 +422,40 @@ class CheckoutController extends Controller
         }
 
         return response()->json(['error' => "Payment returned unexpected status: {$status}"], 400);
+    }
+
+    /**
+     * Poll payment intent status (used by QRPh to detect when user has paid).
+     */
+    public function checkPaymentStatus(Request $request, $orderNumber)
+    {
+        $order = Order::where('order_number', $orderNumber)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $paymentIntentId = $request->input('payment_intent_id');
+        if (! $paymentIntentId) {
+            return response()->json(['status' => 'unknown']);
+        }
+
+        $intent = $this->payMongoService->getPaymentIntent($paymentIntentId);
+        $status = $intent['attributes']['status'] ?? 'unknown';
+
+        if ($status === 'succeeded' && $order->payment_status !== 'paid') {
+            $order->update([
+                'payment_status' => 'paid',
+                'payment_reference' => $paymentIntentId,
+            ]);
+            OrderTracking::create([
+                'order_id' => $order->id,
+                'status' => 'payment_confirmed',
+                'description' => 'Payment confirmed via QR Ph.',
+                'updated_by' => Auth::id(),
+            ]);
+            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+        }
+
+        return response()->json(['status' => $status]);
     }
 
     private function extractRedirectUrl($nextAction): ?string

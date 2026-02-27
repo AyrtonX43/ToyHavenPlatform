@@ -51,7 +51,7 @@ class PayMongoService
                     'data' => [
                         'attributes' => [
                             'amount' => $amountCentavos,
-                            'payment_method_allowed' => ['card'],
+                            'payment_method_allowed' => ['card', 'qrph'],
                             'payment_method_options' => [
                                 'card' => ['request_three_d_secure' => 'any'],
                             ],
@@ -128,6 +128,43 @@ class PayMongoService
             return null;
         } catch (\Exception $e) {
             Log::error('PayMongo: Attach payment method exception', ['message' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Create a QRPh payment method server-side (no sensitive details needed).
+     */
+    public function createQrphPaymentMethod(string $name, string $email): ?string
+    {
+        try {
+            $response = Http::withBasicAuth($this->secretKey, '')
+                ->withOptions(['verify' => config('app.env') !== 'local'])
+                ->post("{$this->baseUrl}/payment_methods", [
+                    'data' => [
+                        'attributes' => [
+                            'type' => 'qrph',
+                            'billing' => [
+                                'name' => $name,
+                                'email' => $email,
+                            ],
+                        ],
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                return $response->json('data.id');
+            }
+
+            Log::error('PayMongo: Create QRPh payment method failed', [
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('PayMongo: Create QRPh payment method exception', ['message' => $e->getMessage()]);
 
             return null;
         }

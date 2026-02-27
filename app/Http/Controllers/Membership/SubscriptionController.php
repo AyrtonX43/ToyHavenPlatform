@@ -222,8 +222,11 @@ class SubscriptionController extends Controller
             return response()->json(['error' => 'Subscription is not in pending state.'], 400);
         }
 
+        $paymentType = $request->input('payment_type', 'card');
+
         $request->validate([
-            'payment_method_id' => 'required|string',
+            'payment_method_id' => 'required_if:payment_type,card|nullable|string',
+            'payment_type' => 'in:card,qrph',
         ]);
 
         $paymentIntentId = $subscription->paymongo_payment_intent_id;
@@ -235,11 +238,6 @@ class SubscriptionController extends Controller
         $existingStatus = $existingIntent['attributes']['status'] ?? 'unknown';
 
         if ($existingStatus !== 'awaiting_payment_method') {
-            Log::info('PayMongo: processPayment intent not attachable, creating fresh', [
-                'old_id' => $paymentIntentId,
-                'old_status' => $existingStatus,
-            ]);
-
             $newIntent = $this->payMongo->createPaymentIntent(
                 (float) $subscription->plan->price,
                 'PHP',
@@ -258,16 +256,26 @@ class SubscriptionController extends Controller
             $subscription->update(['paymongo_payment_intent_id' => $paymentIntentId]);
         }
 
+        if ($paymentType === 'qrph') {
+            $user = Auth::user();
+            $pmId = $this->payMongo->createQrphPaymentMethod($user->name, $user->email);
+            if (! $pmId) {
+                return response()->json(['error' => 'Failed to create QR Ph payment method.'], 500);
+            }
+            $paymentMethodId = $pmId;
+        } else {
+            $paymentMethodId = $request->payment_method_id;
+            if (! $paymentMethodId) {
+                return response()->json(['error' => 'Payment method ID is required for card payments.'], 400);
+            }
+        }
+
         $returnUrl = url('/membership/payment-return') . '?' . http_build_query([
             'subscription_id' => $subscription->id,
             'payment_intent_id' => $paymentIntentId,
         ]);
 
-        $result = $this->payMongo->attachPaymentMethod(
-            $paymentIntentId,
-            $request->payment_method_id,
-            $returnUrl
-        );
+        $result = $this->payMongo->attachPaymentMethod($paymentIntentId, $paymentMethodId, $returnUrl);
 
         if (! $result) {
             return response()->json(['error' => 'Failed to process payment. Please try again.'], 500);
@@ -278,26 +286,27 @@ class SubscriptionController extends Controller
 
         Log::info('PayMongo: processPayment result', [
             'subscription_id' => $subscription->id,
+            'payment_type' => $paymentType,
             'status' => $status,
             'next_action_raw' => json_encode($nextAction),
         ]);
 
         if ($status === 'succeeded') {
-            return response()->json([
-                'status' => 'succeeded',
-                'redirect_url' => $returnUrl,
-            ]);
+            return response()->json(['status' => 'succeeded', 'redirect_url' => $returnUrl]);
         }
 
-        if ($status === 'awaiting_next_action') {
-            $redirectUrl = $this->extractRedirectUrl($nextAction);
+        if ($status === 'awaiting_next_action' && $nextAction) {
+            $nextActionType = $nextAction['type'] ?? null;
 
-            if (! $redirectUrl) {
-                Log::error('PayMongo: awaiting_next_action but no redirect URL found', [
-                    'next_action' => $nextAction,
+            if ($nextActionType === 'consume_qr') {
+                return response()->json([
+                    'status' => 'awaiting_next_action',
+                    'qr_image' => $nextAction['code']['image_url'] ?? null,
+                    'payment_intent_id' => $paymentIntentId,
                 ]);
             }
 
+            $redirectUrl = $this->extractRedirectUrl($nextAction);
             return response()->json([
                 'status' => 'awaiting_next_action',
                 'redirect_url' => $redirectUrl,
@@ -306,22 +315,53 @@ class SubscriptionController extends Controller
         }
 
         if ($status === 'processing') {
-            return response()->json([
-                'status' => 'processing',
-                'redirect_url' => $returnUrl,
-            ]);
+            return response()->json(['status' => 'processing', 'redirect_url' => $returnUrl]);
         }
 
         if ($status === 'awaiting_payment_method') {
             $errorMsg = $result['attributes']['last_payment_error']['message']
                 ?? 'Payment failed. Please try again with a different payment method.';
-
             return response()->json(['error' => $errorMsg], 400);
         }
 
-        return response()->json([
-            'error' => "Payment returned unexpected status: {$status}",
-        ], 400);
+        return response()->json(['error' => "Payment returned unexpected status: {$status}"], 400);
+    }
+
+    /**
+     * Poll payment intent status (used by QRPh to detect when user has paid).
+     */
+    public function checkPaymentStatus(Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $paymentIntentId = $subscription->paymongo_payment_intent_id;
+        if (! $paymentIntentId) {
+            return response()->json(['status' => 'unknown']);
+        }
+
+        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
+        $status = $intent['attributes']['status'] ?? 'unknown';
+
+        if ($status === 'succeeded') {
+            $subscription->update([
+                'status' => 'active',
+                'current_period_start' => now(),
+                'current_period_end' => $subscription->plan?->interval === 'yearly'
+                    ? now()->addYear()
+                    : now()->addMonth(),
+            ]);
+
+            SubscriptionPayment::create([
+                'subscription_id' => $subscription->id,
+                'amount' => data_get($intent, 'attributes.amount', 0) / 100,
+                'status' => 'paid',
+                'paid_at' => now(),
+            ]);
+        }
+
+        return response()->json(['status' => $status]);
     }
 
     /**
