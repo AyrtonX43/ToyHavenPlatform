@@ -86,6 +86,53 @@ class PayMongoService
     }
 
     /**
+     * Attach a payment method to a payment intent (server-side with secret key).
+     * Returns the full payment intent resource after attachment.
+     */
+    public function attachPaymentMethod(string $paymentIntentId, string $paymentMethodId, ?string $returnUrl = null): ?array
+    {
+        try {
+            $attrs = [
+                'payment_method' => $paymentMethodId,
+            ];
+
+            if ($returnUrl) {
+                $attrs['return_url'] = $returnUrl;
+            }
+
+            $response = Http::withBasicAuth($this->secretKey, '')
+                ->withOptions(['verify' => config('app.env') !== 'local'])
+                ->post("{$this->baseUrl}/payment_intents/{$paymentIntentId}/attach", [
+                    'data' => [
+                        'attributes' => $attrs,
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json('data');
+                Log::info('PayMongo: Attach payment method result', [
+                    'payment_intent_id' => $paymentIntentId,
+                    'status' => $data['attributes']['status'] ?? 'unknown',
+                    'next_action' => $data['attributes']['next_action'] ?? null,
+                ]);
+
+                return $data;
+            }
+
+            Log::error('PayMongo: Attach payment method failed', [
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('PayMongo: Attach payment method exception', ['message' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
      * Retrieve a Payment Intent by ID (using secret key for full access).
      */
     public function getPaymentIntent(string $paymentIntentId): ?array

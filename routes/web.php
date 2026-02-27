@@ -157,6 +157,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/payment-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment-return');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
         Route::post('/cancel-pending/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancelPending'])->name('cancel-pending');
+        Route::post('/process-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processPayment'])->name('process-payment');
     });
 
     // Auction Routes - Public index (teaser allowed for non-members)

@@ -202,6 +202,121 @@ class SubscriptionController extends Controller
     }
 
     /**
+     * Server-side: create payment method and attach to intent via PayMongo secret key.
+     * Returns JSON with status and redirect_url if 3DS/e-wallet auth is needed.
+     */
+    public function processPayment(Request $request, Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($subscription->status !== 'pending') {
+            return response()->json(['error' => 'Subscription is not in pending state.'], 400);
+        }
+
+        $paymentIntentId = $subscription->paymongo_payment_intent_id;
+        if (! $paymentIntentId) {
+            return response()->json(['error' => 'No payment intent found for this subscription.'], 400);
+        }
+
+        $request->validate([
+            'payment_method_id' => 'required|string',
+        ]);
+
+        $returnUrl = url('/membership/payment-return') . '?' . http_build_query([
+            'subscription_id' => $subscription->id,
+            'payment_intent_id' => $paymentIntentId,
+        ]);
+
+        $result = $this->payMongo->attachPaymentMethod(
+            $paymentIntentId,
+            $request->payment_method_id,
+            $returnUrl
+        );
+
+        if (! $result) {
+            return response()->json(['error' => 'Failed to process payment. Please try again.'], 500);
+        }
+
+        $status = $result['attributes']['status'] ?? 'unknown';
+        $nextAction = $result['attributes']['next_action'] ?? null;
+
+        if ($status === 'succeeded') {
+            return response()->json([
+                'status' => 'succeeded',
+                'redirect_url' => $returnUrl,
+            ]);
+        }
+
+        if ($status === 'awaiting_next_action' && $nextAction) {
+            $redirectUrl = $this->extractRedirectUrl($nextAction);
+            if ($redirectUrl) {
+                return response()->json([
+                    'status' => 'awaiting_next_action',
+                    'redirect_url' => $redirectUrl,
+                ]);
+            }
+
+            return response()->json([
+                'error' => 'Payment requires verification but no redirect URL was provided by the payment processor.',
+                'next_action' => $nextAction,
+            ], 400);
+        }
+
+        if ($status === 'processing') {
+            return response()->json([
+                'status' => 'processing',
+                'redirect_url' => $returnUrl,
+            ]);
+        }
+
+        if ($status === 'awaiting_payment_method') {
+            $errorMsg = $result['attributes']['last_payment_error']['message']
+                ?? 'Payment failed. Please try again with a different payment method.';
+
+            return response()->json(['error' => $errorMsg], 400);
+        }
+
+        return response()->json([
+            'error' => "Payment returned unexpected status: {$status}",
+        ], 400);
+    }
+
+    /**
+     * Recursively find a redirect URL from PayMongo's next_action object.
+     */
+    private function extractRedirectUrl($nextAction): ?string
+    {
+        if (is_string($nextAction)) {
+            return filter_var($nextAction, FILTER_VALIDATE_URL) ? $nextAction : null;
+        }
+
+        if (! is_array($nextAction)) {
+            return null;
+        }
+
+        if (! empty($nextAction['redirect']['url'])) {
+            return $nextAction['redirect']['url'];
+        }
+
+        if (! empty($nextAction['url'])) {
+            return $nextAction['url'];
+        }
+
+        foreach ($nextAction as $value) {
+            if (is_array($value)) {
+                $found = $this->extractRedirectUrl($value);
+                if ($found) {
+                    return $found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Cancel a pending (unpaid) subscription and redirect back to plan selection.
      */
     public function cancelPending(Subscription $subscription)

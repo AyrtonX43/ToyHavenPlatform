@@ -5,16 +5,12 @@
 @push('styles')
 <style>
     .payment-order-card {
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 2px solid #e2e8f0;
-        overflow: hidden;
+        background: #fff; border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 2px solid #e2e8f0; overflow: hidden;
     }
     .payment-plan-header {
         background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-        color: white;
-        padding: 1.5rem 2rem;
+        color: white; padding: 1.5rem 2rem;
     }
     .payment-plan-header h2 { margin: 0; font-weight: 700; font-size: 1.5rem; }
     .payment-plan-header .plan-badge {
@@ -218,9 +214,7 @@
                             <i class="bi bi-arrow-clockwise me-1"></i>Try Again
                         </a>
                         <div class="text-center">
-                            <a href="{{ route('membership.index') }}" class="text-muted small">
-                                <i class="bi bi-arrow-left me-1"></i>Back to Plans
-                            </a>
+                            <a href="{{ route('membership.index') }}" class="text-muted small"><i class="bi bi-arrow-left me-1"></i>Back to Plans</a>
                         </div>
                     @endif
                 </div>
@@ -266,12 +260,8 @@
 <script>
 (function() {
     var publicKey = @json($publicKey);
-    var paymentIntentId = @json($paymentIntentId);
-    var clientKey = @json($clientKey);
-    var subscriptionId = @json($subscription->id);
-    var returnUrl = new URL('/membership/payment-return', window.location.origin);
-    returnUrl.searchParams.set('subscription_id', subscriptionId);
-    returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+    var csrfToken = @json(csrf_token());
+    var processUrl = @json(route('membership.process-payment', $subscription->id));
 
     function setError(msg) {
         var el = document.getElementById('pay-error');
@@ -320,35 +310,6 @@
         });
     }
 
-    function handlePaymentStatus(pi) {
-        var status = pi.attributes?.status;
-        var nextAction = pi.attributes?.next_action;
-
-        if (status === 'succeeded') {
-            window.location.href = returnUrl.toString();
-            return true;
-        }
-
-        if (status === 'awaiting_next_action' && nextAction) {
-            var redirectUrl = nextAction.redirect?.url || nextAction.url;
-            if (redirectUrl) {
-                window.location.href = redirectUrl;
-                return true;
-            }
-        }
-
-        if (status === 'processing') {
-            window.location.href = returnUrl.toString();
-            return true;
-        }
-
-        if (status === 'awaiting_payment_method') {
-            throw new Error(pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again.');
-        }
-
-        return false;
-    }
-
     document.getElementById('pay-btn').addEventListener('click', async function() {
         clearError();
         setLoading(true);
@@ -373,15 +334,10 @@
                 if (cardNumber.length < 13 || cardNumber.length > 19) {
                     throw new Error('Please enter a valid card number.');
                 }
-                if (expMonth < 1 || expMonth > 12) {
-                    throw new Error('Please enter a valid expiration month (1-12).');
-                }
-                if (cvc.length < 3) {
-                    throw new Error('Please enter a valid CVC.');
-                }
                 pmAttrs.details = { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc };
             }
 
+            // Step 1: Create payment method on PayMongo (client-side, public key)
             var pmRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(publicKey + ':') },
@@ -392,30 +348,28 @@
                 throw new Error(pmData.errors?.[0]?.detail || 'Failed to create payment method. Please check your details.');
             }
 
-            var attachBody = {
-                data: {
-                    attributes: {
-                        payment_method: pmData.data.id,
-                        client_key: clientKey,
-                        return_url: returnUrl.toString()
-                    }
-                }
-            };
-
-            var attachRes = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
+            // Step 2: Send payment method ID to our server for secure attachment
+            var serverRes = await fetch(processUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(publicKey + ':') },
-                body: JSON.stringify(attachBody)
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ payment_method_id: pmData.data.id })
             });
-            var attachData = await attachRes.json();
-            var pi = attachData.data;
-            if (!pi) {
-                throw new Error(attachData.errors?.[0]?.detail || 'Failed to process payment. Please try again.');
+            var serverData = await serverRes.json();
+
+            if (serverData.redirect_url) {
+                window.location.href = serverData.redirect_url;
+                return;
             }
 
-            if (!handlePaymentStatus(pi)) {
-                throw new Error('Payment could not be completed. Status: ' + (pi.attributes?.status || 'unknown') + '. Please try again.');
+            if (serverData.error) {
+                throw new Error(serverData.error);
             }
+
+            throw new Error('Unexpected response from server.');
         } catch (e) {
             setError(e.message || 'Payment failed. Please try again.');
             setLoading(false);
