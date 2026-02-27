@@ -113,11 +113,14 @@ class SubscriptionController extends Controller
             }
         }
 
+        $isTestMode = config('app.env') !== 'production' || str_starts_with($publicKey ?? '', 'pk_test_');
+
         return view('membership.payment', [
             'subscription' => $subscription,
             'paymentIntentId' => $paymentIntentId,
             'clientKey' => $clientKey,
             'publicKey' => $publicKey,
+            'isTestMode' => $isTestMode,
         ]);
     }
 

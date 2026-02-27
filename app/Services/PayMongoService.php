@@ -24,6 +24,30 @@ class PayMongoService
     }
 
     /**
+     * Get allowed payment methods based on environment.
+     * In test/development mode, all methods are available.
+     * In production, only card is enabled by default (unless account has GCash/Maya activated).
+     */
+    private function getAllowedPaymentMethods(): array
+    {
+        $env = config('app.env');
+        
+        // In test/development mode, all payment methods work
+        if (in_array($env, ['local', 'development', 'testing'])) {
+            return ['card', 'gcash', 'paymaya'];
+        }
+        
+        // In production, check if using test keys (student/demo mode)
+        if (str_starts_with($this->publicKey, 'pk_test_')) {
+            return ['card', 'gcash', 'paymaya'];
+        }
+        
+        // Production with live keys - only card by default
+        // (GCash/Maya require account activation on PayMongo dashboard)
+        return ['card'];
+    }
+
+    /**
      * Create a Payment Intent for a given amount in PHP.
      *
      * @param  float  $amount  Amount in PHP (e.g. 150.00)
@@ -51,7 +75,7 @@ class PayMongoService
                     'data' => [
                         'attributes' => [
                             'amount' => $amountCentavos,
-                            'payment_method_allowed' => ['card'],
+                            'payment_method_allowed' => $this->getAllowedPaymentMethods(),
                             'payment_method_options' => [
                                 'card' => ['request_three_d_secure' => 'any'],
                             ],

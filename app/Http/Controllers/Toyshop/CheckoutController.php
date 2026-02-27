@@ -286,8 +286,9 @@ class CheckoutController extends Controller
 
         $paymentIntentId = $intent['id'] ?? null;
         $clientKey = data_get($intent, 'attributes.client_key');
+        $isTestMode = config('app.env') !== 'production' || str_starts_with($publicKey ?? '', 'pk_test_');
 
-        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'paymentIntentId', 'clientKey'));
+        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'paymentIntentId', 'clientKey', 'isTestMode'));
     }
 
     /**

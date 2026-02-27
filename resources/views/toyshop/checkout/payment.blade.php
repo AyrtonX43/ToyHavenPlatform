@@ -103,7 +103,27 @@
                                 </div>
                             </div>
 
-                            {{-- GCash and Maya will be added once enabled on the PayMongo account --}}
+                            @if($isTestMode ?? false)
+                            <div class="payment-method-option" data-method="gcash">
+                                <input type="radio" name="pay_method" value="gcash" id="pm_gcash">
+                                <span class="pm-radio"></span>
+                                <i class="bi bi-phone fs-4 me-3 text-success"></i>
+                                <div>
+                                    <strong>GCash</strong>
+                                    <small class="d-block text-muted">Pay with GCash e-wallet</small>
+                                </div>
+                            </div>
+
+                            <div class="payment-method-option" data-method="paymaya">
+                                <input type="radio" name="pay_method" value="paymaya" id="pm_paymaya">
+                                <span class="pm-radio"></span>
+                                <i class="bi bi-wallet2 fs-4 me-3 text-primary"></i>
+                                <div>
+                                    <strong>Maya (PayMaya)</strong>
+                                    <small class="d-block text-muted">Pay with Maya e-wallet</small>
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <div id="card-form" class="mb-4">
@@ -126,6 +146,13 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if($isTestMode ?? false)
+                        <div id="ewallet-notice" class="alert alert-light border d-none mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You will be redirected to complete payment securely via the selected e-wallet app.
+                        </div>
+                        @endif
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
                         <div id="pay-loading" class="d-none text-center py-3">
@@ -190,6 +217,28 @@
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
     }
 
+    function getSelectedMethod() {
+        var checked = document.querySelector('input[name="pay_method"]:checked');
+        return checked ? checked.value : 'card';
+    }
+
+    function togglePaymentUi(method) {
+        var cardForm = document.getElementById('card-form');
+        var ewalletNotice = document.getElementById('ewallet-notice');
+        if (cardForm) cardForm.classList.toggle('d-none', method !== 'card');
+        if (ewalletNotice) ewalletNotice.classList.toggle('d-none', method === 'card');
+    }
+
+    document.querySelectorAll('.payment-method-option').forEach(function(el) {
+        el.addEventListener('click', function() {
+            document.querySelectorAll('.payment-method-option').forEach(function(o) { o.classList.remove('selected'); });
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+            togglePaymentUi(this.dataset.method);
+            clearError();
+        });
+    });
+
     var cardInput = document.getElementById('card_number');
     if (cardInput) {
         cardInput.addEventListener('input', function() {
@@ -202,16 +251,28 @@
         clearError();
         setLoading(true);
         try {
-            var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
-            var expMonth = parseInt(document.getElementById('exp_month').value, 10);
-            var expYear = parseInt(document.getElementById('exp_year').value, 10);
-            var cvc = document.getElementById('cvc').value;
+            var method = getSelectedMethod();
+            var pmAttrs = {
+                type: method,
+                billing: {
+                    name: @json(auth()->user()->name ?? 'Customer'),
+                    email: @json(auth()->user()->email ?? '')
+                }
+            };
 
-            if (!cardNumber || !expMonth || !expYear || !cvc) {
-                throw new Error('Please fill in all card details.');
-            }
-            if (cardNumber.length < 13 || cardNumber.length > 19) {
-                throw new Error('Please enter a valid card number.');
+            if (method === 'card') {
+                var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
+                var expMonth = parseInt(document.getElementById('exp_month').value, 10);
+                var expYear = parseInt(document.getElementById('exp_year').value, 10);
+                var cvc = document.getElementById('cvc').value;
+
+                if (!cardNumber || !expMonth || !expYear || !cvc) {
+                    throw new Error('Please fill in all card details.');
+                }
+                if (cardNumber.length < 13 || cardNumber.length > 19) {
+                    throw new Error('Please enter a valid card number.');
+                }
+                pmAttrs.details = { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc };
             }
 
             // Step 1: Create PaymentMethod (client-side with public key)
@@ -221,23 +282,7 @@
                     'Content-Type': 'application/json',
                     'Authorization': 'Basic ' + btoa(publicKey + ':')
                 },
-                body: JSON.stringify({
-                    data: {
-                        attributes: {
-                            type: 'card',
-                            details: {
-                                card_number: cardNumber,
-                                exp_month: expMonth,
-                                exp_year: expYear,
-                                cvc: cvc
-                            },
-                            billing: {
-                                name: @json(auth()->user()->name ?? 'Customer'),
-                                email: @json(auth()->user()->email ?? '')
-                            }
-                        }
-                    }
-                })
+                body: JSON.stringify({ data: { attributes: pmAttrs } })
             });
             var pmData = await pmRes.json();
 
