@@ -87,87 +87,118 @@
     .intro-step h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.35rem; }
     .intro-step p { color: #64748b; margin: 0; font-size: 0.95rem; }
 
-    /* Membership Comparison */
-    .membership-comparison-section {
-        margin-bottom: 3rem;
+    /* Membership Hero Banner */
+    .membership-hero {
+        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #fb923c 100%);
+        border-radius: 20px;
+        padding: 3rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 8px 32px rgba(8, 145, 178, 0.3);
     }
-    .section-label {
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: #0891b2;
-        margin-bottom: 0.5rem;
-    }
-    .section-heading {
-        font-size: 1.75rem;
+    .membership-hero h1 {
+        font-size: 2rem;
         font-weight: 800;
-        color: #1e293b;
-        letter-spacing: -0.02em;
         margin-bottom: 0.5rem;
     }
-    .plan-comparison-card {
+    .membership-hero p {
+        opacity: 0.95;
+        font-size: 1.1rem;
+    }
+    .plan-card {
         background: #fff;
-        border-radius: 18px;
+        border-radius: 16px;
         padding: 2rem;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 2px solid #e2e8f0;
         height: 100%;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
+        transition: all 0.3s ease;
     }
-    .plan-comparison-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 16px 48px rgba(8, 145, 178, 0.15);
+    .plan-card:hover {
         border-color: #0891b2;
+        box-shadow: 0 8px 32px rgba(8, 145, 178, 0.15);
+        transform: translateY(-4px);
     }
-    .plan-comparison-card.featured {
+    .plan-card.featured {
         border-color: #0891b2;
         border-width: 3px;
-        box-shadow: 0 8px 32px rgba(8, 145, 178, 0.2);
+        position: relative;
     }
-    .plan-comparison-card.featured::before {
-        content: 'Most Popular';
+    .plan-card.featured::before {
+        content: 'Popular';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
         background: linear-gradient(135deg, #0891b2, #06b6d4);
         color: white;
-        font-size: 0.7rem;
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
         font-weight: 700;
-        padding: 0.5rem;
-        text-align: center;
-        letter-spacing: 0.05em;
     }
-    .plan-comparison-card.featured { padding-top: 3rem; }
-    .plan-comparison-card .plan-name { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
-    .plan-comparison-card .plan-price {
-        font-size: 2.25rem;
+    .plan-card.vip-plan {
+        border-color: #f59e0b;
+        border-width: 3px;
+        position: relative;
+        background: linear-gradient(180deg, #fffbeb 0%, #fff 30%);
+    }
+    .plan-card.vip-plan::before {
+        content: 'Best Value';
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #f59e0b, #eab308);
+        color: white;
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .plan-card.vip-plan:hover {
+        border-color: #d97706;
+        box-shadow: 0 8px 32px rgba(245, 158, 11, 0.2);
+    }
+    .vip-auction-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.75rem;
+        border: 1px solid #fcd34d;
+    }
+    .plan-price {
+        font-size: 2.5rem;
         font-weight: 800;
         color: #0891b2;
-        margin: 0.5rem 0 1rem;
     }
-    .plan-comparison-card .plan-price span { font-size: 0.9rem; font-weight: 600; color: #64748b; }
-    .plan-comparison-card .plan-benefits {
+    .plan-price span {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .plan-features {
         list-style: none;
         padding: 0;
-        margin: 0;
+        margin: 1.5rem 0;
     }
-    .plan-comparison-card .plan-benefits li {
-        padding: 0.6rem 0;
+    .plan-features li {
+        padding: 0.5rem 0;
         display: flex;
         align-items: center;
-        gap: 0.6rem;
+        gap: 0.5rem;
         font-weight: 500;
-        color: #334155;
-        font-size: 0.95rem;
     }
-    .plan-comparison-card .plan-benefits li i {
+    .plan-features li i {
         color: #10b981;
         font-size: 1.1rem;
-        flex-shrink: 0;
     }
 
     /* Auction cards */
@@ -340,27 +371,34 @@
             </div>
         </div>
 
-        {{-- Membership Plan Comparison --}}
-        <div id="membership-plans" class="membership-comparison-section">
-            <p class="section-label text-center mb-1">Choose your plan</p>
-            <h2 class="section-heading text-center mb-2">Membership Comparison</h2>
-            <p class="text-center text-muted mb-4">Join to unlock auction access and exclusive benefits</p>
+        {{-- Membership Plan Section --}}
+        <div id="membership-plans">
+            <div class="membership-hero reveal">
+                <h1><i class="bi bi-gem me-2"></i>Join ToyHaven Membership</h1>
+                <p>Access exclusive auctions, place bids on rare collectibles, and enjoy premium perks across our platform.</p>
+                <p class="mb-0"><strong>Join now to start bidding on our active auctions!</strong></p>
+            </div>
 
             <div class="row g-4">
                 @foreach($plans as $index => $plan)
                     <div class="col-lg-4">
-                        <div class="plan-comparison-card {{ $plan->slug === 'pro' ? 'featured' : '' }} reveal" style="transition-delay: {{ $index * 0.1 }}s;">
-                            <h3 class="plan-name">{{ $plan->name }}</h3>
-                            <p class="text-muted small mb-0">{{ $plan->description }}</p>
-                            <div class="plan-price">
+                        <div class="plan-card {{ $plan->slug === 'pro' ? 'featured' : '' }} {{ $plan->slug === 'vip' ? 'vip-plan' : '' }} reveal" style="transition-delay: {{ $index * 0.1 }}s;">
+                            <h3 class="h4 fw-bold mb-2">{{ $plan->name }}</h3>
+                            <p class="text-muted small mb-3">{{ $plan->description }}</p>
+                            <div class="plan-price mb-3">
                                 ₱{{ number_format($plan->price, 0) }}
-                                <span>/{{ $plan->interval === 'monthly' ? 'month' : 'year' }}</span>
+                                <span>/{{ $plan->interval === 'monthly' ? 'mo' : 'yr' }}</span>
                             </div>
-                            <ul class="plan-benefits">
+                            <ul class="plan-features">
                                 @foreach($plan->features ?? [] as $feature)
                                     <li><i class="bi bi-check-circle-fill"></i> {{ $feature }}</li>
                                 @endforeach
                             </ul>
+                            @if($plan->canCreateAuction())
+                                <div class="vip-auction-badge">
+                                    <i class="bi bi-hammer"></i> Auction your own products
+                                </div>
+                            @endif
                             @auth
                                 @if(auth()->user()->hasActiveMembership() && auth()->user()->currentPlan()?->id === $plan->id)
                                     <button class="btn btn-outline-secondary w-100 mt-3" disabled>Current Plan</button>
@@ -368,13 +406,23 @@
                                     <form action="{{ route('membership.subscribe') }}" method="POST" class="mt-3">
                                         @csrf
                                         <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                        <button type="submit" class="btn w-100 {{ $plan->slug === 'pro' ? 'btn-primary' : 'btn-outline-primary' }} py-3 fw-bold" style="{{ $plan->slug === 'pro' ? 'background: linear-gradient(135deg, #0891b2, #06b6d4); border: none; border-radius: 12px;' : 'border-radius: 12px;' }}">
-                                            Get {{ $plan->name }}
-                                        </button>
+                                        @if($plan->slug === 'vip')
+                                            <button type="submit" class="btn btn-warning w-100 fw-bold" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
+                                                Get {{ $plan->name }}
+                                            </button>
+                                        @elseif($plan->slug === 'pro')
+                                            <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
+                                                Get {{ $plan->name }}
+                                            </button>
+                                        @else
+                                            <button type="submit" class="btn btn-outline-primary w-100">
+                                                Get {{ $plan->name }}
+                                            </button>
+                                        @endif
                                     </form>
                                 @endif
                             @else
-                                <a href="{{ route('login', ['redirect' => route('membership.index', ['intent' => 'auction'])]) }}" class="btn btn-primary w-100 py-3 fw-bold mt-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none; border-radius: 12px;">
+                                <a href="{{ route('login', ['redirect' => route('membership.index', ['intent' => 'auction'])]) }}" class="btn btn-primary w-100 mt-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
                                     Sign in to Subscribe
                                 </a>
                             @endauth
