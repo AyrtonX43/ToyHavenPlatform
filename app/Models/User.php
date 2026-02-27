@@ -183,7 +183,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $plan = $this->currentPlan();
 
         return $plan
-            && $plan->canCreateAuction()
+            && (strtolower($plan->slug) === 'vip' || $plan->canCreateAuction())
             && $this->hasApprovedAuctionVerification();
     }
 

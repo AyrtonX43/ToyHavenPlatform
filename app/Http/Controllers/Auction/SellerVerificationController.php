@@ -22,7 +22,7 @@ class SellerVerificationController extends Controller
         }
 
         $plan = $user->currentPlan();
-        $hasVip = $plan && $plan->canCreateAuction();
+        $hasVip = $plan && (strtolower($plan->slug) === 'vip' || $plan->canCreateAuction());
 
         return view('auctions.seller-verification.index', compact('verification', 'hasVip'));
     }
@@ -32,7 +32,7 @@ class SellerVerificationController extends Controller
         $user = Auth::user();
         $plan = $user->currentPlan();
 
-        if (! $plan || ! $plan->canCreateAuction()) {
+        if (! $plan || (strtolower($plan->slug) !== 'vip' && ! $plan->canCreateAuction())) {
             return redirect()->route('membership.index', ['intent' => 'auction'])
                 ->with('error', 'You need a VIP membership to list auctions.');
         }
@@ -60,7 +60,7 @@ class SellerVerificationController extends Controller
         $user = Auth::user();
         $plan = $user->currentPlan();
 
-        if (! $plan || ! $plan->canCreateAuction()) {
+        if (! $plan || (strtolower($plan->slug) !== 'vip' && ! $plan->canCreateAuction())) {
             return redirect()->route('membership.index', ['intent' => 'auction'])
                 ->with('error', 'You need a VIP membership to list auctions.');
         }
