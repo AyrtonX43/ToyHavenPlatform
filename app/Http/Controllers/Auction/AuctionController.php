@@ -40,9 +40,12 @@ class AuctionController extends Controller
             ->limit(6)
             ->get();
 
+        $canCreateAuction = $user && $hasMembership && ($user->currentPlan()?->canCreateAuction() ?? false);
+
         return view('auctions.index', [
             'auctions' => $auctions,
             'hasMembership' => $hasMembership,
+            'canCreateAuction' => $canCreateAuction,
             'plans' => $plans,
             'featuredAuctions' => $featuredAuctions,
         ]);
