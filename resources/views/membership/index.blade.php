@@ -54,6 +54,42 @@
         font-size: 0.75rem;
         font-weight: 700;
     }
+    .plan-card.vip-plan {
+        border-color: #f59e0b;
+        border-width: 3px;
+        position: relative;
+        background: linear-gradient(180deg, #fffbeb 0%, #fff 30%);
+    }
+    .plan-card.vip-plan::before {
+        content: 'Best Value';
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #f59e0b, #eab308);
+        color: white;
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .plan-card.vip-plan:hover {
+        border-color: #d97706;
+        box-shadow: 0 8px 32px rgba(245, 158, 11, 0.2);
+    }
+    .vip-auction-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #92400e;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.75rem;
+        border: 1px solid #fcd34d;
+    }
     .plan-price {
         font-size: 2.5rem;
         font-weight: 800;
@@ -99,7 +135,7 @@
     <div class="row g-4">
         @foreach($plans as $plan)
             <div class="col-lg-4">
-                <div class="plan-card {{ $plan->slug === 'pro' ? 'featured' : '' }} reveal">
+                <div class="plan-card {{ $plan->slug === 'pro' ? 'featured' : '' }} {{ $plan->slug === 'vip' ? 'vip-plan' : '' }} reveal">
                     <h3 class="h4 fw-bold mb-2">{{ $plan->name }}</h3>
                     <p class="text-muted small mb-3">{{ $plan->description }}</p>
                     <div class="plan-price mb-3">
@@ -111,20 +147,35 @@
                             <li><i class="bi bi-check-circle-fill"></i> {{ $feature }}</li>
                         @endforeach
                     </ul>
+                    @if($plan->canCreateAuction())
+                        <div class="vip-auction-badge">
+                            <i class="bi bi-hammer"></i> Auction your own products
+                        </div>
+                    @endif
                     @auth
                         @if(auth()->user()->hasActiveMembership() && auth()->user()->currentPlan()?->id === $plan->id)
-                            <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                            <button class="btn btn-outline-secondary w-100 mt-3" disabled>Current Plan</button>
                         @else
-                            <form action="{{ route('membership.subscribe') }}" method="POST">
+                            <form action="{{ route('membership.subscribe') }}" method="POST" class="mt-3">
                                 @csrf
                                 <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                <button type="submit" class="btn w-100 {{ $plan->slug === 'pro' ? 'btn-primary' : 'btn-outline-primary' }}" style="{{ $plan->slug === 'pro' ? 'background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;' : '' }}">
-                                    Get {{ $plan->name }}
-                                </button>
+                                @if($plan->slug === 'vip')
+                                    <button type="submit" class="btn btn-warning w-100 fw-bold" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
+                                        Get {{ $plan->name }}
+                                    </button>
+                                @elseif($plan->slug === 'pro')
+                                    <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
+                                        Get {{ $plan->name }}
+                                    </button>
+                                @else
+                                    <button type="submit" class="btn btn-outline-primary w-100">
+                                        Get {{ $plan->name }}
+                                    </button>
+                                @endif
                             </form>
                         @endif
                     @else
-                        <a href="{{ route('login', ['redirect' => route('membership.index')]) }}" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
+                        <a href="{{ route('login', ['redirect' => route('membership.index')]) }}" class="btn btn-primary w-100 mt-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
                             Sign in to Subscribe
                         </a>
                     @endauth

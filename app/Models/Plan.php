@@ -82,4 +82,19 @@ class Plan extends Model
     {
         return $this->getBenefit('badge_label', $this->name);
     }
+
+    public function canCreateAuction(): bool
+    {
+        return (bool) $this->getBenefit('can_create_auction', false);
+    }
+
+    public function getMaxActiveAuctions(): int
+    {
+        return (int) $this->getBenefit('max_active_auctions', 0);
+    }
+
+    public function getAuctionListingFee(): float
+    {
+        return (float) $this->getBenefit('auction_listing_fee', 0);
+    }
 }

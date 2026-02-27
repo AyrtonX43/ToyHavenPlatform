@@ -182,4 +182,27 @@ class SubscriptionController extends Controller
         return redirect()->route('membership.manage')
             ->with('success', 'Subscription cancelled. You will retain access until the end of your billing period.');
     }
+
+    /**
+     * Cancel a pending (unpaid) subscription and redirect back to plan selection.
+     */
+    public function cancelPending(Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($subscription->status !== 'pending') {
+            return redirect()->route('membership.manage')
+                ->with('error', 'Only pending subscriptions can be cancelled from the payment page.');
+        }
+
+        $subscription->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+        ]);
+
+        return redirect()->route('membership.index')
+            ->with('info', 'Payment cancelled. You can choose a different plan below.');
+    }
 }
