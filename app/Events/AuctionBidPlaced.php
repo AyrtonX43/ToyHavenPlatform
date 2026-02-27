@@ -38,8 +38,9 @@ class AuctionBidPlaced implements ShouldBroadcast
         return [
             'bid_id' => $this->bid->id,
             'amount' => (float) $this->bid->amount,
-            'user_id' => $this->bid->user_id,
-            'user_name' => $this->bid->user?->name,
+            'user_alias' => $this->bid->user?->getAuctionAlias() ?? 'Anonymous',
+            'bids_count' => $this->auction->bids()->count(),
+            'min_next_bid' => $this->auction->getMinNextBid(),
         ];
     }
 }

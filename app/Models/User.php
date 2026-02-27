@@ -24,6 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'auction_alias',
         'google_id',
         'phone',
         'phone_verified_at',
@@ -153,6 +154,39 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
     }
 
+    public function auctionSellerVerification()
+    {
+        return $this->hasOne(AuctionSellerVerification::class)->latestOfMany();
+    }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function getOrCreateWallet(): Wallet
+    {
+        return $this->wallet ?? Wallet::create(['user_id' => $this->id, 'balance' => 0]);
+    }
+
+    public function hasApprovedAuctionVerification(): bool
+    {
+        return $this->auctionSellerVerification?->isApproved() ?? false;
+    }
+
+    public function canListAuctions(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $plan = $this->currentPlan();
+
+        return $plan
+            && $plan->canCreateAuction()
+            && $this->hasApprovedAuctionVerification();
+    }
+
     public function activeSubscription()
     {
         return $this->subscriptions()->active()->first();
@@ -220,6 +254,34 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isOnline(int $withinSeconds = 30): bool
     {
         return $this->last_seen_at && $this->last_seen_at->diffInSeconds(now(), false) < $withinSeconds;
+    }
+
+    public function getAuctionAlias(): string
+    {
+        if (! $this->auction_alias) {
+            $this->auction_alias = self::generateUniqueAlias();
+            $this->saveQuietly();
+        }
+
+        return $this->auction_alias;
+    }
+
+    public static function generateUniqueAlias(): string
+    {
+        $prefixes = ['ToyBidder', 'Collector', 'Hunter', 'Seeker', 'Finder', 'Player'];
+        $maxAttempts = 20;
+
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $prefix = $prefixes[array_rand($prefixes)];
+            $suffix = strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
+            $alias = $prefix . '_' . $suffix;
+
+            if (! self::where('auction_alias', $alias)->exists()) {
+                return $alias;
+            }
+        }
+
+        return 'Bidder_' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
     }
 
 }

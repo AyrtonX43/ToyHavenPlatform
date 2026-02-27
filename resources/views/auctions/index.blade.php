@@ -433,6 +433,37 @@
         </div>
     @endif
 
+    {{-- Featured Auctions Carousel --}}
+    @if(isset($featuredAuctions) && $featuredAuctions->isNotEmpty())
+        <div class="mb-4 reveal">
+            <h3 class="fw-bold mb-3"><i class="bi bi-star-fill text-warning me-2"></i>Featured Auctions</h3>
+            <div class="row g-3 flex-nowrap overflow-auto pb-2" style="scrollbar-width: thin;">
+                @foreach($featuredAuctions as $featured)
+                    <div class="col-md-4 col-lg-3" style="min-width: 260px;">
+                        <a href="{{ route('auctions.show', $featured) }}" class="text-decoration-none text-dark">
+                            <div class="card border-2 border-warning h-100" style="border-radius: 14px; overflow: hidden;">
+                                <div style="height: 150px; background: #f8fafc; overflow: hidden;">
+                                    @if($imgUrl = $featured->getPrimaryImageUrl())
+                                        <img src="{{ $imgUrl }}" alt="{{ $featured->title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    @else
+                                        <div class="d-flex align-items-center justify-content-center h-100">
+                                            <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="p-2">
+                                    <span class="badge bg-warning text-dark mb-1"><i class="bi bi-star-fill me-1"></i>Featured</span>
+                                    <h6 class="fw-bold mb-1 text-truncate">{{ $featured->title }}</h6>
+                                    <div class="fw-bold" style="color: #0891b2;">₱{{ number_format($featured->getCurrentPrice(), 0) }}</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Auctions Section --}}
     <div class="reveal">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">

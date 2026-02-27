@@ -17,18 +17,28 @@ class Auction extends Model
         'category_id',
         'title',
         'description',
+        'box_condition',
+        'authenticity_marks',
+        'known_defects',
+        'provenance',
+        'verification_video_path',
         'starting_bid',
         'reserve_price',
         'bid_increment',
         'start_at',
         'end_at',
+        'duration_minutes',
         'status',
+        'auction_type',
         'is_members_only',
         'early_access_hours',
+        'allowed_bidder_plans',
         'winner_id',
         'winning_amount',
         'bids_count',
         'views_count',
+        'is_promoted',
+        'promoted_until',
     ];
 
     protected $casts = [
@@ -38,7 +48,10 @@ class Auction extends Model
         'winning_amount' => 'decimal:2',
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'promoted_until' => 'datetime',
         'is_members_only' => 'boolean',
+        'is_promoted' => 'boolean',
+        'allowed_bidder_plans' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -174,7 +187,65 @@ class Auction extends Model
         if ($this->user_id === $user->id) {
             return false;
         }
+        if (! $this->isUserPlanAllowed($user)) {
+            return false;
+        }
         return $this->canBid();
+    }
+
+    public function isUserPlanAllowed(User $user): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $allowed = $this->allowed_bidder_plans;
+        if (empty($allowed) || in_array('all', $allowed)) {
+            return true;
+        }
+
+        $plan = $user->currentPlan();
+        if (! $plan) {
+            return false;
+        }
+
+        return in_array($plan->slug, $allowed);
+    }
+
+    public function isLiveEvent(): bool
+    {
+        return $this->auction_type === 'live_event';
+    }
+
+    public function isTimed(): bool
+    {
+        return $this->auction_type === 'timed';
+    }
+
+    public function isCurrentlyPromoted(): bool
+    {
+        return $this->is_promoted && $this->promoted_until && $this->promoted_until->isFuture();
+    }
+
+    public function auctionPayment()
+    {
+        return $this->hasOne(\App\Models\AuctionPayment::class);
+    }
+
+    public function secondChances()
+    {
+        return $this->hasMany(\App\Models\AuctionSecondChance::class)->orderBy('queue_position');
+    }
+
+    public static function boxConditionLabel(string $condition): string
+    {
+        return match ($condition) {
+            'sealed' => 'Sealed / Mint in Box',
+            'opened_complete' => 'Opened - Complete',
+            'opened_incomplete' => 'Opened - Incomplete',
+            'no_box' => 'No Box / Loose',
+            default => ucfirst($condition),
+        };
     }
 
     /**

@@ -47,7 +47,18 @@ class BidController extends Controller
 
                 $auction->update(['bids_count' => $auction->bids()->count()]);
 
-                event(new AuctionBidPlaced($auction, $bid));
+                // Anti-snipe: extend by 2 min if bid in last 2 min of timed auction
+                if ($auction->isTimed() && $auction->end_at) {
+                    $remaining = now()->diffInSeconds($auction->end_at, false);
+                    if ($remaining > 0 && $remaining <= 120) {
+                        $auction->update(['end_at' => $auction->end_at->addMinutes(2)]);
+                    }
+                }
+
+                // Auto-generate alias on first bid
+                $user->getAuctionAlias();
+
+                event(new AuctionBidPlaced($auction->fresh(), $bid));
             });
         } catch (\Exception $e) {
             return back()->with('error', 'Could not place bid. Please try again.');

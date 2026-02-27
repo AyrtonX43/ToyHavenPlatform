@@ -11,6 +11,7 @@ class AuctionImage extends Model
     protected $fillable = [
         'auction_id',
         'path',
+        'image_type',
         'display_order',
     ];
 

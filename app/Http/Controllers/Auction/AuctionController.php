@@ -32,10 +32,19 @@ class AuctionController extends Controller
 
         $plans = $hasMembership ? collect() : Plan::active()->ordered()->get();
 
+        $featuredAuctions = Auction::live()
+            ->where('is_promoted', true)
+            ->where('promoted_until', '>', now())
+            ->with(['category'])
+            ->orderByDesc('promoted_until')
+            ->limit(6)
+            ->get();
+
         return view('auctions.index', [
             'auctions' => $auctions,
             'hasMembership' => $hasMembership,
             'plans' => $plans,
+            'featuredAuctions' => $featuredAuctions,
         ]);
     }
 
@@ -58,6 +67,33 @@ class AuctionController extends Controller
         $auction->load(['bids' => fn ($q) => $q->with('user')->orderByDesc('amount')->limit(20), 'category', 'images']);
 
         return view('auctions.show', [
+            'auction' => $auction,
+            'hasMembership' => $hasMembership,
+            'canBid' => $user && $auction->canUserBid($user),
+        ]);
+    }
+
+    /**
+     * Live auction room for live_event auctions
+     */
+    public function liveRoom(Auction $auction)
+    {
+        $user = Auth::user();
+        $hasMembership = $user?->hasActiveMembership() ?? false;
+
+        if (! $auction->isVisibleToUser($user)) {
+            return redirect()->route('membership.index', ['intent' => 'auction'])
+                ->with('info', 'This auction is for members only.');
+        }
+
+        if (! $auction->isLiveEvent()) {
+            return redirect()->route('auctions.show', $auction);
+        }
+
+        $auction->increment('views_count');
+        $auction->load(['bids' => fn ($q) => $q->with('user')->orderByDesc('amount')->limit(50), 'category', 'images']);
+
+        return view('auctions.live-room', [
             'auction' => $auction,
             'hasMembership' => $hasMembership,
             'canBid' => $user && $auction->canUserBid($user),

@@ -125,7 +125,10 @@
                                 @if($bid->user_id === auth()->id())
                                     <strong>You</strong>
                                 @else
-                                    {{ Str::mask($bid->user?->name ?? 'Anonymous', '*', 2, 2) }}
+                                    {{ $bid->user?->getAuctionAlias() ?? 'Anonymous' }}
+                                @endif
+                                @if($bid->is_winning)
+                                    <span class="badge bg-success ms-1">Highest</span>
                                 @endif
                             </span>
                             <span class="fw-semibold">₱{{ number_format($bid->amount, 2) }}</span>
