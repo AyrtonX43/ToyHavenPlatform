@@ -136,16 +136,19 @@ class PayMongoService
     /**
      * Create a Card payment method server-side using the secret key.
      */
-    public function createCardPaymentMethod(string $cardNumber, int $expMonth, int $expYear, string $cvc, string $name = '', string $email = ''): ?string
+    public function createCardPaymentMethod(string $cardNumber, int $expMonth, int $expYear, string $cvc, string $name = '', string $email = ''): array
     {
         try {
             $cleanCard = preg_replace('/\D/', '', $cardNumber);
+            $cleanCvc = preg_replace('/\D/', '', $cvc);
 
             Log::info('PayMongo: Creating card payment method', [
                 'card_last4' => substr($cleanCard, -4),
                 'card_length' => strlen($cleanCard),
                 'exp_month' => $expMonth,
                 'exp_year' => $expYear,
+                'cvc_length' => strlen($cleanCvc),
+                'using_key_prefix' => substr($this->secretKey, 0, 7),
             ]);
 
             $billing = [];
@@ -158,9 +161,9 @@ class PayMongoService
                         'type' => 'card',
                         'details' => [
                             'card_number' => $cleanCard,
-                            'exp_month' => $expMonth,
-                            'exp_year' => $expYear,
-                            'cvc' => $cvc,
+                            'exp_month' => (int) $expMonth,
+                            'exp_year' => (int) $expYear,
+                            'cvc' => $cleanCvc,
                         ],
                     ],
                 ],
@@ -170,28 +173,40 @@ class PayMongoService
                 $payload['data']['attributes']['billing'] = $billing;
             }
 
-            $response = Http::withBasicAuth($this->publicKey, '')
+            Log::info('PayMongo: Card PM payload (sanitized)', [
+                'card_length' => strlen($cleanCard),
+                'card_first6' => substr($cleanCard, 0, 6),
+                'card_last4' => substr($cleanCard, -4),
+                'exp_month' => (int) $expMonth,
+                'exp_year' => (int) $expYear,
+                'cvc_length' => strlen($cleanCvc),
+            ]);
+
+            $response = Http::withBasicAuth($this->secretKey, '')
                 ->withOptions(['verify' => config('app.env') !== 'local'])
                 ->post("{$this->baseUrl}/payment_methods", $payload);
 
             if ($response->successful()) {
                 $pmId = $response->json('data.id');
                 Log::info('PayMongo: Card payment method created', ['id' => $pmId]);
-                return $pmId;
+                return ['success' => true, 'id' => $pmId];
             }
 
+            $errorBody = $response->json();
+            $errorDetail = $errorBody['errors'][0]['detail'] ?? 'Unknown error from PayMongo';
+            
             Log::error('PayMongo: Create card payment method failed', [
                 'status' => $response->status(),
-                'response' => $response->json(),
+                'response' => $errorBody,
             ]);
 
-            return null;
+            return ['success' => false, 'error' => $errorDetail];
         } catch (\Exception $e) {
             Log::error('PayMongo: Create card payment method exception', [
                 'message' => $e->getMessage(),
             ]);
 
-            return null;
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 

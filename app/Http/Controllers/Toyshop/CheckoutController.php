@@ -375,7 +375,7 @@ class CheckoutController extends Controller
             }
             $paymentMethodId = $pmId;
         } else {
-            $pmId = $this->payMongoService->createCardPaymentMethod(
+            $cardResult = $this->payMongoService->createCardPaymentMethod(
                 $request->input('card_number'),
                 (int) $request->input('exp_month'),
                 (int) $request->input('exp_year'),
@@ -383,12 +383,12 @@ class CheckoutController extends Controller
                 $user->name ?? 'Customer',
                 $user->email ?? ''
             );
-            if (! $pmId) {
+            if (! $cardResult['success']) {
                 return response()->json([
-                    'error' => 'Failed to create card payment method. Please check your card details and try again.',
-                ], 500);
+                    'error' => $cardResult['error'] ?? 'Failed to create card payment method.',
+                ], 400);
             }
-            $paymentMethodId = $pmId;
+            $paymentMethodId = $cardResult['id'];
         }
 
         $returnUrl = url('/checkout/return') . '?' . http_build_query([

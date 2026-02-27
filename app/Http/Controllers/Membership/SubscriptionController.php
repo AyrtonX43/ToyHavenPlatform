@@ -291,7 +291,7 @@ class SubscriptionController extends Controller
             }
             $paymentMethodId = $pmId;
         } else {
-            $pmId = $this->payMongo->createCardPaymentMethod(
+            $cardResult = $this->payMongo->createCardPaymentMethod(
                 $request->input('card_number'),
                 (int) $request->input('exp_month'),
                 (int) $request->input('exp_year'),
@@ -299,12 +299,12 @@ class SubscriptionController extends Controller
                 $user->name ?? 'Customer',
                 $user->email ?? ''
             );
-            if (! $pmId) {
+            if (! $cardResult['success']) {
                 return response()->json([
-                    'error' => 'Failed to create card payment method. Please check your card details and try again.',
-                ], 500);
+                    'error' => $cardResult['error'] ?? 'Failed to create card payment method.',
+                ], 400);
             }
-            $paymentMethodId = $pmId;
+            $paymentMethodId = $cardResult['id'];
         }
 
         $returnUrl = url('/membership/payment-return') . '?' . http_build_query([
