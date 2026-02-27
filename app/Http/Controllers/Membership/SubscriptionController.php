@@ -76,8 +76,26 @@ class SubscriptionController extends Controller
         $publicKey = config('services.paymongo.public_key');
         $paymentIntentId = $subscription->paymongo_payment_intent_id;
         $clientKey = null;
+        $needsNewIntent = false;
 
-        if (! $paymentIntentId && $subscription->status === 'pending') {
+        if ($paymentIntentId && $subscription->status === 'pending') {
+            $existing = $this->payMongo->getPaymentIntent($paymentIntentId);
+            $existingStatus = $existing['attributes']['status'] ?? null;
+            $clientKey = $existing['attributes']['client_key'] ?? null;
+
+            if (in_array($existingStatus, ['succeeded', 'processing'])) {
+                return redirect()->route('membership.payment-return', [
+                    'subscription_id' => $subscription->id,
+                    'payment_intent_id' => $paymentIntentId,
+                ]);
+            }
+
+            if (! in_array($existingStatus, ['awaiting_payment_method'])) {
+                $needsNewIntent = true;
+            }
+        }
+
+        if ((! $paymentIntentId || $needsNewIntent) && $subscription->status === 'pending') {
             $intent = $this->payMongo->createPaymentIntent(
                 (float) $subscription->plan->price,
                 'PHP',
@@ -93,17 +111,6 @@ class SubscriptionController extends Controller
                 $clientKey = $intent['attributes']['client_key'] ?? null;
                 $subscription->update(['paymongo_payment_intent_id' => $paymentIntentId]);
             }
-        }
-
-        if ($paymentIntentId && ! $clientKey) {
-            $fetched = $this->payMongo->getPaymentIntent($paymentIntentId);
-            $clientKey = $fetched['attributes']['client_key'] ?? null;
-
-            Log::info('PayMongo: Fetched client_key for payment page', [
-                'payment_intent_id' => $paymentIntentId,
-                'has_client_key' => ! empty($clientKey),
-                'status' => $fetched['attributes']['status'] ?? 'unknown',
-            ]);
         }
 
         return view('membership.payment', [
@@ -202,8 +209,8 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Server-side: create payment method and attach to intent via PayMongo secret key.
-     * Returns JSON with status and redirect_url if 3DS/e-wallet auth is needed.
+     * Server-side: attach payment method to intent via PayMongo secret key.
+     * Returns JSON with redirect_url for 3DS/e-wallet auth.
      */
     public function processPayment(Request $request, Subscription $subscription)
     {
@@ -242,6 +249,12 @@ class SubscriptionController extends Controller
         $status = $result['attributes']['status'] ?? 'unknown';
         $nextAction = $result['attributes']['next_action'] ?? null;
 
+        Log::info('PayMongo processPayment: status and next_action', [
+            'status' => $status,
+            'next_action_type' => gettype($nextAction),
+            'next_action_dump' => json_encode($nextAction),
+        ]);
+
         if ($status === 'succeeded') {
             return response()->json([
                 'status' => 'succeeded',
@@ -249,8 +262,8 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        if ($status === 'awaiting_next_action' && $nextAction) {
-            $redirectUrl = $this->extractRedirectUrl($nextAction);
+        if ($status === 'awaiting_next_action') {
+            $redirectUrl = $this->findAnyUrl($nextAction);
             if ($redirectUrl) {
                 return response()->json([
                     'status' => 'awaiting_next_action',
@@ -258,9 +271,14 @@ class SubscriptionController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'error' => 'Payment requires verification but no redirect URL was provided by the payment processor.',
+            Log::error('PayMongo: awaiting_next_action but no redirect URL found', [
                 'next_action' => $nextAction,
+                'full_attributes' => $result['attributes'] ?? [],
+            ]);
+
+            return response()->json([
+                'error' => 'Payment requires bank verification but no redirect was provided. Please try again.',
+                'debug_next_action' => $nextAction,
             ], 400);
         }
 
@@ -284,32 +302,47 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Recursively find a redirect URL from PayMongo's next_action object.
+     * Find any URL in a nested array/object structure.
      */
-    private function extractRedirectUrl($nextAction): ?string
+    private function findAnyUrl($data): ?string
     {
-        if (is_string($nextAction)) {
-            return filter_var($nextAction, FILTER_VALIDATE_URL) ? $nextAction : null;
-        }
+        if (is_string($data)) {
+            if (str_starts_with($data, 'http://') || str_starts_with($data, 'https://')) {
+                return $data;
+            }
 
-        if (! is_array($nextAction)) {
             return null;
         }
 
-        if (! empty($nextAction['redirect']['url'])) {
-            return $nextAction['redirect']['url'];
+        if (! is_array($data)) {
+            return null;
         }
 
-        if (! empty($nextAction['url'])) {
-            return $nextAction['url'];
-        }
+        // Check known PayMongo paths first
+        $knownPaths = [
+            ['redirect', 'url'],
+            ['url'],
+            ['redirect', 'return_url'],
+        ];
 
-        foreach ($nextAction as $value) {
-            if (is_array($value)) {
-                $found = $this->extractRedirectUrl($value);
-                if ($found) {
-                    return $found;
+        foreach ($knownPaths as $path) {
+            $value = $data;
+            foreach ($path as $key) {
+                $value = $value[$key] ?? null;
+                if ($value === null) {
+                    break;
                 }
+            }
+            if (is_string($value) && (str_starts_with($value, 'http://') || str_starts_with($value, 'https://'))) {
+                return $value;
+            }
+        }
+
+        // Brute-force: scan every value recursively
+        foreach ($data as $value) {
+            $found = $this->findAnyUrl($value);
+            if ($found) {
+                return $found;
             }
         }
 

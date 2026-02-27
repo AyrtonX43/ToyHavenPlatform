@@ -51,7 +51,7 @@ class PayMongoService
                     'data' => [
                         'attributes' => [
                             'amount' => $amountCentavos,
-                            'payment_method_allowed' => ['card', 'gcash', 'paymaya'],
+                            'payment_method_allowed' => ['card'],
                             'payment_method_options' => [
                                 'card' => ['request_three_d_secure' => 'any'],
                             ],
@@ -108,20 +108,19 @@ class PayMongoService
                     ],
                 ]);
 
-            if ($response->successful()) {
-                $data = $response->json('data');
-                Log::info('PayMongo: Attach payment method result', [
-                    'payment_intent_id' => $paymentIntentId,
-                    'status' => $data['attributes']['status'] ?? 'unknown',
-                    'next_action' => $data['attributes']['next_action'] ?? null,
-                ]);
+            $json = $response->json();
+            Log::info('PayMongo: Attach raw response', [
+                'http_status' => $response->status(),
+                'body' => $json,
+            ]);
 
-                return $data;
+            if ($response->successful()) {
+                return $json['data'] ?? null;
             }
 
             Log::error('PayMongo: Attach payment method failed', [
                 'status' => $response->status(),
-                'response' => $response->json(),
+                'response' => $json,
             ]);
 
             return null;
