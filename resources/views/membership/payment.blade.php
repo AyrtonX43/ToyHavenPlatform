@@ -167,7 +167,7 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label">Card Number</label>
-                                    <input type="text" id="card_number" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" inputmode="numeric">
+                                    <input type="text" id="card_number" class="form-control" placeholder="1234 5678 9012 3456" maxlength="23" autocomplete="cc-number" inputmode="numeric">
                                 </div>
                                 <div class="col-5">
                                     <label class="form-label">Expiry Date (MM/YY)</label>
