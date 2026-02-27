@@ -32,14 +32,19 @@
                                 @error('title') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                                <select name="category_id" class="form-select" required>
-                                    <option value="">Select Category</option>
+                                <label class="form-label fw-semibold">Categories <span class="text-danger">*</span></label>
+                                <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
                                     @foreach($categories as $cat)
-                                        <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="category_ids[]" value="{{ $cat->id }}" id="cat_{{ $cat->id }}"
+                                                {{ in_array($cat->id, old('category_ids', [])) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="cat_{{ $cat->id }}">{{ $cat->name }}</label>
+                                        </div>
                                     @endforeach
-                                </select>
-                                @error('category_id') <div class="text-danger small">{{ $message }}</div> @enderror
+                                </div>
+                                <small class="text-muted">Select one or more categories</small>
+                                @error('category_ids') <div class="text-danger small">{{ $message }}</div> @enderror
+                                @error('category_ids.*') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>

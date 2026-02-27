@@ -65,7 +65,8 @@ class SellerAuctionController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
-            'category_id' => 'required|exists:categories,id',
+            'category_ids' => 'required|array|min:1',
+            'category_ids.*' => 'exists:categories,id',
             'box_condition' => 'required|in:sealed,opened_complete,opened_incomplete,no_box',
             'authenticity_marks' => 'nullable|string|max:2000',
             'known_defects' => 'nullable|string|max:2000',
@@ -86,6 +87,8 @@ class SellerAuctionController extends Controller
             'verification_video' => 'nullable|file|mimes:mp4,webm|max:51200',
         ]);
 
+        $categoryIds = $validated['category_ids'];
+
         $allowedPlans = $request->input('allowed_bidder_plans', ['all']);
         if (empty($allowedPlans)) {
             $allowedPlans = ['all'];
@@ -94,7 +97,7 @@ class SellerAuctionController extends Controller
         $auction = Auction::create([
             'user_id' => $user->id,
             'seller_id' => $user->seller?->id,
-            'category_id' => $validated['category_id'],
+            'category_id' => $categoryIds[0],
             'title' => $validated['title'],
             'description' => $validated['description'],
             'box_condition' => $validated['box_condition'],
@@ -111,6 +114,8 @@ class SellerAuctionController extends Controller
             'allowed_bidder_plans' => $allowedPlans,
             'status' => 'pending_approval',
         ]);
+
+        $auction->categories()->sync($categoryIds);
 
         $storagePath = 'auction_images/' . $auction->id;
 
@@ -161,7 +166,7 @@ class SellerAuctionController extends Controller
         }
 
         $categories = Category::orderBy('name')->get();
-        $auction->load('images');
+        $auction->load(['images', 'categories']);
 
         return view('auctions.seller.edit', compact('auction', 'categories'));
     }
@@ -182,7 +187,8 @@ class SellerAuctionController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
-            'category_id' => 'required|exists:categories,id',
+            'category_ids' => 'required|array|min:1',
+            'category_ids.*' => 'exists:categories,id',
             'box_condition' => 'required|in:sealed,opened_complete,opened_incomplete,no_box',
             'authenticity_marks' => 'nullable|string|max:2000',
             'known_defects' => 'nullable|string|max:2000',
@@ -201,13 +207,15 @@ class SellerAuctionController extends Controller
             'verification_video' => 'nullable|file|mimes:mp4,webm|max:51200',
         ]);
 
+        $categoryIds = $validated['category_ids'];
+
         $allowedPlans = $request->input('allowed_bidder_plans', ['all']);
         if (empty($allowedPlans)) {
             $allowedPlans = ['all'];
         }
 
         $auction->update([
-            'category_id' => $validated['category_id'],
+            'category_id' => $categoryIds[0],
             'title' => $validated['title'],
             'description' => $validated['description'],
             'box_condition' => $validated['box_condition'],
@@ -224,6 +232,8 @@ class SellerAuctionController extends Controller
             'allowed_bidder_plans' => $allowedPlans,
             'status' => 'pending_approval',
         ]);
+
+        $auction->categories()->sync($categoryIds);
 
         if ($request->hasFile('new_images')) {
             $storagePath = 'auction_images/' . $auction->id;

@@ -15,10 +15,14 @@ class AuctionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Auction::live()->with(['category', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(1)]);
+        $query = Auction::live()->with(['category', 'categories', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(1)]);
 
         if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+            $catId = $request->category;
+            $query->where(function ($sql) use ($catId) {
+                $sql->where('category_id', $catId)
+                    ->orWhereHas('categories', fn ($q) => $q->where('categories.id', $catId));
+            });
         }
 
         if ($request->filled('search')) {
