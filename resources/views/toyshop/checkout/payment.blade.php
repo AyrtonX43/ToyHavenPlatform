@@ -124,9 +124,18 @@
                         <div id="card-form" class="mb-4 d-none">
                             @if(config('services.paymongo.mode') === 'test')
                                 <div class="alert alert-info small mb-3">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    <strong>Test Card (Success):</strong> 4120 0000 0000 0007 | Exp: 12/29 | CVC: 123<br>
-                                    <strong>Test Card (Declined):</strong> 4571 7360 0000 0008 | Exp: 12/29 | CVC: 123
+                                    <i class="bi bi-info-circle me-1"></i> <strong>Test Cards</strong> (use any future exp date &amp; any 3-digit CVC)
+                                    <div class="mt-2" style="font-size: 0.82rem; line-height: 1.7;">
+                                        <strong>Visa:</strong> 4343 4343 4343 4345<br>
+                                        <strong>Visa (debit):</strong> 4571 7360 0000 0075<br>
+                                        <strong>Visa (PH credit):</strong> 4009 9300 0000 1421<br>
+                                        <strong>Mastercard:</strong> 5555 4444 4444 4457<br>
+                                        <strong>Mastercard (debit):</strong> 5455 5900 0000 0009<br>
+                                        <strong>3DS Auth:</strong> 4120 0000 0000 0007<br>
+                                        <strong>3DS (no auth needed):</strong> 5123 0000 0000 0001<br>
+                                        <strong>Declined:</strong> 4571 7360 0000 0008<br>
+                                        <strong>Expired:</strong> 4200 0000 0000 0018
+                                    </div>
                                 </div>
                             @endif
                             <div class="row g-3">
