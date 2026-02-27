@@ -225,8 +225,11 @@ class SubscriptionController extends Controller
         $paymentType = $request->input('payment_type', 'card');
 
         $request->validate([
-            'payment_method_id' => 'required_if:payment_type,card|nullable|string',
             'payment_type' => 'in:card,qrph',
+            'card_number' => 'required_if:payment_type,card|nullable|string',
+            'exp_month' => 'required_if:payment_type,card|nullable|integer|between:1,12',
+            'exp_year' => 'required_if:payment_type,card|nullable|integer',
+            'cvc' => 'required_if:payment_type,card|nullable|string|min:3|max:4',
         ]);
 
         $paymentIntentId = $subscription->paymongo_payment_intent_id;
@@ -271,8 +274,9 @@ class SubscriptionController extends Controller
             Log::info('Fresh payment intent created', ['new_id' => $paymentIntentId]);
         }
 
+        $user = Auth::user();
+
         if ($paymentType === 'qrph') {
-            $user = Auth::user();
             Log::info('Creating QRPh payment method', [
                 'user_name' => $user->name,
                 'user_email' => $user->email,
@@ -282,17 +286,25 @@ class SubscriptionController extends Controller
             if (! $pmId) {
                 Log::error('QRPh payment method creation returned null');
                 return response()->json([
-                    'error' => 'Failed to create QR Ph payment method. Please check your PayMongo account settings or contact support.',
-                    'debug' => 'Payment method creation failed - check Laravel logs for details'
+                    'error' => 'Failed to create QR Ph payment method. Please try again.',
                 ], 500);
             }
             $paymentMethodId = $pmId;
-            Log::info('QRPh payment method created successfully', ['pm_id' => $pmId]);
         } else {
-            $paymentMethodId = $request->payment_method_id;
-            if (! $paymentMethodId) {
-                return response()->json(['error' => 'Payment method ID is required for card payments.'], 400);
+            $pmId = $this->payMongo->createCardPaymentMethod(
+                $request->input('card_number'),
+                (int) $request->input('exp_month'),
+                (int) $request->input('exp_year'),
+                $request->input('cvc'),
+                $user->name ?? 'Customer',
+                $user->email ?? ''
+            );
+            if (! $pmId) {
+                return response()->json([
+                    'error' => 'Failed to create card payment method. Please check your card details and try again.',
+                ], 500);
             }
+            $paymentMethodId = $pmId;
         }
 
         $returnUrl = url('/membership/payment-return') . '?' . http_build_query([

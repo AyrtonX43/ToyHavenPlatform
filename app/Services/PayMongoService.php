@@ -134,6 +134,68 @@ class PayMongoService
     }
 
     /**
+     * Create a Card payment method server-side using the secret key.
+     */
+    public function createCardPaymentMethod(string $cardNumber, int $expMonth, int $expYear, string $cvc, string $name = '', string $email = ''): ?string
+    {
+        try {
+            $cleanCard = preg_replace('/\D/', '', $cardNumber);
+
+            Log::info('PayMongo: Creating card payment method', [
+                'card_last4' => substr($cleanCard, -4),
+                'card_length' => strlen($cleanCard),
+                'exp_month' => $expMonth,
+                'exp_year' => $expYear,
+            ]);
+
+            $billing = [];
+            if ($name) $billing['name'] = $name;
+            if ($email) $billing['email'] = $email;
+
+            $payload = [
+                'data' => [
+                    'attributes' => [
+                        'type' => 'card',
+                        'details' => [
+                            'card_number' => $cleanCard,
+                            'exp_month' => $expMonth,
+                            'exp_year' => $expYear,
+                            'cvc' => $cvc,
+                        ],
+                    ],
+                ],
+            ];
+
+            if (!empty($billing)) {
+                $payload['data']['attributes']['billing'] = $billing;
+            }
+
+            $response = Http::withBasicAuth($this->publicKey, '')
+                ->withOptions(['verify' => config('app.env') !== 'local'])
+                ->post("{$this->baseUrl}/payment_methods", $payload);
+
+            if ($response->successful()) {
+                $pmId = $response->json('data.id');
+                Log::info('PayMongo: Card payment method created', ['id' => $pmId]);
+                return $pmId;
+            }
+
+            Log::error('PayMongo: Create card payment method failed', [
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('PayMongo: Create card payment method exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
      * Create a QRPh payment method server-side.
      * Note: PayMongo requires public key for payment method creation.
      */

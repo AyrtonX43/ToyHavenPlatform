@@ -377,39 +377,25 @@
             var cvc = document.getElementById('cvc').value.replace(/\D/g, '');
             
             if (!cardNumber || !expiry || !cvc) throw new Error('Please fill in all card details.');
-            if (cardNumber.length < 13 || cardNumber.length > 19) throw new Error('Please enter a valid card number (13-19 digits).');
+            if (cardNumber.length < 13 || cardNumber.length > 19) throw new Error('Please enter a valid card number.');
             if (expiry.length !== 4) throw new Error('Please enter expiry date as MM/YY.');
-            if (cvc.length < 3 || cvc.length > 4) throw new Error('Please enter a valid CVC (3-4 digits).');
+            if (cvc.length < 3 || cvc.length > 4) throw new Error('Please enter a valid CVC.');
             
             var expMonth = parseInt(expiry.substring(0, 2), 10);
             var expYear = parseInt(expiry.substring(2, 4), 10);
             
-            if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month (must be 01-12).');
-
-            console.log('Creating payment method with card ending in:', cardNumber.slice(-4));
-
-            var pmRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(publicKey + ':') },
-                body: JSON.stringify({ data: { attributes: {
-                    type: 'card',
-                    details: { 
-                        card_number: String(cardNumber), 
-                        exp_month: Number(expMonth), 
-                        exp_year: Number(expYear), 
-                        cvc: String(cvc) 
-                    },
-                    billing: { name: @json(auth()->user()->name ?? 'Customer'), email: @json(auth()->user()->email ?? '') }
-                }}})
-            });
-            var pmData = await pmRes.json();
-            console.log('PayMongo response:', pmData.errors || 'Success');
-            if (!pmData.data?.id) throw new Error(pmData.errors?.[0]?.detail || 'Failed to create payment method.');
+            if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month.');
 
             var serverRes = await fetch(processUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: JSON.stringify({ payment_type: 'card', payment_method_id: pmData.data.id })
+                body: JSON.stringify({ 
+                    payment_type: 'card', 
+                    card_number: cardNumber, 
+                    exp_month: expMonth, 
+                    exp_year: expYear, 
+                    cvc: cvc 
+                })
             });
             var serverData = await serverRes.json();
 

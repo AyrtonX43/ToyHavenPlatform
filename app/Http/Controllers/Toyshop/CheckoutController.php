@@ -340,8 +340,11 @@ class CheckoutController extends Controller
         $paymentType = $request->input('payment_type', 'card');
 
         $request->validate([
-            'payment_method_id' => 'required_if:payment_type,card|nullable|string',
             'payment_type' => 'in:card,qrph',
+            'card_number' => 'required_if:payment_type,card|nullable|string',
+            'exp_month' => 'required_if:payment_type,card|nullable|integer|between:1,12',
+            'exp_year' => 'required_if:payment_type,card|nullable|integer',
+            'cvc' => 'required_if:payment_type,card|nullable|string|min:3|max:4',
         ]);
 
         $intent = $this->payMongoService->createPaymentIntent(
@@ -355,9 +358,9 @@ class CheckoutController extends Controller
         }
 
         $paymentIntentId = $intent['id'];
+        $user = Auth::user();
 
         if ($paymentType === 'qrph') {
-            $user = Auth::user();
             Log::info('Creating QRPh payment method for order', [
                 'order_number' => $order->order_number,
                 'user_name' => $user->name,
@@ -366,16 +369,26 @@ class CheckoutController extends Controller
             
             $pmId = $this->payMongoService->createQrphPaymentMethod($user->name, $user->email);
             if (! $pmId) {
-                Log::error('QRPh payment method creation failed for order', ['order_number' => $order->order_number]);
                 return response()->json([
-                    'error' => 'Failed to create QR Ph payment method. Please check your PayMongo account settings or contact support.',
-                    'debug' => 'Payment method creation failed - check Laravel logs'
+                    'error' => 'Failed to create QR Ph payment method. Please try again.',
                 ], 500);
             }
             $paymentMethodId = $pmId;
-            Log::info('QRPh payment method created for order', ['order_number' => $order->order_number, 'pm_id' => $pmId]);
         } else {
-            $paymentMethodId = $request->payment_method_id;
+            $pmId = $this->payMongoService->createCardPaymentMethod(
+                $request->input('card_number'),
+                (int) $request->input('exp_month'),
+                (int) $request->input('exp_year'),
+                $request->input('cvc'),
+                $user->name ?? 'Customer',
+                $user->email ?? ''
+            );
+            if (! $pmId) {
+                return response()->json([
+                    'error' => 'Failed to create card payment method. Please check your card details and try again.',
+                ], 500);
+            }
+            $paymentMethodId = $pmId;
         }
 
         $returnUrl = url('/checkout/return') . '?' . http_build_query([
