@@ -322,10 +322,16 @@
                 <a href="{{ route('auctions.my-bids') }}" class="btn btn-light btn-lg fw-bold px-4" style="color: #0891b2; border-radius: 12px;">
                     <i class="bi bi-list-check me-2"></i>My Bids
                 </a>
-                @if($canCreateAuction)
-                    <a href="{{ route('auctions.seller.index') }}" class="btn btn-warning btn-lg fw-bold px-4" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white; border-radius: 12px;">
-                        <i class="bi bi-hammer me-2"></i>My Auction Listings
-                    </a>
+                @if($isVipPlan || $canCreateAuction)
+                    @if($isVerifiedAuctionSeller)
+                        <a href="{{ route('auctions.seller.index') }}" class="btn btn-warning btn-lg fw-bold px-4" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white; border-radius: 12px;">
+                            <i class="bi bi-hammer me-2"></i>My Auction Listings
+                        </a>
+                    @else
+                        <a href="{{ route('auctions.verification.index') }}" class="btn btn-warning btn-lg fw-bold px-4" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white; border-radius: 12px;">
+                            <i class="bi bi-shield-check me-2"></i>Register as Auction Seller
+                        </a>
+                    @endif
                 @endif
             @else
                 <a href="#membership-plans" class="btn btn-light btn-lg fw-bold px-4" style="color: #0891b2; border-radius: 12px;">
@@ -439,7 +445,7 @@
     @endif
 
     {{-- Seller Quick Actions for VIP users --}}
-    @if($canCreateAuction)
+    @if($isVipPlan || $canCreateAuction)
         <div class="card border-0 shadow-sm mb-4 reveal" style="border-radius: 16px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fcd34d !important;">
             <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3 p-4">
                 <div class="d-flex align-items-center gap-3">
@@ -447,17 +453,28 @@
                         <i class="bi bi-hammer text-white" style="font-size: 1.3rem;"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0" style="color: #92400e;">Auction Seller Dashboard</h5>
-                        <p class="text-muted small mb-0">Manage your listings, create new auctions, and promote your items</p>
+                        @if($isVerifiedAuctionSeller)
+                            <h5 class="fw-bold mb-0" style="color: #92400e;">Auction Seller Dashboard</h5>
+                            <p class="text-muted small mb-0">Manage your listings, create new auctions, and promote your items</p>
+                        @else
+                            <h5 class="fw-bold mb-0" style="color: #92400e;">Become an Auction Seller</h5>
+                            <p class="text-muted small mb-0">As a VIP member, you can list your toys and collectibles for auction. Complete verification to get started.</p>
+                        @endif
                     </div>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ route('auctions.seller.index') }}" class="btn btn-outline-dark px-3">
-                        <i class="bi bi-grid me-1"></i>My Listings
-                    </a>
-                    <a href="{{ route('auctions.seller.create') }}" class="btn btn-warning fw-bold px-3" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
-                        <i class="bi bi-plus-circle me-1"></i>Create Auction
-                    </a>
+                    @if($isVerifiedAuctionSeller)
+                        <a href="{{ route('auctions.seller.index') }}" class="btn btn-outline-dark px-3">
+                            <i class="bi bi-grid me-1"></i>My Listings
+                        </a>
+                        <a href="{{ route('auctions.seller.create') }}" class="btn btn-warning fw-bold px-3" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
+                            <i class="bi bi-plus-circle me-1"></i>Create Auction
+                        </a>
+                    @else
+                        <a href="{{ route('auctions.verification.index') }}" class="btn btn-warning fw-bold px-3" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
+                            <i class="bi bi-shield-check me-1"></i>Start Verification
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
