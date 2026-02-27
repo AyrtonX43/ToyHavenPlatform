@@ -393,7 +393,12 @@
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(publicKey + ':') },
                 body: JSON.stringify({ data: { attributes: {
                     type: 'card',
-                    details: { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc },
+                    details: { 
+                        card_number: String(cardNumber), 
+                        exp_month: Number(expMonth), 
+                        exp_year: Number(expYear), 
+                        cvc: String(cvc) 
+                    },
                     billing: { name: @json(auth()->user()->name ?? 'Customer'), email: @json(auth()->user()->email ?? '') }
                 }}})
             });
