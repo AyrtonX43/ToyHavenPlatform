@@ -13,6 +13,7 @@ use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
@@ -286,9 +287,8 @@ class CheckoutController extends Controller
 
         $paymentIntentId = $intent['id'] ?? null;
         $clientKey = data_get($intent, 'attributes.client_key');
-        $isTestMode = config('app.env') !== 'production' || str_starts_with($publicKey ?? '', 'pk_test_');
 
-        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'paymentIntentId', 'clientKey', 'isTestMode'));
+        return view('toyshop.checkout.payment', compact('order', 'publicKey', 'paymentIntentId', 'clientKey'));
     }
 
     /**
@@ -322,6 +322,116 @@ class CheckoutController extends Controller
             'client_key' => $attrs['client_key'] ?? null,
             'id' => $intent['id'] ?? null,
         ]);
+    }
+
+    /**
+     * Server-side: attach payment method to intent via secret key.
+     */
+    public function processPayment(Request $request, $orderNumber)
+    {
+        $order = Order::where('order_number', $orderNumber)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ($order->payment_status === 'paid') {
+            return response()->json(['error' => 'Order already paid.'], 400);
+        }
+
+        $request->validate([
+            'payment_method_id' => 'required|string',
+        ]);
+
+        $intent = $this->payMongoService->createPaymentIntent(
+            $order->total,
+            'PHP',
+            ['order_number' => $order->order_number, 'order_id' => (string) $order->id]
+        );
+
+        if (! $intent) {
+            return response()->json(['error' => 'Failed to create payment session.'], 500);
+        }
+
+        $paymentIntentId = $intent['id'];
+
+        $returnUrl = url('/checkout/return') . '?' . http_build_query([
+            'order_number' => $order->order_number,
+            'payment_intent_id' => $paymentIntentId,
+        ]);
+
+        $result = $this->payMongoService->attachPaymentMethod(
+            $paymentIntentId,
+            $request->payment_method_id,
+            $returnUrl
+        );
+
+        if (! $result) {
+            return response()->json(['error' => 'Failed to process payment. Please try again.'], 500);
+        }
+
+        $status = $result['attributes']['status'] ?? 'unknown';
+        $nextAction = $result['attributes']['next_action'] ?? null;
+
+        Log::info('Checkout: processPayment result', [
+            'order_number' => $order->order_number,
+            'status' => $status,
+            'next_action_json' => json_encode($nextAction),
+        ]);
+
+        if ($status === 'succeeded') {
+            return response()->json([
+                'status' => 'succeeded',
+                'redirect_url' => $returnUrl,
+            ]);
+        }
+
+        if ($status === 'awaiting_next_action') {
+            $redirectUrl = $this->extractRedirectUrl($nextAction);
+            return response()->json([
+                'status' => 'awaiting_next_action',
+                'redirect_url' => $redirectUrl,
+                'next_action' => $nextAction,
+            ]);
+        }
+
+        if ($status === 'processing') {
+            return response()->json([
+                'status' => 'processing',
+                'redirect_url' => $returnUrl,
+            ]);
+        }
+
+        if ($status === 'awaiting_payment_method') {
+            $errorMsg = $result['attributes']['last_payment_error']['message']
+                ?? 'Payment failed. Please try again with a different payment method.';
+            return response()->json(['error' => $errorMsg], 400);
+        }
+
+        return response()->json(['error' => "Payment returned unexpected status: {$status}"], 400);
+    }
+
+    private function extractRedirectUrl($nextAction): ?string
+    {
+        if (is_string($nextAction)) {
+            return filter_var($nextAction, FILTER_VALIDATE_URL) ? $nextAction : null;
+        }
+        if (! is_array($nextAction)) {
+            return null;
+        }
+        if (! empty($nextAction['redirect']['url'])) {
+            return $nextAction['redirect']['url'];
+        }
+        if (! empty($nextAction['url'])) {
+            return $nextAction['url'];
+        }
+        foreach ($nextAction as $value) {
+            if (is_array($value)) {
+                $found = $this->extractRedirectUrl($value);
+                if ($found) {
+                    return $found;
+                }
+            }
+        }
+        return null;
     }
 
     /**
