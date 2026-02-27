@@ -24,13 +24,11 @@ class SubscriptionController extends Controller
         $plan = Plan::where('slug', $request->get('plan', 'basic'))->active()->firstOrFail();
         $user = Auth::user();
 
-        // Prevent duplicate active subscriptions
         if ($user->hasActiveMembership()) {
             return redirect()->route('membership.manage')
                 ->with('info', 'You already have an active subscription.');
         }
 
-        // Create local subscription in "pending" status until payment succeeds
         $subscription = Subscription::create([
             'user_id' => $user->id,
             'plan_id' => $plan->id,
@@ -39,7 +37,8 @@ class SubscriptionController extends Controller
             'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
         ]);
 
-        // Create a PayMongo payment intent for the plan price
+        $availableMethods = $this->payMongo->getAvailablePaymentMethods();
+
         $intent = $this->payMongo->createPaymentIntent(
             (float) $plan->price,
             'PHP',
@@ -47,7 +46,8 @@ class SubscriptionController extends Controller
                 'subscription_id' => (string) $subscription->id,
                 'plan_id' => (string) $plan->id,
                 'user_id' => (string) $user->id,
-            ]
+            ],
+            $availableMethods
         );
 
         if (! $intent) {
@@ -60,6 +60,7 @@ class SubscriptionController extends Controller
         return redirect()->route('membership.payment', [
             'subscription' => $subscription->id,
             'payment_intent' => $intent['id'],
+            'client_key' => $intent['attributes']['client_key'] ?? null,
         ])->with('success', 'Subscription created. Complete your payment to activate.');
     }
 
@@ -74,8 +75,9 @@ class SubscriptionController extends Controller
 
         $publicKey = config('services.paymongo.public_key');
         $paymentIntentId = $request->get('payment_intent');
+        $clientKey = $request->get('client_key');
+        $availableMethods = $this->payMongo->getAvailablePaymentMethods();
 
-        // If no payment intent passed, create one
         if (! $paymentIntentId && $subscription->status === 'pending') {
             $intent = $this->payMongo->createPaymentIntent(
                 (float) $subscription->plan->price,
@@ -84,15 +86,19 @@ class SubscriptionController extends Controller
                     'subscription_id' => (string) $subscription->id,
                     'plan_id' => (string) $subscription->plan_id,
                     'user_id' => (string) $subscription->user_id,
-                ]
+                ],
+                $availableMethods
             );
             $paymentIntentId = $intent['id'] ?? null;
+            $clientKey = $intent['attributes']['client_key'] ?? null;
         }
 
         return view('membership.payment', [
             'subscription' => $subscription,
             'paymentIntentId' => $paymentIntentId,
+            'clientKey' => $clientKey,
             'publicKey' => $publicKey,
+            'availableMethods' => $availableMethods,
         ]);
     }
 

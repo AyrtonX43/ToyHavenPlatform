@@ -146,9 +146,13 @@
 
                 <div class="payment-actions">
                     @if(($publicKey ?? false) && ($paymentIntentId ?? false))
+                        @php
+                            $methods = $availableMethods ?? ['card'];
+                        @endphp
                         <div class="mb-4">
                             <label class="form-label fw-semibold mb-3">Select Payment Method</label>
 
+                            @if(in_array('card', $methods))
                             <div class="payment-method-option selected" data-method="card">
                                 <input type="radio" name="pay_method" value="card" id="pm_card" checked>
                                 <span class="pm-radio"></span>
@@ -158,9 +162,11 @@
                                     <small class="d-block text-muted">Visa, Mastercard</small>
                                 </div>
                             </div>
+                            @endif
 
-                            <div class="payment-method-option" data-method="gcash">
-                                <input type="radio" name="pay_method" value="gcash" id="pm_gcash">
+                            @if(in_array('gcash', $methods))
+                            <div class="payment-method-option {{ !in_array('card', $methods) ? 'selected' : '' }}" data-method="gcash">
+                                <input type="radio" name="pay_method" value="gcash" id="pm_gcash" {{ !in_array('card', $methods) ? 'checked' : '' }}>
                                 <span class="pm-radio"></span>
                                 <i class="bi bi-phone fs-4 me-3 text-success"></i>
                                 <div>
@@ -168,9 +174,11 @@
                                     <small class="d-block text-muted">Pay with GCash e-wallet</small>
                                 </div>
                             </div>
+                            @endif
 
-                            <div class="payment-method-option" data-method="paymaya">
-                                <input type="radio" name="pay_method" value="paymaya" id="pm_paymaya">
+                            @if(in_array('paymaya', $methods))
+                            <div class="payment-method-option {{ !in_array('card', $methods) && !in_array('gcash', $methods) ? 'selected' : '' }}" data-method="paymaya">
+                                <input type="radio" name="pay_method" value="paymaya" id="pm_paymaya" {{ !in_array('card', $methods) && !in_array('gcash', $methods) ? 'checked' : '' }}>
                                 <span class="pm-radio"></span>
                                 <i class="bi bi-wallet2 fs-4 me-3 text-primary"></i>
                                 <div>
@@ -178,30 +186,33 @@
                                     <small class="d-block text-muted">Pay with Maya e-wallet</small>
                                 </div>
                             </div>
+                            @endif
                         </div>
 
+                        @if(in_array('card', $methods))
                         <div id="card-form" class="mb-4">
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label">Card Number</label>
-                                    <input type="text" id="card_number" class="form-control" placeholder="•••• •••• •••• ••••" maxlength="19" autocomplete="cc-number">
+                                    <input type="text" id="card_number" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" inputmode="numeric">
                                 </div>
                                 <div class="col-4">
                                     <label class="form-label">Exp Month</label>
-                                    <input type="number" id="exp_month" class="form-control" placeholder="MM" min="1" max="12" autocomplete="cc-exp-month">
+                                    <input type="number" id="exp_month" class="form-control" placeholder="MM" min="1" max="12" autocomplete="cc-exp-month" inputmode="numeric">
                                 </div>
                                 <div class="col-4">
                                     <label class="form-label">Exp Year</label>
-                                    <input type="number" id="exp_year" class="form-control" placeholder="YYYY" min="{{ date('Y') }}" autocomplete="cc-exp-year">
+                                    <input type="number" id="exp_year" class="form-control" placeholder="YYYY" min="{{ date('Y') }}" autocomplete="cc-exp-year" inputmode="numeric">
                                 </div>
                                 <div class="col-4">
                                     <label class="form-label">CVC</label>
-                                    <input type="text" id="cvc" class="form-control" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+                                    <input type="password" id="cvc" class="form-control" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                        <div id="ewallet-notice" class="alert alert-light border d-none mb-4">
+                        <div id="ewallet-notice" class="alert alert-light border {{ in_array('card', $methods) ? 'd-none' : '' }} mb-4">
                             <i class="bi bi-info-circle me-2"></i>
                             You will be redirected to complete payment securely via the selected e-wallet app.
                         </div>
@@ -255,11 +266,9 @@
     var publicKey = @json($publicKey);
     var paymentIntentId = @json($paymentIntentId);
     var orderNumber = @json($order->order_number);
-    var orderId = @json($order->id);
+    var clientKey = @json($clientKey ?? null);
     var returnUrl = new URL('/checkout/return', window.location.origin);
     returnUrl.searchParams.set('order_number', orderNumber);
-
-    var clientKey = @json($clientKey ?? null);
 
     function setError(msg) {
         var el = document.getElementById('pay-error');
@@ -273,8 +282,10 @@
     }
 
     function togglePaymentUi(method) {
-        document.getElementById('card-form').classList.toggle('d-none', method !== 'card');
-        document.getElementById('ewallet-notice').classList.toggle('d-none', method !== 'gcash' && method !== 'paymaya');
+        var cardForm = document.getElementById('card-form');
+        var ewalletNotice = document.getElementById('ewallet-notice');
+        if (cardForm) cardForm.classList.toggle('d-none', method !== 'card');
+        if (ewalletNotice) ewalletNotice.classList.toggle('d-none', method === 'card');
     }
 
     document.querySelectorAll('.payment-method-option').forEach(function(el) {
@@ -289,7 +300,6 @@
         });
     });
 
-    // Card number auto-formatting
     var cardInput = document.getElementById('card_number');
     if (cardInput) {
         cardInput.addEventListener('input', function() {
@@ -299,13 +309,16 @@
         });
     }
 
-    async function fetchClientKey() {
+    async function ensureClientKey() {
         if (clientKey) return;
-        var res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '?client_key=', {
+        var res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId, {
             headers: { 'Authorization': 'Basic ' + btoa(publicKey + ':') }
         });
         var data = await res.json();
         clientKey = data.data?.attributes?.client_key;
+        if (!clientKey) {
+            throw new Error('Could not retrieve payment session. Please refresh the page and try again.');
+        }
     }
 
     async function createPaymentMethod() {
@@ -416,9 +429,7 @@
         clearError();
         setLoading(true);
         try {
-            if (!clientKey) {
-                await fetchClientKey();
-            }
+            await ensureClientKey();
             var pmId = await createPaymentMethod();
             await attachPaymentMethod(pmId);
         } catch (e) {
@@ -426,8 +437,6 @@
             setLoading(false);
         }
     });
-
-    fetchClientKey().catch(function() {});
 })();
 </script>
 @endif
