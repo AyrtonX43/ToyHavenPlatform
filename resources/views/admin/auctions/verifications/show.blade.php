@@ -146,49 +146,116 @@
         </div>
     </div>
 </div>
-{{-- Fullscreen Image Viewer Modal --}}
-<div class="modal fade" id="fullscreenImageModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen" style="margin: 0; max-width: 100%;">
-        <div class="modal-content" style="background: rgba(0, 0, 0, 0.92); border: none; border-radius: 0;">
-            <div class="modal-header border-0 position-absolute w-100" style="z-index: 10; top: 0;">
-                <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal" aria-label="Close" style="font-size: 1.25rem; opacity: 0.8; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></button>
-            </div>
-            <div class="modal-body d-flex align-items-center justify-content-center p-0" style="overflow: auto;">
-                <img id="fullscreenImage" src="" alt="Full Screen View" style="max-width: 95vw; max-height: 95vh; object-fit: contain; transition: transform 0.2s ease;" class="rounded shadow">
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
+
+@push('styles')
+<style>
+    .img-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-out;
+    }
+    .img-overlay.active {
+        display: flex;
+    }
+    .img-overlay img {
+        max-width: 92vw;
+        max-height: 92vh;
+        object-fit: contain;
+        border-radius: 6px;
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        transition: transform 0.15s ease;
+    }
+    .img-overlay .overlay-close {
+        position: fixed;
+        top: 18px;
+        right: 24px;
+        z-index: 100000;
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: #fff;
+        font-size: 2rem;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        backdrop-filter: blur(4px);
+        transition: background 0.2s;
+    }
+    .img-overlay .overlay-close:hover {
+        background: rgba(255,255,255,0.3);
+    }
+    .img-overlay .overlay-hint {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(255,255,255,0.5);
+        font-size: 0.85rem;
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('fullscreenImageModal');
-    const fullscreenImg = document.getElementById('fullscreenImage');
-    let scale = 1;
+    var overlay = document.createElement('div');
+    overlay.className = 'img-overlay';
+    overlay.innerHTML = '<button class="overlay-close" title="Close">&times;</button><img src="" alt="Full View"><span class="overlay-hint">Scroll to zoom &middot; Click or press Esc to close</span>';
+    document.body.appendChild(overlay);
+
+    var overlayImg = overlay.querySelector('img');
+    var scale = 1;
 
     document.querySelectorAll('.fullscreen-img').forEach(function (img) {
         img.addEventListener('click', function () {
-            fullscreenImg.src = this.src;
-            fullscreenImg.alt = this.alt;
+            overlayImg.src = this.src;
+            overlayImg.alt = this.alt;
             scale = 1;
-            fullscreenImg.style.transform = 'scale(1)';
-            new bootstrap.Modal(modal).show();
+            overlayImg.style.transform = 'scale(1)';
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         });
     });
 
-    modal.addEventListener('wheel', function (e) {
-        e.preventDefault();
-        scale += e.deltaY > 0 ? -0.1 : 0.1;
-        scale = Math.max(0.3, Math.min(5, scale));
-        fullscreenImg.style.transform = 'scale(' + scale + ')';
-    }, { passive: false });
-
-    modal.addEventListener('hidden.bs.modal', function () {
-        fullscreenImg.src = '';
+    function closeOverlay() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        overlayImg.src = '';
         scale = 1;
+    }
+
+    overlay.querySelector('.overlay-close').addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeOverlay();
     });
+
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeOverlay();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) closeOverlay();
+    });
+
+    overlay.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        scale += e.deltaY > 0 ? -0.15 : 0.15;
+        scale = Math.max(0.3, Math.min(5, scale));
+        overlayImg.style.transform = 'scale(' + scale + ')';
+    }, { passive: false });
 });
 </script>
 @endpush
