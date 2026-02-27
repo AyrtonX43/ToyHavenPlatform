@@ -45,8 +45,17 @@ return [
     ],
 
     'paymongo' => [
-        'secret_key' => env('PAYMONGO_SECRET_KEY'),
-        'public_key' => env('PAYMONGO_PUBLIC_KEY'),
+        'mode' => env('PAYMONGO_MODE', 'live'), // 'test' or 'live'
+        
+        // Automatically select keys based on mode
+        'secret_key' => env('PAYMONGO_MODE', 'live') === 'test' 
+            ? env('PAYMONGO_TEST_SECRET_KEY', env('PAYMONGO_SECRET_KEY'))
+            : env('PAYMONGO_LIVE_SECRET_KEY', env('PAYMONGO_SECRET_KEY')),
+        
+        'public_key' => env('PAYMONGO_MODE', 'live') === 'test'
+            ? env('PAYMONGO_TEST_PUBLIC_KEY', env('PAYMONGO_PUBLIC_KEY'))
+            : env('PAYMONGO_LIVE_PUBLIC_KEY', env('PAYMONGO_PUBLIC_KEY')),
+        
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
         'base_url' => env('PAYMONGO_BASE_URL', 'https://api.paymongo.com/v1'),
     ],
