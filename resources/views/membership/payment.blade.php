@@ -158,24 +158,6 @@
                         </div>
 
                         <div id="card-form" class="mb-4 d-none">
-                            @if(config('services.paymongo.mode') === 'test')
-                                <div class="alert alert-info small mb-3">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    <strong>Test Cards (No 3DS):</strong><br>
-                                    <small>
-                                    Visa: <code>4343 4343 4343 4345</code><br>
-                                    Visa Debit: <code>4571 7360 0000 0075</code><br>
-                                    Visa PH: <code>4009 9300 0000 1421</code><br>
-                                    Mastercard: <code>5555 4444 4444 4457</code><br>
-                                    MC Debit: <code>5455 5900 0000 0009</code><br>
-                                    MC Prepaid: <code>5339 0800 0000 0003</code><br>
-                                    MC PH: <code>5240 0500 0000 1440</code><br>
-                                    </small>
-                                    <strong>With 3DS:</strong> <code>4120 0000 0000 0007</code><br>
-                                    <strong>Declined:</strong> <code>4571 7360 0000 0008</code><br>
-                                    <small class="text-muted">Use any future exp (e.g. 12/29) &amp; any 3-digit CVC (e.g. 123)</small>
-                                </div>
-                            @endif
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label">Card Number</label>
