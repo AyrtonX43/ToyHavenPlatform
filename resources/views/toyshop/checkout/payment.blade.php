@@ -382,7 +382,7 @@
             if (cvc.length < 3 || cvc.length > 4) throw new Error('Please enter a valid CVC (3-4 digits).');
             
             var expMonth = parseInt(expiry.substring(0, 2), 10);
-            var expYear = parseInt('20' + expiry.substring(2, 4), 10);
+            var expYear = parseInt(expiry.substring(2, 4), 10);
             
             if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month (must be 01-12).');
 
