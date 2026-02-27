@@ -124,18 +124,20 @@
                         <div id="card-form" class="mb-4 d-none">
                             @if(config('services.paymongo.mode') === 'test')
                                 <div class="alert alert-info small mb-3">
-                                    <i class="bi bi-info-circle me-1"></i> <strong>Test Cards</strong> (use any future exp date &amp; any 3-digit CVC)
-                                    <div class="mt-2" style="font-size: 0.82rem; line-height: 1.7;">
-                                        <strong>Visa:</strong> 4343 4343 4343 4345<br>
-                                        <strong>Visa (debit):</strong> 4571 7360 0000 0075<br>
-                                        <strong>Visa (PH credit):</strong> 4009 9300 0000 1421<br>
-                                        <strong>Mastercard:</strong> 5555 4444 4444 4457<br>
-                                        <strong>Mastercard (debit):</strong> 5455 5900 0000 0009<br>
-                                        <strong>3DS Auth:</strong> 4120 0000 0000 0007<br>
-                                        <strong>3DS (no auth needed):</strong> 5123 0000 0000 0001<br>
-                                        <strong>Declined:</strong> 4571 7360 0000 0008<br>
-                                        <strong>Expired:</strong> 4200 0000 0000 0018
-                                    </div>
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Test Cards (No 3DS):</strong><br>
+                                    <small>
+                                    Visa: <code>4343 4343 4343 4345</code><br>
+                                    Visa Debit: <code>4571 7360 0000 0075</code><br>
+                                    Visa PH: <code>4009 9300 0000 1421</code><br>
+                                    Mastercard: <code>5555 4444 4444 4457</code><br>
+                                    MC Debit: <code>5455 5900 0000 0009</code><br>
+                                    MC Prepaid: <code>5339 0800 0000 0003</code><br>
+                                    MC PH: <code>5240 0500 0000 1440</code><br>
+                                    </small>
+                                    <strong>With 3DS:</strong> <code>4120 0000 0000 0007</code><br>
+                                    <strong>Declined:</strong> <code>4571 7360 0000 0008</code><br>
+                                    <small class="text-muted">Use any future exp (e.g. 12/29) &amp; any 3-digit CVC (e.g. 123)</small>
                                 </div>
                             @endif
                             <div class="row g-3">
