@@ -18,13 +18,9 @@
     }
     .payment-plan-header h2 { margin: 0; font-weight: 700; font-size: 1.5rem; }
     .payment-plan-header .plan-badge {
-        display: inline-block;
-        background: rgba(255,255,255,0.25);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-top: 0.5rem;
+        display: inline-block; background: rgba(255,255,255,0.25);
+        padding: 0.25rem 0.75rem; border-radius: 20px;
+        font-size: 0.85rem; font-weight: 600; margin-top: 0.5rem;
     }
     .benefits-section { padding: 1.5rem 2rem; }
     .benefits-section h4 {
@@ -146,6 +142,26 @@
                                     <small class="d-block text-muted">Visa, Mastercard</small>
                                 </div>
                             </div>
+
+                            <div class="payment-method-option" data-method="gcash">
+                                <input type="radio" name="pay_method" value="gcash" id="pm_gcash">
+                                <span class="pm-radio"></span>
+                                <i class="bi bi-phone fs-4 me-3 text-success"></i>
+                                <div>
+                                    <strong>GCash</strong>
+                                    <small class="d-block text-muted">Pay with GCash e-wallet</small>
+                                </div>
+                            </div>
+
+                            <div class="payment-method-option" data-method="paymaya">
+                                <input type="radio" name="pay_method" value="paymaya" id="pm_paymaya">
+                                <span class="pm-radio"></span>
+                                <i class="bi bi-wallet2 fs-4 me-3 text-primary"></i>
+                                <div>
+                                    <strong>Maya (PayMaya)</strong>
+                                    <small class="d-block text-muted">Pay with Maya e-wallet</small>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="card-form" class="mb-4">
@@ -167,6 +183,11 @@
                                     <input type="password" id="cvc" class="form-control" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
                                 </div>
                             </div>
+                        </div>
+
+                        <div id="ewallet-notice" class="alert alert-light border d-none mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You will be redirected to complete payment securely via the selected e-wallet app.
                         </div>
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
@@ -250,6 +271,7 @@
     var subscriptionId = @json($subscription->id);
     var returnUrl = new URL('/membership/payment-return', window.location.origin);
     returnUrl.searchParams.set('subscription_id', subscriptionId);
+    returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
 
     function setError(msg) {
         var el = document.getElementById('pay-error');
@@ -261,6 +283,27 @@
         document.getElementById('pay-btn').disabled = show;
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
     }
+    function getSelectedMethod() {
+        var checked = document.querySelector('input[name="pay_method"]:checked');
+        return checked ? checked.value : 'card';
+    }
+
+    function togglePaymentUi(method) {
+        var cardForm = document.getElementById('card-form');
+        var ewalletNotice = document.getElementById('ewallet-notice');
+        if (cardForm) cardForm.classList.toggle('d-none', method !== 'card');
+        if (ewalletNotice) ewalletNotice.classList.toggle('d-none', method === 'card');
+    }
+
+    document.querySelectorAll('.payment-method-option').forEach(function(el) {
+        el.addEventListener('click', function() {
+            document.querySelectorAll('.payment-method-option').forEach(function(o) { o.classList.remove('selected'); });
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+            togglePaymentUi(this.dataset.method);
+            clearError();
+        });
+    });
 
     var cardInput = document.getElementById('card_number');
     if (cardInput) {
@@ -277,73 +320,92 @@
         });
     }
 
+    function handlePaymentStatus(pi) {
+        var status = pi.attributes?.status;
+        var nextAction = pi.attributes?.next_action;
+
+        if (status === 'succeeded') {
+            window.location.href = returnUrl.toString();
+            return true;
+        }
+
+        if (status === 'awaiting_next_action' && nextAction) {
+            var redirectUrl = nextAction.redirect?.url || nextAction.url;
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+                return true;
+            }
+        }
+
+        if (status === 'processing') {
+            window.location.href = returnUrl.toString();
+            return true;
+        }
+
+        if (status === 'awaiting_payment_method') {
+            throw new Error(pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again.');
+        }
+
+        return false;
+    }
+
     document.getElementById('pay-btn').addEventListener('click', async function() {
         clearError();
         setLoading(true);
         try {
-            var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
-            var expMonth = parseInt(document.getElementById('exp_month').value, 10);
-            var expYear = parseInt(document.getElementById('exp_year').value, 10);
-            var cvc = document.getElementById('cvc').value;
+            var method = getSelectedMethod();
+            var pmAttrs = {
+                type: method,
+                billing: {
+                    name: @json(auth()->user()->name ?? 'Customer'),
+                    email: @json(auth()->user()->email ?? '')
+                }
+            };
 
-            if (!cardNumber || !expMonth || !expYear || !cvc) {
-                throw new Error('Please fill in all card details.');
-            }
-            if (cardNumber.length < 13 || cardNumber.length > 19) {
-                throw new Error('Please enter a valid card number.');
-            }
-            if (expMonth < 1 || expMonth > 12) {
-                throw new Error('Please enter a valid expiration month (1-12).');
-            }
-            if (cvc.length < 3) {
-                throw new Error('Please enter a valid CVC.');
+            if (method === 'card') {
+                var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
+                var expMonth = parseInt(document.getElementById('exp_month').value, 10);
+                var expYear = parseInt(document.getElementById('exp_year').value, 10);
+                var cvc = document.getElementById('cvc').value;
+                if (!cardNumber || !expMonth || !expYear || !cvc) {
+                    throw new Error('Please fill in all card details.');
+                }
+                if (cardNumber.length < 13 || cardNumber.length > 19) {
+                    throw new Error('Please enter a valid card number.');
+                }
+                if (expMonth < 1 || expMonth > 12) {
+                    throw new Error('Please enter a valid expiration month (1-12).');
+                }
+                if (cvc.length < 3) {
+                    throw new Error('Please enter a valid CVC.');
+                }
+                pmAttrs.details = { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc };
             }
 
-            // Step 1: Create payment method
             var pmRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(publicKey + ':')
-                },
-                body: JSON.stringify({
-                    data: {
-                        attributes: {
-                            type: 'card',
-                            details: {
-                                card_number: cardNumber,
-                                exp_month: expMonth,
-                                exp_year: expYear,
-                                cvc: cvc
-                            },
-                            billing: {
-                                name: @json(auth()->user()->name ?? 'Customer'),
-                                email: @json(auth()->user()->email ?? '')
-                            }
-                        }
-                    }
-                })
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(publicKey + ':') },
+                body: JSON.stringify({ data: { attributes: pmAttrs } })
             });
             var pmData = await pmRes.json();
             if (!pmData.data?.id) {
-                throw new Error(pmData.errors?.[0]?.detail || 'Failed to create payment method. Please check your card details.');
+                throw new Error(pmData.errors?.[0]?.detail || 'Failed to create payment method. Please check your details.');
             }
 
-            // Step 2: Attach payment method to intent
+            var attachBody = {
+                data: {
+                    attributes: {
+                        payment_method: pmData.data.id,
+                        client_key: clientKey,
+                        return_url: returnUrl.toString()
+                    }
+                }
+            };
+
             var attachRes = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(publicKey + ':')
-                },
-                body: JSON.stringify({
-                    data: {
-                        attributes: {
-                            payment_method: pmData.data.id,
-                            client_key: clientKey
-                        }
-                    }
-                })
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(publicKey + ':') },
+                body: JSON.stringify(attachBody)
             });
             var attachData = await attachRes.json();
             var pi = attachData.data;
@@ -351,27 +413,9 @@
                 throw new Error(attachData.errors?.[0]?.detail || 'Failed to process payment. Please try again.');
             }
 
-            var status = pi.attributes?.status;
-
-            if (status === 'succeeded') {
-                returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-                window.location.href = returnUrl.toString();
-                return;
+            if (!handlePaymentStatus(pi)) {
+                throw new Error('Payment could not be completed. Status: ' + (pi.attributes?.status || 'unknown') + '. Please try again.');
             }
-            if (status === 'awaiting_next_action' && pi.attributes?.next_action?.redirect?.url) {
-                window.location.href = pi.attributes.next_action.redirect.url;
-                return;
-            }
-            if (status === 'processing') {
-                returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-                window.location.href = returnUrl.toString();
-                return;
-            }
-            if (status === 'awaiting_payment_method') {
-                throw new Error(pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again.');
-            }
-
-            throw new Error('Unexpected payment status: ' + status);
         } catch (e) {
             setError(e.message || 'Payment failed. Please try again.');
             setLoading(false);

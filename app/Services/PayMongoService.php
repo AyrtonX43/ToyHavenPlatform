@@ -51,7 +51,7 @@ class PayMongoService
                     'data' => [
                         'attributes' => [
                             'amount' => $amountCentavos,
-                            'payment_method_allowed' => ['card'],
+                            'payment_method_allowed' => ['card', 'gcash', 'paymaya'],
                             'payment_method_options' => [
                                 'card' => ['request_three_d_secure' => 'any'],
                             ],
