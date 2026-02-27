@@ -169,11 +169,11 @@
                                     <label class="form-label">Card Number</label>
                                     <input type="text" id="card_number" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" inputmode="numeric">
                                 </div>
-                                <div class="col-8">
+                                <div class="col-5">
                                     <label class="form-label">Expiry Date (MM/YY)</label>
-                                    <input type="text" id="card_expiry" class="form-control" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric">
+                                    <input type="text" id="card_expiry" class="form-control" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric" style="max-width: 120px;">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-3">
                                     <label class="form-label">CVC</label>
                                     <input type="password" id="cvc" class="form-control" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
                                 </div>
