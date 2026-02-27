@@ -26,6 +26,16 @@
                     <p class="text-muted mb-0">Complete all required fields to submit your verification</p>
                 </div>
                 <div class="card-body p-4">
+                    @if($syncedData)
+                        <div class="alert alert-success d-flex align-items-start mb-4">
+                            <i class="bi bi-arrow-repeat me-2 mt-1" style="font-size: 1.2rem;"></i>
+                            <div>
+                                <strong>ToyShop Seller Data Detected!</strong><br>
+                                <span class="small">Your address, ID, bank statement, and business documents from your ToyShop seller registration have been synced below. You can still replace any file by uploading a new one.</span>
+                            </div>
+                        </div>
+                    @endif
+
                     <form action="{{ route('auctions.verification.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="seller_type" value="{{ $type }}">
@@ -34,18 +44,28 @@
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                                @php
+                                    $defaultPhone = old('phone', $syncedData['phone'] ?? auth()->user()->phone ?? '');
+                                    $phoneDisplay = substr($defaultPhone, 0, 3) === '+63' ? substr($defaultPhone, 3) : $defaultPhone;
+                                @endphp
                                 <div class="input-group">
                                     <span class="input-group-text">+63</span>
-                                    <input type="text" name="phone_display" class="form-control" placeholder="9XXXXXXXXX" value="{{ old('phone_display', substr(old('phone', auth()->user()->phone ?? ''), 3)) }}" maxlength="10">
+                                    <input type="text" name="phone_display" class="form-control" placeholder="9XXXXXXXXX" value="{{ old('phone_display', $phoneDisplay) }}" maxlength="10">
                                 </div>
-                                <input type="hidden" name="phone" id="phone_hidden" value="{{ old('phone') }}">
+                                <input type="hidden" name="phone" id="phone_hidden" value="{{ old('phone', $defaultPhone) }}">
+                                @if($syncedData && ($syncedData['phone'] ?? false))
+                                    <div class="text-success small mt-1"><i class="bi bi-arrow-repeat me-1"></i>Synced from ToyShop registration</div>
+                                @endif
                                 @error('phone')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-semibold">Full Address <span class="text-danger">*</span></label>
-                                <textarea name="address" class="form-control" rows="2" required>{{ old('address', auth()->user()->address) }}</textarea>
+                                <textarea name="address" class="form-control" rows="2" required>{{ old('address', $syncedData['address'] ?? auth()->user()->address) }}</textarea>
+                                @if($syncedData && ($syncedData['address'] ?? false))
+                                    <div class="text-success small mt-1"><i class="bi bi-arrow-repeat me-1"></i>Synced from ToyShop registration — feel free to edit</div>
+                                @endif
                                 @error('address')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
@@ -77,8 +97,29 @@
 
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Government ID #1 <span class="text-danger">*</span></label>
-                                <input type="file" name="government_id_1" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                <label class="form-label fw-semibold">
+                                    Government ID #1
+                                    @if($syncedData && isset($syncedData['documents']['government_id_1']))
+                                        <span class="text-muted">(Optional — synced)</span>
+                                    @else
+                                        <span class="text-danger">*</span>
+                                    @endif
+                                </label>
+                                @if($syncedData && isset($syncedData['documents']['government_id_1']))
+                                    <div class="synced-doc-preview mb-2 p-2 bg-success bg-opacity-10 border border-success rounded d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-check text-success me-2"></i>
+                                            <span class="small text-success fw-semibold">{{ $syncedData['documents']['government_id_1']['label'] }}</span>
+                                        </div>
+                                        <a href="{{ $syncedData['documents']['government_id_1']['url'] }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
+                                            <i class="bi bi-eye me-1"></i>View
+                                        </a>
+                                    </div>
+                                    <input type="file" name="government_id_1" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                    <div class="text-muted small mt-1"><i class="bi bi-info-circle me-1"></i>Upload a new file to replace the synced document</div>
+                                @else
+                                    <input type="file" name="government_id_1" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                @endif
                                 @error('government_id_1')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
@@ -103,10 +144,30 @@
 
                         <hr class="my-4">
 
-                        <h5 class="fw-bold mb-3"><i class="bi bi-bank me-1"></i>Bank Statement <span class="text-danger">*</span></h5>
+                        <h5 class="fw-bold mb-3"><i class="bi bi-bank me-1"></i>Bank Statement
+                            @if($syncedData && isset($syncedData['documents']['bank_statement']))
+                                <span class="text-muted fw-normal fs-6">(Optional — synced)</span>
+                            @else
+                                <span class="text-danger">*</span>
+                            @endif
+                        </h5>
                         <p class="text-muted small">Upload a recent bank statement showing your name and account details.</p>
                         <div class="mb-4">
-                            <input type="file" name="bank_statement" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            @if($syncedData && isset($syncedData['documents']['bank_statement']))
+                                <div class="synced-doc-preview mb-2 p-2 bg-success bg-opacity-10 border border-success rounded d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-check text-success me-2"></i>
+                                        <span class="small text-success fw-semibold">{{ $syncedData['documents']['bank_statement']['label'] }}</span>
+                                    </div>
+                                    <a href="{{ $syncedData['documents']['bank_statement']['url'] }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                </div>
+                                <input type="file" name="bank_statement" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                <div class="text-muted small mt-1"><i class="bi bi-info-circle me-1"></i>Upload a new file to replace the synced document</div>
+                            @else
+                                <input type="file" name="bank_statement" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            @endif
                             @error('bank_statement')
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
@@ -119,8 +180,29 @@
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Business Permit <span class="text-danger">*</span></label>
-                                    <input type="file" name="business_permit" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <label class="form-label fw-semibold">
+                                        Business Permit
+                                        @if($syncedData && isset($syncedData['documents']['business_permit']))
+                                            <span class="text-muted">(Optional — synced)</span>
+                                        @else
+                                            <span class="text-danger">*</span>
+                                        @endif
+                                    </label>
+                                    @if($syncedData && isset($syncedData['documents']['business_permit']))
+                                        <div class="synced-doc-preview mb-2 p-2 bg-success bg-opacity-10 border border-success rounded d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-file-earmark-check text-success me-2"></i>
+                                                <span class="small text-success fw-semibold">{{ $syncedData['documents']['business_permit']['label'] }}</span>
+                                            </div>
+                                            <a href="{{ $syncedData['documents']['business_permit']['url'] }}" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                        </div>
+                                        <input type="file" name="business_permit" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                        <div class="text-muted small mt-1"><i class="bi bi-info-circle me-1"></i>Upload a new file to replace the synced document</div>
+                                    @else
+                                        <input type="file" name="business_permit" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    @endif
                                     @error('business_permit')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
