@@ -9,6 +9,7 @@ use App\Models\SubscriptionPayment;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
@@ -37,8 +38,6 @@ class SubscriptionController extends Controller
             'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
         ]);
 
-        $availableMethods = $this->payMongo->getAvailablePaymentMethods();
-
         $intent = $this->payMongo->createPaymentIntent(
             (float) $plan->price,
             'PHP',
@@ -46,8 +45,7 @@ class SubscriptionController extends Controller
                 'subscription_id' => (string) $subscription->id,
                 'plan_id' => (string) $plan->id,
                 'user_id' => (string) $user->id,
-            ],
-            $availableMethods
+            ]
         );
 
         if (! $intent) {
@@ -57,10 +55,12 @@ class SubscriptionController extends Controller
                 ->with('error', 'Could not initialize payment. Please try again.');
         }
 
+        $subscription->update([
+            'paymongo_payment_intent_id' => $intent['id'],
+        ]);
+
         return redirect()->route('membership.payment', [
             'subscription' => $subscription->id,
-            'payment_intent' => $intent['id'],
-            'client_key' => $intent['attributes']['client_key'] ?? null,
         ])->with('success', 'Subscription created. Complete your payment to activate.');
     }
 
@@ -74,9 +74,8 @@ class SubscriptionController extends Controller
         }
 
         $publicKey = config('services.paymongo.public_key');
-        $paymentIntentId = $request->get('payment_intent');
-        $clientKey = $request->get('client_key');
-        $availableMethods = $this->payMongo->getAvailablePaymentMethods();
+        $paymentIntentId = $subscription->paymongo_payment_intent_id;
+        $clientKey = null;
 
         if (! $paymentIntentId && $subscription->status === 'pending') {
             $intent = $this->payMongo->createPaymentIntent(
@@ -86,11 +85,25 @@ class SubscriptionController extends Controller
                     'subscription_id' => (string) $subscription->id,
                     'plan_id' => (string) $subscription->plan_id,
                     'user_id' => (string) $subscription->user_id,
-                ],
-                $availableMethods
+                ]
             );
-            $paymentIntentId = $intent['id'] ?? null;
-            $clientKey = $intent['attributes']['client_key'] ?? null;
+
+            if ($intent) {
+                $paymentIntentId = $intent['id'];
+                $clientKey = $intent['attributes']['client_key'] ?? null;
+                $subscription->update(['paymongo_payment_intent_id' => $paymentIntentId]);
+            }
+        }
+
+        if ($paymentIntentId && ! $clientKey) {
+            $fetched = $this->payMongo->getPaymentIntent($paymentIntentId);
+            $clientKey = $fetched['attributes']['client_key'] ?? null;
+
+            Log::info('PayMongo: Fetched client_key for payment page', [
+                'payment_intent_id' => $paymentIntentId,
+                'has_client_key' => ! empty($clientKey),
+                'status' => $fetched['attributes']['status'] ?? 'unknown',
+            ]);
         }
 
         return view('membership.payment', [
@@ -98,7 +111,6 @@ class SubscriptionController extends Controller
             'paymentIntentId' => $paymentIntentId,
             'clientKey' => $clientKey,
             'publicKey' => $publicKey,
-            'availableMethods' => $availableMethods,
         ]);
     }
 

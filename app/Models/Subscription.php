@@ -15,6 +15,7 @@ class Subscription extends Model
         'current_period_start',
         'current_period_end',
         'cancelled_at',
+        'paymongo_payment_intent_id',
     ];
 
     protected $casts = [

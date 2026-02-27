@@ -16,11 +16,7 @@
         color: white;
         padding: 1.5rem 2rem;
     }
-    .payment-order-header h2 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 1.5rem;
-    }
+    .payment-order-header h2 { margin: 0; font-weight: 700; font-size: 1.5rem; }
     .payment-order-header .order-badge {
         display: inline-block;
         background: rgba(255,255,255,0.25);
@@ -30,80 +26,36 @@
         font-weight: 600;
         margin-top: 0.5rem;
     }
-    .order-details-section {
-        padding: 1.5rem 2rem;
-    }
+    .order-details-section { padding: 1.5rem 2rem; }
     .order-details-section h4 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        font-size: 1rem; font-weight: 700; color: #1e293b;
+        margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
     }
-    .order-summary-box {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 1.25rem 1.5rem;
-    }
-    .order-summary-box .price-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 1.1rem;
-    }
-    .order-summary-box .price-row .total {
-        font-weight: 800;
-        color: #0891b2;
-        font-size: 1.35rem;
-    }
-    .payment-actions {
-        padding: 1.5rem 2rem;
-        background: #f8fafc;
-        border-top: 1px solid #e2e8f0;
-    }
+    .order-summary-box { background: #f8fafc; border-radius: 12px; padding: 1.25rem 1.5rem; }
+    .order-summary-box .price-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
+    .order-summary-box .price-row .total { font-weight: 800; color: #0891b2; font-size: 1.35rem; }
+    .payment-actions { padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; }
     .payment-method-option {
-        border: 1.5px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 0.75rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
+        border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s;
+        display: flex; align-items: center;
     }
     .payment-method-option:hover { border-color: #06b6d4; background: #f0fdfa; }
     .payment-method-option.selected { border-color: #0891b2; background: #ecfeff; box-shadow: 0 0 0 3px rgba(8,145,178,0.1); }
     .payment-method-option input[type="radio"] { display: none; }
     .payment-method-option .pm-radio {
-        width: 20px; height: 20px;
-        border: 2px solid #cbd5e1;
-        border-radius: 50%;
-        flex-shrink: 0;
-        margin-right: 1rem;
-        display: flex; align-items: center; justify-content: center;
-        transition: all 0.2s;
+        width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 50%;
+        flex-shrink: 0; margin-right: 1rem;
+        display: flex; align-items: center; justify-content: center; transition: all 0.2s;
     }
-    .payment-method-option.selected .pm-radio {
-        border-color: #0891b2;
-    }
+    .payment-method-option.selected .pm-radio { border-color: #0891b2; }
     .payment-method-option.selected .pm-radio::after {
-        content: '';
-        width: 10px; height: 10px;
-        background: #0891b2;
-        border-radius: 50%;
+        content: ''; width: 10px; height: 10px; background: #0891b2; border-radius: 50%;
     }
     .secure-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-size: 0.8rem;
-        color: #64748b;
-        background: #f1f5f9;
-        padding: 0.35rem 0.75rem;
-        border-radius: 20px;
-        margin-top: 0.75rem;
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        font-size: 0.8rem; color: #64748b; background: #f1f5f9;
+        padding: 0.35rem 0.75rem; border-radius: 20px; margin-top: 0.75rem;
     }
     .secure-badge i { color: #10b981; }
 </style>
@@ -145,14 +97,10 @@
                 </div>
 
                 <div class="payment-actions">
-                    @if(($publicKey ?? false) && ($paymentIntentId ?? false))
-                        @php
-                            $methods = $availableMethods ?? ['card'];
-                        @endphp
+                    @if(($publicKey ?? false) && ($paymentIntentId ?? false) && ($clientKey ?? false))
                         <div class="mb-4">
                             <label class="form-label fw-semibold mb-3">Select Payment Method</label>
 
-                            @if(in_array('card', $methods))
                             <div class="payment-method-option selected" data-method="card">
                                 <input type="radio" name="pay_method" value="card" id="pm_card" checked>
                                 <span class="pm-radio"></span>
@@ -162,34 +110,8 @@
                                     <small class="d-block text-muted">Visa, Mastercard</small>
                                 </div>
                             </div>
-                            @endif
-
-                            @if(in_array('gcash', $methods))
-                            <div class="payment-method-option {{ !in_array('card', $methods) ? 'selected' : '' }}" data-method="gcash">
-                                <input type="radio" name="pay_method" value="gcash" id="pm_gcash" {{ !in_array('card', $methods) ? 'checked' : '' }}>
-                                <span class="pm-radio"></span>
-                                <i class="bi bi-phone fs-4 me-3 text-success"></i>
-                                <div>
-                                    <strong>GCash</strong>
-                                    <small class="d-block text-muted">Pay with GCash e-wallet</small>
-                                </div>
-                            </div>
-                            @endif
-
-                            @if(in_array('paymaya', $methods))
-                            <div class="payment-method-option {{ !in_array('card', $methods) && !in_array('gcash', $methods) ? 'selected' : '' }}" data-method="paymaya">
-                                <input type="radio" name="pay_method" value="paymaya" id="pm_paymaya" {{ !in_array('card', $methods) && !in_array('gcash', $methods) ? 'checked' : '' }}>
-                                <span class="pm-radio"></span>
-                                <i class="bi bi-wallet2 fs-4 me-3 text-primary"></i>
-                                <div>
-                                    <strong>Maya (PayMaya)</strong>
-                                    <small class="d-block text-muted">Pay with Maya e-wallet</small>
-                                </div>
-                            </div>
-                            @endif
                         </div>
 
-                        @if(in_array('card', $methods))
                         <div id="card-form" class="mb-4">
                             <div class="row g-3">
                                 <div class="col-12">
@@ -210,12 +132,6 @@
                                 </div>
                             </div>
                         </div>
-                        @endif
-
-                        <div id="ewallet-notice" class="alert alert-light border {{ in_array('card', $methods) ? 'd-none' : '' }} mb-4">
-                            <i class="bi bi-info-circle me-2"></i>
-                            You will be redirected to complete payment securely via the selected e-wallet app.
-                        </div>
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
                         <div id="pay-loading" class="d-none text-center py-3">
@@ -228,9 +144,7 @@
                         </button>
 
                         <div class="text-center">
-                            <span class="secure-badge">
-                                <i class="bi bi-shield-lock-fill"></i> Secured by PayMongo
-                            </span>
+                            <span class="secure-badge"><i class="bi bi-shield-lock-fill"></i> Secured by PayMongo</span>
                         </div>
 
                         <div class="mt-3 text-center">
@@ -260,13 +174,13 @@
 @endsection
 
 @push('scripts')
-@if(($publicKey ?? false) && ($paymentIntentId ?? false))
+@if(($publicKey ?? false) && ($paymentIntentId ?? false) && ($clientKey ?? false))
 <script>
 (function() {
     var publicKey = @json($publicKey);
     var paymentIntentId = @json($paymentIntentId);
+    var clientKey = @json($clientKey);
     var orderNumber = @json($order->order_number);
-    var clientKey = @json($clientKey ?? null);
     var returnUrl = new URL('/checkout/return', window.location.origin);
     returnUrl.searchParams.set('order_number', orderNumber);
 
@@ -281,61 +195,23 @@
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
     }
 
-    function togglePaymentUi(method) {
-        var cardForm = document.getElementById('card-form');
-        var ewalletNotice = document.getElementById('ewallet-notice');
-        if (cardForm) cardForm.classList.toggle('d-none', method !== 'card');
-        if (ewalletNotice) ewalletNotice.classList.toggle('d-none', method === 'card');
-    }
-
-    document.querySelectorAll('.payment-method-option').forEach(function(el) {
-        el.addEventListener('click', function() {
-            document.querySelectorAll('.payment-method-option').forEach(function(o) {
-                o.classList.remove('selected');
-            });
-            this.classList.add('selected');
-            this.querySelector('input[type="radio"]').checked = true;
-            togglePaymentUi(this.dataset.method);
-            clearError();
-        });
-    });
-
     var cardInput = document.getElementById('card_number');
     if (cardInput) {
         cardInput.addEventListener('input', function() {
             var val = this.value.replace(/\D/g, '').substring(0, 16);
-            var formatted = val.replace(/(.{4})/g, '$1 ').trim();
-            this.value = formatted;
+            this.value = val.replace(/(.{4})/g, '$1 ').trim();
         });
     }
 
-    async function ensureClientKey() {
-        if (clientKey) return;
-        var res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId, {
-            headers: { 'Authorization': 'Basic ' + btoa(publicKey + ':') }
-        });
-        var data = await res.json();
-        clientKey = data.data?.attributes?.client_key;
-        if (!clientKey) {
-            throw new Error('Could not retrieve payment session. Please refresh the page and try again.');
-        }
-    }
-
-    async function createPaymentMethod() {
-        var method = document.querySelector('input[name="pay_method"]:checked').value;
-        var attrs = {
-            type: method,
-            billing: {
-                name: @json(auth()->user()->name ?? 'Customer'),
-                email: @json(auth()->user()->email ?? ''),
-            }
-        };
-
-        if (method === 'card') {
+    document.getElementById('pay-btn').addEventListener('click', async function() {
+        clearError();
+        setLoading(true);
+        try {
             var cardNumber = document.getElementById('card_number').value.replace(/\s/g, '');
             var expMonth = parseInt(document.getElementById('exp_month').value, 10);
             var expYear = parseInt(document.getElementById('exp_year').value, 10);
             var cvc = document.getElementById('cvc').value;
+
             if (!cardNumber || !expMonth || !expYear || !cvc) {
                 throw new Error('Please fill in all card details.');
             }
@@ -348,90 +224,78 @@
             if (cvc.length < 3) {
                 throw new Error('Please enter a valid CVC.');
             }
-            attrs.details = { card_number: cardNumber, exp_month: expMonth, exp_year: expYear, cvc: cvc };
-        }
 
-        var res = await fetch('https://api.paymongo.com/v1/payment_methods', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa(publicKey + ':')
-            },
-            body: JSON.stringify({ data: { attributes: attrs } })
-        });
-
-        var data = await res.json();
-        if (!data.data?.id) {
-            throw new Error(data.errors?.[0]?.detail || 'Failed to create payment method. Please check your details.');
-        }
-        return data.data.id;
-    }
-
-    async function attachPaymentMethod(paymentMethodId) {
-        var method = document.querySelector('input[name="pay_method"]:checked').value;
-        var body = {
-            data: {
-                attributes: {
-                    client_key: clientKey,
-                    payment_method: paymentMethodId,
-                }
+            var pmRes = await fetch('https://api.paymongo.com/v1/payment_methods', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(publicKey + ':')
+                },
+                body: JSON.stringify({
+                    data: {
+                        attributes: {
+                            type: 'card',
+                            details: {
+                                card_number: cardNumber,
+                                exp_month: expMonth,
+                                exp_year: expYear,
+                                cvc: cvc
+                            },
+                            billing: {
+                                name: @json(auth()->user()->name ?? 'Customer'),
+                                email: @json(auth()->user()->email ?? '')
+                            }
+                        }
+                    }
+                })
+            });
+            var pmData = await pmRes.json();
+            if (!pmData.data?.id) {
+                throw new Error(pmData.errors?.[0]?.detail || 'Failed to create payment method. Please check your card details.');
             }
-        };
 
-        if (method === 'gcash' || method === 'paymaya') {
-            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-            body.data.attributes.return_url = returnUrl.toString();
-        }
+            var attachRes = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(publicKey + ':')
+                },
+                body: JSON.stringify({
+                    data: {
+                        attributes: {
+                            payment_method: pmData.data.id,
+                            client_key: clientKey
+                        }
+                    }
+                })
+            });
+            var attachData = await attachRes.json();
+            var pi = attachData.data;
+            if (!pi) {
+                throw new Error(attachData.errors?.[0]?.detail || 'Failed to process payment. Please try again.');
+            }
 
-        var res = await fetch('https://api.paymongo.com/v1/payment_intents/' + paymentIntentId + '/attach', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + btoa(publicKey + ':')
-            },
-            body: JSON.stringify(body)
-        });
+            var status = pi.attributes?.status;
 
-        var data = await res.json();
-        var pi = data.data;
-        if (!pi) {
-            throw new Error(data.errors?.[0]?.detail || 'Failed to process payment. Please try again.');
-        }
+            if (status === 'succeeded') {
+                returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+                window.location.href = returnUrl.toString();
+                return;
+            }
+            if (status === 'awaiting_next_action' && pi.attributes?.next_action?.redirect?.url) {
+                window.location.href = pi.attributes.next_action.redirect.url;
+                return;
+            }
+            if (status === 'processing') {
+                returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
+                window.location.href = returnUrl.toString();
+                return;
+            }
+            if (status === 'awaiting_payment_method') {
+                throw new Error(pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again.');
+            }
 
-        var status = pi.attributes?.status;
-        var nextAction = pi.attributes?.next_action;
-
-        if (status === 'succeeded') {
-            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-            window.location.href = returnUrl.toString();
-            return;
-        }
-
-        if (status === 'awaiting_next_action' && nextAction?.redirect?.url) {
-            window.location.href = nextAction.redirect.url;
-            return;
-        }
-
-        if (status === 'awaiting_payment_method') {
-            throw new Error(pi.attributes?.last_payment_error?.message || 'Payment failed. Please try again with a different payment method.');
-        }
-
-        if (status === 'processing') {
-            returnUrl.searchParams.set('payment_intent_id', paymentIntentId);
-            window.location.href = returnUrl.toString();
-            return;
-        }
-
-        throw new Error('Unexpected payment status: ' + status);
-    }
-
-    document.getElementById('pay-btn').addEventListener('click', async function() {
-        clearError();
-        setLoading(true);
-        try {
-            await ensureClientKey();
-            var pmId = await createPaymentMethod();
-            await attachPaymentMethod(pmId);
+            throw new Error('Unexpected payment status: ' + status);
         } catch (e) {
             setError(e.message || 'Payment failed. Please try again.');
             setLoading(false);

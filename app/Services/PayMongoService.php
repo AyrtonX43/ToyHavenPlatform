@@ -29,12 +29,12 @@ class PayMongoService
      * @param  float  $amount  Amount in PHP (e.g. 150.00)
      * @param  string  $currency
      * @param  array  $metadata  Arbitrary key-value metadata attached to the intent
-     * @return array|null  The payment intent resource data, or null on failure
+     * @return array|null  The full payment intent resource (id, attributes.client_key, etc.), or null on failure
      */
-    public function createPaymentIntent(float $amount, string $currency = 'PHP', array $metadata = [], array $paymentMethods = ['card']): ?array
+    public function createPaymentIntent(float $amount, string $currency = 'PHP', array $metadata = []): ?array
     {
         if (! $this->isConfigured()) {
-            Log::error('PayMongo: API keys not configured. Check PAYMONGO_SECRET_KEY and PAYMONGO_PUBLIC_KEY in .env and run php artisan config:clear');
+            Log::error('PayMongo: API keys not configured.');
 
             return null;
         }
@@ -42,7 +42,7 @@ class PayMongoService
         try {
             $amountCentavos = (int) round($amount * 100);
             if ($amountCentavos < 2000) {
-                $amountCentavos = 2000; // PayMongo minimum ₱20
+                $amountCentavos = 2000;
             }
 
             $response = Http::withBasicAuth($this->secretKey, '')
@@ -51,7 +51,7 @@ class PayMongoService
                     'data' => [
                         'attributes' => [
                             'amount' => $amountCentavos,
-                            'payment_method_allowed' => $paymentMethods,
+                            'payment_method_allowed' => ['card'],
                             'payment_method_options' => [
                                 'card' => ['request_three_d_secure' => 'any'],
                             ],
@@ -63,10 +63,19 @@ class PayMongoService
                 ]);
 
             if ($response->successful()) {
-                return $response->json('data');
+                $data = $response->json('data');
+                Log::info('PayMongo: Payment intent created', [
+                    'id' => $data['id'] ?? null,
+                    'has_client_key' => ! empty($data['attributes']['client_key'] ?? null),
+                ]);
+
+                return $data;
             }
 
-            Log::error('PayMongo: Create Payment Intent failed', ['response' => $response->json()]);
+            Log::error('PayMongo: Create Payment Intent failed', [
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
 
             return null;
         } catch (\Exception $e) {
@@ -77,61 +86,7 @@ class PayMongoService
     }
 
     /**
-     * Detect which payment methods are actually enabled on this PayMongo account
-     * by creating a minimal test intent and reading back the allowed methods.
-     */
-    public function getAvailablePaymentMethods(): array
-    {
-        $allMethods = ['card', 'gcash', 'paymaya'];
-
-        if (! $this->isConfigured()) {
-            return ['card'];
-        }
-
-        try {
-            $response = Http::withBasicAuth($this->secretKey, '')
-                ->withOptions(['verify' => config('app.env') !== 'local'])
-                ->post("{$this->baseUrl}/payment_intents", [
-                    'data' => [
-                        'attributes' => [
-                            'amount' => 2000,
-                            'payment_method_allowed' => $allMethods,
-                            'currency' => 'PHP',
-                            'capture_type' => 'automatic',
-                            'metadata' => ['probe' => 'true'],
-                        ],
-                    ],
-                ]);
-
-            if ($response->successful()) {
-                return $response->json('data.attributes.payment_method_allowed') ?? ['card'];
-            }
-
-            $errors = $response->json('errors') ?? [];
-            $disallowed = [];
-            foreach ($errors as $error) {
-                $detail = $error['detail'] ?? '';
-                foreach (['gcash', 'paymaya'] as $method) {
-                    if (stripos($detail, $method) !== false && stripos($detail, 'not allowed') !== false) {
-                        $disallowed[] = $method;
-                    }
-                }
-            }
-
-            if (! empty($disallowed)) {
-                return array_values(array_diff($allMethods, $disallowed));
-            }
-
-            return ['card'];
-        } catch (\Exception $e) {
-            Log::warning('PayMongo: Could not detect available payment methods', ['message' => $e->getMessage()]);
-
-            return ['card'];
-        }
-    }
-
-    /**
-     * Retrieve a Payment Intent by ID.
+     * Retrieve a Payment Intent by ID (using secret key for full access).
      */
     public function getPaymentIntent(string $paymentIntentId): ?array
     {
@@ -161,7 +116,7 @@ class PayMongoService
     {
         $webhookSecret = config('services.paymongo.webhook_secret');
         if (empty($webhookSecret)) {
-            return true; // Skip verification if no secret configured
+            return true;
         }
 
         $parts = collect(explode(',', $signatureHeader))
