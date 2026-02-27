@@ -134,12 +134,13 @@ class PayMongoService
     }
 
     /**
-     * Create a QRPh payment method server-side (no sensitive details needed).
+     * Create a QRPh payment method server-side.
+     * Note: PayMongo requires public key for payment method creation.
      */
     public function createQrphPaymentMethod(string $name, string $email): ?string
     {
         try {
-            $response = Http::withBasicAuth($this->secretKey, '')
+            $response = Http::withBasicAuth($this->publicKey, '')
                 ->withOptions(['verify' => config('app.env') !== 'local'])
                 ->post("{$this->baseUrl}/payment_methods", [
                     'data' => [
@@ -154,7 +155,9 @@ class PayMongoService
                 ]);
 
             if ($response->successful()) {
-                return $response->json('data.id');
+                $pmId = $response->json('data.id');
+                Log::info('PayMongo: QRPh payment method created', ['id' => $pmId]);
+                return $pmId;
             }
 
             Log::error('PayMongo: Create QRPh payment method failed', [
@@ -164,7 +167,10 @@ class PayMongoService
 
             return null;
         } catch (\Exception $e) {
-            Log::error('PayMongo: Create QRPh payment method exception', ['message' => $e->getMessage()]);
+            Log::error('PayMongo: Create QRPh payment method exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return null;
         }
