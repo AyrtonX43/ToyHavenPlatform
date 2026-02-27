@@ -39,7 +39,7 @@
                             <div class="card-header fw-bold">Selfie Photo</div>
                             <div class="card-body text-center">
                                 @if($verification->selfie_path)
-                                    <img src="{{ asset('storage/' . $verification->selfie_path) }}" alt="Selfie" class="img-fluid rounded" style="max-height: 300px;">
+                                    <img src="{{ asset('storage/' . $verification->selfie_path) }}" alt="Selfie" class="img-fluid rounded fullscreen-img" style="max-height: 300px; cursor: pointer;" title="Click to view full screen">
                                 @else
                                     <p class="text-muted">No selfie uploaded</p>
                                 @endif
@@ -59,7 +59,7 @@
                                 </div>
                                 <div class="card-body text-center">
                                     @if(in_array(pathinfo($doc->document_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png']))
-                                        <img src="{{ asset('storage/' . $doc->document_path) }}" alt="{{ $doc->document_type }}" class="img-fluid rounded" style="max-height: 200px;">
+                                        <img src="{{ asset('storage/' . $doc->document_path) }}" alt="{{ $doc->document_type }}" class="img-fluid rounded fullscreen-img" style="max-height: 200px; cursor: pointer;" title="Click to view full screen">
                                     @else
                                         <a href="{{ asset('storage/' . $doc->document_path) }}" target="_blank" class="btn btn-outline-primary btn-sm">
                                             <i class="bi bi-file-earmark-pdf me-1"></i>View PDF
@@ -146,4 +146,49 @@
         </div>
     </div>
 </div>
+{{-- Fullscreen Image Viewer Modal --}}
+<div class="modal fade" id="fullscreenImageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen" style="margin: 0; max-width: 100%;">
+        <div class="modal-content" style="background: rgba(0, 0, 0, 0.92); border: none; border-radius: 0;">
+            <div class="modal-header border-0 position-absolute w-100" style="z-index: 10; top: 0;">
+                <button type="button" class="btn-close btn-close-white ms-auto me-2 mt-2" data-bs-dismiss="modal" aria-label="Close" style="font-size: 1.25rem; opacity: 0.8; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));"></button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center p-0" style="overflow: auto;">
+                <img id="fullscreenImage" src="" alt="Full Screen View" style="max-width: 95vw; max-height: 95vh; object-fit: contain; transition: transform 0.2s ease;" class="rounded shadow">
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('fullscreenImageModal');
+    const fullscreenImg = document.getElementById('fullscreenImage');
+    let scale = 1;
+
+    document.querySelectorAll('.fullscreen-img').forEach(function (img) {
+        img.addEventListener('click', function () {
+            fullscreenImg.src = this.src;
+            fullscreenImg.alt = this.alt;
+            scale = 1;
+            fullscreenImg.style.transform = 'scale(1)';
+            new bootstrap.Modal(modal).show();
+        });
+    });
+
+    modal.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        scale += e.deltaY > 0 ? -0.1 : 0.1;
+        scale = Math.max(0.3, Math.min(5, scale));
+        fullscreenImg.style.transform = 'scale(' + scale + ')';
+    }, { passive: false });
+
+    modal.addEventListener('hidden.bs.modal', function () {
+        fullscreenImg.src = '';
+        scale = 1;
+    });
+});
+</script>
+@endpush
