@@ -192,10 +192,13 @@
                             <p class="mt-3 mb-1 fw-semibold">Scan this QR code to pay</p>
                             <p class="text-muted small mb-2">Open your GCash, Maya, or banking app and scan the code above.</p>
                             <div id="qr-timer" class="text-muted small mb-2"><i class="bi bi-clock me-1"></i>QR code expires in <span id="qr-countdown">30:00</span></div>
-                            <div id="qr-polling" class="text-center">
+                            <div id="qr-polling" class="text-center mb-3">
                                 <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
                                 <span class="text-muted small">Waiting for payment...</span>
                             </div>
+                            <button type="button" id="change-method-btn" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Change Payment Method
+                            </button>
                         </div>
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
@@ -345,6 +348,21 @@
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
             new bootstrap.Modal(document.getElementById('cancelPaymentModal')).show();
+        });
+    }
+
+    var changeMethodBtn = document.getElementById('change-method-btn');
+    if (changeMethodBtn) {
+        changeMethodBtn.addEventListener('click', function() {
+            stopPolling();
+            document.getElementById('qr-display').classList.add('d-none');
+            document.getElementById('pay-btn').classList.remove('d-none');
+            document.getElementById('qrph-notice').classList.remove('d-none');
+            document.querySelectorAll('.payment-method-option').forEach(function(o) { 
+                o.style.pointerEvents = ''; 
+                o.style.opacity = ''; 
+            });
+            clearError();
         });
     }
 

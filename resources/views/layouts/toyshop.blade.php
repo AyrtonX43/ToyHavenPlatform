@@ -516,16 +516,6 @@
                             <i class="bi bi-hammer me-1"></i>Auctions
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#about">
-                            <i class="bi bi-info-circle me-1"></i>About
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('home') }}#contact">
-                            <i class="bi bi-envelope me-1"></i>Contacts
-                        </a>
-                    </li>
                 </ul>
                 
                 <!-- Search Bar -->
