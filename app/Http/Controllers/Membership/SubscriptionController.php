@@ -230,14 +230,28 @@ class SubscriptionController extends Controller
         ]);
 
         $paymentIntentId = $subscription->paymongo_payment_intent_id;
+        $needsNewIntent = false;
+
         if (! $paymentIntentId) {
-            return response()->json(['error' => 'No payment intent found for this subscription.'], 400);
+            $needsNewIntent = true;
+        } else {
+            $existingIntent = $this->payMongo->getPaymentIntent($paymentIntentId);
+            $existingStatus = $existingIntent['attributes']['status'] ?? 'unknown';
+            $allowedMethods = $existingIntent['attributes']['payment_method_allowed'] ?? [];
+
+            // Create new intent if: status is not awaiting_payment_method, OR payment type not in allowed methods
+            if ($existingStatus !== 'awaiting_payment_method' || ! in_array($paymentType, $allowedMethods)) {
+                Log::info('Creating fresh payment intent', [
+                    'reason' => $existingStatus !== 'awaiting_payment_method' ? 'status_mismatch' : 'method_not_allowed',
+                    'old_status' => $existingStatus,
+                    'old_allowed_methods' => $allowedMethods,
+                    'requested_method' => $paymentType,
+                ]);
+                $needsNewIntent = true;
+            }
         }
 
-        $existingIntent = $this->payMongo->getPaymentIntent($paymentIntentId);
-        $existingStatus = $existingIntent['attributes']['status'] ?? 'unknown';
-
-        if ($existingStatus !== 'awaiting_payment_method') {
+        if ($needsNewIntent) {
             $newIntent = $this->payMongo->createPaymentIntent(
                 (float) $subscription->plan->price,
                 'PHP',
@@ -254,6 +268,7 @@ class SubscriptionController extends Controller
 
             $paymentIntentId = $newIntent['id'];
             $subscription->update(['paymongo_payment_intent_id' => $paymentIntentId]);
+            Log::info('Fresh payment intent created', ['new_id' => $paymentIntentId]);
         }
 
         if ($paymentType === 'qrph') {
