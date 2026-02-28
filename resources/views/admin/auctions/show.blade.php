@@ -45,9 +45,6 @@
                                     </button>
                                 </form>
                             @endif
-                            <a href="{{ route('admin.auctions.edit', $auction) }}" class="btn btn-outline-primary">
-                                <i class="bi bi-pencil me-1"></i>Edit
-                            </a>
                             <a href="{{ route('admin.auctions.index') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>Back
                             </a>
