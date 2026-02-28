@@ -24,6 +24,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'moderator_permissions',
+        'moderator_assigned_at',
+        'assigned_by',
         'auction_alias',
         'google_id',
         'phone',
@@ -62,6 +65,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'phone_verified_at' => 'datetime',
             'banned_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'moderator_assigned_at' => 'datetime',
+            'moderator_permissions' => 'array',
             'password' => 'hashed',
             'is_banned' => 'boolean',
         ];
@@ -164,6 +169,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Wallet::class);
     }
 
+    public function assignedModerators()
+    {
+        return $this->hasMany(User::class, 'assigned_by');
+    }
+
+    public function assignedBy()
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function moderatedDisputes()
+    {
+        return $this->hasMany(OrderDispute::class, 'moderator_id');
+    }
+
     public function getOrCreateWallet(): Wallet
     {
         return $this->wallet ?? Wallet::create(['user_id' => $this->id, 'balance' => 0]);
@@ -228,6 +248,35 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isPremium(): bool
     {
         return $this->role === 'premium';
+    }
+
+    public function isModerator(): bool
+    {
+        return $this->role === 'moderator';
+    }
+
+    public function canManageOrders(): bool
+    {
+        return $this->isAdmin() || $this->isModerator();
+    }
+
+    public function canManageDisputes(): bool
+    {
+        return $this->isAdmin() || $this->isModerator();
+    }
+
+    public function hasModeratorPermission(string $permission): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (!$this->isModerator()) {
+            return false;
+        }
+
+        $permissions = $this->moderator_permissions ?? [];
+        return in_array($permission, $permissions) || in_array('all', $permissions);
     }
 
     /**

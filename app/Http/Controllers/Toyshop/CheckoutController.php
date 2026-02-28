@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Toyshop;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutRequest;
+use App\Jobs\GenerateOrderReceiptPDF;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTracking;
+use App\Notifications\OrderPaidNotification;
 use App\Services\PayMongoService;
 use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
@@ -486,7 +488,12 @@ class CheckoutController extends Controller
                 'description' => 'Payment confirmed via QR Ph.',
                 'updated_by' => Auth::id(),
             ]);
-            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+            
+            if ($order->seller && $order->seller->user) {
+                $order->seller->user->notify(new OrderPaidNotification($order));
+            }
+            
+            GenerateOrderReceiptPDF::dispatch($order);
         }
 
         return response()->json(['status' => $status]);
@@ -556,9 +563,13 @@ class CheckoutController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
-            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+            if ($order->seller && $order->seller->user) {
+                $order->seller->user->notify(new OrderPaidNotification($order));
+            }
+            
+            GenerateOrderReceiptPDF::dispatch($order);
 
-            return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful!');
+            return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful! Receipt sent to your email.');
         }
 
         if ($status === 'awaiting_payment_method') {

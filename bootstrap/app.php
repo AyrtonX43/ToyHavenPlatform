@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'redirect.admin.from.customer' => \App\Http\Middleware\RedirectAdminFromCustomerRoutes::class,
             'seller.approved' => \App\Http\Middleware\CheckSellerApproved::class,
             'membership' => \App\Http\Middleware\MembershipRequired::class,
+            'moderator' => \App\Http\Middleware\EnsureModeratorRole::class,
         ]);
         
         // Apply banned check to all web routes (after authentication)

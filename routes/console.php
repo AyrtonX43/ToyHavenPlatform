@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('auction:end-expired')->everyMinute();
 Schedule::command('auction:check-payment-deadlines')->everyFiveMinutes();
 Schedule::command('auction:release-escrow')->hourly();
+Schedule::job(new \App\Jobs\AutoCancelPendingOrders)->hourly();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

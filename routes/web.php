@@ -136,6 +136,20 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Toyshop\OrderController::class, 'index'])->name('index');
         Route::get('/{id}', [\App\Http\Controllers\Toyshop\OrderController::class, 'show'])->name('show');
         Route::get('/{id}/tracking', [\App\Http\Controllers\Toyshop\OrderController::class, 'tracking'])->name('tracking');
+        Route::post('/{id}/cancel', [\App\Http\Controllers\Toyshop\OrderController::class, 'cancel'])->name('cancel');
+        Route::get('/{id}/retry-payment', [\App\Http\Controllers\Toyshop\OrderController::class, 'retryPayment'])->name('retry-payment');
+        
+        // Receipt Routes
+        Route::post('/{id}/receipt', [\App\Http\Controllers\Toyshop\OrderReceiptController::class, 'store'])->name('receipt.store');
+        Route::get('/{id}/receipt', [\App\Http\Controllers\Toyshop\OrderReceiptController::class, 'show'])->name('receipt.show');
+        
+        // Dispute Routes
+        Route::prefix('disputes')->name('disputes.')->group(function () {
+            Route::get('/{orderId}/create', [\App\Http\Controllers\Toyshop\OrderDisputeController::class, 'create'])->name('create');
+            Route::post('/{orderId}', [\App\Http\Controllers\Toyshop\OrderDisputeController::class, 'store'])->name('store');
+            Route::get('/{disputeId}', [\App\Http\Controllers\Toyshop\OrderDisputeController::class, 'show'])->name('show');
+            Route::post('/{disputeId}/message', [\App\Http\Controllers\Toyshop\OrderDisputeController::class, 'addMessage'])->name('message');
+        });
     });
 
     // Review Routes
@@ -420,6 +434,16 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy'])->name('destroy');
         });
 
+        Route::prefix('moderators')->name('moderators.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ModeratorController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\ModeratorController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\ModeratorController::class, 'store'])->name('store');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\ModeratorController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [\App\Http\Controllers\Admin\ModeratorController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [\App\Http\Controllers\Admin\ModeratorController::class, 'update'])->name('update');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\ModeratorController::class, 'destroy'])->name('destroy');
+        });
+
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\CategoryController::class, 'create'])->name('create');
@@ -484,6 +508,14 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index'])->name('index');
         });
 
+        Route::prefix('disputes')->name('disputes.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Moderator\DisputeController::class, 'index'])->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\Moderator\DisputeController::class, 'show'])->name('show');
+            Route::post('/{id}/status', [\App\Http\Controllers\Moderator\DisputeController::class, 'updateStatus'])->name('update-status');
+            Route::post('/{id}/resolve', [\App\Http\Controllers\Moderator\DisputeController::class, 'resolve'])->name('resolve');
+            Route::post('/{id}/message', [\App\Http\Controllers\Moderator\DisputeController::class, 'addMessage'])->name('message');
+        });
+
         Route::prefix('trades')->name('trades.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TradeController::class, 'index'])->name('index');
             Route::get('/listings', [\App\Http\Controllers\Admin\TradeController::class, 'listings'])->name('listings');
@@ -497,6 +529,27 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::post('/{id}/resolve-dispute', [\App\Http\Controllers\Admin\TradeController::class, 'resolveDispute'])->name('resolve-dispute');
             Route::post('/{id}/cancel', [\App\Http\Controllers\Admin\TradeController::class, 'cancel'])->name('cancel');
         });
+    });
+});
+
+// Moderator Routes
+Route::middleware(['auth', 'moderator'])->prefix('moderator')->name('moderator.')->group(function () {
+    Route::get('/dashboard', function () {
+        return redirect()->route('moderator.orders.index');
+    })->name('dashboard');
+
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Moderator\OrderController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Moderator\OrderController::class, 'show'])->name('show');
+        Route::post('/{id}/status', [\App\Http\Controllers\Moderator\OrderController::class, 'updateStatus'])->name('update-status');
+    });
+
+    Route::prefix('disputes')->name('disputes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Moderator\DisputeController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Moderator\DisputeController::class, 'show'])->name('show');
+        Route::post('/{id}/status', [\App\Http\Controllers\Moderator\DisputeController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{id}/resolve', [\App\Http\Controllers\Moderator\DisputeController::class, 'resolve'])->name('resolve');
+        Route::post('/{id}/message', [\App\Http\Controllers\Moderator\DisputeController::class, 'addMessage'])->name('message');
     });
 });
 
