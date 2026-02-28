@@ -183,6 +183,9 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::post('/', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'store'])->name('store');
             Route::get('/{auction}/edit', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'edit'])->name('edit');
             Route::put('/{auction}', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'update'])->name('update');
+            Route::delete('/{auction}/images/{image}', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'deleteImage'])->name('delete-image');
+            Route::post('/{auction}/images/{image}/primary', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'setPrimaryImage'])->name('set-primary-image');
+            Route::delete('/{auction}/video', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'deleteVideo'])->name('delete-video');
             Route::get('/{auction}/promote', [\App\Http\Controllers\Auction\PromotionController::class, 'show'])->name('promote');
             Route::post('/{auction}/promote', [\App\Http\Controllers\Auction\PromotionController::class, 'store'])->name('promote.store');
             Route::post('/{auction}/promote/activate', [\App\Http\Controllers\Auction\PromotionController::class, 'activate'])->name('promote.activate');

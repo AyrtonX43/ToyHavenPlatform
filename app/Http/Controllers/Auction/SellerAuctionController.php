@@ -293,4 +293,69 @@ class SellerAuctionController extends Controller
         return redirect()->route('auctions.seller.index')
             ->with('success', 'Auction listing updated and resubmitted for approval.');
     }
+
+    public function deleteImage(Auction $auction, AuctionImage $image)
+    {
+        $user = Auth::user();
+        if ($auction->user_id !== $user->id && ! $user->isAdmin()) {
+            abort(403);
+        }
+        if ($image->auction_id !== $auction->id) {
+            abort(404);
+        }
+
+        $standardCount = $auction->images()->where('image_type', 'standard')->count();
+        if ($image->image_type === 'standard' && $standardCount <= 1) {
+            return back()->with('error', 'You must keep at least one photo.');
+        }
+
+        Storage::disk('public')->delete($image->path);
+
+        $wasPrimary = $image->display_order === 0;
+        $image->delete();
+
+        if ($wasPrimary) {
+            $next = $auction->images()->where('image_type', 'standard')->orderBy('display_order')->first();
+            if ($next) {
+                $next->update(['display_order' => 0]);
+            }
+        }
+
+        return back()->with('success', 'Image deleted.');
+    }
+
+    public function setPrimaryImage(Auction $auction, AuctionImage $image)
+    {
+        $user = Auth::user();
+        if ($auction->user_id !== $user->id && ! $user->isAdmin()) {
+            abort(403);
+        }
+        if ($image->auction_id !== $auction->id || $image->image_type !== 'standard') {
+            abort(404);
+        }
+
+        $auction->images()
+            ->where('image_type', 'standard')
+            ->where('display_order', 0)
+            ->update(['display_order' => $image->display_order ?: 999]);
+
+        $image->update(['display_order' => 0]);
+
+        return back()->with('success', 'Primary image updated.');
+    }
+
+    public function deleteVideo(Auction $auction)
+    {
+        $user = Auth::user();
+        if ($auction->user_id !== $user->id && ! $user->isAdmin()) {
+            abort(403);
+        }
+
+        if ($auction->verification_video_path) {
+            Storage::disk('public')->delete($auction->verification_video_path);
+            $auction->update(['verification_video_path' => null]);
+        }
+
+        return back()->with('success', 'Video deleted.');
+    }
 }

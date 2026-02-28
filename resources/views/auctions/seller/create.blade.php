@@ -258,6 +258,63 @@
         transition: background 0.2s;
     }
     .media-overlay .overlay-close:hover { background: rgba(255,255,255,0.3); }
+    .media-thumb-wrap .btn-remove-file {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(220,53,69,0.85);
+        border: none;
+        color: #fff;
+        font-size: 0.65rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: background 0.2s;
+    }
+    .media-thumb-wrap .btn-remove-file:hover { background: #dc3545; }
+    .media-thumb-wrap .btn-set-primary-new {
+        position: absolute;
+        bottom: 2px;
+        left: 2px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(13,110,253,0.7);
+        border: none;
+        color: #fff;
+        font-size: 0.65rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: background 0.2s;
+    }
+    .media-thumb-wrap .btn-set-primary-new:hover { background: #0d6efd; }
+    .video-preview-wrap {
+        position: relative;
+        display: inline-block;
+    }
+    .video-preview-wrap .btn-remove-video {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        z-index: 5;
+        background: rgba(220,53,69,0.85);
+        border: none;
+        color: #fff;
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .video-preview-wrap .btn-remove-video:hover { background: #dc3545; }
 </style>
 @endpush
 
@@ -286,11 +343,19 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeOverlay(); });
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeOverlay(); });
 
-    function previewImages(input, container) {
-        input.addEventListener('change', function() {
+    function rebuildFileList(input, filesArray) {
+        var dt = new DataTransfer();
+        filesArray.forEach(function(f) { dt.items.add(f); });
+        input.files = dt.files;
+    }
+
+    function setupImagePreview(input, container, allowPrimary) {
+        var currentFiles = [];
+        var primaryIndex = 0;
+
+        function renderPreviews() {
             container.innerHTML = '';
-            if (!this.files.length) return;
-            Array.from(this.files).forEach(function(file, i) {
+            currentFiles.forEach(function(file, i) {
                 if (!file.type.startsWith('image/')) return;
                 var reader = new FileReader();
                 reader.onload = function(e) {
@@ -301,29 +366,77 @@ document.addEventListener('DOMContentLoaded', function() {
                     img.className = 'media-thumb';
                     img.title = 'Click to view full screen';
                     img.addEventListener('click', function() {
-                        openOverlay('<img src="' + this.src + '" alt="Preview">');
+                        openOverlay('<img src="' + img.src + '" alt="Preview">');
                     });
                     wrap.appendChild(img);
-                    if (i === 0) {
+
+                    if (allowPrimary && i === primaryIndex) {
                         var badge = document.createElement('span');
                         badge.className = 'badge bg-primary thumb-badge';
                         badge.textContent = 'Primary';
                         wrap.appendChild(badge);
+                    } else if (allowPrimary) {
+                        var starBtn = document.createElement('button');
+                        starBtn.type = 'button';
+                        starBtn.className = 'btn-set-primary-new';
+                        starBtn.title = 'Set as primary';
+                        starBtn.innerHTML = '<i class="bi bi-star"></i>';
+                        starBtn.addEventListener('click', function() {
+                            primaryIndex = i;
+                            reorderFiles();
+                        });
+                        wrap.appendChild(starBtn);
                     }
+
+                    var removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn-remove-file';
+                    removeBtn.title = 'Remove';
+                    removeBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+                    removeBtn.addEventListener('click', function() {
+                        currentFiles.splice(i, 1);
+                        if (primaryIndex >= currentFiles.length) primaryIndex = 0;
+                        if (primaryIndex > i) primaryIndex--;
+                        if (primaryIndex === i) primaryIndex = 0;
+                        rebuildFileList(input, currentFiles);
+                        renderPreviews();
+                    });
+                    wrap.appendChild(removeBtn);
+
                     container.appendChild(wrap);
                 };
                 reader.readAsDataURL(file);
             });
+        }
+
+        function reorderFiles() {
+            if (primaryIndex > 0 && primaryIndex < currentFiles.length) {
+                var primary = currentFiles.splice(primaryIndex, 1)[0];
+                currentFiles.unshift(primary);
+                primaryIndex = 0;
+            }
+            rebuildFileList(input, currentFiles);
+            renderPreviews();
+        }
+
+        input.addEventListener('change', function() {
+            currentFiles = Array.from(this.files);
+            primaryIndex = 0;
+            renderPreviews();
         });
     }
 
-    function previewVideo(input, container) {
+    function setupVideoPreview(input, container) {
         input.addEventListener('change', function() {
             container.innerHTML = '';
             if (!this.files.length) return;
             var file = this.files[0];
             if (!file.type.startsWith('video/')) return;
             var url = URL.createObjectURL(file);
+
+            var wrap = document.createElement('div');
+            wrap.className = 'video-preview-wrap';
+
             var video = document.createElement('video');
             video.src = url;
             video.controls = true;
@@ -332,25 +445,39 @@ document.addEventListener('DOMContentLoaded', function() {
             video.style.cursor = 'pointer';
             video.className = 'rounded';
             video.title = 'Click to view full screen';
-            video.addEventListener('click', function(e) {
-                e.preventDefault();
+            video.addEventListener('click', function(ev) {
+                ev.preventDefault();
                 openOverlay('<video src="' + url + '" controls autoplay style="max-width:92vw;max-height:92vh;border-radius:6px;box-shadow:0 0 40px rgba(0,0,0,0.5);"></video>');
             });
-            container.appendChild(video);
+            wrap.appendChild(video);
+
+            var removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn-remove-video';
+            removeBtn.title = 'Remove video';
+            removeBtn.innerHTML = '<i class="bi bi-x-lg me-1"></i>Remove';
+            removeBtn.addEventListener('click', function() {
+                var dt = new DataTransfer();
+                input.files = dt.files;
+                container.innerHTML = '';
+            });
+            wrap.appendChild(removeBtn);
+
+            container.appendChild(wrap);
         });
     }
 
     var imageInput = document.getElementById('imageInput');
     var imagePreview = document.getElementById('imagePreview');
-    if (imageInput && imagePreview) previewImages(imageInput, imagePreview);
+    if (imageInput && imagePreview) setupImagePreview(imageInput, imagePreview, true);
 
     var photo360Input = document.getElementById('photo360Input');
     var photo360Preview = document.getElementById('photo360Preview');
-    if (photo360Input && photo360Preview) previewImages(photo360Input, photo360Preview);
+    if (photo360Input && photo360Preview) setupImagePreview(photo360Input, photo360Preview, false);
 
     var videoInput = document.getElementById('videoInput');
     var videoPreview = document.getElementById('videoPreview');
-    if (videoInput && videoPreview) previewVideo(videoInput, videoPreview);
+    if (videoInput && videoPreview) setupVideoPreview(videoInput, videoPreview);
 
     document.querySelectorAll('.fullscreen-img').forEach(function(img) {
         img.addEventListener('click', function() {
