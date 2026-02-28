@@ -11,11 +11,57 @@
         border: 2px solid #e2e8f0;
         overflow: hidden;
     }
-    .auction-main-image {
+    .main-image-container {
+        position: relative;
         width: 100%;
-        max-height: 400px;
-        object-fit: contain;
+        height: 500px;
         background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .main-image-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+    .main-image-container:hover img {
+        transform: scale(1.05);
+    }
+    .thumbnail-container {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 12px;
+        background: #f8fafc;
+    }
+    .thumbnail-container::-webkit-scrollbar {
+        height: 6px;
+    }
+    .thumbnail-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    .thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+    .thumbnail:hover {
+        border-color: #0891b2;
+        transform: scale(1.05);
+    }
+    .thumbnail.active {
+        border-color: #0891b2;
+        box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2);
     }
     .current-price {
         font-size: 2rem;
@@ -33,6 +79,53 @@
         border-radius: 12px;
         font-weight: 700;
     }
+    .media-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.95);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-out;
+    }
+    .media-overlay.active { display: flex; }
+    .media-overlay img {
+        max-width: 92vw;
+        max-height: 92vh;
+        object-fit: contain;
+        border-radius: 6px;
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    }
+    .media-overlay .overlay-close {
+        position: fixed;
+        top: 18px; right: 24px;
+        z-index: 100000;
+        background: rgba(255,255,255,0.15);
+        border: none; color: #fff;
+        font-size: 2rem;
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+        transition: background 0.2s;
+    }
+    .media-overlay .overlay-close:hover { background: rgba(255,255,255,0.3); }
+    .info-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+    .info-badge i {
+        margin-right: 6px;
+        color: #64748b;
+    }
 </style>
 @endpush
 
@@ -46,12 +139,17 @@
     </nav>
 
     <div class="row g-4">
+        <!-- Left Column: Images & Details -->
         <div class="col-lg-8">
-            <div class="auction-detail-card">
-                <div class="p-3 bg-light border-bottom">
-                    @if($auction->is_members_only)
-                        <span class="badge bg-warning text-dark me-2">Members Only</span>
-                    @endif
+            <!-- Image Gallery -->
+            <div class="auction-detail-card mb-4">
+                <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        @if($auction->is_members_only)
+                            <span class="badge bg-warning text-dark me-2">Members Only</span>
+                        @endif
+                        <span class="badge bg-info">{{ ucfirst($auction->auction_type) }}</span>
+                    </div>
                     <span class="countdown-badge">
                         <i class="bi bi-clock me-1"></i>
                         @if($auction->isEnded())
@@ -61,28 +159,105 @@
                         @endif
                     </span>
                 </div>
-                <div class="p-3 text-center">
-                    @if($imgUrl = $auction->getPrimaryImageUrl())
-                        <img src="{{ $imgUrl }}" alt="{{ $auction->title }}" class="auction-main-image">
+                
+                <!-- Main Image -->
+                <div class="main-image-container" id="mainImageContainer">
+                    @php
+                        $images = $auction->images->where('image_type', 'standard');
+                        $primaryImage = $images->firstWhere('display_order', 0) ?? $images->first();
+                    @endphp
+                    @if($primaryImage)
+                        <img src="{{ asset('storage/' . $primaryImage->path) }}" alt="{{ $auction->title }}" id="mainImage">
                     @else
-                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                        <div class="d-flex align-items-center justify-content-center" style="height: 100%;">
                             <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
                         </div>
                     @endif
                 </div>
-                <div class="p-4">
-                    <h1 class="h3 fw-bold mb-3">{{ $auction->title }}</h1>
-                    @if($auction->description)
-                        <div class="mb-4">
+
+                <!-- Thumbnails -->
+                @if($images->count() > 1)
+                    <div class="thumbnail-container">
+                        @foreach($images as $img)
+                            <img src="{{ asset('storage/' . $img->path) }}" 
+                                 class="thumbnail {{ $loop->first ? 'active' : '' }}" 
+                                 data-full="{{ asset('storage/' . $img->path) }}"
+                                 alt="Thumbnail {{ $loop->iteration }}">
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            <!-- Product Details -->
+            <div class="auction-detail-card p-4">
+                <h1 class="h3 fw-bold mb-3">{{ $auction->title }}</h1>
+                
+                <!-- Product Info Badges -->
+                <div class="mb-3">
+                    <div class="info-badge">
+                        <i class="bi bi-box"></i>
+                        <span>{{ \App\Models\Auction::boxConditionLabel($auction->box_condition) }}</span>
+                    </div>
+                    @if($auction->categories->count())
+                        @foreach($auction->categories as $cat)
+                            <div class="info-badge">
+                                <i class="bi bi-tag"></i>
+                                <span>{{ $cat->name }}</span>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+
+                @if($auction->description)
+                    <div class="mb-4">
+                        <h5 class="fw-bold mb-2">Description</h5>
+                        <p class="text-justify" style="text-align: justify; text-justify: inter-word;">
                             {!! nl2br(e($auction->description)) !!}
+                        </p>
+                    </div>
+                @endif
+
+                @if($auction->provenance || $auction->authenticity_marks || $auction->known_defects)
+                    <hr class="my-4">
+                    <h5 class="fw-bold mb-3">Additional Information</h5>
+                    
+                    @if($auction->provenance)
+                        <div class="mb-3">
+                            <strong><i class="bi bi-journal-text me-2"></i>Provenance:</strong>
+                            <p class="mb-0 ms-4">{{ $auction->provenance }}</p>
                         </div>
                     @endif
+
+                    @if($auction->authenticity_marks)
+                        <div class="mb-3">
+                            <strong><i class="bi bi-shield-check me-2"></i>Authenticity Marks:</strong>
+                            <p class="mb-0 ms-4">{{ $auction->authenticity_marks }}</p>
+                        </div>
+                    @endif
+
+                    @if($auction->known_defects)
+                        <div class="alert alert-warning mb-0">
+                            <strong><i class="bi bi-exclamation-triangle me-2"></i>Known Defects:</strong>
+                            <p class="mb-0">{{ $auction->known_defects }}</p>
+                        </div>
+                    @endif
+                @endif
+
+                <!-- Seller Info -->
+                <hr class="my-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-circle fs-3 text-muted me-3"></i>
+                    <div>
+                        <small class="text-muted d-block">Seller</small>
+                        <strong>{{ $auction->user->name }}</strong>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- Right Column: Bidding -->
         <div class="col-lg-4">
-            <div class="auction-detail-card p-4">
+            <div class="auction-detail-card p-4 sticky-top" style="top: 20px;">
                 <div class="current-price mb-2">
                     ₱{{ number_format($auction->getCurrentPrice(), 2) }}
                 </div>
@@ -109,12 +284,18 @@
                         <i class="bi bi-gem me-1"></i>Join Membership to Bid
                     </a>
                 @elseif($auction->isEnded())
-                    <p class="text-muted mb-0">This auction has ended.</p>
+                    <div class="alert alert-secondary mb-4">
+                        <i class="bi bi-info-circle me-2"></i>This auction has ended.
+                    </div>
                     @if($auction->winner_id && $auction->winner_id === auth()->id())
-                        <p class="text-success fw-bold mt-2"><i class="bi bi-trophy me-1"></i>You won this auction!</p>
+                        <div class="alert alert-success">
+                            <i class="bi bi-trophy me-2"></i><strong>You won this auction!</strong>
+                        </div>
                     @endif
                 @elseif($auction->user_id === auth()->id())
-                    <p class="text-muted mb-0">You cannot bid on your own auction.</p>
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle me-2"></i>You cannot bid on your own auction.
+                    </div>
                 @endif
 
                 <h6 class="fw-bold mt-4 mb-2">Bid History</h6>
@@ -142,23 +323,80 @@
     </div>
 </div>
 
-@if($canBid)
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof Echo !== 'undefined') {
-            Echo.channel('auction.{{ $auction->id }}')
-                .listen('.AuctionBidPlaced', (e) => {
-                    // Refresh page or update UI when new bid is placed
-                    if (e.amount) {
-                        const priceEl = document.querySelector('.current-price');
-                        if (priceEl) priceEl.textContent = '₱' + parseFloat(e.amount).toLocaleString('en-PH', {minimumFractionDigits: 2});
-                    }
-                    location.reload(); // Simple approach; could use dynamic updates
-                });
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // Image gallery functionality
+    const mainImage = document.getElementById('mainImage');
+    const mainImageContainer = document.getElementById('mainImageContainer');
+    const thumbnails = document.querySelectorAll('.thumbnail');
+
+    // Thumbnail click to change main image
+    thumbnails.forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            const fullSrc = this.getAttribute('data-full');
+            if (mainImage) {
+                mainImage.src = fullSrc;
+            }
+            thumbnails.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
     });
+
+    // Fullscreen overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'media-overlay';
+    overlay.innerHTML = '<button class="overlay-close" title="Close">&times;</button><div id="overlayContent"></div>';
+    document.body.appendChild(overlay);
+
+    const overlayContent = document.getElementById('overlayContent');
+
+    function openOverlay(src) {
+        overlayContent.innerHTML = '<img src="' + src + '" alt="Full View">';
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeOverlay() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        overlayContent.innerHTML = '';
+    }
+
+    overlay.querySelector('.overlay-close').addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeOverlay();
+    });
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeOverlay();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeOverlay();
+    });
+
+    // Click main image to view fullscreen
+    if (mainImageContainer) {
+        mainImageContainer.addEventListener('click', function() {
+            if (mainImage && mainImage.src) {
+                openOverlay(mainImage.src);
+            }
+        });
+    }
+
+    // Real-time bid updates
+    @if($canBid)
+    if (typeof Echo !== 'undefined') {
+        Echo.channel('auction.{{ $auction->id }}')
+            .listen('.AuctionBidPlaced', (e) => {
+                if (e.amount) {
+                    const priceEl = document.querySelector('.current-price');
+                    if (priceEl) priceEl.textContent = '₱' + parseFloat(e.amount).toLocaleString('en-PH', {minimumFractionDigits: 2});
+                }
+                location.reload();
+            });
+    }
+    @endif
+});
 </script>
 @endpush
-@endif
 @endsection
