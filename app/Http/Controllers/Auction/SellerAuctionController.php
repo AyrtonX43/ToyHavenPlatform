@@ -85,7 +85,7 @@ class SellerAuctionController extends Controller
             'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:10240',
             'photo_360' => 'nullable|array|max:36',
             'photo_360.*' => 'image|mimes:jpg,jpeg,png,webp|max:10240',
-            'verification_video' => 'nullable|file|mimes:mp4,webm|max:51200',
+            'verification_video' => 'required|file|mimes:mp4,webm|max:51200',
         ]);
 
         $categoryIds = $validated['category_ids'];
@@ -99,10 +99,10 @@ class SellerAuctionController extends Controller
         $endAt = null;
         if ($validated['auction_type'] === 'timed' && ! empty($validated['end_at'])) {
             $endAt = \Carbon\Carbon::parse($validated['end_at']);
-            $minEnd = $startAt->copy()->addDay();
-            $maxEnd = $startAt->copy()->addDays(2);
+            $minEnd = $startAt->copy()->addDay()->startOfDay();
+            $maxEnd = $startAt->copy()->addDays(2)->endOfDay();
             if ($endAt->lt($minEnd) || $endAt->gt($maxEnd)) {
-                return back()->withErrors(['end_at' => 'End date must be 1–2 days after start date.'])->withInput();
+                return back()->withErrors(['end_at' => 'End date must be between 1-2 days after start date (any time within those days).'])->withInput();
             }
         }
 
@@ -247,10 +247,10 @@ class SellerAuctionController extends Controller
         $endAt = null;
         if ($validated['auction_type'] === 'timed' && ! empty($validated['end_at'])) {
             $endAt = \Carbon\Carbon::parse($validated['end_at']);
-            $minEnd = $startAt->copy()->addDay();
-            $maxEnd = $startAt->copy()->addDays(2);
+            $minEnd = $startAt->copy()->addDay()->startOfDay();
+            $maxEnd = $startAt->copy()->addDays(2)->endOfDay();
             if ($endAt->lt($minEnd) || $endAt->gt($maxEnd)) {
-                return back()->withErrors(['end_at' => 'End date must be 1–2 days after start date.'])->withInput();
+                return back()->withErrors(['end_at' => 'End date must be between 1-2 days after start date (any time within those days).'])->withInput();
             }
         }
 

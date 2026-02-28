@@ -541,16 +541,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         var start = new Date(startAt.value);
         var minEnd = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-        var maxEnd = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000);
-        endAt.min = toLocal(minEnd);
-        endAt.max = toLocal(maxEnd);
-        document.getElementById('endAtHint').textContent = 'Between ' + minEnd.toLocaleDateString() + ' and ' + maxEnd.toLocaleDateString();
+        var maxEndDate = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000);
+        
+        // Set min to 1 day after start (at 00:00)
+        var minEndDateOnly = new Date(minEnd);
+        minEndDateOnly.setHours(0, 0, 0, 0);
+        endAt.min = toLocal(minEndDateOnly);
+        
+        // Set max to end of 2nd day after start (23:59)
+        maxEndDate.setHours(23, 59, 0, 0);
+        endAt.max = toLocal(maxEndDate);
+        
+        document.getElementById('endAtHint').textContent = 'Between ' + minEndDateOnly.toLocaleDateString() + ' and ' + maxEndDate.toLocaleDateString() + ' (any time)';
 
-        if (endAt.value && new Date(endAt.value) < minEnd) {
-            endAt.value = toLocal(minEnd);
-        }
-        if (endAt.value && new Date(endAt.value) > maxEnd) {
-            endAt.value = toLocal(maxEnd);
+        if (endAt.value) {
+            var currentEnd = new Date(endAt.value);
+            if (currentEnd < minEndDateOnly) {
+                endAt.value = toLocal(minEndDateOnly);
+            }
+            if (currentEnd > maxEndDate) {
+                endAt.value = toLocal(maxEndDate);
+            }
         }
     }
 

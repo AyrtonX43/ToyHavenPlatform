@@ -74,7 +74,7 @@ class AuctionController extends Controller
 
     public function show(Auction $auction)
     {
-        $auction->load(['user', 'seller', 'product', 'userProduct', 'category', 'bids.user', 'winner']);
+        $auction->load(['user', 'seller', 'product', 'userProduct', 'category', 'categories', 'images', 'bids.user', 'winner']);
 
         return view('admin.auctions.show', compact('auction'));
     }

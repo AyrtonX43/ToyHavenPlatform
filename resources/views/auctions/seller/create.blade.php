@@ -107,9 +107,9 @@
                                 <div id="photo360Preview" class="d-flex flex-wrap gap-2 mt-2"></div>
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-semibold">Verification Video <span class="text-muted small">(10 sec, holding the item)</span></label>
-                                <input type="file" name="verification_video" id="videoInput" class="form-control" accept="video/mp4,video/webm">
-                                <div class="form-text">Record a short video (max 10 seconds, max 50MB) showing yourself holding the product.</div>
+                                <label class="form-label fw-semibold">Verification Video <span class="text-danger">*</span> <span class="text-muted small">(10 sec, holding the item)</span></label>
+                                <input type="file" name="verification_video" id="videoInput" class="form-control" accept="video/mp4,video/webm" required>
+                                <div class="form-text">Record a short video (max 10 seconds, max 50MB) showing yourself holding the product. Required for admin verification.</div>
                                 @error('verification_video') <div class="text-danger small">{{ $message }}</div> @enderror
                                 <div id="videoPreview" class="mt-2"></div>
                             </div>
@@ -524,16 +524,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         var start = new Date(startAt.value);
         var minEnd = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-        var maxEnd = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000);
-        endAt.min = toLocal(minEnd);
-        endAt.max = toLocal(maxEnd);
-        document.getElementById('endAtHint').textContent = 'Between ' + minEnd.toLocaleDateString() + ' and ' + maxEnd.toLocaleDateString();
+        var maxEndDate = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000);
+        
+        // Set min to 1 day after start (at 00:00)
+        var minEndDateOnly = new Date(minEnd);
+        minEndDateOnly.setHours(0, 0, 0, 0);
+        endAt.min = toLocal(minEndDateOnly);
+        
+        // Set max to end of 2nd day after start (23:59)
+        maxEndDate.setHours(23, 59, 0, 0);
+        endAt.max = toLocal(maxEndDate);
+        
+        document.getElementById('endAtHint').textContent = 'Between ' + minEndDateOnly.toLocaleDateString() + ' and ' + maxEndDate.toLocaleDateString() + ' (any time)';
 
-        if (endAt.value && new Date(endAt.value) < minEnd) {
-            endAt.value = toLocal(minEnd);
-        }
-        if (endAt.value && new Date(endAt.value) > maxEnd) {
-            endAt.value = toLocal(maxEnd);
+        if (endAt.value) {
+            var currentEnd = new Date(endAt.value);
+            if (currentEnd < minEndDateOnly) {
+                endAt.value = toLocal(minEndDateOnly);
+            }
+            if (currentEnd > maxEndDate) {
+                endAt.value = toLocal(maxEndDate);
+            }
         }
     }
 
