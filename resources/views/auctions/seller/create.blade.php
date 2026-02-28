@@ -141,15 +141,26 @@
                                 </select>
                                 @error('auction_type') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
-                            <div class="col-md-4" id="endAtGroup">
-                                <label class="form-label fw-semibold">End Date & Time <span class="text-danger">*</span></label>
-                                <input type="datetime-local" name="end_at" class="form-control" value="{{ old('end_at') }}">
-                                @error('end_at') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
                             <div class="col-md-4" id="startAtGroup">
-                                <label class="form-label fw-semibold">Start Date & Time <span class="text-muted small">(optional)</span></label>
-                                <input type="datetime-local" name="start_at" class="form-control" value="{{ old('start_at') }}">
-                                @error('start_at') <div class="text-danger small">{{ $message }}</div> @enderror
+                                <label class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
+                                <select name="start_days" id="startDays" class="form-select" required>
+                                    <option value="">Select Start Date</option>
+                                    @for($d = 1; $d <= 5; $d++)
+                                        <option value="{{ $d }}" {{ old('start_days') == $d ? 'selected' : '' }}>
+                                            {{ now()->addDays($d)->format('l, M d, Y') }} ({{ $d }} {{ $d === 1 ? 'day' : 'days' }} from now)
+                                        </option>
+                                    @endfor
+                                </select>
+                                <small class="text-muted">Auction will start at 12:00 AM on the selected date</small>
+                                @error('start_days') <div class="text-danger small">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-4" id="endAtGroup">
+                                <label class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
+                                <select name="end_days" id="endDays" class="form-select" required>
+                                    <option value="">Select Start Date first</option>
+                                </select>
+                                <small class="text-muted">Auction will end at 11:59 PM on the selected date</small>
+                                @error('end_days') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4" id="durationGroup" style="display: none;">
                                 <label class="form-label fw-semibold">Duration (minutes) <span class="text-danger">*</span></label>
@@ -191,17 +202,53 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const typeSelect = document.getElementById('auctionType');
-    const endAtGroup = document.getElementById('endAtGroup');
-    const durationGroup = document.getElementById('durationGroup');
+    var typeSelect = document.getElementById('auctionType');
+    var endAtGroup = document.getElementById('endAtGroup');
+    var durationGroup = document.getElementById('durationGroup');
+    var startDays = document.getElementById('startDays');
+    var endDays = document.getElementById('endDays');
+    var oldEndDays = '{{ old("end_days", "") }}';
+
+    var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function formatDate(d) {
+        return dayNames[d.getDay()] + ', ' + monthNames[d.getMonth()] + ' ' + String(d.getDate()).padStart(2,'0') + ', ' + d.getFullYear();
+    }
+
+    function updateEndDays() {
+        var sv = parseInt(startDays.value);
+        endDays.innerHTML = '';
+        if (!sv) {
+            endDays.innerHTML = '<option value="">Select Start Date first</option>';
+            return;
+        }
+        endDays.innerHTML = '<option value="">Select End Date</option>';
+        for (var i = 1; i <= 2; i++) {
+            var totalDays = sv + i;
+            var d = new Date();
+            d.setDate(d.getDate() + totalDays);
+            var opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = formatDate(d) + ' (' + i + (i === 1 ? ' day' : ' days') + ' after start)';
+            if (oldEndDays == i) opt.selected = true;
+            endDays.appendChild(opt);
+        }
+        oldEndDays = '';
+    }
+
+    startDays.addEventListener('change', updateEndDays);
+    updateEndDays();
 
     function toggleFields() {
         if (typeSelect.value === 'live_event') {
             durationGroup.style.display = '';
-            endAtGroup.querySelector('input').removeAttribute('required');
+            endAtGroup.style.display = 'none';
+            endDays.removeAttribute('required');
         } else {
             durationGroup.style.display = 'none';
-            endAtGroup.querySelector('input').setAttribute('required', 'required');
+            endAtGroup.style.display = '';
+            endDays.setAttribute('required', 'required');
         }
     }
 

@@ -75,8 +75,8 @@ class SellerAuctionController extends Controller
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
             'auction_type' => 'required|in:timed,live_event',
-            'end_at' => 'required_if:auction_type,timed|nullable|date|after:now',
-            'start_at' => 'nullable|date',
+            'start_days' => 'required|integer|min:1|max:5',
+            'end_days' => 'required_if:auction_type,timed|nullable|integer|min:1|max:2',
             'duration_minutes' => 'required_if:auction_type,live_event|nullable|integer|min:5|max:480',
             'allowed_bidder_plans' => 'nullable|array',
             'allowed_bidder_plans.*' => 'in:basic,pro,vip,all',
@@ -88,6 +88,12 @@ class SellerAuctionController extends Controller
         ]);
 
         $categoryIds = $validated['category_ids'];
+
+        $startAt = now()->addDays((int) $validated['start_days'])->startOfDay();
+        $endAt = null;
+        if ($validated['auction_type'] === 'timed' && ! empty($validated['end_days'])) {
+            $endAt = $startAt->copy()->addDays((int) $validated['end_days'])->endOfDay();
+        }
 
         $allowedPlans = $request->input('allowed_bidder_plans', ['all']);
         if (empty($allowedPlans)) {
@@ -108,8 +114,8 @@ class SellerAuctionController extends Controller
             'reserve_price' => $validated['reserve_price'] ?? null,
             'bid_increment' => $validated['bid_increment'],
             'auction_type' => $validated['auction_type'],
-            'start_at' => $validated['start_at'] ?? null,
-            'end_at' => $validated['end_at'] ?? null,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
             'duration_minutes' => $validated['duration_minutes'] ?? null,
             'allowed_bidder_plans' => $allowedPlans,
             'status' => 'pending_approval',
@@ -197,8 +203,8 @@ class SellerAuctionController extends Controller
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
             'auction_type' => 'required|in:timed,live_event',
-            'end_at' => 'required_if:auction_type,timed|nullable|date|after:now',
-            'start_at' => 'nullable|date',
+            'start_days' => 'required|integer|min:1|max:5',
+            'end_days' => 'required_if:auction_type,timed|nullable|integer|min:1|max:2',
             'duration_minutes' => 'required_if:auction_type,live_event|nullable|integer|min:5|max:480',
             'allowed_bidder_plans' => 'nullable|array',
             'allowed_bidder_plans.*' => 'in:basic,pro,vip,all',
@@ -208,6 +214,12 @@ class SellerAuctionController extends Controller
         ]);
 
         $categoryIds = $validated['category_ids'];
+
+        $startAt = now()->addDays((int) $validated['start_days'])->startOfDay();
+        $endAt = null;
+        if ($validated['auction_type'] === 'timed' && ! empty($validated['end_days'])) {
+            $endAt = $startAt->copy()->addDays((int) $validated['end_days'])->endOfDay();
+        }
 
         $allowedPlans = $request->input('allowed_bidder_plans', ['all']);
         if (empty($allowedPlans)) {
@@ -226,8 +238,8 @@ class SellerAuctionController extends Controller
             'reserve_price' => $validated['reserve_price'] ?? null,
             'bid_increment' => $validated['bid_increment'],
             'auction_type' => $validated['auction_type'],
-            'start_at' => $validated['start_at'] ?? null,
-            'end_at' => $validated['end_at'] ?? null,
+            'start_at' => $startAt,
+            'end_at' => $endAt,
             'duration_minutes' => $validated['duration_minutes'] ?? null,
             'allowed_bidder_plans' => $allowedPlans,
             'status' => 'pending_approval',
