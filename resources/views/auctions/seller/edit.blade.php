@@ -193,6 +193,18 @@ document.addEventListener('DOMContentLoaded', function() {
         return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
+    function updateStartMin() {
+        var now = new Date();
+        startAt.min = toLocal(now);
+        var maxStart = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+        startAt.max = toLocal(maxStart);
+
+        if (startAt.value && new Date(startAt.value) < now) {
+            startAt.value = toLocal(now);
+            updateEndLimits();
+        }
+    }
+
     function updateEndLimits() {
         if (!startAt.value) {
             endAt.min = '';
@@ -215,7 +227,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    startAt.addEventListener('change', updateEndLimits);
+    updateStartMin();
+    setInterval(updateStartMin, 30000);
+
+    startAt.addEventListener('focus', updateStartMin);
+    startAt.addEventListener('change', function() {
+        updateStartMin();
+        updateEndLimits();
+    });
     updateEndLimits();
 
     function toggleFields() {
