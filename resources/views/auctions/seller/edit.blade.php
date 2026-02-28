@@ -84,25 +84,33 @@
                         <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-3-circle me-1"></i> Photos & Video</h5>
                         @if($auction->images->where('image_type', 'standard')->count())
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Current Photos</label>
+                                <label class="form-label fw-semibold">Current Photos <small class="text-muted">(click to view full screen)</small></label>
                                 <div class="d-flex flex-wrap gap-2">
                                     @foreach($auction->images->where('image_type', 'standard') as $img)
-                                        <img src="{{ asset('storage/' . $img->path) }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                        <img src="{{ asset('storage/' . $img->path) }}" class="rounded fullscreen-img" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" title="Click to view full screen">
                                     @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        @if($auction->verification_video_path)
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Current Video</label>
+                                <div>
+                                    <video src="{{ asset('storage/' . $auction->verification_video_path) }}" controls class="rounded fullscreen-video" style="max-height: 200px; max-width: 100%; cursor: pointer;" title="Click to view full screen"></video>
                                 </div>
                             </div>
                         @endif
                         <div class="row g-3 mb-4">
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Add More Photos</label>
-                                <input type="file" name="new_images[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+                                <input type="file" name="new_images[]" id="imageInput" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+                                <div class="form-text">Click a thumbnail to view full screen.</div>
+                                <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Update Verification Video</label>
-                                <input type="file" name="verification_video" class="form-control" accept="video/mp4,video/webm">
-                                @if($auction->verification_video_path)
-                                    <div class="form-text text-success"><i class="bi bi-check-circle me-1"></i>Video already uploaded</div>
-                                @endif
+                                <input type="file" name="verification_video" id="videoInput" class="form-control" accept="video/mp4,video/webm">
+                                <div id="videoPreview" class="mt-2"></div>
                             </div>
                         </div>
 
@@ -179,9 +187,164 @@
     </div>
 </div>
 
+@push('styles')
+<style>
+    .media-thumb {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        cursor: pointer;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+    .media-thumb:hover {
+        border-color: #0891b2;
+        transform: scale(1.05);
+    }
+    .media-thumb-wrap {
+        position: relative;
+        display: inline-block;
+    }
+    .media-thumb-wrap .thumb-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        font-size: 0.65rem;
+        padding: 1px 5px;
+    }
+    .media-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.95);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-out;
+    }
+    .media-overlay.active { display: flex; }
+    .media-overlay img,
+    .media-overlay video {
+        max-width: 92vw;
+        max-height: 92vh;
+        object-fit: contain;
+        border-radius: 6px;
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    }
+    .media-overlay .overlay-close {
+        position: fixed;
+        top: 18px; right: 24px;
+        z-index: 100000;
+        background: rgba(255,255,255,0.15);
+        border: none; color: #fff;
+        font-size: 2rem;
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+        transition: background 0.2s;
+    }
+    .media-overlay .overlay-close:hover { background: rgba(255,255,255,0.3); }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Media preview & fullscreen ---
+    var overlay = document.createElement('div');
+    overlay.className = 'media-overlay';
+    overlay.innerHTML = '<button class="overlay-close" title="Close">&times;</button><div id="overlayContent"></div>';
+    document.body.appendChild(overlay);
+
+    var overlayContent = document.getElementById('overlayContent');
+
+    function openOverlay(html) {
+        overlayContent.innerHTML = html;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeOverlay() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        overlayContent.innerHTML = '';
+    }
+    overlay.querySelector('.overlay-close').addEventListener('click', function(e) { e.stopPropagation(); closeOverlay(); });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeOverlay(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeOverlay(); });
+
+    function previewImages(input, container) {
+        input.addEventListener('change', function() {
+            container.innerHTML = '';
+            if (!this.files.length) return;
+            Array.from(this.files).forEach(function(file, i) {
+                if (!file.type.startsWith('image/')) return;
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var wrap = document.createElement('div');
+                    wrap.className = 'media-thumb-wrap';
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'media-thumb';
+                    img.title = 'Click to view full screen';
+                    img.addEventListener('click', function() {
+                        openOverlay('<img src="' + this.src + '" alt="Preview">');
+                    });
+                    wrap.appendChild(img);
+                    container.appendChild(wrap);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
+    function previewVideo(input, container) {
+        input.addEventListener('change', function() {
+            container.innerHTML = '';
+            if (!this.files.length) return;
+            var file = this.files[0];
+            if (!file.type.startsWith('video/')) return;
+            var url = URL.createObjectURL(file);
+            var video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            video.style.maxHeight = '200px';
+            video.style.maxWidth = '100%';
+            video.style.cursor = 'pointer';
+            video.className = 'rounded';
+            video.title = 'Click to view full screen';
+            video.addEventListener('click', function(e) {
+                e.preventDefault();
+                openOverlay('<video src="' + url + '" controls autoplay style="max-width:92vw;max-height:92vh;border-radius:6px;box-shadow:0 0 40px rgba(0,0,0,0.5);"></video>');
+            });
+            container.appendChild(video);
+        });
+    }
+
+    var imageInput = document.getElementById('imageInput');
+    var imagePreview = document.getElementById('imagePreview');
+    if (imageInput && imagePreview) previewImages(imageInput, imagePreview);
+
+    var videoInput = document.getElementById('videoInput');
+    var videoPreview = document.getElementById('videoPreview');
+    if (videoInput && videoPreview) previewVideo(videoInput, videoPreview);
+
+    document.querySelectorAll('.fullscreen-img').forEach(function(img) {
+        img.addEventListener('click', function() {
+            openOverlay('<img src="' + this.src + '" alt="Full View">');
+        });
+    });
+    document.querySelectorAll('.fullscreen-video').forEach(function(vid) {
+        vid.addEventListener('click', function(e) {
+            e.preventDefault();
+            openOverlay('<video src="' + this.src + '" controls autoplay style="max-width:92vw;max-height:92vh;border-radius:6px;box-shadow:0 0 40px rgba(0,0,0,0.5);"></video>');
+        });
+    });
+
+    // --- Auction date/type logic ---
     var typeSelect = document.getElementById('auctionType');
     var endAtGroup = document.getElementById('endAtGroup');
     var durationGroup = document.getElementById('durationGroup');
