@@ -55,6 +55,7 @@ class BusinessRegistrationController extends Controller
         // Validation rules for business information
         $businessRules = [
             'business_name' => 'required|string|max:255',
+            'seller_type' => 'required|in:individual,business',
             'description' => 'nullable|string|max:1000',
             'phone' => ['required', 'string', 'regex:/^\+63[0-9]{10}$/'],
             'business_email' => 'required|email|max:255',
@@ -62,13 +63,20 @@ class BusinessRegistrationController extends Controller
             'city' => 'required|string|max:100',
             'province' => 'required|string|max:100',
             'postal_code' => 'required|string|max:10',
-            'id_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'selfie' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+            'government_id_1' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'government_id_2' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'bank_statement' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ];
 
-        // Add verified shop requirements
-        if ($isVerified) {
+        // Add business-specific requirements (same as auction verification)
+        if ($request->seller_type === 'business') {
             $businessRules['business_permit'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:5120';
-            $businessRules['bank_account'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:5120';
+            $businessRules['bir_certificate'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:5120';
+            $businessRules['official_receipt_sample'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:5120';
+            $businessRules['government_id_3'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120';
+            $businessRules['dti_registration'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120';
+            $businessRules['sec_registration'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120';
         }
 
         // Merge and validate all rules
@@ -96,6 +104,7 @@ class BusinessRegistrationController extends Controller
             'user_id' => $user->id,
             'business_name' => $request->business_name,
             'business_slug' => Str::slug($request->business_name) . '-' . $user->id,
+            'seller_type' => $request->seller_type,
             'description' => $request->description,
             'phone' => $request->phone,
             'email' => $request->business_email,
@@ -108,41 +117,103 @@ class BusinessRegistrationController extends Controller
             'is_verified_shop' => $isVerified,
         ]);
 
-        // Upload Primary ID document (required for all)
-        $idPath = $request->file('id_document')->store('seller_documents/' . $seller->id, 'public');
+        // Upload Selfie (required for all - same as auction)
+        $selfiePath = $request->file('selfie')->store('seller_documents/' . $seller->id . '/selfie', 'public');
         \App\Models\SellerDocument::create([
             'seller_id' => $seller->id,
-            'document_type' => 'id',
-            'document_path' => $idPath,
+            'document_type' => 'selfie',
+            'document_path' => $selfiePath,
             'status' => 'pending',
         ]);
 
-        // Upload Bank document (required for all)
-        $bankPath = $request->file('bank_document')->store('seller_documents/' . $seller->id, 'public');
+        // Upload Government ID #1 (required for all - same as auction)
+        $govId1Path = $request->file('government_id_1')->store('seller_documents/' . $seller->id . '/government_ids', 'public');
         \App\Models\SellerDocument::create([
             'seller_id' => $seller->id,
-            'document_type' => 'bank_account',
+            'document_type' => 'government_id_1',
+            'document_path' => $govId1Path,
+            'status' => 'pending',
+        ]);
+
+        // Upload Government ID #2 (required for individual - same as auction)
+        $govId2Path = $request->file('government_id_2')->store('seller_documents/' . $seller->id . '/government_ids', 'public');
+        \App\Models\SellerDocument::create([
+            'seller_id' => $seller->id,
+            'document_type' => 'government_id_2',
+            'document_path' => $govId2Path,
+            'status' => 'pending',
+        ]);
+
+        // Upload Bank Statement (required for all - same as auction)
+        $bankPath = $request->file('bank_statement')->store('seller_documents/' . $seller->id . '/financial', 'public');
+        \App\Models\SellerDocument::create([
+            'seller_id' => $seller->id,
+            'document_type' => 'bank_statement',
             'document_path' => $bankPath,
             'status' => 'pending',
         ]);
 
-        // Upload verified trusted seller documents (only if verified registration)
-        if ($isVerified) {
-            $businessRegPath = $request->file('business_registration')->store('seller_documents/' . $seller->id, 'public');
+        // Upload business-specific documents (same as auction verification)
+        if ($request->seller_type === 'business') {
+            // Business Permit (required for business)
+            $businessPermitPath = $request->file('business_permit')->store('seller_documents/' . $seller->id . '/business', 'public');
             \App\Models\SellerDocument::create([
                 'seller_id' => $seller->id,
-                'document_type' => 'business_registration',
-                'document_path' => $businessRegPath,
+                'document_type' => 'business_permit',
+                'document_path' => $businessPermitPath,
                 'status' => 'pending',
             ]);
 
-            $brandRightsPath = $request->file('brand_rights')->store('seller_documents/' . $seller->id, 'public');
+            // BIR Certificate (required for business)
+            $birPath = $request->file('bir_certificate')->store('seller_documents/' . $seller->id . '/business', 'public');
             \App\Models\SellerDocument::create([
                 'seller_id' => $seller->id,
-                'document_type' => 'brand_rights',
-                'document_path' => $brandRightsPath,
+                'document_type' => 'bir_certificate',
+                'document_path' => $birPath,
                 'status' => 'pending',
             ]);
+
+            // Official Receipt Sample (required for business)
+            $receiptPath = $request->file('official_receipt_sample')->store('seller_documents/' . $seller->id . '/business', 'public');
+            \App\Models\SellerDocument::create([
+                'seller_id' => $seller->id,
+                'document_type' => 'official_receipt_sample',
+                'document_path' => $receiptPath,
+                'status' => 'pending',
+            ]);
+
+            // Government ID #3 (optional for business)
+            if ($request->hasFile('government_id_3')) {
+                $govId3Path = $request->file('government_id_3')->store('seller_documents/' . $seller->id . '/government_ids', 'public');
+                \App\Models\SellerDocument::create([
+                    'seller_id' => $seller->id,
+                    'document_type' => 'government_id_3',
+                    'document_path' => $govId3Path,
+                    'status' => 'pending',
+                ]);
+            }
+
+            // DTI Registration (optional for business)
+            if ($request->hasFile('dti_registration')) {
+                $dtiPath = $request->file('dti_registration')->store('seller_documents/' . $seller->id . '/business', 'public');
+                \App\Models\SellerDocument::create([
+                    'seller_id' => $seller->id,
+                    'document_type' => 'dti_registration',
+                    'document_path' => $dtiPath,
+                    'status' => 'pending',
+                ]);
+            }
+
+            // SEC Registration (optional for business)
+            if ($request->hasFile('sec_registration')) {
+                $secPath = $request->file('sec_registration')->store('seller_documents/' . $seller->id . '/business', 'public');
+                \App\Models\SellerDocument::create([
+                    'seller_id' => $seller->id,
+                    'document_type' => 'sec_registration',
+                    'document_path' => $secPath,
+                    'status' => 'pending',
+                ]);
+            }
         }
 
         // Do not fire Registered event: business accounts are auto-verified (email_verified_at set above).
@@ -161,11 +232,10 @@ class BusinessRegistrationController extends Controller
             'Analytics & Reports'
         ];
 
-        $message = $isVerified 
-            ? 'Full verified trusted shop registration submitted successfully!'
-            : 'Business account registration submitted successfully!';
+        $sellerType = $request->seller_type === 'business' ? 'Business' : 'Individual';
+        $message = "Seller registration submitted successfully! ({$sellerType} Seller)";
 
-        $infoMessage = 'Your registration is pending admin approval. You can browse and shop online, but business features will be available after approval.';
+        $infoMessage = 'Your registration is pending admin approval. All submitted documents will be verified. You can browse and shop online, but seller features will be available after approval.';
 
         return redirect()->route('seller.dashboard')
             ->with('success', $message)
