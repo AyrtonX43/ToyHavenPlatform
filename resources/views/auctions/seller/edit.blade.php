@@ -129,46 +129,21 @@
                                     <option value="live_event" {{ old('auction_type', $auction->auction_type) === 'live_event' ? 'selected' : '' }}>Live Event</option>
                                 </select>
                             </div>
-                            @php
-                                $editStartDays = '';
-                                if ($auction->start_at) {
-                                    $diff = (int) now()->startOfDay()->diffInDays($auction->start_at->startOfDay(), false);
-                                    $editStartDays = max(0, min(5, $diff));
-                                }
-                                $editStartTime = $auction->start_at ? $auction->start_at->format('H:i') : '09:00';
-                                $editEndTime = $auction->end_at ? $auction->end_at->format('H:i') : '21:00';
-                            @endphp
                             <div class="col-md-4" id="startAtGroup">
-                                <label class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
-                                <select name="start_days" id="startDays" class="form-select" required>
-                                    <option value="">Select Start Date</option>
-                                    <option value="0" {{ old('start_days', $editStartDays) === '0' || old('start_days', $editStartDays) === 0 ? 'selected' : '' }}>Start Now (Today)</option>
-                                    @for($d = 1; $d <= 5; $d++)
-                                        <option value="{{ $d }}" {{ old('start_days', $editStartDays) == $d ? 'selected' : '' }}>
-                                            {{ now()->addDays($d)->format('l, M d, Y') }} ({{ $d }} {{ $d === 1 ? 'day' : 'days' }} from now)
-                                        </option>
-                                    @endfor
-                                </select>
-                                @error('start_days') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="col-md-4" id="startTimeGroup" style="display: none;">
-                                <label class="form-label fw-semibold">Start Time <span class="text-danger">*</span></label>
-                                <input type="time" name="start_time" id="startTime" class="form-control" value="{{ old('start_time', $editStartTime) }}">
-                                <small class="text-muted" id="startTimeHint">Time the auction will begin</small>
-                                @error('start_time') <div class="text-danger small">{{ $message }}</div> @enderror
+                                <label class="form-label fw-semibold">Start Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="start_at" id="startAt" class="form-control"
+                                       value="{{ old('start_at', $auction->start_at?->format('Y-m-d\TH:i')) }}"
+                                       min="{{ now()->format('Y-m-d\TH:i') }}"
+                                       max="{{ now()->addDays(5)->endOfDay()->format('Y-m-d\TH:i') }}" required>
+                                <small class="text-muted">Select from now up to 5 days ahead</small>
+                                @error('start_at') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4" id="endAtGroup">
-                                <label class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
-                                <select name="end_days" id="endDays" class="form-select" required>
-                                    <option value="">Select Start Date first</option>
-                                </select>
-                                @error('end_days') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="col-md-4" id="endTimeGroup" style="display: none;">
-                                <label class="form-label fw-semibold">End Time <span class="text-danger">*</span></label>
-                                <input type="time" name="end_time" id="endTime" class="form-control" value="{{ old('end_time', $editEndTime) }}">
-                                <small class="text-muted">Time the auction will close</small>
-                                @error('end_time') <div class="text-danger small">{{ $message }}</div> @enderror
+                                <label class="form-label fw-semibold">End Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="end_at" id="endAt" class="form-control"
+                                       value="{{ old('end_at', $auction->end_at?->format('Y-m-d\TH:i')) }}" required>
+                                <small class="text-muted" id="endAtHint">Must be 1–2 days after start</small>
+                                @error('end_at') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4" id="durationGroup" style="display: none;">
                                 <label class="form-label fw-semibold">Duration (minutes)</label>
@@ -209,82 +184,49 @@
 document.addEventListener('DOMContentLoaded', function() {
     var typeSelect = document.getElementById('auctionType');
     var endAtGroup = document.getElementById('endAtGroup');
-    var endTimeGroup = document.getElementById('endTimeGroup');
-    var startTimeGroup = document.getElementById('startTimeGroup');
     var durationGroup = document.getElementById('durationGroup');
-    var startDays = document.getElementById('startDays');
-    var endDays = document.getElementById('endDays');
+    var startAt = document.getElementById('startAt');
+    var endAt = document.getElementById('endAt');
 
-    @php
-        $existingEndDays = '';
-        if ($auction->start_at && $auction->end_at) {
-            $existingEndDays = max(1, min(2, (int) $auction->start_at->startOfDay()->diffInDays($auction->end_at->startOfDay())));
-        }
-    @endphp
-    var oldEndDays = '{{ old("end_days", $existingEndDays) }}';
-
-    var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    function formatDate(d) {
-        return dayNames[d.getDay()] + ', ' + monthNames[d.getMonth()] + ' ' + String(d.getDate()).padStart(2,'0') + ', ' + d.getFullYear();
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function toLocal(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
-    function updateEndDays() {
-        var sv = startDays.value;
-        endDays.innerHTML = '';
-        if (sv === '' || sv === null) {
-            endDays.innerHTML = '<option value="">Select Start Date first</option>';
-            endTimeGroup.style.display = 'none';
-            startTimeGroup.style.display = 'none';
+    function updateEndLimits() {
+        if (!startAt.value) {
+            endAt.min = '';
+            endAt.max = '';
+            document.getElementById('endAtHint').textContent = 'Select start date first';
             return;
         }
-        sv = parseInt(sv);
-        startTimeGroup.style.display = '';
-        if (sv === 0) {
-            document.getElementById('startTimeHint').textContent = 'Starts immediately when approved';
-        } else {
-            document.getElementById('startTimeHint').textContent = 'Time the auction will begin';
-        }
+        var start = new Date(startAt.value);
+        var minEnd = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+        var maxEnd = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000);
+        endAt.min = toLocal(minEnd);
+        endAt.max = toLocal(maxEnd);
+        document.getElementById('endAtHint').textContent = 'Between ' + minEnd.toLocaleDateString() + ' and ' + maxEnd.toLocaleDateString();
 
-        endDays.innerHTML = '<option value="">Select End Date</option>';
-        for (var i = 1; i <= 2; i++) {
-            var totalDays = sv + i;
-            var d = new Date();
-            d.setDate(d.getDate() + totalDays);
-            var opt = document.createElement('option');
-            opt.value = i;
-            opt.textContent = formatDate(d) + ' (' + i + (i === 1 ? ' day' : ' days') + ' after start)';
-            if (oldEndDays == i) opt.selected = true;
-            endDays.appendChild(opt);
+        if (endAt.value && new Date(endAt.value) < minEnd) {
+            endAt.value = toLocal(minEnd);
         }
-        oldEndDays = '';
-        updateEndTimeVisibility();
-    }
-
-    function updateEndTimeVisibility() {
-        if (endDays.value && endDays.value !== '') {
-            endTimeGroup.style.display = '';
-        } else {
-            endTimeGroup.style.display = 'none';
+        if (endAt.value && new Date(endAt.value) > maxEnd) {
+            endAt.value = toLocal(maxEnd);
         }
     }
 
-    endDays.addEventListener('change', updateEndTimeVisibility);
-    startDays.addEventListener('change', updateEndDays);
-    updateEndDays();
+    startAt.addEventListener('change', updateEndLimits);
+    updateEndLimits();
 
     function toggleFields() {
         if (typeSelect.value === 'live_event') {
             durationGroup.style.display = '';
             endAtGroup.style.display = 'none';
-            endTimeGroup.style.display = 'none';
-            endDays.removeAttribute('required');
+            endAt.removeAttribute('required');
         } else {
             durationGroup.style.display = 'none';
             endAtGroup.style.display = '';
-            endDays.setAttribute('required', 'required');
-            updateEndTimeVisibility();
+            endAt.setAttribute('required', 'required');
         }
     }
 

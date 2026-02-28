@@ -75,10 +75,8 @@ class SellerAuctionController extends Controller
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
             'auction_type' => 'required|in:timed,live_event',
-            'start_days' => 'required|integer|min:0|max:5',
-            'start_time' => 'required|date_format:H:i',
-            'end_days' => 'required_if:auction_type,timed|nullable|integer|min:1|max:2',
-            'end_time' => 'required_if:auction_type,timed|nullable|date_format:H:i',
+            'start_at' => 'required|date|after_or_equal:now',
+            'end_at' => 'required_if:auction_type,timed|nullable|date|after:start_at',
             'duration_minutes' => 'required_if:auction_type,live_event|nullable|integer|min:5|max:480',
             'allowed_bidder_plans' => 'nullable|array',
             'allowed_bidder_plans.*' => 'in:basic,pro,vip,all',
@@ -91,19 +89,20 @@ class SellerAuctionController extends Controller
 
         $categoryIds = $validated['category_ids'];
 
-        $startDays = (int) $validated['start_days'];
-        [$startHour, $startMin] = explode(':', $validated['start_time']);
-
-        if ($startDays === 0) {
-            $startAt = now();
-        } else {
-            $startAt = now()->addDays($startDays)->startOfDay()->setTime((int) $startHour, (int) $startMin);
+        $startAt = \Carbon\Carbon::parse($validated['start_at']);
+        $maxStart = now()->addDays(5)->endOfDay();
+        if ($startAt->gt($maxStart)) {
+            return back()->withErrors(['start_at' => 'Start date must be within 5 days from now.'])->withInput();
         }
 
         $endAt = null;
-        if ($validated['auction_type'] === 'timed' && ! empty($validated['end_days'])) {
-            [$endHour, $endMin] = explode(':', $validated['end_time'] ?? '21:00');
-            $endAt = now()->addDays($startDays + (int) $validated['end_days'])->startOfDay()->setTime((int) $endHour, (int) $endMin);
+        if ($validated['auction_type'] === 'timed' && ! empty($validated['end_at'])) {
+            $endAt = \Carbon\Carbon::parse($validated['end_at']);
+            $minEnd = $startAt->copy()->addDay();
+            $maxEnd = $startAt->copy()->addDays(2);
+            if ($endAt->lt($minEnd) || $endAt->gt($maxEnd)) {
+                return back()->withErrors(['end_at' => 'End date must be 1–2 days after start date.'])->withInput();
+            }
         }
 
         $allowedPlans = $request->input('allowed_bidder_plans', ['all']);
@@ -214,10 +213,8 @@ class SellerAuctionController extends Controller
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
             'auction_type' => 'required|in:timed,live_event',
-            'start_days' => 'required|integer|min:0|max:5',
-            'start_time' => 'required|date_format:H:i',
-            'end_days' => 'required_if:auction_type,timed|nullable|integer|min:1|max:2',
-            'end_time' => 'required_if:auction_type,timed|nullable|date_format:H:i',
+            'start_at' => 'required|date|after_or_equal:now',
+            'end_at' => 'required_if:auction_type,timed|nullable|date|after:start_at',
             'duration_minutes' => 'required_if:auction_type,live_event|nullable|integer|min:5|max:480',
             'allowed_bidder_plans' => 'nullable|array',
             'allowed_bidder_plans.*' => 'in:basic,pro,vip,all',
@@ -228,19 +225,20 @@ class SellerAuctionController extends Controller
 
         $categoryIds = $validated['category_ids'];
 
-        $startDays = (int) $validated['start_days'];
-        [$startHour, $startMin] = explode(':', $validated['start_time']);
-
-        if ($startDays === 0) {
-            $startAt = now();
-        } else {
-            $startAt = now()->addDays($startDays)->startOfDay()->setTime((int) $startHour, (int) $startMin);
+        $startAt = \Carbon\Carbon::parse($validated['start_at']);
+        $maxStart = now()->addDays(5)->endOfDay();
+        if ($startAt->gt($maxStart)) {
+            return back()->withErrors(['start_at' => 'Start date must be within 5 days from now.'])->withInput();
         }
 
         $endAt = null;
-        if ($validated['auction_type'] === 'timed' && ! empty($validated['end_days'])) {
-            [$endHour, $endMin] = explode(':', $validated['end_time'] ?? '21:00');
-            $endAt = now()->addDays($startDays + (int) $validated['end_days'])->startOfDay()->setTime((int) $endHour, (int) $endMin);
+        if ($validated['auction_type'] === 'timed' && ! empty($validated['end_at'])) {
+            $endAt = \Carbon\Carbon::parse($validated['end_at']);
+            $minEnd = $startAt->copy()->addDay();
+            $maxEnd = $startAt->copy()->addDays(2);
+            if ($endAt->lt($minEnd) || $endAt->gt($maxEnd)) {
+                return back()->withErrors(['end_at' => 'End date must be 1–2 days after start date.'])->withInput();
+            }
         }
 
         $allowedPlans = $request->input('allowed_bidder_plans', ['all']);
