@@ -62,7 +62,8 @@ class SellerAuctionController extends Controller
             return redirect()->route('auctions.verification.index');
         }
 
-        $validated = $request->validate([
+        try {
+            $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
             'category_ids' => 'required|array|min:1',
@@ -131,11 +132,11 @@ class SellerAuctionController extends Controller
             'status' => 'pending_approval',
         ]);
 
-        $auction->categories()->sync($categoryIds);
+            $auction->categories()->sync($categoryIds);
 
-        $storagePath = 'auction_images/' . $auction->id;
+            $storagePath = 'auction_images/' . $auction->id;
 
-        if ($request->hasFile('images')) {
+            if ($request->hasFile('images')) {
             foreach ($request->file('images') as $i => $image) {
                 $path = $image->store($storagePath, 'public');
                 AuctionImage::create([
@@ -159,13 +160,24 @@ class SellerAuctionController extends Controller
             }
         }
 
-        if ($request->hasFile('verification_video')) {
-            $videoPath = $request->file('verification_video')->store('auction_videos/' . $auction->id, 'public');
-            $auction->update(['verification_video_path' => $videoPath]);
-        }
+            if ($request->hasFile('verification_video')) {
+                $videoPath = $request->file('verification_video')->store('auction_videos/' . $auction->id, 'public');
+                $auction->update(['verification_video_path' => $videoPath]);
+            }
 
-        return redirect()->route('auctions.seller.index')
-            ->with('success', 'Auction listing submitted for approval!');
+            return redirect()->route('auctions.seller.index')
+                ->with('success', 'Auction listing submitted for approval!');
+        } catch (\Exception $e) {
+            \Log::error('Auction creation failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create auction: ' . $e->getMessage());
+        }
     }
 
     public function edit(Auction $auction)
@@ -200,7 +212,8 @@ class SellerAuctionController extends Controller
                 ->with('error', 'You can only edit draft or pending auctions.');
         }
 
-        $validated = $request->validate([
+        try {
+            $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
             'category_ids' => 'required|array|min:1',
@@ -265,9 +278,9 @@ class SellerAuctionController extends Controller
             'status' => 'pending_approval',
         ]);
 
-        $auction->categories()->sync($categoryIds);
+            $auction->categories()->sync($categoryIds);
 
-        if ($request->hasFile('new_images')) {
+            if ($request->hasFile('new_images')) {
             $storagePath = 'auction_images/' . $auction->id;
             $maxOrder = $auction->images()->max('display_order') ?? -1;
             foreach ($request->file('new_images') as $image) {
@@ -282,16 +295,28 @@ class SellerAuctionController extends Controller
             }
         }
 
-        if ($request->hasFile('verification_video')) {
-            if ($auction->verification_video_path) {
-                Storage::disk('public')->delete($auction->verification_video_path);
+            if ($request->hasFile('verification_video')) {
+                if ($auction->verification_video_path) {
+                    Storage::disk('public')->delete($auction->verification_video_path);
+                }
+                $videoPath = $request->file('verification_video')->store('auction_videos/' . $auction->id, 'public');
+                $auction->update(['verification_video_path' => $videoPath]);
             }
-            $videoPath = $request->file('verification_video')->store('auction_videos/' . $auction->id, 'public');
-            $auction->update(['verification_video_path' => $videoPath]);
-        }
 
-        return redirect()->route('auctions.seller.index')
-            ->with('success', 'Auction listing updated and resubmitted for approval.');
+            return redirect()->route('auctions.seller.index')
+                ->with('success', 'Auction listing updated and resubmitted for approval.');
+        } catch (\Exception $e) {
+            \Log::error('Auction update failed', [
+                'user_id' => $user->id,
+                'auction_id' => $auction->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update auction: ' . $e->getMessage());
+        }
     }
 
     public function deleteImage(Auction $auction, AuctionImage $image)
