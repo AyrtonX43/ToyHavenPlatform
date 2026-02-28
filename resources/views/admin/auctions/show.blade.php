@@ -138,7 +138,7 @@
                             <h5 class="mb-0 fw-bold"><i class="bi bi-file-text text-success me-2"></i>Description</h5>
                         </div>
                         <div class="card-body">
-                            <p class="mb-0">{{ $auction->description }}</p>
+                            <p class="mb-0 text-justify">{{ $auction->description }}</p>
                         </div>
                     </div>
 
@@ -382,6 +382,10 @@
 
 @push('styles')
 <style>
+    .text-justify {
+        text-align: justify;
+        text-justify: inter-word;
+    }
     .card {
         transition: box-shadow 0.3s ease;
     }
