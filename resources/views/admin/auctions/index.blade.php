@@ -58,7 +58,11 @@
                                     <td>{{ $auction->end_at?->format('M d, Y H:i') ?? 'TBD' }}</td>
                                     <td>
                                         <a href="{{ route('admin.auctions.show', $auction) }}" class="btn btn-sm btn-outline-primary">View</a>
-                                        <a href="{{ route('admin.auctions.edit', $auction) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        @if($auction->user_id === null)
+                                            <a href="{{ route('admin.auctions.edit', $auction) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        @else
+                                            <span class="badge bg-secondary" title="Seller-created auctions cannot be edited">Seller Auction</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

@@ -440,7 +440,11 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
         Route::prefix('auctions')->name('auctions.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AuctionController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AuctionController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AuctionController::class, 'store'])->name('store');
             Route::get('/{auction}', [\App\Http\Controllers\Admin\AuctionController::class, 'show'])->name('show');
+            Route::get('/{auction}/edit', [\App\Http\Controllers\Admin\AuctionController::class, 'edit'])->name('edit');
+            Route::put('/{auction}', [\App\Http\Controllers\Admin\AuctionController::class, 'update'])->name('update');
             Route::post('/{auction}/approve', [\App\Http\Controllers\Admin\AuctionController::class, 'approve'])->name('approve');
             Route::post('/{auction}/reject', [\App\Http\Controllers\Admin\AuctionController::class, 'reject'])->name('reject');
             Route::post('/{auction}/cancel', [\App\Http\Controllers\Admin\AuctionController::class, 'cancel'])->name('cancel');

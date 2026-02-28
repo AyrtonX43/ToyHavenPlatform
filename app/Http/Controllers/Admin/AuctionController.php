@@ -81,12 +81,24 @@ class AuctionController extends Controller
 
     public function edit(Auction $auction)
     {
+        // Prevent editing seller-created auctions
+        if ($auction->user_id !== null) {
+            return redirect()->route('admin.auctions.show', $auction)
+                ->with('error', 'Cannot edit seller-created auctions. Only admin-created auctions can be edited.');
+        }
+
         $categories = Category::orderBy('name')->get();
         return view('admin.auctions.edit', compact('auction', 'categories'));
     }
 
     public function update(Request $request, Auction $auction)
     {
+        // Prevent updating seller-created auctions
+        if ($auction->user_id !== null) {
+            return redirect()->route('admin.auctions.show', $auction)
+                ->with('error', 'Cannot update seller-created auctions. Only admin-created auctions can be updated.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
