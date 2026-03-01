@@ -2,49 +2,53 @@
 
 namespace App\Notifications;
 
-use App\Models\Order;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class OrderDeliveredNotification extends Notification implements ShouldQueue
+class OrderDeliveredNotification extends Notification
 {
     use Queueable;
 
-    protected Order $order;
-
-    public function __construct(Order $order)
+    /**
+     * Create a new notification instance.
+     */
+    public function __construct()
     {
-        $this->order = $order;
+        //
     }
 
-    public function via($notifiable): array
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
+    public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['mail'];
     }
 
-    public function toMail($notifiable)
+    /**
+     * Get the mail representation of the notification.
+     */
+    public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Order Delivered - ' . $this->order->order_number)
-            ->line('Great news! Your order has been delivered.')
-            ->line('Order Number: ' . $this->order->order_number)
-            ->line('Delivered At: ' . $this->order->delivered_at->format('M d, Y h:i A'))
-            ->line('**Important:** Please confirm receipt of your order by uploading a photo proof within 3 days.')
-            ->action('Confirm Receipt', route('orders.show', $this->order->id))
-            ->line('If you did not receive the order, please report an issue.')
-            ->line('Thank you for shopping at ToyHaven!');
+            ->line('The introduction to the notification.')
+            ->action('Notification Action', url('/'))
+            ->line('Thank you for using our application!');
     }
 
-    public function toArray($notifiable): array
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'order_delivered',
-            'order_id' => $this->order->id,
-            'order_number' => $this->order->order_number,
-            'message' => 'Order #' . $this->order->order_number . ' has been delivered. Please confirm receipt.',
-            'action_required' => true,
+            //
         ];
     }
 }

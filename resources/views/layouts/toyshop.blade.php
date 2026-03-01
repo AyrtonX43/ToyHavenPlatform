@@ -13,65 +13,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Google Fonts - Quicksand: Toys and Joy style (clean, playful) -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tabler CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet"/>
-    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet"/>
-    
-    <!-- Custom Animations -->
-    <link href="{{ asset('css/toyhaven-animations.css') }}" rel="stylesheet"/>
-    
+    <!-- Custom CSS -->
+    <link href="{{ asset('css/toyshop-animations.css') }}" rel="stylesheet">
     @stack('styles')
     <style>
-        /* ===== FIX CAROUSEL ARROWS - REMOVE HUGE ARROWS ===== */
-        .carousel-control-prev,
-        .carousel-control-next {
-            width: 45px !important;
-            height: 45px !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            background-color: rgba(8, 145, 178, 0.8) !important;
-            border-radius: 50% !important;
-            opacity: 0 !important;
-            transition: all 0.3s ease !important;
-            z-index: 10 !important;
-        }
-        
-        .carousel:hover .carousel-control-prev,
-        .carousel:hover .carousel-control-next {
-            opacity: 1 !important;
-        }
-        
-        .carousel-control-prev {
-            left: 15px !important;
-        }
-        
-        .carousel-control-next {
-            right: 15px !important;
-        }
-        
-        .carousel-control-prev-icon,
-        .carousel-control-next-icon {
-            width: 20px !important;
-            height: 20px !important;
-            background-size: 100% 100% !important;
-        }
-        
-        .carousel-control-prev:hover,
-        .carousel-control-next:hover {
-            background-color: rgba(8, 145, 178, 1) !important;
-            transform: translateY(-50%) scale(1.1) !important;
-        }
-        
-        /* Hide carousel arrows on mobile */
-        @media (max-width: 768px) {
-            .carousel-control-prev,
-            .carousel-control-next {
-                display: none !important;
-            }
-        }
-        
-        /* ===== END CAROUSEL FIX ===== */
-        
         /* Stable full-width layout: fill viewport, never overflow */
         html {
             box-sizing: border-box;
@@ -183,13 +128,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border-radius: 14px;
             padding: 0.5rem;
-            z-index: 1050;
-            display: none;
-        }
-        
-        .dropdown-menu.show {
-            display: block;
-            animation: fadeIn 0.2s ease-out;
         }
         
         .dropdown-item {
@@ -198,24 +136,10 @@
             font-weight: 600;
             font-size: 0.9375rem;
             transition: background 0.15s;
-            cursor: pointer;
         }
         
         .dropdown-item:hover {
             background: #ecfeff;
-        }
-        
-        .dropdown-toggle::after {
-            margin-left: 0.5rem;
-        }
-        
-        .nav-item.dropdown {
-            position: relative;
-        }
-        
-        .dropdown-menu-end {
-            right: 0;
-            left: auto;
         }
         
         main {
@@ -1061,53 +985,8 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Tabler JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
-    
-    <!-- Fix Dropdown Issues -->
-    <script>
-        // Ensure Bootstrap dropdowns work properly
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if Bootstrap is loaded
-            if (typeof bootstrap === 'undefined') {
-                console.error('Bootstrap JS not loaded! Dropdowns will not work.');
-                return;
-            }
-            
-            // Initialize all dropdowns manually
-            const dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-            const dropdownList = [...dropdownElementList].map(dropdownToggleEl => {
-                return new bootstrap.Dropdown(dropdownToggleEl, {
-                    autoClose: true,
-                    boundary: 'viewport'
-                });
-            });
-            
-            // Fix for user profile dropdown specifically
-            const userDropdown = document.getElementById('navbarDropdown');
-            if (userDropdown) {
-                userDropdown.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const dropdown = bootstrap.Dropdown.getInstance(this) || new bootstrap.Dropdown(this);
-                    dropdown.toggle();
-                });
-            }
-            
-            // Prevent dropdown from closing when clicking inside
-            document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-                dropdown.addEventListener('click', function(e) {
-                    if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
-                        e.stopPropagation();
-                    }
-                });
-            });
-        });
-    </script>
-    
-    <!-- Page Transitions & Loading States -->
-    <script src="{{ asset('js/toyhaven-page-transitions.js') }}"></script>
+    <!-- Custom Animations JS -->
+    <script src="{{ asset('js/toyshop-animations.js') }}"></script>
     <style>
         /* Flash Notifications */
         .flash-notifications-container {

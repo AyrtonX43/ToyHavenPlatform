@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderTracking;
-use App\Notifications\OrderStatusUpdatedNotification;
-use App\Notifications\OrderDeliveredNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -47,39 +45,40 @@ class OrderController extends Controller
         $request->validate([
             'status' => 'required|in:processing,packed,shipped,in_transit,out_for_delivery,delivered',
             'tracking_number' => 'nullable|string|max:100',
-            'courier_name' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:500',
             'estimated_delivery_date' => 'nullable|date|after:today',
             'notes' => 'nullable|string|max:1000',
             'location' => 'nullable|string|max:255',
         ]);
 
-        $oldStatus = $order->status;
-        $newStatus = $request->status;
-
-        $updateData = [
-            'status' => $newStatus,
-            'tracking_number' => $request->tracking_number ?? $order->tracking_number,
+        $statusMap = [
+            'processing' => 'processing',
+            'packed' => 'packed',
+            'shipped' => 'shipped',
+            'in_transit' => 'in_transit',
+            'out_for_delivery' => 'out_for_delivery',
+            'delivered' => 'delivered',
         ];
 
-        if ($request->filled('courier_name')) {
-            $updateData['courier_name'] = $request->courier_name;
-        }
+        $trackingStatusMap = [
+            'processing' => 'processing',
+            'packed' => 'packed',
+            'shipped' => 'shipped',
+            'in_transit' => 'in_transit',
+            'out_for_delivery' => 'out_for_delivery',
+            'delivered' => 'delivered',
+        ];
 
-        if ($request->filled('estimated_delivery_date')) {
-            $updateData['estimated_delivery_date'] = $request->estimated_delivery_date;
-        }
+        $order->update([
+            'status' => $request->status,
+            'tracking_number' => $request->tracking_number ?? $order->tracking_number,
+        ]);
 
-        if ($newStatus === 'delivered') {
-            $updateData['delivered_at'] = now();
-        }
-
-        $order->update($updateData);
-
+        // Create tracking entry
         OrderTracking::create([
             'order_id' => $order->id,
-            'status' => $newStatus,
-            'description' => $request->description ?? $this->getDefaultDescription($newStatus),
+            'status' => $trackingStatusMap[$request->status],
+            'description' => $request->description ?? $this->getDefaultDescription($request->status),
             'tracking_number' => $request->tracking_number,
             'updated_by' => Auth::id(),
             'location' => $request->location,
@@ -87,10 +86,18 @@ class OrderController extends Controller
             'notes' => $request->notes,
         ]);
 
-        $order->user->notify(new OrderStatusUpdatedNotification($order, $oldStatus, $newStatus));
+        // If delivered, update delivered_at
+        if ($request->status === 'delivered') {
+            $order->update(['delivered_at' => now()]);
+        }
 
-        if ($newStatus === 'delivered') {
-            $order->user->notify(new OrderDeliveredNotification($order));
+        // Send notifications based on status
+        if ($request->status === 'shipped') {
+            $order->user->notify(new \App\Notifications\OrderShippedNotification($order));
+        } elseif ($request->status === 'delivered') {
+            $order->user->notify(new \App\Notifications\OrderDeliveredNotification($order));
+            
+            \App\Jobs\SendReviewRequestJob::dispatch($order)->delay(now()->addDays(3));
         }
 
         return back()->with('success', 'Order status updated successfully!');
@@ -115,14 +122,7 @@ class OrderController extends Controller
 
         $updatedCount = 0;
         foreach ($orders as $order) {
-            $oldStatus = $order->status;
-            $updateData = ['status' => $request->status];
-            
-            if ($request->status === 'delivered') {
-                $updateData['delivered_at'] = now();
-            }
-            
-            $order->update($updateData);
+            $order->update(['status' => $request->status]);
 
             OrderTracking::create([
                 'order_id' => $order->id,
@@ -131,10 +131,8 @@ class OrderController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
-            $order->user->notify(new OrderStatusUpdatedNotification($order, $oldStatus, $request->status));
-
             if ($request->status === 'delivered') {
-                $order->user->notify(new OrderDeliveredNotification($order));
+                $order->update(['delivered_at' => now()]);
             }
 
             $updatedCount++;

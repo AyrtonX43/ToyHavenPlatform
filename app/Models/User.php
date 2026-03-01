@@ -24,9 +24,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
-        'moderator_permissions',
-        'moderator_assigned_at',
-        'assigned_by',
         'auction_alias',
         'google_id',
         'phone',
@@ -65,8 +62,6 @@ class User extends Authenticatable implements MustVerifyEmail
             'phone_verified_at' => 'datetime',
             'banned_at' => 'datetime',
             'last_seen_at' => 'datetime',
-            'moderator_assigned_at' => 'datetime',
-            'moderator_permissions' => 'array',
             'password' => 'hashed',
             'is_banned' => 'boolean',
         ];
@@ -154,6 +149,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(UserProduct::class);
     }
 
+    public function moderatorActions()
+    {
+        return $this->hasMany(ModeratorAction::class, 'moderator_id');
+    }
+
+    public function assignedDisputes()
+    {
+        return $this->hasMany(OrderDispute::class, 'assigned_to');
+    }
+
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
@@ -167,21 +172,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
-    }
-
-    public function assignedModerators()
-    {
-        return $this->hasMany(User::class, 'assigned_by');
-    }
-
-    public function assignedBy()
-    {
-        return $this->belongsTo(User::class, 'assigned_by');
-    }
-
-    public function moderatedDisputes()
-    {
-        return $this->hasMany(OrderDispute::class, 'moderator_id');
     }
 
     public function getOrCreateWallet(): Wallet
@@ -255,28 +245,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === 'moderator';
     }
 
-    public function canManageOrders(): bool
+    public function canModerate(): bool
     {
-        return $this->isAdmin() || $this->isModerator();
-    }
-
-    public function canManageDisputes(): bool
-    {
-        return $this->isAdmin() || $this->isModerator();
-    }
-
-    public function hasModeratorPermission(string $permission): bool
-    {
-        if ($this->isAdmin()) {
-            return true;
-        }
-
-        if (!$this->isModerator()) {
-            return false;
-        }
-
-        $permissions = $this->moderator_permissions ?? [];
-        return in_array($permission, $permissions) || in_array('all', $permissions);
+        return $this->isModerator() || $this->isAdmin();
     }
 
     /**

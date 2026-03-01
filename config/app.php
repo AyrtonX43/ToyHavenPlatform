@@ -15,6 +15,11 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'receipt_prefix' => env('RECEIPT_PREFIX', 'TH-RCP'),
+    'company_address' => env('COMPANY_ADDRESS', 'Philippines'),
+    'company_phone' => env('COMPANY_PHONE', ''),
+    'company_email' => env('COMPANY_EMAIL', 'support@toyhaven.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

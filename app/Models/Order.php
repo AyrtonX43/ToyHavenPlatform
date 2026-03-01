@@ -5,11 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
     protected $fillable = [
         'order_number',
+        'receipt_number',
+        'receipt_path',
+        'receipt_generated_at',
         'user_id',
         'seller_id',
         'total_amount',
@@ -31,14 +35,8 @@ class Order extends Model
         'shipping_postal_code',
         'shipping_notes',
         'tracking_number',
-        'courier_name',
         'estimated_delivery_date',
         'delivered_at',
-        'receipt_confirmed_at',
-        'has_dispute',
-        'cancelled_at',
-        'cancellation_reason',
-        'cancelled_by',
     ];
 
     protected $casts = [
@@ -52,9 +50,7 @@ class Order extends Model
         'shipping_fee' => 'decimal:2',
         'estimated_delivery_date' => 'date',
         'delivered_at' => 'datetime',
-        'receipt_confirmed_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'has_dispute' => 'boolean',
+        'receipt_generated_at' => 'datetime',
     ];
 
     // Relationships
@@ -83,19 +79,19 @@ class Order extends Model
         return $this->belongsTo(OrderTracking::class)->latestOfMany();
     }
 
-    public function receipt()
+    public function deliveryConfirmation(): HasOne
     {
-        return $this->hasOne(OrderReceipt::class);
+        return $this->hasOne(DeliveryConfirmation::class);
     }
 
-    public function dispute()
+    public function disputes(): HasMany
     {
-        return $this->hasOne(OrderDispute::class);
+        return $this->hasMany(OrderDispute::class);
     }
 
-    public function cancelledByUser(): BelongsTo
+    public function activeDispute(): HasOne
     {
-        return $this->belongsTo(User::class, 'cancelled_by');
+        return $this->hasOne(OrderDispute::class)->whereIn('status', ['open', 'investigating'])->latestOfMany();
     }
 
     // Helper methods
@@ -131,78 +127,33 @@ class Order extends Model
         };
     }
 
-    public function getStatusColorAttribute(): string
+    public function hasReceipt(): bool
     {
-        return match($this->status) {
-            'pending' => 'warning',
-            'processing' => 'info',
-            'packed' => 'primary',
-            'shipped' => 'primary',
-            'in_transit' => 'primary',
-            'out_for_delivery' => 'primary',
-            'delivered' => 'success',
-            'cancelled' => 'danger',
-            default => 'secondary',
-        };
-    }
-
-    public function getPaymentStatusColorAttribute(): string
-    {
-        return match($this->payment_status) {
-            'pending' => 'warning',
-            'paid' => 'success',
-            'failed' => 'danger',
-            'refunded' => 'info',
-            default => 'secondary',
-        };
+        return !empty($this->receipt_path);
     }
 
     public function isDelivered(): bool
     {
-        return $this->status === 'delivered' && $this->delivered_at !== null;
+        return $this->status === 'delivered';
     }
 
-    public function hasReceipt(): bool
+    public function isDeliveryConfirmed(): bool
     {
-        return $this->receipt_confirmed_at !== null;
+        return $this->deliveryConfirmation()->exists();
     }
 
-    public function needsReceiptConfirmation(): bool
+    public function hasActiveDispute(): bool
     {
-        return $this->isDelivered() && !$this->hasReceipt() && !$this->has_dispute;
+        return $this->activeDispute()->exists();
     }
 
-    public function canOpenDispute(): bool
+    public function canBeReviewed(): bool
     {
-        return $this->isDelivered() && !$this->has_dispute && !$this->hasReceipt();
+        return $this->isDeliveryConfirmed() && $this->payment_status === 'paid';
     }
 
-    public function canReview(): bool
+    public function needsDeliveryConfirmation(): bool
     {
-        return $this->hasReceipt() && $this->payment_status === 'paid';
-    }
-
-    public function isPending(): bool
-    {
-        return $this->payment_status === 'pending';
-    }
-
-    public function isPaid(): bool
-    {
-        return $this->payment_status === 'paid';
-    }
-
-    public function isCancelled(): bool
-    {
-        return $this->status === 'cancelled';
-    }
-
-    public function restoreStock(): void
-    {
-        foreach ($this->items as $item) {
-            if ($item->product) {
-                $item->product->increment('stock_quantity', $item->quantity);
-            }
-        }
+        return $this->isDelivered() && !$this->isDeliveryConfirmed() && !$this->hasActiveDispute();
     }
 }

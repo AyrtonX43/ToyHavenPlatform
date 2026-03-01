@@ -45,6 +45,11 @@ class ReviewController extends Controller
             if (!$order) {
                 return back()->with('error', 'Invalid order or order not delivered yet.');
             }
+
+            // Check if delivery is confirmed
+            if (!$order->canBeReviewed()) {
+                return back()->with('error', 'You can only review products after confirming delivery.');
+            }
         }
 
         // Upload review images
@@ -64,6 +69,7 @@ class ReviewController extends Controller
             'rating' => $request->rating,
             'review_text' => $request->review_text,
             'review_images' => $imagePaths,
+            'delivery_confirmed' => $request->order_id ? true : false,
             'status' => 'pending', // Admin approval
         ]);
 
@@ -95,6 +101,11 @@ class ReviewController extends Controller
 
         if (!$order) {
             return back()->with('error', 'Invalid order or order not delivered yet.');
+        }
+
+        // Check if delivery is confirmed
+        if (!$order->canBeReviewed()) {
+            return back()->with('error', 'You can only review after confirming delivery.');
         }
 
         // Check if already reviewed

@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class DisputeResolvedNotification extends Notification
+class DisputeCreatedNotification extends Notification
 {
     use Queueable;
 

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderDispute extends Model
 {
@@ -12,19 +11,19 @@ class OrderDispute extends Model
         'order_id',
         'user_id',
         'seller_id',
-        'moderator_id',
-        'dispute_number',
-        'reason',
+        'type',
         'description',
-        'evidence_photos',
+        'evidence_images',
         'status',
-        'resolution',
+        'assigned_to',
         'resolution_notes',
+        'resolution_type',
         'resolved_at',
+        'resolved_by',
     ];
 
     protected $casts = [
-        'evidence_photos' => 'array',
+        'evidence_images' => 'array',
         'resolved_at' => 'datetime',
     ];
 
@@ -43,44 +42,49 @@ class OrderDispute extends Model
         return $this->belongsTo(Seller::class);
     }
 
-    public function moderator(): BelongsTo
+    public function assignedTo(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'moderator_id');
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function messages(): HasMany
+    public function resolvedBy(): BelongsTo
     {
-        return $this->hasMany(OrderDisputeMessage::class)->orderBy('created_at');
-    }
-
-    public static function generateDisputeNumber(): string
-    {
-        return 'DSP-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+        return $this->belongsTo(User::class, 'resolved_by');
     }
 
     public function isOpen(): bool
     {
-        return in_array($this->status, ['open', 'investigating']);
+        return $this->status === 'open';
     }
 
-    public function canBeResolved(): bool
+    public function isInvestigating(): bool
     {
-        return $this->status !== 'resolved' && $this->status !== 'closed';
+        return $this->status === 'investigating';
     }
 
-    public function getReasonLabelAttribute(): string
+    public function isResolved(): bool
     {
-        return match($this->reason) {
-            'not_received' => 'Product Not Received',
-            'damaged' => 'Product Damaged',
-            'wrong_item' => 'Wrong Item Received',
+        return $this->status === 'resolved';
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === 'closed';
+    }
+
+    public function getTypeLabel(): string
+    {
+        return match($this->type) {
+            'not_received' => 'Not Received',
+            'damaged' => 'Damaged Item',
+            'wrong_item' => 'Wrong Item',
             'incomplete' => 'Incomplete Order',
             'other' => 'Other Issue',
             default => 'Unknown',
         };
     }
 
-    public function getStatusLabelAttribute(): string
+    public function getStatusLabel(): string
     {
         return match($this->status) {
             'open' => 'Open',
@@ -88,17 +92,6 @@ class OrderDispute extends Model
             'resolved' => 'Resolved',
             'closed' => 'Closed',
             default => 'Unknown',
-        };
-    }
-
-    public function getStatusColorAttribute(): string
-    {
-        return match($this->status) {
-            'open' => 'warning',
-            'investigating' => 'info',
-            'resolved' => 'success',
-            'closed' => 'secondary',
-            default => 'secondary',
         };
     }
 }

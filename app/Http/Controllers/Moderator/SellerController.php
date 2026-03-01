@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Moderator;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class OrderController extends Controller
+class SellerController extends Controller
 {
     //
 }

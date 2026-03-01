@@ -197,6 +197,85 @@
                     </div>
                 @endif
             </div>
+
+            <!-- Receipt Download -->
+            @if($order->hasReceipt())
+            <div class="detail-card reveal" style="animation-delay: 0.15s;">
+                <div class="detail-card-header">
+                    <div class="detail-card-icon">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <h3 class="detail-card-title">Receipt</h3>
+                </div>
+                <p class="text-muted mb-3">Download your official receipt for this order.</p>
+                <a href="{{ route('orders.receipt', $order->id) }}" class="btn btn-outline-primary">
+                    <i class="bi bi-download me-2"></i>Download Receipt PDF
+                </a>
+            </div>
+            @endif
+
+            <!-- Delivery Confirmation -->
+            @if($order->isDelivered())
+                @if($order->isDeliveryConfirmed())
+                    <div class="detail-card reveal" style="animation-delay: 0.16s;">
+                        <div class="detail-card-header">
+                            <div class="detail-card-icon" style="background: #10b981;">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <h3 class="detail-card-title">Delivery Confirmed</h3>
+                        </div>
+                        <div class="alert alert-success mb-0">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            You confirmed delivery on {{ $order->deliveryConfirmation->confirmed_at->format('F d, Y') }}
+                            @if($order->deliveryConfirmation->auto_confirmed)
+                                <span class="badge bg-info ms-2">Auto-confirmed</span>
+                            @endif
+                        </div>
+                    </div>
+                @elseif(!$order->hasActiveDispute())
+                    <div class="detail-card reveal" style="animation-delay: 0.16s;">
+                        <div class="detail-card-header">
+                            <div class="detail-card-icon" style="background: #f59e0b;">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <h3 class="detail-card-title">Action Required</h3>
+                        </div>
+                        <div class="alert alert-warning mb-3">
+                            <strong>Please confirm delivery!</strong><br>
+                            Upload a photo as proof that you received this order.
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('orders.confirm-delivery', $order->id) }}" class="btn btn-success flex-fill">
+                                <i class="bi bi-camera me-2"></i>Confirm Delivery
+                            </a>
+                            <a href="{{ route('orders.report-issue', $order->id) }}" class="btn btn-danger flex-fill">
+                                <i class="bi bi-flag me-2"></i>Report Issue
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            @endif
+
+            <!-- Active Dispute -->
+            @if($order->hasActiveDispute())
+            <div class="detail-card reveal" style="animation-delay: 0.17s;">
+                <div class="detail-card-header">
+                    <div class="detail-card-icon" style="background: #ef4444;">
+                        <i class="bi bi-exclamation-octagon"></i>
+                    </div>
+                    <h3 class="detail-card-title">Dispute Active</h3>
+                </div>
+                <div class="alert alert-danger mb-3">
+                    <strong>You have reported an issue with this order.</strong><br>
+                    Status: <span class="badge bg-danger">{{ $order->activeDispute->getStatusLabel() }}</span>
+                    <br>
+                    Type: {{ $order->activeDispute->getTypeLabel() }}
+                </div>
+                <a href="{{ route('disputes.show', $order->activeDispute->id) }}" class="btn btn-outline-danger">
+                    <i class="bi bi-eye me-2"></i>View Dispute Details
+                </a>
+            </div>
+            @endif
         </div>
 
         <div class="col-lg-4">

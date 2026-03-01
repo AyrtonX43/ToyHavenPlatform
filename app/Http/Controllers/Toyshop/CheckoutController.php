@@ -4,12 +4,10 @@ namespace App\Http\Controllers\Toyshop;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutRequest;
-use App\Jobs\GenerateOrderReceiptPDF;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTracking;
-use App\Notifications\OrderPaidNotification;
 use App\Services\PayMongoService;
 use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
@@ -489,11 +487,12 @@ class CheckoutController extends Controller
                 'updated_by' => Auth::id(),
             ]);
             
-            if ($order->seller && $order->seller->user) {
-                $order->seller->user->notify(new OrderPaidNotification($order));
-            }
-            
-            GenerateOrderReceiptPDF::dispatch($order);
+            $receiptService = app(\App\Services\ReceiptService::class);
+            $receiptService->generateReceipt($order);
+
+            $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
+            $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
+            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
         }
 
         return response()->json(['status' => $status]);
@@ -563,13 +562,14 @@ class CheckoutController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
-            if ($order->seller && $order->seller->user) {
-                $order->seller->user->notify(new OrderPaidNotification($order));
-            }
-            
-            GenerateOrderReceiptPDF::dispatch($order);
+            $receiptService = app(\App\Services\ReceiptService::class);
+            $receiptService->generateReceipt($order);
 
-            return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful! Receipt sent to your email.');
+            $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
+            $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
+            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+
+            return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful!');
         }
 
         if ($status === 'awaiting_payment_method') {

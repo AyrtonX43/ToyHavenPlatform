@@ -15,7 +15,6 @@ class Seller extends Model
         'user_id',
         'business_name',
         'business_slug',
-        'seller_type',
         'description',
         'logo',
         'phone',
