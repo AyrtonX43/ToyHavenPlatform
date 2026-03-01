@@ -382,41 +382,6 @@
                                             </div>
                                         @endif
                                         
-                                        <!-- View Document Modal (Fullscreen) -->
-                                        <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1">
-                                            <div class="modal-dialog modal-fullscreen">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-dark text-white">
-                                                        <h5 class="modal-title">
-                                                            <i class="bi bi-file-earmark-text me-2"></i>
-                                                            {{ ucfirst(str_replace('_', ' ', $document->document_type)) }} - {{ $seller->business_name }}
-                                                        </h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body bg-dark d-flex align-items-center justify-content-center p-0">
-                                                        @php
-                                                            $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
-                                                            $isPdf = strtolower($extension) === 'pdf';
-                                                        @endphp
-                                                        @if($isPdf)
-                                                            <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: none;"></iframe>
-                                                        @else
-                                                            <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                                                        @endif
-                                                    </div>
-                                                    <div class="modal-footer bg-dark text-white">
-                                                        <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
-                                                            <i class="bi bi-download me-1"></i> Download
-                                                        </a>
-                                                        <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
-                                                            <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
-                                                        </a>
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         <!-- Reject Document Modal -->
                                         <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1">
                                             <div class="modal-dialog">
@@ -470,35 +435,37 @@
         
         <!-- View Document Modals (Outside the table) -->
         @foreach($seller->documents as $document)
-            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1">
+            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true">
                 <div class="modal-dialog modal-fullscreen">
                     <div class="modal-content">
                         <div class="modal-header bg-dark text-white">
-                            <h5 class="modal-title">
+                            <h5 class="modal-title" id="viewDocumentModalLabel{{ $document->id }}">
                                 <i class="bi bi-file-earmark-text me-2"></i>
                                 {{ ucfirst(str_replace('_', ' ', $document->document_type)) }} - {{ $seller->business_name }}
                             </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body bg-dark d-flex align-items-center justify-content-center p-0">
+                        <div class="modal-body bg-dark d-flex align-items-center justify-content-center p-4" style="min-height: 80vh;">
                             @php
                                 $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
                                 $isPdf = strtolower($extension) === 'pdf';
                             @endphp
                             @if($isPdf)
-                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: none;"></iframe>
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: none; min-height: 80vh;"></iframe>
                             @else
-                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="document-viewer-image" style="max-width: 95%; max-height: 85vh; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto;">
                             @endif
                         </div>
-                        <div class="modal-footer bg-dark text-white">
+                        <div class="modal-footer bg-dark text-white border-top border-secondary">
                             <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
                                 <i class="bi bi-download me-1"></i> Download
                             </a>
                             <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
                                 <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
                             </a>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-lg me-1"></i> Close
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -986,10 +953,34 @@ tr:hover .bg-light.rounded-circle {
 /* Modal improvements */
 .modal-fullscreen .modal-body {
     background: #1a1a1a;
+    overflow: auto;
 }
 
-.modal-fullscreen img {
-    cursor: zoom-in;
+.modal-fullscreen .modal-content {
+    background: #1a1a1a;
+}
+
+.modal-fullscreen .modal-header {
+    z-index: 1050;
+}
+
+.modal-fullscreen .modal-footer {
+    z-index: 1050;
+}
+
+/* Document viewer image styling */
+.document-viewer-image {
+    cursor: default;
+    user-select: none;
+}
+
+/* Ensure modal backdrop is clickable */
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal {
+    z-index: 1045;
 }
 
 /* Smooth transitions */
@@ -1014,4 +1005,36 @@ tr:hover .bg-light.rounded-circle {
     pointer-events: none;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle document viewer modals
+    const documentModals = document.querySelectorAll('[id^="viewDocumentModal"]');
+    
+    documentModals.forEach(function(modalElement) {
+        // Enable backdrop click to close
+        modalElement.addEventListener('click', function(event) {
+            if (event.target === modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
+        });
+        
+        // Ensure ESC key closes modal
+        modalElement.addEventListener('shown.bs.modal', function() {
+            document.addEventListener('keydown', function escHandler(e) {
+                if (e.key === 'Escape') {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    document.removeEventListener('keydown', escHandler);
+                }
+            });
+        });
+    });
+});
+</script>
 @endsection
