@@ -98,7 +98,7 @@
                 <div class="payment-actions">
                     @if(($publicKey ?? false))
                         <div class="mb-4">
-                            <label class="form-label fw-semibold mb-3">Select Payment Method</label>
+                            <label class="form-label fw-semibold mb-3">Payment Method</label>
 
                             <div class="payment-method-option selected" data-method="qrph">
                                 <input type="radio" name="pay_method" value="qrph" id="pm_qrph" checked>
@@ -107,33 +107,6 @@
                                 <div>
                                     <strong>QR Ph</strong>
                                     <small class="d-block text-muted">Scan with GCash, Maya, banks &amp; e-wallets</small>
-                                </div>
-                            </div>
-
-                            <div class="payment-method-option" data-method="card">
-                                <input type="radio" name="pay_method" value="card" id="pm_card">
-                                <span class="pm-radio"></span>
-                                <i class="bi bi-credit-card-2-front fs-4 me-3 text-primary"></i>
-                                <div>
-                                    <strong>Credit / Debit Card</strong>
-                                    <small class="d-block text-muted">Visa, Mastercard</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="card-form" class="mb-4 d-none">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label">Card Number</label>
-                                    <input type="text" id="card_number" class="form-control" placeholder="1234 5678 9012 3456" maxlength="23" autocomplete="cc-number" inputmode="numeric">
-                                </div>
-                                <div class="col-5">
-                                    <label class="form-label">Expiry Date (MM/YY)</label>
-                                    <input type="text" id="card_expiry" class="form-control" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric" style="max-width: 120px;">
-                                </div>
-                                <div class="col-3">
-                                    <label class="form-label">CVC</label>
-                                    <input type="password" id="cvc" class="form-control" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
                                 </div>
                             </div>
                         </div>
@@ -326,10 +299,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var cancelBtn = document.getElementById('cancel-payment-btn');
         if (cancelBtn) cancelBtn.disabled = show;
     }
-    function getSelectedMethod() {
-        var checked = document.querySelector('input[name="pay_method"]:checked');
-        return checked ? checked.value : 'qrph';
-    }
     function findRedirectUrl(obj) {
         if (!obj || typeof obj !== 'object') return null;
         if (obj.redirect && obj.redirect.url) return obj.redirect.url;
@@ -343,40 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
-    function togglePaymentUi(method) {
-        document.getElementById('card-form').classList.toggle('d-none', method !== 'card');
-        document.getElementById('qrph-notice').classList.toggle('d-none', method !== 'qrph');
-    }
-
-    document.querySelectorAll('.payment-method-option').forEach(function(el) {
-        el.addEventListener('click', function() {
-            document.querySelectorAll('.payment-method-option').forEach(function(o) { o.classList.remove('selected'); });
-            this.classList.add('selected');
-            this.querySelector('input[type="radio"]').checked = true;
-            togglePaymentUi(this.dataset.method);
-            clearError();
-        });
-    });
-
-    var cardInput = document.getElementById('card_number');
-    if (cardInput) {
-        cardInput.addEventListener('input', function() {
-            var val = this.value.replace(/\D/g, '').substring(0, 16);
-            this.value = val.replace(/(.{4})/g, '$1 ').trim();
-        });
-    }
-
-    var expiryInput = document.getElementById('card_expiry');
-    if (expiryInput) {
-        expiryInput.addEventListener('input', function() {
-            var val = this.value.replace(/\D/g, '');
-            if (val.length >= 2) {
-                this.value = val.substring(0, 2) + '/' + val.substring(2, 4);
-            } else {
-                this.value = val;
-            }
-        });
-    }
 
     var changeMethodBtn = document.getElementById('change-method-btn');
     if (changeMethodBtn) {
@@ -454,71 +389,24 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('pay-btn').addEventListener('click', async function() {
         clearError();
         setLoading(true);
-        var method = getSelectedMethod();
 
         try {
-            if (method === 'qrph') {
-                var serverRes = await fetch(processUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                    body: JSON.stringify({ payment_type: 'qrph' })
-                });
-                var serverData = await serverRes.json();
-
-                if (serverData.qr_image) {
-                    setLoading(false);
-                    showQrCode(serverData.qr_image);
-                    startPolling(serverData.payment_intent_id);
-                    return;
-                }
-                if (serverData.error) throw new Error(serverData.error);
-                throw new Error('Failed to generate QR code. Please try again.');
-            }
-
-            var cardNumber = document.getElementById('card_number').value.replace(/\D/g, '');
-            var expiry = document.getElementById('card_expiry').value.replace(/\D/g, '');
-            var cvc = document.getElementById('cvc').value.replace(/\D/g, '');
-            
-            if (!cardNumber || !expiry || !cvc) throw new Error('Please fill in all card details.');
-            if (cardNumber.length < 13 || cardNumber.length > 19) throw new Error('Please enter a valid card number.');
-            if (expiry.length !== 4) throw new Error('Please enter expiry date as MM/YY.');
-            if (cvc.length < 3 || cvc.length > 4) throw new Error('Please enter a valid CVC.');
-            
-            var expMonth = parseInt(expiry.substring(0, 2), 10);
-            var expYear = parseInt(expiry.substring(2, 4), 10);
-            
-            if (expMonth < 1 || expMonth > 12) throw new Error('Invalid expiry month.');
-
+            // Only QR Ph payment method
             var serverRes = await fetch(processUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                body: JSON.stringify({ 
-                    payment_type: 'card', 
-                    card_number: cardNumber, 
-                    exp_month: expMonth, 
-                    exp_year: expYear, 
-                    cvc: cvc 
-                })
+                body: JSON.stringify({ payment_type: 'qrph' })
             });
             var serverData = await serverRes.json();
 
-            var redirectUrl = serverData.redirect_url;
-            if (!redirectUrl && serverData.next_action) redirectUrl = findRedirectUrl(serverData.next_action);
-            if (redirectUrl) { 
-                paymentCompleted = true;
-                window.location.href = redirectUrl; 
-                return; 
-            }
-            if (serverData.error) throw new Error(serverData.error);
-            if (serverData.status === 'succeeded' || serverData.status === 'processing') {
-                paymentCompleted = true;
-                showPaymentSuccess();
-                setTimeout(function() {
-                    window.location.href = returnBaseUrl + '&payment_intent_id=done';
-                }, 3000);
+            if (serverData.qr_image) {
+                setLoading(false);
+                showQrCode(serverData.qr_image);
+                startPolling(serverData.payment_intent_id);
                 return;
             }
-            throw new Error('Unexpected response. Please try again.');
+            if (serverData.error) throw new Error(serverData.error);
+            throw new Error('Failed to generate QR code. Please try again.');
         } catch (e) {
             setError(e.message || 'Payment failed. Please try again.');
             setLoading(false);
