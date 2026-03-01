@@ -984,61 +984,38 @@ tr:hover .bg-light.rounded-circle {
 }
 
 /* Fix ALL modals - center properly without glitching */
-.modal {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    overflow-y: auto !important;
-}
-
-.modal-dialog {
-    position: relative !important;
-    margin: 1.75rem auto !important;
-    pointer-events: auto !important;
-    max-width: 500px !important;
-}
-
 .modal-dialog-centered {
-    display: flex !important;
-    align-items: center !important;
-    min-height: calc(100vh - 3.5rem) !important;
+    display: flex;
+    align-items: center;
+    min-height: calc(100vh - 3.5rem);
 }
 
 .modal-content {
-    position: relative !important;
-    pointer-events: auto !important;
-    background-color: #fff !important;
-    border: 1px solid rgba(0,0,0,.2) !important;
-    border-radius: 0.5rem !important;
-    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15) !important;
+    width: 100%;
 }
 
-/* Ensure ALL form elements are interactive - no glitching */
+/* Ensure form elements are clickable */
+.modal .form-control,
+.modal .btn,
+.modal button,
 .modal input,
 .modal textarea,
-.modal select,
-.modal button,
-.modal .form-control,
-.modal .btn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
+.modal select {
+    pointer-events: auto;
 }
 
 .modal textarea.form-control,
 .modal input.form-control {
-    cursor: text !important;
+    cursor: text;
 }
 
-/* Remove ALL transitions that cause glitching */
-.modal,
-.modal *,
-.modal *::before,
-.modal *::after {
-    transition: none !important;
+.modal .btn,
+.modal button {
+    cursor: pointer;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - only for cards, not modals */
+.card {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
