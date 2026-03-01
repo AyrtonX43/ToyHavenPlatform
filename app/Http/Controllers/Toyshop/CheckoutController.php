@@ -502,12 +502,28 @@ class CheckoutController extends Controller
                     'updated_by' => Auth::id(),
                 ]);
                 
-                $receiptService = app(\App\Services\ReceiptService::class);
-                $receiptService->generateReceipt($order);
+                try {
+                    $receiptService = app(\App\Services\ReceiptService::class);
+                    $receiptService->generateReceipt($order);
+                } catch (\Exception $e) {
+                    Log::warning('Receipt generation failed (non-critical)', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
-                $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
-                $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
-                $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+                try {
+                    $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
+                    $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
+                    if ($order->seller && $order->seller->user) {
+                        $order->seller->user->notify(new \App\Notifications\OrderPaidNotification($order));
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Notification sending failed (non-critical)', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 DB::commit();
                 
@@ -604,12 +620,28 @@ class CheckoutController extends Controller
                     'updated_by' => Auth::id(),
                 ]);
 
-                $receiptService = app(\App\Services\ReceiptService::class);
-                $receiptService->generateReceipt($order);
+                try {
+                    $receiptService = app(\App\Services\ReceiptService::class);
+                    $receiptService->generateReceipt($order);
+                } catch (\Exception $e) {
+                    Log::warning('Receipt generation failed (non-critical)', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
-                $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
-                $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
-                $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+                try {
+                    $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
+                    $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
+                    if ($order->seller && $order->seller->user) {
+                        $order->seller->user->notify(new \App\Notifications\OrderPaidNotification($order));
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Notification sending failed (non-critical)', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 DB::commit();
                 
