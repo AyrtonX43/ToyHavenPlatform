@@ -744,14 +744,14 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Reject Seller Application</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="rejectModalLabel">Reject Seller Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-warning">
@@ -787,16 +787,41 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rejectionType = document.getElementById('rejection_type');
+    const rejectionReason = document.getElementById('rejection_reason');
+    
+    const rejectionMessages = {
+        'incomplete_documents': 'Your application has been rejected due to incomplete or missing required documents. Please ensure all required verification documents are uploaded and clearly visible.',
+        'invalid_documents': 'Your application has been rejected because the submitted documents are invalid, unclear, or do not meet our verification requirements. Please submit clear, valid documents.',
+        'business_info_mismatch': 'Your application has been rejected due to inconsistencies between the provided business information and the submitted documents. Please ensure all information matches your official business documents.',
+        'suspicious_activity': 'Your application has been rejected due to suspicious activity detected during the verification process. Please contact support if you believe this is an error.',
+        'policy_violation': 'Your application has been rejected due to a violation of our platform policies. Please review our terms and conditions before reapplying.',
+        'duplicate_account': 'Your application has been rejected because a duplicate account already exists for this business. Please use your existing account or contact support.',
+        'other': ''
+    };
+    
+    rejectionType.addEventListener('change', function() {
+        if (this.value && this.value !== 'other') {
+            rejectionReason.value = rejectionMessages[this.value];
+        } else if (this.value === 'other') {
+            rejectionReason.value = '';
+            rejectionReason.placeholder = 'Please provide a detailed reason for rejection...';
+        }
+    });
+});
+</script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Suspend Business Account</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="suspendModalLabel">Suspend Business Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-warning">
@@ -844,6 +869,33 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const suspensionType = document.getElementById('suspension_type');
+    const suspensionReason = document.getElementById('suspension_reason');
+    
+    const suspensionMessages = {
+        'policy_violation': 'Your business account has been suspended due to a violation of our platform policies. Please review our terms and conditions and contact support if you have questions.',
+        'fraudulent_activity': 'Your business account has been suspended due to suspected fraudulent activity. This is a serious matter and requires immediate attention. Please contact support for further information.',
+        'poor_product_quality': 'Your business account has been suspended due to consistent reports of poor product quality or failure to meet product standards. Please review your product listings and quality control processes.',
+        'customer_complaints': 'Your business account has been suspended due to multiple customer complaints regarding your products or services. We take customer satisfaction seriously and need to address these issues.',
+        'non_compliance': 'Your business account has been suspended due to non-compliance with platform rules and regulations. Please review our seller guidelines and ensure full compliance.',
+        'payment_issues': 'Your business account has been suspended due to payment or transaction-related issues. Please contact our finance team to resolve these matters.',
+        'inappropriate_content': 'Your business account has been suspended due to inappropriate content or behavior that violates our community guidelines. Please review and remove any inappropriate content.',
+        'safety_concerns': 'Your business account has been suspended due to safety concerns regarding your products or business practices. This requires immediate attention to ensure customer safety.',
+        'other': ''
+    };
+    
+    suspensionType.addEventListener('change', function() {
+        if (this.value && this.value !== 'other') {
+            suspensionReason.value = suspensionMessages[this.value];
+        } else if (this.value === 'other') {
+            suspensionReason.value = '';
+            suspensionReason.placeholder = 'Please provide a detailed reason for suspension...';
+        }
+    });
+});
+</script>
 
 <style>
 /* Enhanced card styling */
@@ -922,13 +974,22 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Ensure modal backdrop is clickable */
-.modal-backdrop {
+/* Ensure modal backdrop is clickable for fullscreen modals only */
+.modal-fullscreen ~ .modal-backdrop {
     z-index: 1040;
 }
 
-.modal {
+.modal-fullscreen {
     z-index: 1045;
+}
+
+/* Regular modals should have proper z-index above backdrop */
+.modal:not(.modal-fullscreen) {
+    z-index: 1055;
+}
+
+.modal-backdrop.show {
+    z-index: 1050;
 }
 
 /* Smooth transitions */
@@ -984,57 +1045,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle rejection modal dropdown feedback
-    const rejectionType = document.getElementById('rejection_type');
-    const rejectionReason = document.getElementById('rejection_reason');
+    // Fix z-index for reject and suspend modals
+    const rejectModal = document.getElementById('rejectModal');
+    const suspendModal = document.getElementById('suspendModal');
     
-    if (rejectionType && rejectionReason) {
-        const rejectionMessages = {
-            'incomplete_documents': 'Your application has been rejected due to incomplete or missing required documents. Please ensure all required verification documents are uploaded and clearly visible.',
-            'invalid_documents': 'Your application has been rejected because the submitted documents are invalid, unclear, or do not meet our verification requirements. Please submit clear, valid documents.',
-            'business_info_mismatch': 'Your application has been rejected due to inconsistencies between the provided business information and the submitted documents. Please ensure all information matches your official business documents.',
-            'suspicious_activity': 'Your application has been rejected due to suspicious activity detected during the verification process. Please contact support if you believe this is an error.',
-            'policy_violation': 'Your application has been rejected due to a violation of our platform policies. Please review our terms and conditions before reapplying.',
-            'duplicate_account': 'Your application has been rejected because a duplicate account already exists for this business. Please use your existing account or contact support.',
-            'other': ''
-        };
-        
-        rejectionType.addEventListener('change', function() {
-            if (this.value && this.value !== 'other') {
-                rejectionReason.value = rejectionMessages[this.value];
-            } else if (this.value === 'other') {
-                rejectionReason.value = '';
-                rejectionReason.placeholder = 'Please provide a detailed reason for rejection...';
-            }
-        });
-    }
-    
-    // Handle suspension modal dropdown feedback
-    const suspensionType = document.getElementById('suspension_type');
-    const suspensionReason = document.getElementById('suspension_reason');
-    
-    if (suspensionType && suspensionReason) {
-        const suspensionMessages = {
-            'policy_violation': 'Your business account has been suspended due to a violation of our platform policies. Please review our terms and conditions and contact support if you have questions.',
-            'fraudulent_activity': 'Your business account has been suspended due to suspected fraudulent activity. This is a serious matter and requires immediate attention. Please contact support for further information.',
-            'poor_product_quality': 'Your business account has been suspended due to consistent reports of poor product quality or failure to meet product standards. Please review your product listings and quality control processes.',
-            'customer_complaints': 'Your business account has been suspended due to multiple customer complaints regarding your products or services. We take customer satisfaction seriously and need to address these issues.',
-            'non_compliance': 'Your business account has been suspended due to non-compliance with platform rules and regulations. Please review our seller guidelines and ensure full compliance.',
-            'payment_issues': 'Your business account has been suspended due to payment or transaction-related issues. Please contact our finance team to resolve these matters.',
-            'inappropriate_content': 'Your business account has been suspended due to inappropriate content or behavior that violates our community guidelines. Please review and remove any inappropriate content.',
-            'safety_concerns': 'Your business account has been suspended due to safety concerns regarding your products or business practices. This requires immediate attention to ensure customer safety.',
-            'other': ''
-        };
-        
-        suspensionType.addEventListener('change', function() {
-            if (this.value && this.value !== 'other') {
-                suspensionReason.value = suspensionMessages[this.value];
-            } else if (this.value === 'other') {
-                suspensionReason.value = '';
-                suspensionReason.placeholder = 'Please provide a detailed reason for suspension...';
-            }
-        });
-    }
+    [rejectModal, suspendModal].forEach(function(modalElement) {
+        if (modalElement) {
+            modalElement.addEventListener('show.bs.modal', function() {
+                // Ensure modal and backdrop have correct z-index
+                setTimeout(function() {
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.style.zIndex = '1050';
+                    }
+                    modalElement.style.zIndex = '1055';
+                }, 0);
+            });
+            
+            // Ensure form elements are clickable
+            modalElement.addEventListener('shown.bs.modal', function() {
+                const formElements = modalElement.querySelectorAll('input, select, textarea, button');
+                formElements.forEach(function(element) {
+                    element.style.pointerEvents = 'auto';
+                    element.style.position = 'relative';
+                    element.style.zIndex = '1';
+                });
+            });
+        }
+    });
 });
 </script>
 @endsection
