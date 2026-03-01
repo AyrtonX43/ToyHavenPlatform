@@ -383,7 +383,7 @@
                                         @endif
                                         
                                         <!-- Reject Document Modal -->
-                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
+                                        <div class="modal" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
                                             <div class="modal-dialog modal-dialog-centered">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
@@ -744,7 +744,7 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
+<div class="modal" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
+<div class="modal" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
@@ -984,6 +984,22 @@ tr:hover .bg-light.rounded-circle {
 }
 
 /* Fix reject document modal positioning and prevent glitching */
+.modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 1055 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    outline: 0 !important;
+}
+
+.modal.show {
+    display: block !important;
+}
+
 .modal-dialog-centered {
     display: flex !important;
     align-items: center !important;
@@ -994,36 +1010,60 @@ tr:hover .bg-light.rounded-circle {
 .modal-dialog {
     position: relative !important;
     width: auto !important;
+    max-width: 500px !important;
+    margin: 1.75rem auto !important;
     pointer-events: auto !important;
 }
 
 .modal-content {
     position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
     pointer-events: auto !important;
     background-color: #fff !important;
+    background-clip: padding-box !important;
     border: 1px solid rgba(0,0,0,.2) !important;
     border-radius: 0.3rem !important;
+    outline: 0 !important;
 }
 
 /* Ensure modal form elements don't glitch */
+.modal-body,
+.modal-header,
+.modal-footer {
+    pointer-events: auto !important;
+}
+
 .modal-body input,
 .modal-body textarea,
 .modal-body select,
 .modal-body button,
-.modal-footer button {
+.modal-footer button,
+.modal-header button {
     pointer-events: auto !important;
     position: relative !important;
+    cursor: pointer !important;
 }
 
-/* Remove conflicting transitions that cause glitching */
+/* Remove ALL transitions from modals to prevent glitching */
+.modal,
 .modal *,
 .modal *::before,
-.modal *::after {
+.modal *::after,
+.modal-dialog,
+.modal-content,
+.modal-body,
+.modal-header,
+.modal-footer {
     transition: none !important;
+    animation: none !important;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions only for non-modal elements */
+.card,
+.btn:not(.modal *),
+.table-hover tbody tr {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
