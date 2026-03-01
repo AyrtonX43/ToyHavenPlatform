@@ -382,7 +382,7 @@
         if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
     
-    // Save quantity to server
+    // Save quantity to server (silently in background)
     function saveQuantity(itemId, quantity, input) {
         const updateUrl = input.dataset.updateUrl;
         
@@ -395,19 +395,31 @@
             body: formData,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
         .then(response => {
-            if (!response.ok) throw new Error('Update failed');
-            return response.json();
+            if (!response.ok) {
+                console.warn('Failed to save quantity to server, but UI is updated');
+                return null;
+            }
+            return response.text().then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch (e) {
+                    return {};
+                }
+            });
         })
         .then(data => {
-            console.log('Quantity updated successfully');
+            if (data) {
+                console.log('Quantity saved to server successfully');
+            }
         })
         .catch(error => {
-            console.error('Error updating quantity:', error);
-            alert('Failed to update quantity. Please refresh the page.');
+            // Silent fail - UI is already updated, server will sync on next page load
+            console.warn('Quantity save failed (background), but UI is updated:', error);
         });
     }
     

@@ -155,6 +155,13 @@ class CartController extends Controller
             !$cartItem->product->seller->is_active || 
             $cartItem->product->seller->verification_status !== 'approved') {
             $cartItem->delete();
+            
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This product is no longer available. Item removed from cart.'
+                ], 400);
+            }
             return back()->with('error', 'This product is no longer available. Item removed from cart.');
         }
 
@@ -162,10 +169,24 @@ class CartController extends Controller
             ? $cartItem->variation->stock_quantity
             : $cartItem->product->stock_quantity;
         if ($maxQty < $request->quantity) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient stock available.'
+                ], 400);
+            }
             return back()->with('error', 'Insufficient stock available.');
         }
 
         $cartItem->update(['quantity' => $request->quantity]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart updated successfully!',
+                'quantity' => $cartItem->quantity
+            ]);
+        }
 
         return back()->with('success', 'Cart updated successfully!');
     }
