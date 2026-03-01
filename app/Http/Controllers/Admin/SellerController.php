@@ -120,25 +120,40 @@ class SellerController extends Controller
     {
         $seller = Seller::with(['user', 'documents'])->findOrFail($id);
         
+        // Determine if this is a Verified Trusted Toyshop registration
+        $isVerifiedShop = $seller->is_verified_shop;
+        
         // Check if all required documents are approved
-        $requiredDocsCount = $seller->is_verified_shop ? 3 : 1; // ID + Business Permit + Bank Account for verified, or just ID for basic
+        // Verified Trusted: ID + Facial Verification + Bank Statement + Business Permit + BIR Certificate + Product Sample = 6
+        // Local Business: ID + Facial Verification + Bank Statement = 3
+        $requiredDocsCount = $isVerifiedShop ? 6 : 3;
         $approvedDocsCount = $seller->documents()->where('status', 'approved')->count();
         
         if ($approvedDocsCount < $requiredDocsCount) {
-            return back()->with('error', 'Cannot approve seller. Please approve all required verification documents first.');
+            return back()->with('error', 'Cannot approve seller. Please approve all required verification documents first. (' . $approvedDocsCount . '/' . $requiredDocsCount . ' approved)');
         }
         
         // Sync: Approve all pending documents when seller is approved
         $seller->documents()->where('status', 'pending')->update(['status' => 'approved']);
         
-        $seller->update(['verification_status' => 'approved']);
+        // Update seller verification status
+        // If they registered as Verified Trusted Shop, mark them as verified
+        $seller->update([
+            'verification_status' => 'approved',
+            'is_verified_shop' => $isVerifiedShop, // Ensure the flag is set correctly
+        ]);
         
         // Send notification to seller
         if ($seller->user) {
-            $seller->user->notify(new SellerApprovedNotification($seller->business_name));
+            $shopType = $isVerifiedShop ? 'Verified Trusted Toyshop' : 'Local Business Toyshop';
+            $seller->user->notify(new SellerApprovedNotification($seller->business_name, $shopType));
         }
         
-        return back()->with('success', 'Seller approved successfully and notified via email!');
+        $message = $isVerifiedShop 
+            ? 'Verified Trusted Toyshop approved successfully! The seller now has verified status and enhanced benefits.'
+            : 'Local Business Toyshop approved successfully! Seller has been notified via email.';
+        
+        return back()->with('success', $message);
     }
 
     public function reject(Request $request, $id)

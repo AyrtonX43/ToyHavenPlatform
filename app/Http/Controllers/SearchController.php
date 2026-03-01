@@ -5,21 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Seller;
 use App\Models\TradeListing;
+use App\Models\Auction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SearchController extends Controller
 {
     /**
-     * Real-time search suggest: products and business pages (JSON for dropdown)
+     * Real-time search suggest: products, business pages, trade listings, and auctions (JSON for dropdown)
      */
     public function suggest(Request $request)
     {
         $q = trim($request->get('q', ''));
         if (strlen($q) < 2) {
-            return response()->json(['products' => [], 'businesses' => []]);
+            return response()->json([
+                'products' => [], 
+                'businesses' => [], 
+                'trades' => [], 
+                'auctions' => []
+            ]);
         }
 
+        // Toyshop Products
         $products = Product::with(['images', 'seller'])
             ->where('status', 'active')
             ->whereHas('seller', function ($sq) {
@@ -31,7 +38,7 @@ class SearchController extends Controller
                     ->orWhere('brand', 'like', '%' . $q . '%');
             })
             ->orderBy('name')
-            ->limit(8)
+            ->limit(5)
             ->get()
             ->map(function ($p) {
                 $img = $p->images->first();
@@ -42,9 +49,11 @@ class SearchController extends Controller
                     'slug' => $p->slug,
                     'url' => route('toyshop.products.show', $p->slug),
                     'image' => $img ? asset('storage/' . $img->image_path) : null,
+                    'type' => 'product',
                 ];
             });
 
+        // Business Stores
         $businesses = Seller::where('is_active', true)
             ->where('verification_status', 'approved')
             ->where(function ($query) use ($q) {
@@ -52,7 +61,7 @@ class SearchController extends Controller
                     ->orWhere('description', 'like', '%' . $q . '%');
             })
             ->orderBy('business_name')
-            ->limit(5)
+            ->limit(3)
             ->get()
             ->map(function ($s) {
                 return [
@@ -60,12 +69,72 @@ class SearchController extends Controller
                     'name' => $s->business_name,
                     'slug' => $s->business_slug,
                     'url' => route('toyshop.business.show', $s->business_slug),
+                    'type' => 'business',
+                    'is_verified' => $s->is_verified_shop,
+                ];
+            });
+
+        // Trade Listings
+        $trades = TradeListing::with(['product.images', 'userProduct.images'])
+            ->where('status', 'active')
+            ->where(function($q) use ($q) {
+                $q->where('title', 'like', "%{$q}%")
+                  ->orWhere('description', 'like', "%{$q}%")
+                  ->orWhereHas('product', function($query) use ($q) {
+                      $query->where('name', 'like', "%{$q}%");
+                  })
+                  ->orWhereHas('userProduct', function($query) use ($q) {
+                      $query->where('name', 'like', "%{$q}%");
+                  });
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function ($t) {
+                $img = $t->product ? $t->product->images->first() : ($t->userProduct ? $t->userProduct->images->first() : null);
+                return [
+                    'id' => $t->id,
+                    'name' => $t->title,
+                    'url' => route('trading.listings.show', $t->id),
+                    'image' => $img ? asset('storage/' . $img->image_path) : null,
+                    'type' => 'trade',
+                ];
+            });
+
+        // Auction Listings
+        $auctions = Auction::with(['product.images', 'userProduct.images'])
+            ->whereIn('status', ['pending', 'active', 'live'])
+            ->where(function($q) use ($q) {
+                $q->where('title', 'like', "%{$q}%")
+                  ->orWhere('description', 'like', "%{$q}%")
+                  ->orWhereHas('product', function($query) use ($q) {
+                      $query->where('name', 'like', "%{$q}%");
+                  })
+                  ->orWhereHas('userProduct', function($query) use ($q) {
+                      $query->where('name', 'like', "%{$q}%");
+                  });
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function ($a) {
+                $img = $a->product ? $a->product->images->first() : ($a->userProduct ? $a->userProduct->images->first() : null);
+                return [
+                    'id' => $a->id,
+                    'name' => $a->title,
+                    'starting_bid' => $a->starting_bid,
+                    'url' => route('auctions.show', $a->id),
+                    'image' => $img ? asset('storage/' . $img->image_path) : null,
+                    'type' => 'auction',
+                    'status' => $a->status,
                 ];
             });
 
         return response()->json([
             'products' => $products,
             'businesses' => $businesses,
+            'trades' => $trades,
+            'auctions' => $auctions,
         ]);
     }
 
@@ -142,10 +211,30 @@ class SearchController extends Controller
             $results['trade'] = $tradeQuery;
         }
 
-        // Search Auction (placeholder for future implementation)
+        // Search Auction Listings
         if ($type === 'all' || $type === 'auction') {
-            // Auction functionality will be implemented later
-            $results['auction'] = collect();
+            $auctionQuery = Auction::with(['product.images', 'userProduct.images', 'category', 'seller', 'user'])
+                ->whereIn('status', ['pending', 'active', 'live'])
+                ->where(function($q) use ($query) {
+                    $q->where('title', 'like', "%{$query}%")
+                      ->orWhere('description', 'like', "%{$query}%")
+                      ->orWhereHas('product', function($q) use ($query) {
+                          $q->where('name', 'like', "%{$query}%")
+                            ->orWhere('brand', 'like', "%{$query}%");
+                      })
+                      ->orWhereHas('userProduct', function($q) use ($query) {
+                          $q->where('name', 'like', "%{$query}%")
+                            ->orWhere('brand', 'like', "%{$query}%");
+                      })
+                      ->orWhereHas('seller', function($q) use ($query) {
+                          $q->where('business_name', 'like', "%{$query}%");
+                      });
+                })
+                ->orderBy('created_at', 'desc')
+                ->limit(12)
+                ->get();
+            
+            $results['auction'] = $auctionQuery;
         }
 
         // Count totals
