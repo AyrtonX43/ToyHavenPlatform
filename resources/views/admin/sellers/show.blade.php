@@ -744,7 +744,7 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
@@ -974,35 +974,25 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Ensure modal backdrop and modals have proper z-index */
-.modal-backdrop {
-    z-index: 1050 !important;
+/* Fix modal backdrop and interaction issues */
+.modal-backdrop.show {
+    opacity: 0.5;
 }
 
-.modal {
-    z-index: 1055 !important;
+/* Ensure modals are always interactive and on top */
+#rejectModal,
+#suspendModal {
+    z-index: 1060 !important;
 }
 
-.modal-dialog {
-    z-index: 1056 !important;
-}
-
-/* Ensure modal content is always on top and interactive */
-.modal-content {
-    position: relative;
-    z-index: 1057 !important;
+#rejectModal .modal-dialog,
+#suspendModal .modal-dialog {
     pointer-events: auto !important;
 }
 
-/* Ensure all form elements in modals are interactive */
-.modal-body input,
-.modal-body select,
-.modal-body textarea,
-.modal-body button,
-.modal-footer button {
+#rejectModal .modal-content,
+#suspendModal .modal-content {
     pointer-events: auto !important;
-    z-index: 1058 !important;
-    position: relative;
 }
 
 /* Smooth transitions */
@@ -1064,33 +1054,13 @@ document.addEventListener('DOMContentLoaded', function() {
     actionModals.forEach(function(modalId) {
         const modalElement = document.getElementById(modalId);
         if (modalElement) {
-            // Ensure modal is properly initialized
-            modalElement.addEventListener('show.bs.modal', function() {
-                // Force modal and backdrop z-index
-                setTimeout(function() {
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.style.zIndex = '1050';
-                    }
-                    modalElement.style.zIndex = '1055';
-                    
-                    // Ensure modal content is clickable
-                    const modalContent = modalElement.querySelector('.modal-content');
-                    if (modalContent) {
-                        modalContent.style.pointerEvents = 'auto';
-                        modalContent.style.zIndex = '1057';
-                    }
-                }, 10);
-            });
-            
-            // Ensure all form elements are interactive
+            // Ensure modal is on top when shown
             modalElement.addEventListener('shown.bs.modal', function() {
-                const formElements = modalElement.querySelectorAll('input, select, textarea, button');
-                formElements.forEach(function(element) {
-                    element.style.pointerEvents = 'auto';
-                    element.style.position = 'relative';
-                    element.style.zIndex = '1058';
-                });
+                modalElement.style.zIndex = '1060';
+                const backdrop = document.querySelector('.modal-backdrop.show');
+                if (backdrop) {
+                    backdrop.style.zIndex = '1055';
+                }
             });
         }
     });
