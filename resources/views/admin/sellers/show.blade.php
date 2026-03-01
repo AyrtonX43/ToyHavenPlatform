@@ -787,31 +787,6 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const rejectionType = document.getElementById('rejection_type');
-    const rejectionReason = document.getElementById('rejection_reason');
-    
-    const rejectionMessages = {
-        'incomplete_documents': 'Your application has been rejected due to incomplete or missing required documents. Please ensure all required verification documents are uploaded and clearly visible.',
-        'invalid_documents': 'Your application has been rejected because the submitted documents are invalid, unclear, or do not meet our verification requirements. Please submit clear, valid documents.',
-        'business_info_mismatch': 'Your application has been rejected due to inconsistencies between the provided business information and the submitted documents. Please ensure all information matches your official business documents.',
-        'suspicious_activity': 'Your application has been rejected due to suspicious activity detected during the verification process. Please contact support if you believe this is an error.',
-        'policy_violation': 'Your application has been rejected due to a violation of our platform policies. Please review our terms and conditions before reapplying.',
-        'duplicate_account': 'Your application has been rejected because a duplicate account already exists for this business. Please use your existing account or contact support.',
-        'other': ''
-    };
-    
-    rejectionType.addEventListener('change', function() {
-        if (this.value && this.value !== 'other') {
-            rejectionReason.value = rejectionMessages[this.value];
-        } else if (this.value === 'other') {
-            rejectionReason.value = '';
-            rejectionReason.placeholder = 'Please provide a detailed reason for rejection...';
-        }
-    });
-});
-</script>
 
 <!-- Suspend Seller Modal -->
 <div class="modal fade" id="suspendModal" tabindex="-1">
@@ -869,33 +844,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const suspensionType = document.getElementById('suspension_type');
-    const suspensionReason = document.getElementById('suspension_reason');
-    
-    const suspensionMessages = {
-        'policy_violation': 'Your business account has been suspended due to a violation of our platform policies. Please review our terms and conditions and contact support if you have questions.',
-        'fraudulent_activity': 'Your business account has been suspended due to suspected fraudulent activity. This is a serious matter and requires immediate attention. Please contact support for further information.',
-        'poor_product_quality': 'Your business account has been suspended due to consistent reports of poor product quality or failure to meet product standards. Please review your product listings and quality control processes.',
-        'customer_complaints': 'Your business account has been suspended due to multiple customer complaints regarding your products or services. We take customer satisfaction seriously and need to address these issues.',
-        'non_compliance': 'Your business account has been suspended due to non-compliance with platform rules and regulations. Please review our seller guidelines and ensure full compliance.',
-        'payment_issues': 'Your business account has been suspended due to payment or transaction-related issues. Please contact our finance team to resolve these matters.',
-        'inappropriate_content': 'Your business account has been suspended due to inappropriate content or behavior that violates our community guidelines. Please review and remove any inappropriate content.',
-        'safety_concerns': 'Your business account has been suspended due to safety concerns regarding your products or business practices. This requires immediate attention to ensure customer safety.',
-        'other': ''
-    };
-    
-    suspensionType.addEventListener('change', function() {
-        if (this.value && this.value !== 'other') {
-            suspensionReason.value = suspensionMessages[this.value];
-        } else if (this.value === 'other') {
-            suspensionReason.value = '';
-            suspensionReason.placeholder = 'Please provide a detailed reason for suspension...';
-        }
-    });
-});
-</script>
 
 <style>
 /* Enhanced card styling */
@@ -1035,6 +983,58 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    
+    // Handle rejection modal dropdown feedback
+    const rejectionType = document.getElementById('rejection_type');
+    const rejectionReason = document.getElementById('rejection_reason');
+    
+    if (rejectionType && rejectionReason) {
+        const rejectionMessages = {
+            'incomplete_documents': 'Your application has been rejected due to incomplete or missing required documents. Please ensure all required verification documents are uploaded and clearly visible.',
+            'invalid_documents': 'Your application has been rejected because the submitted documents are invalid, unclear, or do not meet our verification requirements. Please submit clear, valid documents.',
+            'business_info_mismatch': 'Your application has been rejected due to inconsistencies between the provided business information and the submitted documents. Please ensure all information matches your official business documents.',
+            'suspicious_activity': 'Your application has been rejected due to suspicious activity detected during the verification process. Please contact support if you believe this is an error.',
+            'policy_violation': 'Your application has been rejected due to a violation of our platform policies. Please review our terms and conditions before reapplying.',
+            'duplicate_account': 'Your application has been rejected because a duplicate account already exists for this business. Please use your existing account or contact support.',
+            'other': ''
+        };
+        
+        rejectionType.addEventListener('change', function() {
+            if (this.value && this.value !== 'other') {
+                rejectionReason.value = rejectionMessages[this.value];
+            } else if (this.value === 'other') {
+                rejectionReason.value = '';
+                rejectionReason.placeholder = 'Please provide a detailed reason for rejection...';
+            }
+        });
+    }
+    
+    // Handle suspension modal dropdown feedback
+    const suspensionType = document.getElementById('suspension_type');
+    const suspensionReason = document.getElementById('suspension_reason');
+    
+    if (suspensionType && suspensionReason) {
+        const suspensionMessages = {
+            'policy_violation': 'Your business account has been suspended due to a violation of our platform policies. Please review our terms and conditions and contact support if you have questions.',
+            'fraudulent_activity': 'Your business account has been suspended due to suspected fraudulent activity. This is a serious matter and requires immediate attention. Please contact support for further information.',
+            'poor_product_quality': 'Your business account has been suspended due to consistent reports of poor product quality or failure to meet product standards. Please review your product listings and quality control processes.',
+            'customer_complaints': 'Your business account has been suspended due to multiple customer complaints regarding your products or services. We take customer satisfaction seriously and need to address these issues.',
+            'non_compliance': 'Your business account has been suspended due to non-compliance with platform rules and regulations. Please review our seller guidelines and ensure full compliance.',
+            'payment_issues': 'Your business account has been suspended due to payment or transaction-related issues. Please contact our finance team to resolve these matters.',
+            'inappropriate_content': 'Your business account has been suspended due to inappropriate content or behavior that violates our community guidelines. Please review and remove any inappropriate content.',
+            'safety_concerns': 'Your business account has been suspended due to safety concerns regarding your products or business practices. This requires immediate attention to ensure customer safety.',
+            'other': ''
+        };
+        
+        suspensionType.addEventListener('change', function() {
+            if (this.value && this.value !== 'other') {
+                suspensionReason.value = suspensionMessages[this.value];
+            } else if (this.value === 'other') {
+                suspensionReason.value = '';
+                suspensionReason.placeholder = 'Please provide a detailed reason for suspension...';
+            }
+        });
+    }
 });
 </script>
 @endsection
