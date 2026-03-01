@@ -183,6 +183,20 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border-radius: 14px;
             padding: 0.5rem;
+            z-index: 1050;
+        }
+        
+        .dropdown-toggle::after {
+            margin-left: 0.5rem;
+        }
+        
+        .nav-item.dropdown {
+            position: relative;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
         }
         
         .dropdown-item {
@@ -1369,6 +1383,31 @@
         setInterval(updateNotificationCount, 30000); // Every 30 seconds
         @endauth
 
+        // Fix dropdown toggle for user menu
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownToggle = document.getElementById('navbarDropdown');
+            if (dropdownToggle) {
+                dropdownToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const menu = this.nextElementSibling;
+                    if (menu && menu.classList.contains('dropdown-menu')) {
+                        menu.classList.toggle('show');
+                    }
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!dropdownToggle.contains(e.target)) {
+                        const menu = dropdownToggle.nextElementSibling;
+                        if (menu && menu.classList.contains('dropdown-menu')) {
+                            menu.classList.remove('show');
+                        }
+                    }
+                });
+            }
+        });
+        
         // Real-time search suggest (products + business pages)
         (function() {
             const input = document.getElementById('navbarSearchInput');
