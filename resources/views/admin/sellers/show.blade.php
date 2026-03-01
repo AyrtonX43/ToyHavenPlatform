@@ -333,9 +333,9 @@
                                     <td class="py-3">
                                         @if($document->document_path)
                                             <div class="d-flex gap-2">
-                                                <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-sm btn-primary">
+                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
                                                     <i class="bi bi-eye me-1"></i> View
-                                                </a>
+                                                </button>
                                                 <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-secondary">
                                                     <i class="bi bi-download me-1"></i> Download
                                                 </a>
@@ -396,6 +396,45 @@
                 @endif
             </div>
         </div>
+        
+        <!-- View Document Modals (Outside the table) -->
+        @foreach($seller->documents as $document)
+            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="false">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="viewDocumentModalLabel{{ $document->id }}">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                {{ ucfirst(str_replace('_', ' ', $document->document_type)) }} - {{ $seller->business_name }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-4">
+                            @php
+                                $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
+                                $isPdf = strtolower($extension) === 'pdf';
+                            @endphp
+                            @if($isPdf)
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 0.25rem;"></iframe>
+                            @else
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="img-fluid" style="max-height: 600px; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            @endif
+                        </div>
+                        <div class="modal-footer">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-primary">
+                                <i class="bi bi-download me-1"></i> Download
+                            </a>
+                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-secondary">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-lg me-1"></i> Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
         
         <!-- Reject Document Modals (Outside the table) -->
         @foreach($seller->documents as $document)
@@ -897,6 +936,30 @@ document.addEventListener('DOMContentLoaded', function() {
     border-left-width: 4px;
 }
 
+/* Modal improvements */
+.modal-fullscreen .modal-body {
+    background: #1a1a1a;
+    overflow: auto;
+}
+
+.modal-fullscreen .modal-content {
+    background: #1a1a1a;
+}
+
+.modal-fullscreen .modal-header {
+    z-index: 1050;
+}
+
+.modal-fullscreen .modal-footer {
+    z-index: 1050;
+}
+
+/* Document viewer image styling */
+.document-viewer-image {
+    cursor: default;
+    user-select: none;
+}
+
 /* Minimal modal fixes - no glitching */
 
 /* Smooth transitions - disabled to prevent modal glitching */
@@ -921,6 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    
     // Auto-scroll to modals when opened
     const allModals = document.querySelectorAll('.modal');
     allModals.forEach(function(modalElement) {
