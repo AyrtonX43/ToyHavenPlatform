@@ -983,32 +983,23 @@ tr:hover .bg-light.rounded-circle {
     transform: none;
 }
 
-/* Force all modals to be centered on screen regardless of scroll position */
-.modal {
+/* Ensure modals are perfectly centered and visible */
+.modal-dialog-centered {
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    overflow-y: auto !important;
+    min-height: calc(100% - 1rem) !important;
 }
 
-.modal-dialog {
-    margin: auto !important;
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    max-height: 90vh !important;
-    overflow-y: auto !important;
+#rejectModal .modal-content,
+#suspendModal .modal-content,
+[id^="rejectDocumentModal"] .modal-content {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5) !important;
+    border: 2px solid #dee2e6 !important;
 }
 
-.modal.show .modal-dialog {
-    transform: translate(-50%, -50%) !important;
-}
-
-/* Ensure modal content is scrollable if too tall */
-.modal-content {
-    max-height: 90vh;
-    overflow-y: auto;
+/* Ensure modal appears on top without backdrop */
+.modal {
+    background-color: rgba(0, 0, 0, 0.3);
 }
 
 /* Smooth transitions */
