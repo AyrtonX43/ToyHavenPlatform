@@ -383,7 +383,7 @@
                                         @endif
                                         
                                         <!-- Reject Document Modal -->
-                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="static">
+                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
                                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
@@ -744,7 +744,7 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
@@ -993,15 +993,24 @@ tr:hover .bg-light.rounded-circle {
 }
 
 .modal-dialog-centered {
-    margin: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100% !important;
+    margin: 0 auto !important;
 }
 
 .modal-dialog {
-    max-width: 600px !important;
+    position: relative !important;
+    max-width: 500px !important;
     width: 90% !important;
+    margin: 1.75rem auto !important;
 }
 
 .modal-content {
+    position: relative !important;
+    background-color: #fff !important;
+    border: none !important;
     border-radius: 0.5rem !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
 }
@@ -1009,23 +1018,31 @@ tr:hover .bg-light.rounded-circle {
 /* Fix glitching - disable all transitions on modals */
 .modal,
 .modal *,
-.modal-backdrop {
+.modal-dialog,
+.modal-content,
+.modal-body,
+.modal-header,
+.modal-footer {
     transition: none !important;
     -webkit-transition: none !important;
 }
 
-/* Ensure form elements are always interactive */
+/* Ensure all form elements are interactive */
 .modal input,
 .modal textarea,
 .modal select,
-.modal button {
+.modal button,
+.modal .form-control,
+.modal .form-select,
+.modal .btn {
     pointer-events: auto !important;
+    cursor: pointer !important;
 }
 
-.modal-body,
-.modal-footer,
-.modal-header {
-    pointer-events: auto !important;
+.modal textarea,
+.modal input[type="text"],
+.modal input[type="email"] {
+    cursor: text !important;
 }
 
 /* Smooth transitions */
@@ -1081,21 +1098,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Ensure all modals are centered and interactive when opened
+    // Ensure modals are properly centered and interactive when opened
     const allModals = document.querySelectorAll('.modal');
     
     allModals.forEach(function(modalElement) {
         modalElement.addEventListener('shown.bs.modal', function() {
-            // Ensure modal is centered
-            modalElement.style.display = 'flex';
-            modalElement.style.alignItems = 'center';
-            modalElement.style.justifyContent = 'center';
+            // Ensure body doesn't scroll
+            document.body.style.overflow = 'hidden';
             
             // Ensure all form elements are interactive
-            const formElements = modalElement.querySelectorAll('input, textarea, select, button');
+            const formElements = modalElement.querySelectorAll('input, textarea, select, button, .form-control, .form-select, .btn');
             formElements.forEach(function(element) {
                 element.style.pointerEvents = 'auto';
+                element.style.cursor = element.tagName === 'BUTTON' ? 'pointer' : (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT' ? 'text' : 'pointer');
             });
+        });
+        
+        // Restore body scroll when modal closes
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            document.body.style.overflow = '';
         });
     });
     
