@@ -400,10 +400,10 @@
         <!-- View Document Modals (Outside the table) -->
         @foreach($seller->documents as $document)
             <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true">
-                <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content">
-                        <div class="modal-header bg-dark text-white">
-                            <h5 class="modal-title" id="viewDocumentModalLabel{{ $document->id }}">
+                        <div class="modal-header bg-dark text-white py-2">
+                            <h6 class="modal-title mb-0" id="viewDocumentModalLabel{{ $document->id }}">
                                 <i class="bi bi-file-earmark-text me-2"></i>
                                 @php
                                     $docLabel = match($document->document_type) {
@@ -417,28 +417,28 @@
                                     };
                                 @endphp
                                 {{ $docLabel }} - {{ $seller->business_name }}
-                            </h5>
+                            </h6>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body bg-dark text-center p-4" style="min-height: 500px; max-height: 80vh; overflow: auto;">
+                        <div class="modal-body bg-dark text-center p-3" style="max-height: 65vh; overflow: auto;">
                             @php
                                 $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
                                 $isPdf = strtolower($extension) === 'pdf';
                             @endphp
                             @if($isPdf)
-                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 60vh; border: none; border-radius: 8px;"></iframe>
                             @else
-                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="img-fluid" style="max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="img-fluid" style="max-height: 60vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                             @endif
                         </div>
-                        <div class="modal-footer bg-dark text-white">
-                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
+                        <div class="modal-footer bg-dark text-white py-2">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-light">
                                 <i class="bi bi-download me-1"></i> Download
                             </a>
-                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-sm btn-outline-light">
                                 <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
                             </a>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">
                                 <i class="bi bi-x-lg me-1"></i> Close
                             </button>
                         </div>
@@ -1026,7 +1026,7 @@ tr:hover .bg-light.rounded-circle {
     overflow-y: auto;
 }
 
-/* Ensure modals don't overflow */
+/* Ensure modals don't overflow - set reasonable max sizes */
 .modal-xl {
     max-width: 90%;
     margin: 1.75rem auto;
@@ -1036,6 +1036,27 @@ tr:hover .bg-light.rounded-circle {
     .modal-xl {
         max-width: 1140px;
     }
+}
+
+.modal-lg {
+    max-width: 90%;
+    margin: 2rem auto;
+}
+
+@media (min-width: 992px) {
+    .modal-lg {
+        max-width: 800px;
+    }
+}
+
+/* Limit modal content height to prevent overflow */
+.modal-content {
+    max-height: calc(100vh - 4rem);
+}
+
+.modal-body {
+    max-height: calc(100vh - 12rem);
+    overflow-y: auto;
 }
 
 /* Smooth transitions */
