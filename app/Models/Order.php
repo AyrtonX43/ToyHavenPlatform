@@ -98,7 +98,13 @@ class Order extends Model
     public function getTotalAttribute(): float
     {
         // Total includes base amount, commission, tax, transaction fee, and shipping
-        return ($this->total_amount + $this->admin_commission + $this->tax_amount + $this->transaction_fee + $this->shipping_fee);
+        $totalAmount = (float) ($this->attributes['total_amount'] ?? 0);
+        $adminCommission = (float) ($this->attributes['admin_commission'] ?? 0);
+        $taxAmount = (float) ($this->attributes['tax_amount'] ?? 0);
+        $transactionFee = (float) ($this->attributes['transaction_fee'] ?? 0);
+        $shippingFee = (float) ($this->attributes['shipping_fee'] ?? 0);
+        
+        return $totalAmount + $adminCommission + $taxAmount + $transactionFee + $shippingFee;
     }
 
     public function getFinalPriceAttribute(): float
