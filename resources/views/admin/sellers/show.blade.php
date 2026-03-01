@@ -383,14 +383,14 @@
                                         @endif
                                         
                                         <!-- Reject Document Modal -->
-                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="false">
+                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
                                             <div class="modal-dialog modal-dialog-centered">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                                                         @csrf
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title" id="rejectDocumentModalLabel{{ $document->id }}">Reject Document - Invalid Document</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            <h5 class="modal-title">Reject Document - Invalid Document</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <div class="alert alert-danger">
@@ -983,35 +983,47 @@ tr:hover .bg-light.rounded-circle {
     transform: none;
 }
 
-/* Fix modal glitching - disable transitions on modal elements */
-.modal,
-.modal *,
-.modal-dialog,
-.modal-content,
-.modal-header,
-.modal-body,
-.modal-footer {
-    transition: none !important;
-    transform: none !important;
-}
-
-/* Ensure modal is stable and doesn't move */
+/* Fix reject document modal positioning and prevent glitching */
 .modal-dialog-centered {
     display: flex !important;
     align-items: center !important;
     min-height: calc(100% - 1rem) !important;
+    margin: 0.5rem auto !important;
 }
 
-/* Prevent hover effects from causing glitches in modals */
-.modal .btn:hover,
-.modal input:hover,
-.modal textarea:hover,
-.modal select:hover {
-    transform: none !important;
+.modal-dialog {
+    position: relative !important;
+    width: auto !important;
+    pointer-events: auto !important;
 }
 
-/* Smooth transitions only for non-modal elements */
-body:not(.modal-open) * {
+.modal-content {
+    position: relative !important;
+    pointer-events: auto !important;
+    background-color: #fff !important;
+    border: 1px solid rgba(0,0,0,.2) !important;
+    border-radius: 0.3rem !important;
+}
+
+/* Ensure modal form elements don't glitch */
+.modal-body input,
+.modal-body textarea,
+.modal-body select,
+.modal-body button,
+.modal-footer button {
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+/* Remove conflicting transitions that cause glitching */
+.modal *,
+.modal *::before,
+.modal *::after {
+    transition: none !important;
+}
+
+/* Smooth transitions */
+* {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1085,14 +1097,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Auto-scroll for document rejection modals
+    // Auto-scroll for document rejection modals with glitch prevention
     const documentRejectModals = document.querySelectorAll('[id^="rejectDocumentModal"]');
     documentRejectModals.forEach(function(modalElement) {
         modalElement.addEventListener('shown.bs.modal', function() {
-            const modalDialog = modalElement.querySelector('.modal-dialog');
-            if (modalDialog) {
-                modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            // Prevent glitching by using setTimeout
+            setTimeout(function() {
+                const modalDialog = modalElement.querySelector('.modal-dialog');
+                if (modalDialog) {
+                    // Scroll to center the modal
+                    modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Ensure all form elements are interactive
+                    const formElements = modalElement.querySelectorAll('input, textarea, select, button');
+                    formElements.forEach(function(element) {
+                        element.style.pointerEvents = 'auto';
+                    });
+                }
+            }, 100);
         });
     });
     
