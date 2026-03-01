@@ -129,7 +129,7 @@
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Region <span class="text-danger">*</span></label>
                                 <select name="region" id="region" class="form-select @error('region') is-invalid @enderror" required>
-                                    <option value="">Select Region</option>
+                                    <option value="">Loading regions...</option>
                                 </select>
                                 @error('region')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -490,7 +490,8 @@
 @push('scripts')
 <script>
 // Cache buster - force reload of this script
-console.log('Seller Registration Form Script Loaded - Version 2.1');
+const SCRIPT_VERSION = '2.2-' + Date.now();
+console.log('Seller Registration Form Script Loaded - Version:', SCRIPT_VERSION);
 
 document.addEventListener('DOMContentLoaded', function() {
     // Phone number formatting
@@ -571,10 +572,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Load regions on page load
+    console.log('Starting to load regions from:', API_BASE);
+    
+    if (!regionSelect) {
+        console.error('Region select element not found!');
+        return;
+    }
+    
     fetch(`${API_BASE}/regions`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Regions API response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            console.log('Regions loaded:', data.length);
+            console.log('Regions loaded successfully:', data.length, 'regions');
+            
+            if (!data || data.length === 0) {
+                console.error('No regions data received!');
+                regionSelect.innerHTML = '<option value="">Error loading regions</option>';
+                return;
+            }
+            
+            // Clear loading message
+            regionSelect.innerHTML = '<option value="">Select Region</option>';
+            
             data.forEach(region => {
                 const originalName = region.name;
                 const normalizedName = normalizeText(region.name);
@@ -591,6 +615,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 regionSelect.appendChild(option);
             });
             
+            console.log('Region options added:', regionSelect.options.length);
+            
             // Pre-select if old value exists
             const oldRegion = "{{ old('region', $prefilledData['region'] ?? '') }}";
             if (oldRegion) {
@@ -598,7 +624,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 regionSelect.dispatchEvent(new Event('change'));
             }
         })
-        .catch(error => console.error('Error loading regions:', error));
+        .catch(error => {
+            console.error('Error loading regions:', error);
+            console.error('Error details:', error.message);
+            regionSelect.innerHTML = '<option value="">Error loading regions - Please refresh</option>';
+            alert('Failed to load Philippine regions. Please check your internet connection and refresh the page.');
+        });
 
     // Load provinces when region changes
     regionSelect.addEventListener('change', function() {
