@@ -184,14 +184,7 @@
             border-radius: 14px;
             padding: 0.5rem;
             z-index: 1050;
-        }
-        
-        .dropdown-toggle::after {
-            margin-left: 0.5rem;
-        }
-        
-        .nav-item.dropdown {
-            position: relative;
+            display: none;
         }
         
         .dropdown-menu.show {
@@ -205,10 +198,24 @@
             font-weight: 600;
             font-size: 0.9375rem;
             transition: background 0.15s;
+            cursor: pointer;
         }
         
         .dropdown-item:hover {
             background: #ecfeff;
+        }
+        
+        .dropdown-toggle::after {
+            margin-left: 0.5rem;
+        }
+        
+        .nav-item.dropdown {
+            position: relative;
+        }
+        
+        .dropdown-menu-end {
+            right: 0;
+            left: auto;
         }
         
         main {
@@ -1056,6 +1063,49 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Tabler JS -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    
+    <!-- Fix Dropdown Issues -->
+    <script>
+        // Ensure Bootstrap dropdowns work properly
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if Bootstrap is loaded
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap JS not loaded! Dropdowns will not work.');
+                return;
+            }
+            
+            // Initialize all dropdowns manually
+            const dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            const dropdownList = [...dropdownElementList].map(dropdownToggleEl => {
+                return new bootstrap.Dropdown(dropdownToggleEl, {
+                    autoClose: true,
+                    boundary: 'viewport'
+                });
+            });
+            
+            // Fix for user profile dropdown specifically
+            const userDropdown = document.getElementById('navbarDropdown');
+            if (userDropdown) {
+                userDropdown.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const dropdown = bootstrap.Dropdown.getInstance(this) || new bootstrap.Dropdown(this);
+                    dropdown.toggle();
+                });
+            }
+            
+            // Prevent dropdown from closing when clicking inside
+            document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+                dropdown.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                        e.stopPropagation();
+                    }
+                });
+            });
+        });
+    </script>
+    
     <!-- Page Transitions & Loading States -->
     <script src="{{ asset('js/toyhaven-page-transitions.js') }}"></script>
     <style>
@@ -1383,31 +1433,6 @@
         setInterval(updateNotificationCount, 30000); // Every 30 seconds
         @endauth
 
-        // Fix dropdown toggle for user menu
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropdownToggle = document.getElementById('navbarDropdown');
-            if (dropdownToggle) {
-                dropdownToggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const menu = this.nextElementSibling;
-                    if (menu && menu.classList.contains('dropdown-menu')) {
-                        menu.classList.toggle('show');
-                    }
-                });
-                
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!dropdownToggle.contains(e.target)) {
-                        const menu = dropdownToggle.nextElementSibling;
-                        if (menu && menu.classList.contains('dropdown-menu')) {
-                            menu.classList.remove('show');
-                        }
-                    }
-                });
-            }
-        });
-        
         // Real-time search suggest (products + business pages)
         (function() {
             const input = document.getElementById('navbarSearchInput');

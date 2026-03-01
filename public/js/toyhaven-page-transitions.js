@@ -14,12 +14,6 @@
         setTimeout(function() {
             document.body.classList.remove('page-transition');
         }, 400);
-        
-        // Ensure Bootstrap dropdowns are initialized
-        if (typeof bootstrap !== 'undefined') {
-            const dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-            const dropdownList = [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl));
-        }
     });
     
     // Loading Overlay
@@ -78,11 +72,8 @@
     const links = document.querySelectorAll('a:not([target="_blank"]):not([href^="#"]):not([data-bs-toggle]):not(.dropdown-item):not(.dropdown-toggle)');
     links.forEach(function(link) {
         link.addEventListener('click', function(e) {
-            // Skip if it's a dropdown or has special attributes
-            if (this.hasAttribute('data-bs-toggle') || 
-                this.classList.contains('dropdown-toggle') || 
-                this.classList.contains('dropdown-item') ||
-                this.closest('.dropdown-menu')) {
+            // Skip if it's a dropdown or has no href
+            if (this.closest('.dropdown-menu') || !this.href || this.href === '#') {
                 return;
             }
             
