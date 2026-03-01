@@ -381,42 +381,6 @@
                                                 </form>
                                             </div>
                                         @endif
-                                        
-                                        <!-- Reject Document Modal -->
-                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
-                                                        @csrf
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">Reject Document - Invalid Document</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <div class="alert alert-danger">
-                                                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                                                <strong>Warning:</strong> Rejecting this document will mark it as invalid. The seller will be notified that their required verification document is invalid and needs to be resubmitted.
-                                                            </div>
-                                                            <div class="alert alert-info">
-                                                                <i class="bi bi-info-circle me-2"></i>
-                                                                <strong>Document Type:</strong> {{ ucfirst(str_replace('_', ' ', $document->document_type)) }}
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
-                                                                <textarea name="reason" class="form-control" rows="4" placeholder="Please provide a detailed reason why this document is invalid (e.g., document is unclear, expired, doesn't match business information, etc.)..." required>{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
-                                                                <small class="text-muted">This reason will be sent to the seller via email notification. They will be informed that their required document is invalid and needs to be resubmitted.</small>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                            <button type="submit" class="btn btn-danger">
-                                                                <i class="bi bi-x-circle me-1"></i> Reject Document (Invalid)
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -467,6 +431,44 @@
                                 <i class="bi bi-x-lg me-1"></i> Close
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+        
+        <!-- Reject Document Modals (Outside the table) -->
+        @foreach($seller->documents as $document)
+            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="false">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
+                            @csrf
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="rejectDocumentModalLabel{{ $document->id }}">Reject Document - Invalid Document</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-danger">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Warning:</strong> Rejecting this document will mark it as invalid. The seller will be notified that their required verification document is invalid and needs to be resubmitted.
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Document Type:</strong> {{ ucfirst(str_replace('_', ' ', $document->document_type)) }}
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                                    <textarea name="reason" class="form-control" rows="4" placeholder="Please provide a detailed reason why this document is invalid (e.g., document is unclear, expired, doesn't match business information, etc.)..." required>{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
+                                    <small class="text-muted">This reason will be sent to the seller via email notification. They will be informed that their required document is invalid and needs to be resubmitted.</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-x-circle me-1"></i> Reject Document (Invalid)
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
