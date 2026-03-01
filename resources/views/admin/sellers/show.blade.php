@@ -399,10 +399,10 @@
         
         <!-- View Document Modals (Outside the table) -->
         @foreach($seller->documents as $document)
-            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                    <div class="modal-content" style="max-height: 90vh;">
-                        <div class="modal-header bg-dark text-white" style="position: sticky; top: 0; z-index: 1055;">
+            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-dark text-white">
                             <h5 class="modal-title" id="viewDocumentModalLabel{{ $document->id }}">
                                 <i class="bi bi-file-earmark-text me-2"></i>
                                 @php
@@ -420,25 +420,25 @@
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body bg-dark text-center p-3">
+                        <div class="modal-body bg-dark text-center p-4" style="min-height: 500px; max-height: 80vh; overflow: auto;">
                             @php
                                 $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
                                 $isPdf = strtolower($extension) === 'pdf';
                             @endphp
                             @if($isPdf)
-                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 600px; border: none; border-radius: 8px;"></iframe>
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>
                             @else
-                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="img-fluid" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="img-fluid" style="max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                             @endif
                         </div>
-                        <div class="modal-footer bg-dark text-white" style="position: sticky; bottom: 0; z-index: 1055;">
-                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light" style="z-index: 1060; position: relative;">
+                        <div class="modal-footer bg-dark text-white">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
                                 <i class="bi bi-download me-1"></i> Download
                             </a>
-                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light" style="z-index: 1060; position: relative;">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
                                 <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
                             </a>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="z-index: 1060; position: relative;">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                                 <i class="bi bi-x-lg me-1"></i> Close
                             </button>
                         </div>
@@ -449,9 +449,9 @@
         
         <!-- Reject Document Modals (Outside the table) -->
         @foreach($seller->documents as $document)
-            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-                <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
-                    <div class="modal-content" style="position: relative; z-index: 1060;">
+            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
                         <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                             @csrf
                             <div class="modal-header bg-danger text-white">
@@ -460,7 +460,7 @@
                                 </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                            <div class="modal-body">
                                 <div class="alert alert-danger border-danger">
                                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                                     <strong>Warning:</strong> Rejecting this document will mark it as invalid. The seller will be notified via email that their required verification document is invalid and needs to be resubmitted.
@@ -489,11 +489,11 @@
                                     </small>
                                 </div>
                             </div>
-                            <div class="modal-footer" style="position: relative; z-index: 1060;">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="position: relative; z-index: 1061;">
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                     <i class="bi bi-x-lg me-1"></i> Cancel
                                 </button>
-                                <button type="submit" class="btn btn-danger" style="position: relative; z-index: 1061;">
+                                <button type="submit" class="btn btn-danger">
                                     <i class="bi bi-x-circle-fill me-1"></i> Reject Document (Invalid)
                                 </button>
                             </div>
@@ -775,9 +775,9 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
-        <div class="modal-content" style="position: relative; z-index: 1060;">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
                 <div class="modal-header bg-danger text-white">
@@ -786,7 +786,7 @@
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                <div class="modal-body">
                     <div class="alert alert-danger border-danger">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <strong>Important:</strong> The seller will be notified via email and website notification about this rejection.
@@ -813,11 +813,11 @@
                         </small>
                     </div>
                 </div>
-                <div class="modal-footer" style="position: relative; z-index: 1060;">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="position: relative; z-index: 1061;">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-1"></i> Cancel
                     </button>
-                    <button type="submit" class="btn btn-danger" style="position: relative; z-index: 1061;">
+                    <button type="submit" class="btn btn-danger">
                         <i class="bi bi-x-octagon-fill me-1"></i> Reject Seller
                     </button>
                 </div>
@@ -853,9 +853,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 700px;">
-        <div class="modal-content" style="position: relative; z-index: 1060;">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
                 <div class="modal-header bg-warning text-dark">
@@ -864,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                <div class="modal-body">
                     <div class="alert alert-warning border-warning">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <strong>Warning:</strong> Suspending this seller will also ban their user account. They will not be able to access their account, create new listings, or receive new orders. Existing orders will continue to be processed. The seller will be notified via email and website notification.
@@ -903,11 +903,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <small class="text-muted">Link this suspension to a specific report if applicable.</small>
                     </div>
                 </div>
-                <div class="modal-footer" style="position: relative; z-index: 1060;">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="position: relative; z-index: 1061;">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-1"></i> Cancel
                     </button>
-                    <button type="submit" class="btn btn-warning text-dark fw-semibold" style="position: relative; z-index: 1061;">
+                    <button type="submit" class="btn btn-warning text-dark fw-semibold">
                         <i class="bi bi-pause-circle-fill me-1"></i> Suspend Seller
                     </button>
                 </div>
@@ -940,6 +940,68 @@ document.addEventListener('DOMContentLoaded', function() {
             suspensionReason.value = '';
             suspensionReason.placeholder = 'Please provide a detailed reason for suspension...';
         }
+    });
+});
+
+// Fix modal responsiveness and interaction issues
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure all modals can be closed and are interactive
+    const allModals = document.querySelectorAll('.modal');
+    
+    allModals.forEach(function(modalElement) {
+        // Fix backdrop click to close
+        modalElement.addEventListener('click', function(e) {
+            if (e.target === modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
+        });
+        
+        // Ensure modal is properly initialized
+        modalElement.addEventListener('shown.bs.modal', function() {
+            // Force z-index to be correct
+            this.style.zIndex = '1056';
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.zIndex = '1055';
+            }
+            
+            // Ensure body scroll is managed correctly
+            document.body.style.overflow = 'hidden';
+            document.body.style.paddingRight = '0px';
+        });
+        
+        // Clean up when modal is hidden
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            // Re-enable body scroll
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Remove any stuck backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+        });
+    });
+    
+    // Ensure close buttons work
+    const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+    closeButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const modalElement = this.closest('.modal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                } else {
+                    const newModal = new bootstrap.Modal(modalElement);
+                    newModal.hide();
+                }
+            }
+        });
     });
 });
 </script>
@@ -997,118 +1059,90 @@ tr:hover .bg-light.rounded-circle {
     border-left-width: 4px;
 }
 
-/* Modal z-index fixes - ensure modals are above everything */
+/* Modal improvements */
+.modal-xl .modal-body {
+    background: #1a1a1a;
+}
+
+.modal-xl img {
+    cursor: zoom-in;
+}
+
+/* Fix modal z-index and interaction issues */
 .modal {
-    z-index: 1055 !important;
-    pointer-events: auto !important;
+    z-index: 1056 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
 }
 
 .modal-backdrop {
-    z-index: 1050 !important;
-    pointer-events: auto !important;
+    z-index: 1055 !important;
 }
 
 .modal.show {
     display: block !important;
-    pointer-events: auto !important;
-}
-
-.modal-dialog {
-    z-index: 1056 !important;
-    margin: 1.75rem auto !important;
-    pointer-events: auto !important;
-    position: relative;
-}
-
-.modal-content {
-    position: relative;
-    z-index: 1060 !important;
-    pointer-events: auto !important;
-    border: none;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header,
-.modal-body,
-.modal-footer {
-    position: relative;
-    z-index: 1061 !important;
-    pointer-events: auto !important;
-}
-
-.modal-header *,
-.modal-body *,
-.modal-footer * {
-    pointer-events: auto !important;
-}
-
-.modal-header button,
-.modal-footer button,
-.modal-footer a,
-.modal-body button,
-.modal-body a {
-    position: relative;
-    z-index: 1062 !important;
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* Document viewer modal */
-.modal-lg .modal-body {
-    background: #1a1a1a;
-}
-
-.modal-lg img {
-    cursor: zoom-in;
-    max-width: 100%;
-    height: auto;
-    pointer-events: auto;
-}
-
-.modal-lg iframe {
-    pointer-events: auto;
 }
 
 /* Fix modal positioning and sizing */
 .modal-dialog-centered {
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    min-height: calc(100vh - 3.5rem) !important;
+    min-height: calc(100% - 3.5rem) !important;
+    margin: 1.75rem auto !important;
 }
 
-/* Ensure modals are properly sized */
-.modal-lg {
-    max-width: 900px !important;
-    width: 90% !important;
+.modal-dialog-scrollable {
+    max-height: calc(100vh - 3.5rem) !important;
 }
 
-@media (min-width: 992px) {
-    .modal-lg {
-        max-width: 900px !important;
+.modal-dialog-scrollable .modal-content {
+    max-height: calc(100vh - 3.5rem) !important;
+    overflow: hidden !important;
+}
+
+.modal-dialog-scrollable .modal-body {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 12rem) !important;
+}
+
+/* Ensure modals don't overflow */
+.modal-xl {
+    max-width: 90% !important;
+    margin: 1.75rem auto !important;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl {
+        max-width: 1140px !important;
     }
 }
 
-/* Remove conflicting overflow from modal body in page styles */
-.modal-body {
-    max-height: 65vh;
-    overflow-y: auto;
-    pointer-events: auto;
-}
-
-/* Ensure forms and inputs are clickable */
-form, input, select, textarea, button, a {
+/* Ensure modal content is clickable */
+.modal-content {
+    position: relative !important;
+    z-index: 1 !important;
     pointer-events: auto !important;
 }
 
-/* Remove any global pointer-events that might interfere */
+.modal-header,
+.modal-body,
+.modal-footer {
+    pointer-events: auto !important;
+}
+
+/* Ensure buttons are clickable */
+.modal button,
+.modal .btn,
+.modal .btn-close {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 2 !important;
+}
+
+/* Fix body scroll lock */
 body.modal-open {
     overflow: hidden !important;
-    pointer-events: auto !important;
-}
-
-body.modal-open .modal {
-    pointer-events: auto !important;
+    padding-right: 0 !important;
 }
 
 /* Smooth transitions */
@@ -1133,113 +1167,4 @@ body.modal-open .modal {
     pointer-events: none;
 }
 </style>
-
-<script>
-// Fix modal interaction issues
-document.addEventListener('DOMContentLoaded', function() {
-    // Ensure all modals are properly initialized and clickable
-    const modals = document.querySelectorAll('.modal');
-    
-    modals.forEach(modal => {
-        // When modal is about to show
-        modal.addEventListener('show.bs.modal', function(e) {
-            // Ensure body doesn't scroll
-            document.body.classList.add('modal-open');
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = '0px';
-            
-            // Force proper z-index
-            setTimeout(() => {
-                this.style.display = 'block';
-                this.style.zIndex = '1055';
-                this.style.pointerEvents = 'auto';
-                
-                const backdrop = document.querySelector('.modal-backdrop.show');
-                if (backdrop) {
-                    backdrop.style.zIndex = '1050';
-                    backdrop.style.pointerEvents = 'auto';
-                }
-            }, 10);
-        });
-        
-        // When modal is fully shown
-        modal.addEventListener('shown.bs.modal', function() {
-            // Ensure modal is on top and clickable
-            this.style.zIndex = '1055';
-            this.style.pointerEvents = 'auto';
-            
-            const modalDialog = this.querySelector('.modal-dialog');
-            if (modalDialog) {
-                modalDialog.style.pointerEvents = 'auto';
-                modalDialog.style.zIndex = '1056';
-            }
-            
-            const modalContent = this.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.style.pointerEvents = 'auto';
-                modalContent.style.zIndex = '1060';
-            }
-            
-            // Ensure all interactive elements are clickable
-            const interactiveElements = this.querySelectorAll('button, a, input, select, textarea');
-            interactiveElements.forEach(element => {
-                element.style.pointerEvents = 'auto';
-                element.style.cursor = 'pointer';
-                element.style.position = 'relative';
-                element.style.zIndex = '1062';
-            });
-            
-            // Ensure modal body and footer are accessible
-            const modalBody = this.querySelector('.modal-body');
-            const modalFooter = this.querySelector('.modal-footer');
-            const modalHeader = this.querySelector('.modal-header');
-            
-            if (modalBody) {
-                modalBody.style.pointerEvents = 'auto';
-                modalBody.style.zIndex = '1061';
-            }
-            if (modalFooter) {
-                modalFooter.style.pointerEvents = 'auto';
-                modalFooter.style.zIndex = '1061';
-            }
-            if (modalHeader) {
-                modalHeader.style.pointerEvents = 'auto';
-                modalHeader.style.zIndex = '1061';
-            }
-            
-            // Ensure backdrop is behind modal
-            const backdrop = document.querySelector('.modal-backdrop.show');
-            if (backdrop) {
-                backdrop.style.zIndex = '1050';
-            }
-        });
-        
-        // When modal is hidden
-        modal.addEventListener('hidden.bs.modal', function() {
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-            document.body.classList.remove('modal-open');
-        });
-    });
-    
-    // Prevent clicks on modal dialog from closing modal
-    document.querySelectorAll('.modal-dialog').forEach(dialog => {
-        dialog.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    });
-    
-    // Allow clicks on backdrop to close modal
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                const bsModal = bootstrap.Modal.getInstance(this);
-                if (bsModal) {
-                    bsModal.hide();
-                }
-            }
-        });
-    });
-});
-</script>
 @endsection

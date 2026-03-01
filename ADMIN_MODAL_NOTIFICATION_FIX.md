@@ -5,40 +5,23 @@ Fixed modal sizing issues and enhanced notification system for admin seller mana
 
 ## Issues Fixed
 
-### 1. Modal Layout & Interaction Issues
-**Problem:** 
-- Modals were appearing too large and cut off at the top
-- Buttons in modals (Download, Close, Reject, Suspend) were not clickable
-- Modal position was incorrect and overlapping content
-- Users couldn't interact with any buttons when viewing fullscreen documents
+### 1. Modal Layout Issues
+**Problem:** Modals were appearing too large, cut off at the top, and not properly centered.
 
 **Root Causes:**
 - Duplicate modals (one inside table rows, one outside)
 - Using `modal-fullscreen` class causing viewport overflow
-- Z-index conflicts between sidebar (z-index: 1000) and modals
-- Missing `pointer-events: auto` on modal elements
-- Conflicting CSS from global styles
-- Modal backdrop blocking interaction
-- Missing proper event handlers for modal initialization
+- Missing `modal-dialog-centered` class for proper vertical centering
+- No scrollable content handling for long forms
 
 **Solutions:**
 - ✅ Removed duplicate modals from inside table rows
-- ✅ Changed document viewer from `modal-fullscreen` to `modal-lg` (900px max-width)
-- ✅ Added explicit z-index hierarchy:
-  - Modal backdrop: 1050
-  - Modal: 1055
-  - Modal dialog: 1056
-  - Modal content: 1060
-  - Modal header/body/footer: 1061
-  - Buttons and links: 1062
-- ✅ Added `pointer-events: auto !important` to all modal elements
-- ✅ Added `modal-dialog-centered` with flexbox for proper vertical centering
-- ✅ Set explicit max-widths: reject (600px), suspend (700px), document viewer (900px)
-- ✅ Added comprehensive JavaScript to force proper z-index and pointer events on modal show
-- ✅ Fixed modal body overflow with max-height: 60-65vh
-- ✅ Added sticky positioning to headers and footers
+- ✅ Changed document viewer from `modal-fullscreen` to `modal-xl` with proper centering
+- ✅ Added `modal-dialog-centered` to all modals for vertical centering
+- ✅ Added `modal-dialog-scrollable` to forms with long content
+- ✅ Set proper max-heights (80vh) for modal content
+- ✅ Added responsive sizing with proper margins
 - ✅ Enhanced modal headers with colored backgrounds and better icons
-- ✅ Added event handlers to prevent modal closing issues
 
 ### 2. Notification System Enhancement
 **Problem:** Admin actions (reject/suspend) only sent email notifications, not website notifications.
@@ -147,21 +130,13 @@ Website notifications now include:
 
 ## Testing Checklist
 
-1. **Modal Display & Interaction:**
-   - [ ] Open document viewer - should be centered at 900px width
-   - [ ] Click "Download" button in document viewer - should work
-   - [ ] Click "Open in New Tab" button in document viewer - should work
-   - [ ] Click "Close" button in document viewer - should close modal
-   - [ ] Open reject document modal - should be centered at 600px width
-   - [ ] Click buttons in reject document modal - should be clickable
-   - [ ] Open reject seller modal - should be centered at 600px width
-   - [ ] Click buttons in reject seller modal - should be clickable
-   - [ ] Open suspend seller modal - should be centered at 700px width
-   - [ ] Click buttons in suspend seller modal - should be clickable
-   - [ ] Verify no modals are cut off at the top or bottom
-   - [ ] Verify all buttons and links are clickable (no pointer-events issues)
+1. **Modal Display:**
+   - [ ] Open document viewer - should be centered, not fullscreen
+   - [ ] Open reject document modal - should be centered, scrollable
+   - [ ] Open reject seller modal - should be centered, scrollable
+   - [ ] Open suspend seller modal - should be centered, larger width
+   - [ ] Verify no modals are cut off at the top
    - [ ] Test on different screen sizes
-   - [ ] Verify modal backdrop closes modal when clicked
 
 2. **Notifications:**
    - [ ] Reject a seller - verify email sent AND database notification created
@@ -169,44 +144,13 @@ Website notifications now include:
    - [ ] Reject a document - verify email sent AND database notification created
    - [ ] Check user's notification dropdown/page shows new notifications
    - [ ] Verify notification links work correctly
-   - [ ] Verify notification data includes title, message, icon, and color
 
 3. **Functionality:**
    - [ ] All forms still submit correctly
-   - [ ] Rejection reasons populate correctly from dropdown
-   - [ ] Suspension reasons populate correctly from dropdown
-   - [ ] Document status updates correctly after rejection
+   - [ ] Rejection reasons populate correctly
+   - [ ] Suspension reasons populate correctly
+   - [ ] Document status updates correctly
    - [ ] User receives notifications in their account
-   - [ ] Forms can be scrolled if content is long
-   - [ ] Modals close properly with ESC key and close button
-
-## Key Technical Fixes
-
-### Z-Index Hierarchy
-```
-Sidebar: 1000-1001
-Modal Backdrop: 1050
-Modal: 1055
-Modal Dialog: 1056
-Modal Content: 1060
-Modal Header/Body/Footer: 1061
-Buttons/Links/Inputs: 1062
-```
-
-### Pointer Events Fix
-All modal elements now have `pointer-events: auto !important` to ensure:
-- Buttons are clickable
-- Links are clickable
-- Forms are submittable
-- Text areas are editable
-- Dropdowns are selectable
-
-### JavaScript Enhancements
-- Forces proper z-index on modal show event
-- Ensures all interactive elements have pointer-events: auto
-- Prevents event bubbling issues
-- Handles backdrop clicks properly
-- Manages body overflow when modal is open
 
 ## Notes
 
@@ -216,6 +160,3 @@ All modal elements now have `pointer-events: auto !important` to ensure:
 - Email notifications remain unchanged (still working)
 - Website notifications are now stored in the `notifications` table
 - Users can view notifications through their notification center/dropdown
-- All modals now properly centered and fully interactive
-- Fixed the "too big" layout issue by using modal-lg instead of modal-fullscreen
-- Fixed the "can't interact buttons" issue with z-index and pointer-events

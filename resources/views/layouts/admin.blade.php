@@ -42,6 +42,11 @@
             flex-direction: column;
             overflow: hidden;
         }
+        
+        /* Ensure modals appear above sidebar */
+        body.modal-open .admin-sidebar {
+            z-index: 1040;
+        }
 
         .admin-sidebar h4 {
             font-weight: 600;
@@ -306,6 +311,25 @@
 
         .modal.fade .modal-dialog { transition: transform 0.3s ease-out; transform: translate(0, -50px); }
         .modal.show .modal-dialog { transform: translate(0, 0); }
+        
+        /* Fix modal z-index and interaction */
+        .modal {
+            z-index: 1056 !important;
+        }
+        
+        .modal-backdrop {
+            z-index: 1055 !important;
+        }
+        
+        /* Ensure modal content is always interactive */
+        .modal-content {
+            pointer-events: auto !important;
+        }
+        
+        /* Fix body scroll when modal is open */
+        body.modal-open {
+            overflow: hidden !important;
+        }
 
         canvas { animation: fadeIn 1s ease-in; }
         .bi { transition: all 0.3s ease; }
@@ -815,6 +839,49 @@
             if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
                 sidebar.classList.remove('show');
             }
+        });
+        
+        // Global modal fix for responsiveness issues
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix all modal interactions
+            document.querySelectorAll('.modal').forEach(function(modal) {
+                // Ensure modal shows properly
+                modal.addEventListener('show.bs.modal', function() {
+                    // Lower sidebar z-index when modal opens
+                    const sidebar = document.querySelector('.admin-sidebar');
+                    if (sidebar) {
+                        sidebar.style.zIndex = '1040';
+                    }
+                });
+                
+                // Restore sidebar z-index when modal closes
+                modal.addEventListener('hidden.bs.modal', function() {
+                    const sidebar = document.querySelector('.admin-sidebar');
+                    if (sidebar) {
+                        sidebar.style.zIndex = '1000';
+                    }
+                    
+                    // Clean up any stuck backdrops
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                        if (!document.querySelector('.modal.show')) {
+                            backdrop.remove();
+                        }
+                    });
+                    
+                    // Re-enable body scroll if no modals are open
+                    if (!document.querySelector('.modal.show')) {
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                        document.body.style.paddingRight = '';
+                    }
+                });
+            });
+            
+            // Ensure all close buttons work
+            document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(btn) {
+                btn.style.cursor = 'pointer';
+                btn.style.pointerEvents = 'auto';
+            });
         });
     </script>
     
