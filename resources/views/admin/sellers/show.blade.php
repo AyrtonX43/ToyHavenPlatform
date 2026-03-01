@@ -974,45 +974,7 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Fix modal z-index - use Bootstrap defaults */
-.modal-backdrop.show {
-    opacity: 0.5;
-}
-
-.modal.show .modal-dialog {
-    transform: none;
-}
-
-/* Fix ALL modals - center properly without glitching */
-.modal-dialog-centered {
-    display: flex;
-    align-items: center;
-    min-height: calc(100vh - 3.5rem);
-}
-
-.modal-content {
-    width: 100%;
-}
-
-/* Ensure form elements are clickable */
-.modal .form-control,
-.modal .btn,
-.modal button,
-.modal input,
-.modal textarea,
-.modal select {
-    pointer-events: auto;
-}
-
-.modal textarea.form-control,
-.modal input.form-control {
-    cursor: text;
-}
-
-.modal .btn,
-.modal button {
-    cursor: pointer;
-}
+/* Minimal modal fixes - no glitching */
 
 /* Smooth transitions - only for cards, not modals */
 .card {
