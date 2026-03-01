@@ -383,8 +383,8 @@
                                         @endif
                                         
                                         <!-- Reject Document Modal -->
-                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-                                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
+                                            <div class="modal-dialog modal-dialog-centered">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                                                         @csrf
@@ -744,8 +744,8 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
@@ -814,8 +814,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
@@ -974,75 +974,67 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Modal backdrop with blur effect */
-.modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(5px) !important;
-    -webkit-backdrop-filter: blur(5px) !important;
-}
-
+/* Fix modal z-index - use Bootstrap defaults */
 .modal-backdrop.show {
-    opacity: 1 !important;
+    opacity: 0.5;
 }
 
-/* Center all modals properly */
+.modal.show .modal-dialog {
+    transform: none;
+}
+
+/* Fix ALL modals - center properly without glitching */
 .modal {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    overflow-y: auto !important;
+}
+
+.modal-dialog {
+    position: relative !important;
+    margin: 1.75rem auto !important;
+    pointer-events: auto !important;
+    max-width: 500px !important;
 }
 
 .modal-dialog-centered {
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    min-height: 100% !important;
-    margin: 0 auto !important;
-}
-
-.modal-dialog {
-    position: relative !important;
-    max-width: 500px !important;
-    width: 90% !important;
-    margin: 1.75rem auto !important;
+    min-height: calc(100vh - 3.5rem) !important;
 }
 
 .modal-content {
     position: relative !important;
+    pointer-events: auto !important;
     background-color: #fff !important;
-    border: none !important;
+    border: 1px solid rgba(0,0,0,.2) !important;
     border-radius: 0.5rem !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15) !important;
 }
 
-/* Fix glitching - disable all transitions on modals */
-.modal,
-.modal *,
-.modal-dialog,
-.modal-content,
-.modal-body,
-.modal-header,
-.modal-footer {
-    transition: none !important;
-    -webkit-transition: none !important;
-}
-
-/* Ensure all form elements are interactive */
+/* Ensure ALL form elements are interactive - no glitching */
 .modal input,
 .modal textarea,
 .modal select,
 .modal button,
 .modal .form-control,
-.modal .form-select,
 .modal .btn {
     pointer-events: auto !important;
     cursor: pointer !important;
 }
 
-.modal textarea,
-.modal input[type="text"],
-.modal input[type="email"] {
+.modal textarea.form-control,
+.modal input.form-control {
     cursor: text !important;
+}
+
+/* Remove ALL transitions that cause glitching */
+.modal,
+.modal *,
+.modal *::before,
+.modal *::after {
+    transition: none !important;
 }
 
 /* Smooth transitions */
@@ -1098,27 +1090,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Ensure modals are properly centered and interactive when opened
-    const allModals = document.querySelectorAll('.modal');
-    
-    allModals.forEach(function(modalElement) {
-        modalElement.addEventListener('shown.bs.modal', function() {
-            // Ensure body doesn't scroll
-            document.body.style.overflow = 'hidden';
-            
-            // Ensure all form elements are interactive
-            const formElements = modalElement.querySelectorAll('input, textarea, select, button, .form-control, .form-select, .btn');
-            formElements.forEach(function(element) {
-                element.style.pointerEvents = 'auto';
-                element.style.cursor = element.tagName === 'BUTTON' ? 'pointer' : (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT' ? 'text' : 'pointer');
-            });
-        });
-        
-        // Restore body scroll when modal closes
-        modalElement.addEventListener('hidden.bs.modal', function() {
-            document.body.style.overflow = '';
-        });
-    });
+    // No scroll needed - CSS handles centering automatically
     
 });
 </script>
