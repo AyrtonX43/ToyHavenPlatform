@@ -974,25 +974,13 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Fix modal backdrop and interaction issues */
+/* Fix modal z-index - use Bootstrap defaults */
 .modal-backdrop.show {
     opacity: 0.5;
 }
 
-/* Ensure modals are always interactive and on top */
-#rejectModal,
-#suspendModal {
-    z-index: 1060 !important;
-}
-
-#rejectModal .modal-dialog,
-#suspendModal .modal-dialog {
-    pointer-events: auto !important;
-}
-
-#rejectModal .modal-content,
-#suspendModal .modal-content {
-    pointer-events: auto !important;
+.modal.show .modal-dialog {
+    transform: none;
 }
 
 /* Smooth transitions */
@@ -1048,22 +1036,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Fix for Reject and Suspend modals - ensure they're always interactive
-    const actionModals = ['rejectModal', 'suspendModal'];
-    
-    actionModals.forEach(function(modalId) {
-        const modalElement = document.getElementById(modalId);
-        if (modalElement) {
-            // Ensure modal is on top when shown
-            modalElement.addEventListener('shown.bs.modal', function() {
-                modalElement.style.zIndex = '1060';
-                const backdrop = document.querySelector('.modal-backdrop.show');
-                if (backdrop) {
-                    backdrop.style.zIndex = '1055';
-                }
-            });
-        }
-    });
 });
 </script>
 @endsection
