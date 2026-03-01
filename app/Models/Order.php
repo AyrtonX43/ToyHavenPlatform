@@ -145,28 +145,12 @@ class Order extends Model
 
     public function isDeliveryConfirmed(): bool
     {
-        try {
-            return $this->deliveryConfirmation()->exists();
-        } catch (\Exception $e) {
-            \Log::warning('isDeliveryConfirmed check failed (table may not exist)', [
-                'order_id' => $this->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->deliveryConfirmation()->exists();
     }
 
     public function hasActiveDispute(): bool
     {
-        try {
-            return $this->activeDispute()->exists();
-        } catch (\Exception $e) {
-            \Log::warning('hasActiveDispute check failed (table may not exist)', [
-                'order_id' => $this->id,
-                'error' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->activeDispute()->exists();
     }
 
     public function canBeReviewed(): bool

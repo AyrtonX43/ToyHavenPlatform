@@ -69,15 +69,42 @@
                         <p class="mb-4">Ready to start your journey with ToyHaven? Choose your registration type below!</p>
                         <div class="d-flex gap-3 justify-content-center flex-wrap">
                             <a href="{{ route('seller.register', ['type' => 'basic']) }}" class="btn btn-primary btn-lg px-5">
-                                <i class="bi bi-arrow-right-circle me-2"></i>Proceed to Register
+                                <i class="bi bi-shop me-2"></i>Register as Local Business Toyshop
                             </a>
                             <a href="{{ route('seller.register', ['type' => 'verified']) }}" class="btn btn-success btn-lg px-5">
-                                <i class="bi bi-shield-check me-2"></i>Register as Full Verified Trusted Shop
+                                <i class="bi bi-shield-check me-2"></i>Register as Verified Trusted Toyshop
                             </a>
                         </div>
-                        <p class="text-muted small mt-3">
-                            <strong>Full Verified Trusted Shop:</strong> Get verified badge, priority support, and enhanced trust from customers by providing additional business documents.
-                        </p>
+                        <div class="row mt-4 text-start">
+                            <div class="col-md-6">
+                                <div class="card border-primary h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="bi bi-shop text-primary me-2"></i>Local Business Toyshop</h6>
+                                        <p class="card-text small text-muted">Perfect for small local toy businesses and individual sellers</p>
+                                        <ul class="small">
+                                            <li>Basic verification required</li>
+                                            <li>Primary ID & Facial Verification</li>
+                                            <li>Bank Statement</li>
+                                            <li>Start selling quickly</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-success h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="bi bi-shield-check text-success me-2"></i>Verified Trusted Toyshop</h6>
+                                        <p class="card-text small text-muted">For established businesses with proper documentation</p>
+                                        <ul class="small">
+                                            <li>Enhanced verification & trust badge</li>
+                                            <li>Business Permit & BIR Certificate</li>
+                                            <li>Product Sample verification</li>
+                                            <li>Priority support & featured placement</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
