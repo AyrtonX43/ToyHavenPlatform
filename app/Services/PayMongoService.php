@@ -41,9 +41,6 @@ class PayMongoService
 
         try {
             $amountCentavos = (int) round($amount * 100);
-            if ($amountCentavos < 2000) {
-                $amountCentavos = 2000;
-            }
 
             $response = Http::withBasicAuth($this->secretKey, '')
                 ->withOptions(['verify' => config('app.env') !== 'local'])

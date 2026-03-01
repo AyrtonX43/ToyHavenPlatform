@@ -26,9 +26,23 @@ class ReceiptService
         $filename = "receipt_{$receiptNumber}.pdf";
         $path = "receipts/{$order->user_id}/{$filename}";
         
+        // Ensure directory exists
+        $directory = "receipts/{$order->user_id}";
+        if (!Storage::disk('public')->exists($directory)) {
+            Storage::disk('public')->makeDirectory($directory);
+        }
+        
         Storage::disk('public')->put($path, $pdf->output());
         
         $order->update(['receipt_path' => $path]);
+        
+        \Log::info('Receipt generated and saved', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'receipt_number' => $receiptNumber,
+            'receipt_path' => $path,
+            'file_size' => Storage::disk('public')->size($path)
+        ]);
         
         return $path;
     }

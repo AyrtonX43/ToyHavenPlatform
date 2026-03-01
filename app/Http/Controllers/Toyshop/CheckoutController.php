@@ -112,6 +112,10 @@ class CheckoutController extends Controller
         $vatRate = $priceBreakdown['tax_rate'];
         $totalWithVat = $subtotalAfterDiscount + $shippingFee + $priceBreakdown['admin_commission'] + $priceBreakdown['tax_amount'] + $priceBreakdown['transaction_fee'];
 
+        // Check PayMongo minimum amount (₱20)
+        $minimumAmount = 20.00;
+        $belowMinimum = $totalWithVat < $minimumAmount;
+
         // Expected delivery: 3-5 business days from now
         $minDeliveryDate = now()->addWeekdays(3);
         $maxDeliveryDate = now()->addWeekdays(5);
@@ -132,7 +136,9 @@ class CheckoutController extends Controller
             'totalWithVat',
             'minDeliveryDate',
             'maxDeliveryDate',
-            'selectedIds'
+            'selectedIds',
+            'belowMinimum',
+            'minimumAmount'
         ));
     }
 
@@ -150,6 +156,26 @@ class CheckoutController extends Controller
 
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Please select at least one item to checkout.');
+        }
+
+        // Calculate total to check minimum amount
+        $totalSubtotal = $cartItems->sum(fn ($item) => $item->product->price * $item->quantity);
+        $membershipDiscountPct = 0;
+        $user = Auth::user();
+        if ($user && $user->hasActiveMembership()) {
+            $plan = $user->currentPlan();
+            if ($plan) {
+                $membershipDiscountPct = $plan->getToyshopDiscount();
+            }
+        }
+        $totalDiscount = $totalSubtotal * ($membershipDiscountPct / 100);
+        $baseAmount = $totalSubtotal - $totalDiscount;
+        $priceCalculation = $this->priceService->calculatePrice($baseAmount);
+        $finalTotal = $baseAmount + $priceCalculation['admin_commission'] + $priceCalculation['tax_amount'] + $priceCalculation['transaction_fee'];
+
+        // Check PayMongo minimum amount
+        if ($finalTotal < 20.00) {
+            return back()->with('error', 'Order total (₱' . number_format($finalTotal, 2) . ') is below the minimum payment amount of ₱20.00. Please add more items to your cart.');
         }
 
         // Validate all items are from active sellers and have stock
@@ -502,26 +528,41 @@ class CheckoutController extends Controller
                     'updated_by' => Auth::id(),
                 ]);
                 
+                // Generate receipt FIRST before sending notifications
+                $receiptGenerated = false;
                 try {
                     $receiptService = app(\App\Services\ReceiptService::class);
                     $receiptService->generateReceipt($order);
-                } catch (\Exception $e) {
-                    Log::warning('Receipt generation failed (non-critical)', [
+                    $receiptGenerated = true;
+                    Log::info('Receipt generated successfully', [
                         'order_number' => $order->order_number,
-                        'error' => $e->getMessage()
+                        'receipt_number' => $order->receipt_number
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Receipt generation failed', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
 
+                // Send notifications with receipt attached
                 try {
+                    $order->refresh();
                     $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
                     $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
                     if ($order->seller && $order->seller->user) {
                         $order->seller->user->notify(new \App\Notifications\OrderPaidNotification($order));
                     }
-                } catch (\Exception $e) {
-                    Log::warning('Notification sending failed (non-critical)', [
+                    Log::info('Notifications sent successfully', [
                         'order_number' => $order->order_number,
-                        'error' => $e->getMessage()
+                        'receipt_attached' => $receiptGenerated
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Notification sending failed', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
 
@@ -620,26 +661,41 @@ class CheckoutController extends Controller
                     'updated_by' => Auth::id(),
                 ]);
 
+                // Generate receipt FIRST before sending notifications
+                $receiptGenerated = false;
                 try {
                     $receiptService = app(\App\Services\ReceiptService::class);
                     $receiptService->generateReceipt($order);
-                } catch (\Exception $e) {
-                    Log::warning('Receipt generation failed (non-critical)', [
+                    $receiptGenerated = true;
+                    Log::info('Receipt generated successfully', [
                         'order_number' => $order->order_number,
-                        'error' => $e->getMessage()
+                        'receipt_number' => $order->receipt_number
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Receipt generation failed', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
 
+                // Send notifications with receipt attached
                 try {
+                    $order->refresh();
                     $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
                     $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
                     if ($order->seller && $order->seller->user) {
                         $order->seller->user->notify(new \App\Notifications\OrderPaidNotification($order));
                     }
-                } catch (\Exception $e) {
-                    Log::warning('Notification sending failed (non-critical)', [
+                    Log::info('Notifications sent successfully', [
                         'order_number' => $order->order_number,
-                        'error' => $e->getMessage()
+                        'receipt_attached' => $receiptGenerated
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Notification sending failed', [
+                        'order_number' => $order->order_number,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
                     ]);
                 }
 

@@ -375,8 +375,15 @@
                         <span class="summary-total">₱{{ number_format($totalWithVat ?? ($subtotal + $shippingFee), 2) }}</span>
                     </div>
                     
+                    @if($belowMinimum ?? false)
+                        <div class="alert alert-warning mt-3 mb-0" style="font-size: 0.875rem;">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Minimum Order:</strong> Your order total (₱{{ number_format($totalWithVat, 2) }}) is below the minimum payment amount of ₱{{ number_format($minimumAmount, 2) }}. Please add more items to proceed.
+                        </div>
+                    @endif
+                    
                     <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="submit" class="btn btn-primary btn-lg" @if($belowMinimum ?? false) disabled @endif>
                             <i class="bi bi-lock me-2"></i>Place Order & Proceed to Payment
                         </button>
                         <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary">
