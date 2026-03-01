@@ -129,7 +129,7 @@
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Region <span class="text-danger">*</span></label>
                                 <select name="region" id="region" class="form-select @error('region') is-invalid @enderror" required>
-                                    <option value="">Loading regions...</option>
+                                    <option value="">Select Region</option>
                                 </select>
                                 @error('region')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -380,7 +380,11 @@
                         <div class="mb-4 {{ $errors->has('toy_category_ids') ? 'is-invalid' : '' }}">
                             <label class="form-label">Select 1-3 Categories <span class="text-danger">*</span></label>
                             
-                            @if(isset($categories) && count($categories) > 0)
+                            @php
+                                $categoryCount = isset($categories) ? count($categories) : 0;
+                            @endphp
+                            
+                            @if($categoryCount > 0)
                                 <div class="row g-3" id="toy-category-buttons">
                                     @foreach($categories as $cat)
                                         @php 
@@ -390,7 +394,7 @@
                                         @endphp
                                         <div class="col-md-6 col-lg-4">
                                             <input type="checkbox" class="btn-check category-checkbox" name="toy_category_ids[]" value="{{ $cat->id }}" id="toy_cat_{{ $cat->id }}" {{ $isOld ? 'checked' : '' }} autocomplete="off">
-                                            <label class="btn btn-outline-primary text-start w-100 h-100 p-3 category-card" for="toy_cat_{{ $cat->id }}">
+                                            <label class="btn btn-outline-primary text-start w-100 h-100 p-3 category-card" for="toy_cat_{{ $cat->id }}" style="cursor: pointer;">
                                                 <div class="d-flex align-items-start">
                                                     <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; min-width: 50px;">
                                                         <i class="bi {{ $icon }} text-primary" style="font-size: 1.5rem;"></i>
@@ -413,10 +417,15 @@
                                     <span id="category-count" class="fw-semibold">0 selected</span>
                                 </small>
                             @else
-                                <div class="alert alert-warning">
+                                <div class="alert alert-danger">
                                     <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <strong>No categories available.</strong> Please contact the administrator to set up toy categories.
+                                    <strong>No categories found in database!</strong>
+                                    <p class="mb-2 mt-2">The administrator needs to add toy categories first. Categories found: {{ $categoryCount }}</p>
+                                    <p class="mb-0"><strong>Admin:</strong> Go to Admin Panel → Categories → Add categories and mark them as "Active"</p>
                                 </div>
+                                
+                                <!-- Temporary: Allow form submission without categories for testing -->
+                                <input type="hidden" name="toy_category_ids[]" value="0">
                             @endif
                             
                             @error('toy_category_ids')
@@ -489,10 +498,6 @@
 
 @push('scripts')
 <script>
-// Cache buster - force reload of this script
-const SCRIPT_VERSION = '2.2-' + Date.now();
-console.log('Seller Registration Form Script Loaded - Version:', SCRIPT_VERSION);
-
 document.addEventListener('DOMContentLoaded', function() {
     // Phone number formatting
     const phoneDisplay = document.getElementById('phone_display');
@@ -548,8 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper function to normalize special characters
     function normalizeText(text) {
         if (!text) return text;
-        
-        // Create a mapping of special characters to their normalized versions
+        // Create a map of special characters to their replacements
         const charMap = {
             'ñ': 'n', 'Ñ': 'N',
             'á': 'a', 'Á': 'A',
@@ -557,65 +561,28 @@ document.addEventListener('DOMContentLoaded', function() {
             'í': 'i', 'Í': 'I',
             'ó': 'o', 'Ó': 'O',
             'ú': 'u', 'Ú': 'U',
-            'ü': 'u', 'Ü': 'U',
-            // Handle encoding issues
-            'Ã±': 'n', 'Ã'': 'N',
-            'Ã¡': 'a', 'Ã©': 'e', 'Ã­': 'i', 'Ã³': 'o', 'Ãº': 'u'
+            'ü': 'u', 'Ü': 'U'
         };
         
+        // Replace each special character
         let normalized = text;
-        for (const [special, normal] of Object.entries(charMap)) {
-            normalized = normalized.split(special).join(normal);
+        for (let char in charMap) {
+            normalized = normalized.split(char).join(charMap[char]);
         }
-        
         return normalized;
     }
 
     // Load regions on page load
-    console.log('Starting to load regions from:', API_BASE);
-    
-    if (!regionSelect) {
-        console.error('Region select element not found!');
-        return;
-    }
-    
     fetch(`${API_BASE}/regions`)
-        .then(response => {
-            console.log('Regions API response status:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('Regions loaded successfully:', data.length, 'regions');
-            
-            if (!data || data.length === 0) {
-                console.error('No regions data received!');
-                regionSelect.innerHTML = '<option value="">Error loading regions</option>';
-                return;
-            }
-            
-            // Clear loading message
-            regionSelect.innerHTML = '<option value="">Select Region</option>';
-            
             data.forEach(region => {
-                const originalName = region.name;
-                const normalizedName = normalizeText(region.name);
-                
-                // Debug: Log if normalization changed anything
-                if (originalName !== normalizedName) {
-                    console.log('Normalized:', originalName, '→', normalizedName);
-                }
-                
                 const option = document.createElement('option');
-                option.value = normalizedName;
-                option.textContent = normalizedName;
+                option.value = normalizeText(region.name);
+                option.textContent = normalizeText(region.name);
                 option.dataset.code = region.code;
                 regionSelect.appendChild(option);
             });
-            
-            console.log('Region options added:', regionSelect.options.length);
             
             // Pre-select if old value exists
             const oldRegion = "{{ old('region', $prefilledData['region'] ?? '') }}";
@@ -624,12 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 regionSelect.dispatchEvent(new Event('change'));
             }
         })
-        .catch(error => {
-            console.error('Error loading regions:', error);
-            console.error('Error details:', error.message);
-            regionSelect.innerHTML = '<option value="">Error loading regions - Please refresh</option>';
-            alert('Failed to load Philippine regions. Please check your internet connection and refresh the page.');
-        });
+        .catch(error => console.error('Error loading regions:', error));
 
     // Load provinces when region changes
     regionSelect.addEventListener('change', function() {
@@ -648,13 +610,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const regionName = this.value;
 
         // Check if NCR (National Capital Region) - it has no provinces, only cities
-        if (regionName.includes('NCR') || regionName.includes('National Capital Region') || regionName.includes('Metro Manila')) {
-            // For NCR, load cities directly
+        if (regionName.includes('NCR') || regionName.includes('National Capital Region') || regionCode === '130000000') {
+            // For NCR, load cities directly from the region
             provinceSelect.innerHTML = '<option value="Metro Manila">Metro Manila</option>';
             provinceSelect.value = 'Metro Manila';
-            provinceSelect.disabled = true; // Disable since there's only one option
+            provinceSelect.disabled = true; // Disable since NCR has no provinces
             
-            // Load cities for NCR
+            // Load cities directly for NCR
             fetch(`${API_BASE}/regions/${regionCode}/cities-municipalities`)
                 .then(response => response.json())
                 .then(data => {
@@ -680,37 +642,20 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`${API_BASE}/regions/${regionCode}/provinces`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.length === 0) {
-                        // If no provinces, try loading cities directly
-                        fetch(`${API_BASE}/regions/${regionCode}/cities-municipalities`)
-                            .then(response => response.json())
-                            .then(cityData => {
-                                cityData.forEach(city => {
-                                    const option = document.createElement('option');
-                                    option.value = normalizeText(city.name);
-                                    option.textContent = normalizeText(city.name);
-                                    option.dataset.code = city.code;
-                                    citySelect.appendChild(option);
-                                });
-                                citySelect.disabled = false;
-                            })
-                            .catch(error => console.error('Error loading cities:', error));
-                    } else {
-                        data.forEach(province => {
-                            const option = document.createElement('option');
-                            option.value = normalizeText(province.name);
-                            option.textContent = normalizeText(province.name);
-                            option.dataset.code = province.code;
-                            provinceSelect.appendChild(option);
-                        });
-                        provinceSelect.disabled = false;
-                        
-                        // Pre-select if old value exists
-                        const oldProvince = "{{ old('province', $prefilledData['province'] ?? '') }}";
-                        if (oldProvince) {
-                            provinceSelect.value = oldProvince;
-                            provinceSelect.dispatchEvent(new Event('change'));
-                        }
+                    data.forEach(province => {
+                        const option = document.createElement('option');
+                        option.value = normalizeText(province.name);
+                        option.textContent = normalizeText(province.name);
+                        option.dataset.code = province.code;
+                        provinceSelect.appendChild(option);
+                    });
+                    provinceSelect.disabled = false;
+                    
+                    // Pre-select if old value exists
+                    const oldProvince = "{{ old('province', $prefilledData['province'] ?? '') }}";
+                    if (oldProvince) {
+                        provinceSelect.value = oldProvince;
+                        provinceSelect.dispatchEvent(new Event('change'));
                     }
                 })
                 .catch(error => console.error('Error loading provinces:', error));

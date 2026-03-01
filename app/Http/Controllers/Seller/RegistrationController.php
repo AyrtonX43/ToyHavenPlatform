@@ -57,6 +57,9 @@ class RegistrationController extends Controller
         $registrationType = $request->input('registration_type', 'basic');
         $isVerified = $registrationType === 'verified';
 
+        // Check if categories exist
+        $categoriesExist = Category::where('is_active', true)->count() > 0;
+        
         // Base validation rules
         $rules = [
             'business_name' => 'required|string|max:255',
@@ -69,8 +72,6 @@ class RegistrationController extends Controller
             'barangay' => 'required|string|max:100',
             'province' => 'required|string|max:100',
             'postal_code' => 'required|string|size:4|regex:/^[0-9]{4}$/',
-            'toy_category_ids' => 'required|array|min:1|max:3',
-            'toy_category_ids.*' => 'exists:categories,id',
             'id_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'facial_verification' => 'required|file|mimes:jpg,jpeg,png|max:5120',
             'bank_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -79,6 +80,14 @@ class RegistrationController extends Controller
             'tiktok_url' => 'nullable|url|max:255',
             'website_url' => 'nullable|url|max:255',
         ];
+        
+        // Only validate categories if they exist in the database
+        if ($categoriesExist) {
+            $rules['toy_category_ids'] = 'required|array|min:1|max:3';
+            $rules['toy_category_ids.*'] = 'exists:categories,id';
+        } else {
+            $rules['toy_category_ids'] = 'nullable|array';
+        }
 
         // Add verified shop requirements
         if ($isVerified) {
@@ -89,6 +98,12 @@ class RegistrationController extends Controller
 
         $request->validate($rules);
 
+        // Prepare category IDs (filter out any invalid values like 0)
+        $categoryIds = $request->toy_category_ids ?? [];
+        $categoryIds = array_filter($categoryIds, function($id) {
+            return $id > 0;
+        });
+        
         // Create seller
         $seller = Seller::create([
             'user_id' => Auth::id(),
@@ -107,7 +122,7 @@ class RegistrationController extends Controller
             'instagram_url' => $request->instagram_url,
             'tiktok_url' => $request->tiktok_url,
             'website_url' => $request->website_url,
-            'toy_category_ids' => $request->toy_category_ids,
+            'toy_category_ids' => !empty($categoryIds) ? $categoryIds : null,
             'verification_status' => 'pending',
             'is_verified_shop' => $isVerified, // Store verification type
         ]);
