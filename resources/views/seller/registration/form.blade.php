@@ -4,31 +4,32 @@
 
 @php
 // PHP helper function to normalize special characters
-function normalizePhilippineText($text) {
-    if (empty($text)) return $text;
-    
-    // First, handle the common encoding issue patterns
-    $text = str_replace('Ã±', 'n', $text);
-    $text = str_replace('Ã'', 'N', $text);
-    $text = str_replace('Ã¡', 'a', $text);
-    $text = str_replace('Ã‰', 'E', $text);
-    $text = str_replace('Ã©', 'e', $text);
-    $text = str_replace('Ã­', 'i', $text);
-    $text = str_replace('Ã³', 'o', $text);
-    $text = str_replace('Ãº', 'u', $text);
-    
-    // Then handle proper UTF-8 characters
-    $charMap = [
-        'ñ' => 'n', 'Ñ' => 'N',
-        'á' => 'a', 'Á' => 'A',
-        'é' => 'e', 'É' => 'E',
-        'í' => 'i', 'Í' => 'I',
-        'ó' => 'o', 'Ó' => 'O',
-        'ú' => 'u', 'Ú' => 'U',
-        'ü' => 'u', 'Ü' => 'U',
-    ];
-    
-    return str_replace(array_keys($charMap), array_values($charMap), $text);
+if (!function_exists('normalizePhilippineText')) {
+    function normalizePhilippineText($text) {
+        if (empty($text)) return $text;
+        
+        // Use regex to remove all non-ASCII characters and replace common ones
+        $replacements = array(
+            // Handle encoding issues
+            chr(195).chr(177) => 'n',  // ñ encoded
+            chr(195).chr(145) => 'N',  // Ñ encoded
+            chr(195).chr(161) => 'a',  // á encoded
+            chr(195).chr(169) => 'e',  // é encoded
+            chr(195).chr(173) => 'i',  // í encoded
+            chr(195).chr(179) => 'o',  // ó encoded
+            chr(195).chr(186) => 'u',  // ú encoded
+            // Handle proper UTF-8
+            'ñ' => 'n', 'Ñ' => 'N',
+            'á' => 'a', 'Á' => 'A',
+            'é' => 'e', 'É' => 'E',
+            'í' => 'i', 'Í' => 'I',
+            'ó' => 'o', 'Ó' => 'O',
+            'ú' => 'u', 'Ú' => 'U',
+            'ü' => 'u', 'Ü' => 'U',
+        );
+        
+        return str_replace(array_keys($replacements), array_values($replacements), $text);
+    }
 }
 
 // Normalize pre-filled data
