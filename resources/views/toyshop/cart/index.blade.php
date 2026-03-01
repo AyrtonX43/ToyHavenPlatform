@@ -68,9 +68,14 @@
         color: #475569;
     }
 
-    .quantity-btn:hover {
+    .quantity-btn:hover:not(:disabled) {
         background: #e2e8f0;
         color: #0891b2;
+    }
+    
+    .quantity-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
 
     .quantity-input {
@@ -222,25 +227,31 @@
                                 <p class="text-muted mb-2">₱{{ number_format($unitPrice, 2) }} each</p>
                                 
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3">
-                                    <div class="quantity-control">
-                                        <form action="{{ route('cart.update', $item->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('PUT')
-                                            <button type="button" class="quantity-btn" onclick="decreaseQuantity({{ $item->id }})">
-                                                <i class="bi bi-dash"></i>
-                                            </button>
-                                            <input type="number" name="quantity" id="quantity-{{ $item->id }}" class="quantity-input" value="{{ $item->quantity }}" min="1" max="{{ $maxQty }}" onchange="updateQuantity({{ $item->id }})">
-                                            <button type="button" class="quantity-btn" onclick="increaseQuantity({{ $item->id }})">
-                                                <i class="bi bi-plus"></i>
-                                            </button>
-                                        </form>
+                                    <div class="d-flex flex-column gap-1">
+                                        <div class="quantity-control">
+                                            <form action="{{ route('cart.update', $item->id) }}" method="POST" class="d-inline" id="form-{{ $item->id }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="button" class="quantity-btn" onclick="decreaseQuantity({{ $item->id }})" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                                    <i class="bi bi-dash"></i>
+                                                </button>
+                                                <input type="number" name="quantity" id="quantity-{{ $item->id }}" class="quantity-input" value="{{ $item->quantity }}" min="1" max="{{ $maxQty }}" onchange="updateQuantity({{ $item->id }})" oninput="validateQuantity({{ $item->id }}, {{ $maxQty }})">
+                                                <button type="button" class="quantity-btn" onclick="increaseQuantity({{ $item->id }})" {{ $item->quantity >= $maxQty ? 'disabled' : '' }}>
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <small class="text-muted" style="font-size: 0.75rem;">
+                                            <i class="bi bi-box-seam me-1"></i>{{ $maxQty }} available
+                                        </small>
                                     </div>
                                     
                                     <div class="text-end">
-                                        <div class="cart-item-price">₱{{ number_format($unitPrice * $item->quantity, 2) }}</div>
+                                        <div class="cart-item-price" id="item-total-{{ $item->id }}">₱{{ number_format($unitPrice * $item->quantity, 2) }}</div>
+                                        <small class="text-muted d-block" style="font-size: 0.75rem;">₱{{ number_format($unitPrice, 2) }} × {{ $item->quantity }}</small>
                                     </div>
                                     
-                                    <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this item from cart?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -330,21 +341,43 @@
     });
 })();
 
+    function validateQuantity(itemId, maxQty) {
+        const input = document.getElementById('quantity-' + itemId);
+        let value = parseInt(input.value) || 1;
+        
+        // Enforce min and max
+        if (value < 1) value = 1;
+        if (value > maxQty) value = maxQty;
+        
+        input.value = value;
+        
+        // Update button states
+        const form = document.getElementById('form-' + itemId);
+        const decreaseBtn = form.querySelector('.quantity-btn:first-child');
+        const increaseBtn = form.querySelector('.quantity-btn:last-child');
+        
+        decreaseBtn.disabled = value <= 1;
+        increaseBtn.disabled = value >= maxQty;
+    }
+
     function increaseQuantity(itemId) {
         const input = document.getElementById('quantity-' + itemId);
         const max = parseInt(input.max);
         const current = parseInt(input.value);
         if (current < max) {
             input.value = current + 1;
+            validateQuantity(itemId, max);
             updateQuantity(itemId);
         }
     }
     
     function decreaseQuantity(itemId) {
         const input = document.getElementById('quantity-' + itemId);
+        const max = parseInt(input.max);
         const current = parseInt(input.value);
         if (current > 1) {
             input.value = current - 1;
+            validateQuantity(itemId, max);
             updateQuantity(itemId);
         }
     }
@@ -353,7 +386,14 @@
         const input = document.getElementById('quantity-' + itemId);
         const form = input.closest('form');
         const formData = new FormData(form);
-        formData.set('quantity', input.value);
+        const quantity = parseInt(input.value);
+        
+        formData.set('quantity', quantity);
+        
+        // Show loading state
+        input.disabled = true;
+        const buttons = form.querySelectorAll('.quantity-btn');
+        buttons.forEach(btn => btn.disabled = true);
         
         fetch(form.action, {
             method: 'POST',
@@ -361,10 +401,49 @@
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
-        }).then(() => {
+        })
+        .then(response => response.ok ? response : Promise.reject(response))
+        .then(() => {
+            // Reload page to update totals and cart
             location.reload();
+        })
+        .catch(error => {
+            console.error('Error updating quantity:', error);
+            alert('Failed to update quantity. Please try again.');
+            input.disabled = false;
+            buttons.forEach(btn => btn.disabled = false);
         });
     }
+    
+    // Allow Enter key to update quantity
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.quantity-input').forEach(function(input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const itemId = this.id.replace('quantity-', '');
+                    const max = parseInt(this.max);
+                    validateQuantity(itemId, max);
+                    updateQuantity(itemId);
+                }
+            });
+            
+            // Validate on blur (when user clicks away)
+            input.addEventListener('blur', function() {
+                const itemId = this.id.replace('quantity-', '');
+                const max = parseInt(this.max);
+                const oldValue = parseInt(this.defaultValue);
+                const newValue = parseInt(this.value);
+                
+                validateQuantity(itemId, max);
+                
+                // Only update if value changed
+                if (oldValue !== newValue) {
+                    updateQuantity(itemId);
+                }
+            });
+        });
+    });
 </script>
 @endpush
 @endsection
