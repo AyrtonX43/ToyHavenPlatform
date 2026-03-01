@@ -6,19 +6,34 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="mb-1">{{ $seller->business_name }}</h4>
-                        <p class="text-muted mb-0">Owner: {{ $seller->user->name }} ({{ $seller->user->email }})</p>
+                        <h3 class="mb-2 fw-bold">
+                            @if($seller->is_verified_shop)
+                                <i class="bi bi-shield-check text-success me-2"></i>
+                            @else
+                                <i class="bi bi-shop text-primary me-2"></i>
+                            @endif
+                            {{ $seller->business_name }}
+                        </h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <strong>Owner:</strong> {{ $seller->user->name }} 
+                            <span class="text-muted">|</span>
+                            <i class="bi bi-envelope me-1"></i>{{ $seller->user->email }}
+                        </p>
                     </div>
                     <div class="text-end">
-                        <span class="badge bg-{{ $seller->verification_status === 'approved' ? 'success' : ($seller->verification_status === 'rejected' ? 'danger' : 'warning') }} fs-6">
+                        <span class="badge bg-{{ $seller->verification_status === 'approved' ? 'success' : ($seller->verification_status === 'rejected' ? 'danger' : 'warning') }} fs-5 px-3 py-2 mb-2">
+                            <i class="bi bi-{{ $seller->verification_status === 'approved' ? 'check-circle' : ($seller->verification_status === 'rejected' ? 'x-circle' : 'clock') }} me-1"></i>
                             {{ ucfirst($seller->verification_status) }}
                         </span>
                         @if(!$seller->is_active)
-                            <span class="badge bg-secondary fs-6">Suspended</span>
+                            <br><span class="badge bg-secondary fs-6 px-3 py-2">
+                                <i class="bi bi-pause-circle me-1"></i>Suspended
+                            </span>
                         @endif
                     </div>
                 </div>
@@ -27,42 +42,56 @@
     </div>
 </div>
 
-<div class="row mb-4">
+<div class="row mb-4 g-3">
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3 class="text-primary">{{ $stats['total_products'] }}</h3>
-                <small class="text-muted">Total Products</small>
-                <div class="mt-2">
-                    <span class="badge bg-success">{{ $stats['active_products'] }} Active</span>
-                    <span class="badge bg-warning">{{ $stats['pending_products'] }} Pending</span>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-2">
+                    <i class="bi bi-box-seam text-primary" style="font-size: 2rem;"></i>
+                </div>
+                <h2 class="text-primary mb-1 fw-bold">{{ $stats['total_products'] }}</h2>
+                <p class="text-muted mb-3 small">Total Products</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <span class="badge bg-success-subtle text-success border border-success">
+                        <i class="bi bi-check-circle me-1"></i>{{ $stats['active_products'] }} Active
+                    </span>
+                    <span class="badge bg-warning-subtle text-warning border border-warning">
+                        <i class="bi bi-clock me-1"></i>{{ $stats['pending_products'] }} Pending
+                    </span>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3 class="text-success">{{ $stats['total_orders'] }}</h3>
-                <small class="text-muted">Total Orders</small>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-2">
+                    <i class="bi bi-cart-check text-success" style="font-size: 2rem;"></i>
+                </div>
+                <h2 class="text-success mb-1 fw-bold">{{ $stats['total_orders'] }}</h2>
+                <p class="text-muted mb-0 small">Total Orders</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3 class="text-info">₱{{ number_format($stats['total_revenue'], 2) }}</h3>
-                <small class="text-muted">Total Revenue</small>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-2">
+                    <i class="bi bi-currency-dollar text-info" style="font-size: 2rem;"></i>
+                </div>
+                <h2 class="text-info mb-1 fw-bold">₱{{ number_format($stats['total_revenue'], 2) }}</h2>
+                <p class="text-muted mb-0 small">Total Revenue</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <h3 class="text-warning">
-                    <i class="bi bi-star-fill"></i> {{ number_format($seller->rating, 1) }}
-                </h3>
-                <small class="text-muted">{{ $seller->total_reviews }} Reviews</small>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-2">
+                    <i class="bi bi-star-fill text-warning" style="font-size: 2rem;"></i>
+                </div>
+                <h2 class="text-warning mb-1 fw-bold">{{ number_format($seller->rating, 1) }}</h2>
+                <p class="text-muted mb-0 small">{{ $seller->total_reviews }} Reviews</p>
             </div>
         </div>
     </div>
@@ -70,62 +99,107 @@
 
 <div class="row">
     <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Business Information</h5>
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-building text-primary me-2"></i>Business Information
+                </h5>
             </div>
-            <div class="card-body">
-                <div class="row mb-3">
+            <div class="card-body p-4">
+                <div class="row mb-4">
                     <div class="col-md-6">
-                        <strong>Business Name:</strong><br>
-                        {{ $seller->business_name }}
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-shop me-1"></i>Business Name
+                            </label>
+                            <div class="fw-semibold">{{ $seller->business_name }}</div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <strong>Registration Type:</strong><br>
-                        @if($seller->is_verified_shop)
-                            <span class="badge bg-info fs-6">
-                                <i class="bi bi-shield-check me-1"></i> Full Trusted Verification Shop
-                            </span>
-                        @else
-                            <span class="badge bg-secondary fs-6">
-                                <i class="bi bi-shop me-1"></i> Basic Seller
-                            </span>
-                        @endif
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Business Slug:</strong><br>
-                        <code>{{ $seller->business_slug }}</code>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Verification Status:</strong><br>
-                        <span class="badge bg-{{ $seller->verification_status === 'approved' ? 'success' : ($seller->verification_status === 'rejected' ? 'danger' : 'warning') }} fs-6">
-                            {{ ucfirst($seller->verification_status) }}
-                        </span>
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-award me-1"></i>Registration Type
+                            </label>
+                            <div>
+                                @if($seller->is_verified_shop)
+                                    <span class="badge bg-info-subtle text-info border border-info px-3 py-2">
+                                        <i class="bi bi-shield-check me-1"></i> Full Trusted Verification Shop
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-2">
+                                        <i class="bi bi-shop me-1"></i> Basic Seller
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mb-4">
                     <div class="col-md-6">
-                        <strong>Email:</strong><br>
-                        {{ $seller->email ?? 'N/A' }}
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-link-45deg me-1"></i>Business Slug
+                            </label>
+                            <div><code class="bg-light px-2 py-1 rounded">{{ $seller->business_slug }}</code></div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <strong>Phone:</strong><br>
-                        {{ $seller->phone ?? 'N/A' }}
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-check-circle me-1"></i>Verification Status
+                            </label>
+                            <div>
+                                <span class="badge bg-{{ $seller->verification_status === 'approved' ? 'success' : ($seller->verification_status === 'rejected' ? 'danger' : 'warning') }}-subtle text-{{ $seller->verification_status === 'approved' ? 'success' : ($seller->verification_status === 'rejected' ? 'danger' : 'warning') }} border border-{{ $seller->verification_status === 'approved' ? 'success' : ($seller->verification_status === 'rejected' ? 'danger' : 'warning') }} px-3 py-2">
+                                    <i class="bi bi-{{ $seller->verification_status === 'approved' ? 'check-circle-fill' : ($seller->verification_status === 'rejected' ? 'x-circle-fill' : 'clock-fill') }} me-1"></i>
+                                    {{ ucfirst($seller->verification_status) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-envelope me-1"></i>Email
+                            </label>
+                            <div class="fw-semibold">{{ $seller->email ?? 'N/A' }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-telephone me-1"></i>Phone
+                            </label>
+                            <div class="fw-semibold">{{ $seller->phone ?? 'N/A' }}</div>
+                        </div>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-12">
-                        <strong>Address:</strong><br>
-                        {{ $seller->address ?? 'N/A' }}, {{ $seller->city ?? '' }}, {{ $seller->province ?? '' }} {{ $seller->postal_code ?? '' }}
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">
+                                <i class="bi bi-geo-alt me-1"></i>Business Address
+                            </label>
+                            <div class="fw-semibold">
+                                {{ $seller->address ?? 'N/A' }}
+                                @if($seller->barangay), {{ $seller->barangay }}@endif
+                                @if($seller->city), {{ $seller->city }}@endif
+                                @if($seller->province), {{ $seller->province }}@endif
+                                @if($seller->postal_code) {{ $seller->postal_code }}@endif
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @if($seller->description)
                 <div class="row">
                     <div class="col-12">
-                        <strong>Description:</strong><br>
-                        <p class="mb-0" style="text-align: justify;">{{ $seller->description }}</p>
+                        <div class="border-top pt-3">
+                            <label class="text-muted small mb-2">
+                                <i class="bi bi-file-text me-1"></i>Business Description
+                            </label>
+                            <p class="mb-0 text-secondary" style="text-align: justify; line-height: 1.8;">{{ $seller->description }}</p>
+                        </div>
                     </div>
                 </div>
                 @endif
@@ -133,104 +207,179 @@
         </div>
 
         @if($seller->documents->count() > 0)
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Verification Documents</h5>
-                <span class="badge bg-secondary">{{ $seller->documents->count() }} Document(s)</span>
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-file-earmark-check text-success me-2"></i>Verification Documents
+                    </h5>
+                    <span class="badge bg-primary px-3 py-2">
+                        <i class="bi bi-files me-1"></i>{{ $seller->documents->count() }} Document(s)
+                    </span>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="alert alert-info mb-3">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <strong>Registration Type:</strong> 
-                    @if($seller->is_verified_shop)
-                        Full Trusted Verification Shop (Requires: ID Document, Business Permit, Bank Account Document)
-                    @else
-                        Basic Seller (Requires: ID Document only)
-                    @endif
+            <div class="card-body p-4">
+                <div class="alert alert-info border-info mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-info-circle-fill me-3 mt-1" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong class="d-block mb-1">Registration Type</strong>
+                            @if($seller->is_verified_shop)
+                                <span class="text-dark">Full Trusted Verification Shop</span>
+                                <p class="mb-0 small mt-1">
+                                    <i class="bi bi-check-circle me-1"></i>Requires: ID Document, Business Permit, BIR Certificate, Product Sample, Facial Verification, Bank Statement
+                                </p>
+                            @else
+                                <span class="text-dark">Basic Seller</span>
+                                <p class="mb-0 small mt-1">
+                                    <i class="bi bi-check-circle me-1"></i>Requires: ID Document, Facial Verification, Bank Statement
+                                </p>
+                            @endif
+                        </div>
+                    </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th>Document Type</th>
-                                <th>Status</th>
-                                <th>Uploaded Date</th>
-                                <th>View/Download</th>
-                                <th>Manage Status</th>
+                                <th class="fw-bold">
+                                    <i class="bi bi-file-earmark me-1"></i>Document Type
+                                </th>
+                                <th class="fw-bold">
+                                    <i class="bi bi-check-circle me-1"></i>Status
+                                </th>
+                                <th class="fw-bold">
+                                    <i class="bi bi-calendar me-1"></i>Uploaded Date
+                                </th>
+                                <th class="fw-bold">
+                                    <i class="bi bi-eye me-1"></i>Actions
+                                </th>
+                                <th class="fw-bold text-center">
+                                    <i class="bi bi-gear me-1"></i>Manage
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($seller->documents as $document)
-                                <tr>
-                                    <td>
-                                        <strong>{{ ucfirst(str_replace('_', ' ', $document->document_type)) }}</strong>
-                                        @if($document->document_type === 'id')
-                                            <br><small class="text-muted">Government-issued ID</small>
-                                        @elseif($document->document_type === 'business_permit')
-                                            <br><small class="text-muted">Business Registration Permit</small>
-                                        @elseif($document->document_type === 'bank_account')
-                                            <br><small class="text-muted">Bank Account Verification</small>
-                                        @endif
+                                <tr class="border-bottom">
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center">
+                                            @php
+                                                $docIcon = match($document->document_type) {
+                                                    'id' => 'bi-person-badge',
+                                                    'business_permit' => 'bi-building',
+                                                    'bir_certificate' => 'bi-file-earmark-text',
+                                                    'bank_statement' => 'bi-bank',
+                                                    'facial_verification' => 'bi-person-circle',
+                                                    'product_sample' => 'bi-box-seam',
+                                                    default => 'bi-file-earmark'
+                                                };
+                                                $docLabel = match($document->document_type) {
+                                                    'id' => 'Primary ID',
+                                                    'business_permit' => 'Business Permit',
+                                                    'bir_certificate' => 'BIR Certificate',
+                                                    'bank_statement' => 'Bank Statement',
+                                                    'facial_verification' => 'Facial Verification',
+                                                    'product_sample' => 'Product Sample',
+                                                    default => ucfirst(str_replace('_', ' ', $document->document_type))
+                                                };
+                                                $docDesc = match($document->document_type) {
+                                                    'id' => 'Government-issued ID',
+                                                    'business_permit' => 'Mayor\'s or Business Permit',
+                                                    'bir_certificate' => 'BIR Form 2303',
+                                                    'bank_statement' => 'Bank Account Verification',
+                                                    'facial_verification' => 'Selfie with ID',
+                                                    'product_sample' => 'Product Photo',
+                                                    default => ''
+                                                };
+                                            @endphp
+                                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px; min-width: 45px;">
+                                                <i class="bi {{ $docIcon }} text-primary" style="font-size: 1.3rem;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ $docLabel }}</div>
+                                                @if($docDesc)
+                                                    <small class="text-muted">{{ $docDesc }}</small>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td>
+                                    <td class="py-3">
                                         @if($document->status === 'approved')
-                                            <span class="badge bg-success">Approved</span>
+                                            <span class="badge bg-success-subtle text-success border border-success px-3 py-2">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Approved
+                                            </span>
                                         @elseif($document->status === 'rejected')
-                                            <span class="badge bg-danger">Rejected</span>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-2">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Rejected
+                                            </span>
                                             @if($document->rejection_reason)
-                                                <br><small class="text-danger d-block mt-1">{{ Str::limit($document->rejection_reason, 50) }}</small>
+                                                <div class="alert alert-danger mt-2 mb-0 py-2 px-3">
+                                                    <small><strong>Reason:</strong> {{ Str::limit($document->rejection_reason, 80) }}</small>
+                                                </div>
                                             @endif
                                         @else
-                                            <span class="badge bg-warning">Pending Review</span>
+                                            <span class="badge bg-warning-subtle text-warning border border-warning px-3 py-2">
+                                                <i class="bi bi-clock-fill me-1"></i>Pending Review
+                                            </span>
                                         @endif
                                     </td>
-                                    <td>
-                                        {{ $document->created_at->format('M d, Y') }}<br>
-                                        <small class="text-muted">{{ $document->created_at->format('h:i A') }}</small>
+                                    <td class="py-3">
+                                        <div class="fw-semibold">{{ $document->created_at->format('M d, Y') }}</div>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>{{ $document->created_at->format('h:i A') }}
+                                        </small>
                                     </td>
-                                    <td>
+                                    <td class="py-3">
                                         @if($document->document_path)
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
-                                                <i class="bi bi-eye me-1"></i> View
-                                            </button>
-                                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-secondary">
-                                                <i class="bi bi-download me-1"></i> Download
-                                            </a>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
+                                                    <i class="bi bi-eye me-1"></i> View
+                                                </button>
+                                                <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-download me-1"></i> Download
+                                                </a>
+                                            </div>
                                         @else
-                                            <span class="text-muted">Not available</span>
+                                            <span class="text-muted">
+                                                <i class="bi bi-x-circle me-1"></i>Not available
+                                            </span>
                                         @endif
                                     </td>
-                                    <td style="min-width: 150px;">
+                                    <td class="py-3 text-center" style="min-width: 180px;">
                                         @if($document->status === 'pending')
-                                            <div class="d-flex flex-column gap-1">
+                                            <div class="d-flex flex-column gap-2">
                                                 <form action="{{ route('admin.sellers.documents.approve', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST" class="w-100">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success w-100" onclick="return confirm('Approve this document?')">
-                                                        <i class="bi bi-check-circle me-1"></i> Approve
+                                                    <button type="submit" class="btn btn-sm btn-success w-100 fw-semibold" onclick="return confirm('Approve this document?')">
+                                                        <i class="bi bi-check-circle-fill me-1"></i> Approve
                                                     </button>
                                                 </form>
-                                                <button type="button" class="btn btn-sm btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectDocumentModal{{ $document->id }}">
-                                                    <i class="bi bi-x-circle me-1"></i> Reject
+                                                <button type="button" class="btn btn-sm btn-danger w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectDocumentModal{{ $document->id }}">
+                                                    <i class="bi bi-x-circle-fill me-1"></i> Reject
                                                 </button>
                                             </div>
                                         @elseif($document->status === 'approved')
-                                            <div class="text-center">
-                                                <span class="badge bg-success fs-6 py-2 px-3">
-                                                    <i class="bi bi-check-circle me-1"></i> Approved
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="badge bg-success-subtle text-success border border-success fs-6 py-2 px-4 mb-2">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Approved
                                                 </span>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-lock-fill me-1"></i>Verified
+                                                </small>
                                             </div>
                                         @elseif($document->status === 'rejected')
-                                            <div class="text-center mb-2">
-                                                <span class="badge bg-danger fs-6 py-2 px-3">
-                                                    <i class="bi bi-x-circle me-1"></i> Rejected
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="badge bg-danger-subtle text-danger border border-danger fs-6 py-2 px-4 mb-2">
+                                                    <i class="bi bi-x-circle-fill me-1"></i> Rejected
                                                 </span>
+                                                <form action="{{ route('admin.sellers.documents.approve', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST" class="w-100">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-success w-100" onclick="return confirm('Approve this document?')">
+                                                        <i class="bi bi-arrow-clockwise me-1"></i> Re-approve
+                                                    </button>
+                                                </form>
                                             </div>
-                                            <form action="{{ route('admin.sellers.documents.approve', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST" class="w-100">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-outline-success w-100" onclick="return confirm('Approve this document?')">
-                                                    <i class="bi bi-check-circle me-1"></i> Approve
-                                                </button>
-                                            </form>
                                         @endif
                                         
                                         <!-- View Document Modal (Fullscreen) -->
@@ -369,41 +518,53 @@
         </div>
         @endif
 
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Recent Products</h5>
-                <a href="{{ route('admin.products.index', ['seller' => $seller->id]) }}" class="btn btn-sm btn-outline-primary">View All</a>
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-box-seam text-primary me-2"></i>Recent Products
+                    </h5>
+                    <a href="{{ route('admin.products.index', ['seller' => $seller->id]) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-right me-1"></i>View All
+                    </a>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th>Product</th>
-                                <th>Status</th>
-                                <th>Price</th>
-                                <th>Stock</th>
-                                <th>Created</th>
+                                <th class="py-3">Product</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3">Price</th>
+                                <th class="py-3">Stock</th>
+                                <th class="py-3">Created</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($seller->products->take(5) as $product)
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('admin.products.show', $product->id) }}">{{ $product->name }}</a>
+                                    <td class="py-3">
+                                        <a href="{{ route('admin.products.show', $product->id) }}" class="text-decoration-none fw-semibold">
+                                            {{ Str::limit($product->name, 40) }}
+                                        </a>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-{{ $product->status === 'active' ? 'success' : ($product->status === 'pending' ? 'warning' : 'secondary') }}">
+                                    <td class="py-3">
+                                        <span class="badge bg-{{ $product->status === 'active' ? 'success' : ($product->status === 'pending' ? 'warning' : 'secondary') }}-subtle text-{{ $product->status === 'active' ? 'success' : ($product->status === 'pending' ? 'warning' : 'secondary') }} border border-{{ $product->status === 'active' ? 'success' : ($product->status === 'pending' ? 'warning' : 'secondary') }}">
                                             {{ ucfirst($product->status) }}
                                         </span>
                                     </td>
-                                    <td>₱{{ number_format($product->price, 2) }}</td>
-                                    <td>{{ $product->stock_quantity }}</td>
-                                    <td>{{ $product->created_at->format('M d, Y') }}</td>
+                                    <td class="py-3 fw-semibold">₱{{ number_format($product->price, 2) }}</td>
+                                    <td class="py-3">
+                                        <span class="badge bg-light text-dark">{{ $product->stock_quantity }}</span>
+                                    </td>
+                                    <td class="py-3 text-muted small">{{ $product->created_at->format('M d, Y') }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">No products yet</td>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox me-2"></i>No products yet
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -412,38 +573,44 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Recent Orders</h5>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-cart-check text-success me-2"></i>Recent Orders
+                </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th>Order #</th>
-                                <th>Customer</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Date</th>
+                                <th class="py-3">Order #</th>
+                                <th class="py-3">Customer</th>
+                                <th class="py-3">Amount</th>
+                                <th class="py-3">Status</th>
+                                <th class="py-3">Date</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($seller->orders->take(5) as $order)
                                 <tr>
-                                    <td>{{ $order->order_number }}</td>
-                                    <td>{{ $order->user->name }}</td>
-                                    <td>₱{{ number_format($order->total, 2) }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ $order->status === 'delivered' ? 'success' : 'warning' }}">
+                                    <td class="py-3">
+                                        <code class="bg-light px-2 py-1 rounded">{{ $order->order_number }}</code>
+                                    </td>
+                                    <td class="py-3">{{ $order->user->name }}</td>
+                                    <td class="py-3 fw-semibold">₱{{ number_format($order->total, 2) }}</td>
+                                    <td class="py-3">
+                                        <span class="badge bg-{{ $order->status === 'delivered' ? 'success' : 'warning' }}-subtle text-{{ $order->status === 'delivered' ? 'success' : 'warning' }} border border-{{ $order->status === 'delivered' ? 'success' : 'warning' }}">
                                             {{ $order->getStatusLabel() }}
                                         </span>
                                     </td>
-                                    <td>{{ $order->created_at->format('M d, Y') }}</td>
+                                    <td class="py-3 text-muted small">{{ $order->created_at->format('M d, Y') }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">No orders yet</td>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox me-2"></i>No orders yet
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -454,78 +621,119 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Actions</h5>
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-lightning-charge me-2"></i>Quick Actions
+                </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 @php
-                    $requiredDocsCount = $seller->is_verified_shop ? 4 : 2; // Verified: business_registration, brand_rights, id, bank_account; Basic: id, bank_account
+                    $requiredDocsCount = $seller->is_verified_shop ? 6 : 3;
                     $approvedDocsCount = $seller->documents->where('status', 'approved')->count();
                     $pendingDocsCount = $seller->documents->where('status', 'pending')->count();
                     $rejectedDocsCount = $seller->documents->where('status', 'rejected')->count();
                 @endphp
                 @if($seller->verification_status === 'pending' && $seller->documents->count() > 0)
-                    <div class="alert alert-info mb-3">
-                        <strong><i class="bi bi-info-circle me-1"></i>Document Status:</strong><br>
-                        <small>
-                            Approved: <span class="badge bg-success">{{ $approvedDocsCount }}</span> / {{ $requiredDocsCount }} required<br>
-                            @if($pendingDocsCount > 0)
-                                Pending: <span class="badge bg-warning">{{ $pendingDocsCount }}</span><br>
-                            @endif
-                            @if($rejectedDocsCount > 0)
-                                Rejected: <span class="badge bg-danger">{{ $rejectedDocsCount }}</span><br>
-                            @endif
-                            @if($approvedDocsCount < $requiredDocsCount)
-                                <span class="text-danger d-block mt-2"><i class="bi bi-exclamation-triangle me-1"></i>All required documents must be approved before seller approval.</span>
-                            @else
-                                <span class="text-success d-block mt-2"><i class="bi bi-check-circle me-1"></i>All required documents are approved. You can approve the seller.</span>
-                            @endif
-                        </small>
+                    <div class="alert alert-info border-info mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <strong class="d-block mb-2">Document Review Status</strong>
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small">Approved:</span>
+                                        <span class="badge bg-success px-3">{{ $approvedDocsCount }} / {{ $requiredDocsCount }}</span>
+                                    </div>
+                                    @if($pendingDocsCount > 0)
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="small">Pending:</span>
+                                            <span class="badge bg-warning px-3">{{ $pendingDocsCount }}</span>
+                                        </div>
+                                    @endif
+                                    @if($rejectedDocsCount > 0)
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="small">Rejected:</span>
+                                            <span class="badge bg-danger px-3">{{ $rejectedDocsCount }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                                <hr class="my-2">
+                                @if($approvedDocsCount < $requiredDocsCount)
+                                    <div class="alert alert-warning mb-0 py-2 px-3 mt-2">
+                                        <small>
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            <strong>Action Required:</strong> Approve all documents first
+                                        </small>
+                                    </div>
+                                @else
+                                    <div class="alert alert-success mb-0 py-2 px-3 mt-2">
+                                        <small>
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            <strong>Ready:</strong> All documents approved
+                                        </small>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 @endif
-                <div class="d-grid gap-2">
+                <div class="d-grid gap-3">
                     @if($seller->verification_status === 'pending')
                         <form action="{{ route('admin.sellers.approve', $seller->id) }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-success w-100" 
+                            <button type="submit" class="btn btn-success w-100 py-3 fw-bold" 
                                 @if($seller->documents->count() > 0 && $approvedDocsCount < $requiredDocsCount)
                                     disabled
                                     title="All required documents must be approved first"
                                 @endif>
-                                <i class="bi bi-check-circle me-1"></i> Approve Seller
+                                <i class="bi bi-check-circle-fill me-2"></i> Approve Seller
                             </button>
                         </form>
-                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
-                            <i class="bi bi-x-circle me-1"></i> Reject Seller
+                        <button type="button" class="btn btn-danger w-100 py-3 fw-bold" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="bi bi-x-circle-fill me-2"></i> Reject Seller
                         </button>
                     @endif
 
                     @if($seller->is_active)
-                        <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#suspendModal">
-                            <i class="bi bi-pause-circle me-1"></i> Suspend Seller
+                        <button type="button" class="btn btn-warning w-100 py-3 fw-bold" data-bs-toggle="modal" data-bs-target="#suspendModal">
+                            <i class="bi bi-pause-circle-fill me-2"></i> Suspend Seller
                         </button>
                     @else
-                        <div class="alert alert-warning mb-3">
-                            <strong>Status:</strong> Suspended<br>
-                            @if($seller->suspended_at)
-                                <small>Suspended on: {{ $seller->suspended_at instanceof \Carbon\Carbon ? $seller->suspended_at->format('M d, Y h:i A') : \Carbon\Carbon::parse($seller->suspended_at)->format('M d, Y h:i A') }}</small>
-                            @endif
-                            @if($seller->suspension_reason)
-                                <br><br><strong>Reason:</strong><br>
-                                <small>{{ $seller->suspension_reason }}</small>
-                            @endif
-                            @if($seller->suspendedBy)
-                                <br><small>Suspended by: {{ $seller->suspendedBy->name }}</small>
-                            @endif
-                            @if($seller->relatedReport)
-                                <br><small><a href="{{ route('admin.reports.show', $seller->related_report_id) }}">View Related Report</a></small>
-                            @endif
+                        <div class="alert alert-danger border-danger mb-3">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-exclamation-octagon-fill me-2 mt-1"></i>
+                                <div>
+                                    <strong class="d-block mb-2">Account Suspended</strong>
+                                    @if($seller->suspended_at)
+                                        <small class="d-block mb-1">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            {{ $seller->suspended_at instanceof \Carbon\Carbon ? $seller->suspended_at->format('M d, Y h:i A') : \Carbon\Carbon::parse($seller->suspended_at)->format('M d, Y h:i A') }}
+                                        </small>
+                                    @endif
+                                    @if($seller->suspension_reason)
+                                        <small class="d-block mt-2 p-2 bg-light rounded">
+                                            <strong>Reason:</strong><br>
+                                            {{ $seller->suspension_reason }}
+                                        </small>
+                                    @endif
+                                    @if($seller->suspendedBy)
+                                        <small class="d-block mt-2">
+                                            <i class="bi bi-person me-1"></i>By: {{ $seller->suspendedBy->name }}
+                                        </small>
+                                    @endif
+                                    @if($seller->relatedReport)
+                                        <a href="{{ route('admin.reports.show', $seller->related_report_id) }}" class="btn btn-sm btn-outline-danger mt-2">
+                                            <i class="bi bi-file-text me-1"></i>View Related Report
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                         <form action="{{ route('admin.sellers.activate', $seller->id) }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="bi bi-play-circle me-1"></i> Activate Seller
+                            <button type="submit" class="btn btn-success w-100 py-3 fw-bold">
+                                <i class="bi bi-play-circle-fill me-2"></i> Activate Seller
                             </button>
                         </form>
                     @endif
@@ -534,23 +742,32 @@
         </div>
 
         @if($seller->reviews->count() > 0)
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Recent Reviews</h5>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-star-fill text-warning me-2"></i>Recent Reviews
+                </h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 @foreach($seller->reviews->take(3) as $review)
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between mb-1">
-                            <strong>{{ $review->user->name }}</strong>
-                            <div>
+                    <div class="mb-3 pb-3 @if(!$loop->last) border-bottom @endif">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                    <i class="bi bi-person-fill text-primary"></i>
+                                </div>
+                                <strong>{{ $review->user->name }}</strong>
+                            </div>
+                            <div class="d-flex gap-1">
                                 @for($i = 1; $i <= 5; $i++)
                                     <i class="bi bi-star{{ $i <= $review->overall_rating ? '-fill' : '' }} text-warning"></i>
                                 @endfor
                             </div>
                         </div>
-                        <p class="mb-0 small">{{ Str::limit($review->review_text, 100) }}</p>
-                        <small class="text-muted">{{ $review->created_at->diffForHumans() }}</small>
+                        <p class="mb-2 small text-secondary" style="line-height: 1.6;">{{ Str::limit($review->review_text, 120) }}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>{{ $review->created_at->diffForHumans() }}
+                        </small>
                     </div>
                 @endforeach
             </div>
@@ -712,4 +929,89 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<style>
+/* Enhanced card styling */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Stat cards hover effect */
+.col-md-3 .card:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.3) !important;
+}
+
+/* Table row hover */
+.table-hover tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    cursor: pointer;
+}
+
+/* Badge improvements */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Button hover effects */
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Document icon styling */
+.bg-light.rounded-circle {
+    transition: all 0.2s ease;
+}
+
+tr:hover .bg-light.rounded-circle {
+    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+    transform: scale(1.05);
+}
+
+/* Alert styling improvements */
+.alert {
+    border-left-width: 4px;
+}
+
+/* Modal improvements */
+.modal-fullscreen .modal-body {
+    background: #1a1a1a;
+}
+
+.modal-fullscreen img {
+    cursor: zoom-in;
+}
+
+/* Smooth transitions */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Card header gradient */
+.bg-gradient {
+    position: relative;
+    overflow: hidden;
+}
+
+.bg-gradient::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+</style>
 @endsection
