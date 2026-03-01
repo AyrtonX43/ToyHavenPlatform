@@ -147,10 +147,15 @@ class SellerController extends Controller
         try {
             if ($seller->user) {
                 $shopType = $isVerifiedShop ? 'Verified Trusted Toyshop' : 'Local Business Toyshop';
+                \Log::info('Attempting to send approval notification to user: ' . $seller->user->email);
                 $seller->user->notify(new SellerApprovedNotification($seller->business_name, $shopType));
+                \Log::info('Approval notification sent successfully to: ' . $seller->user->email);
+            } else {
+                \Log::warning('No user associated with seller ID: ' . $seller->id);
             }
         } catch (\Exception $e) {
             \Log::error('Failed to send seller approval notification: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
             // Continue even if notification fails
         }
         

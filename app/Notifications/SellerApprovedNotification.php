@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 
 class SellerApprovedNotification extends Notification
 {
-    use Queueable;
+    // Removed Queueable to send immediately instead of queuing
 
     protected $businessName;
     protected $shopType;
@@ -31,15 +31,8 @@ class SellerApprovedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        // Try database notification, fall back to mail only if it fails
-        try {
-            if (\Schema::hasTable('notifications')) {
-                return ['mail', 'database'];
-            }
-        } catch (\Exception $e) {
-            \Log::warning('Database notifications table not found, using mail only');
-        }
-        
+        // Use mail only for now to ensure it works
+        // Can add 'database' back later once mail is confirmed working
         return ['mail'];
     }
 
