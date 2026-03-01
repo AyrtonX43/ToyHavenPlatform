@@ -7,6 +7,17 @@
 function normalizePhilippineText($text) {
     if (empty($text)) return $text;
     
+    // First, handle the common encoding issue patterns
+    $text = str_replace('Ã±', 'n', $text);
+    $text = str_replace('Ã'', 'N', $text);
+    $text = str_replace('Ã¡', 'a', $text);
+    $text = str_replace('Ã‰', 'E', $text);
+    $text = str_replace('Ã©', 'e', $text);
+    $text = str_replace('Ã­', 'i', $text);
+    $text = str_replace('Ã³', 'o', $text);
+    $text = str_replace('Ãº', 'u', $text);
+    
+    // Then handle proper UTF-8 characters
     $charMap = [
         'ñ' => 'n', 'Ñ' => 'N',
         'á' => 'a', 'Á' => 'A',
@@ -15,11 +26,6 @@ function normalizePhilippineText($text) {
         'ó' => 'o', 'Ó' => 'O',
         'ú' => 'u', 'Ú' => 'U',
         'ü' => 'u', 'Ü' => 'U',
-        // Also handle the encoding issue
-        'Ã±' => 'n', 'Ã' => 'N',
-        'Ã¡' => 'a', 'Ã‰' => 'E',
-        'Ã©' => 'e', 'Ã­' => 'i',
-        'Ã³' => 'o', 'Ãº' => 'u',
     ];
     
     return str_replace(array_keys($charMap), array_values($charMap), $text);
@@ -162,6 +168,11 @@ if (isset($prefilledData)) {
                                 <label class="form-label">Region <span class="text-danger">*</span></label>
                                 <select name="region" id="region" class="form-select @error('region') is-invalid @enderror" required>
                                     <option value="">Select Region</option>
+                                    @if(!empty($prefilledData['region']))
+                                        <option value="{{ normalizePhilippineText($prefilledData['region']) }}" selected>
+                                            {{ normalizePhilippineText($prefilledData['region']) }}
+                                        </option>
+                                    @endif
                                 </select>
                                 @error('region')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -171,6 +182,11 @@ if (isset($prefilledData)) {
                                 <label class="form-label">Province <span class="text-danger">*</span></label>
                                 <select name="province" id="province" class="form-select @error('province') is-invalid @enderror" required disabled>
                                     <option value="">Select Province</option>
+                                    @if(!empty($prefilledData['province']))
+                                        <option value="{{ normalizePhilippineText($prefilledData['province']) }}" selected>
+                                            {{ normalizePhilippineText($prefilledData['province']) }}
+                                        </option>
+                                    @endif
                                 </select>
                                 @error('province')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -180,6 +196,11 @@ if (isset($prefilledData)) {
                                 <label class="form-label">City/Municipality <span class="text-danger">*</span></label>
                                 <select name="city" id="city" class="form-select @error('city') is-invalid @enderror" required disabled>
                                     <option value="">Select City/Municipality</option>
+                                    @if(!empty($prefilledData['city']))
+                                        <option value="{{ normalizePhilippineText($prefilledData['city']) }}" selected>
+                                            {{ normalizePhilippineText($prefilledData['city']) }}
+                                        </option>
+                                    @endif
                                 </select>
                                 @error('city')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -192,6 +213,11 @@ if (isset($prefilledData)) {
                                 <label class="form-label">Barangay <span class="text-danger">*</span></label>
                                 <select name="barangay" id="barangay" class="form-select @error('barangay') is-invalid @enderror" required disabled>
                                     <option value="">Select Barangay</option>
+                                    @if(!empty($prefilledData['barangay']))
+                                        <option value="{{ normalizePhilippineText($prefilledData['barangay']) }}" selected>
+                                            {{ normalizePhilippineText($prefilledData['barangay']) }}
+                                        </option>
+                                    @endif
                                 </select>
                                 @error('barangay')
                                     <div class="invalid-feedback">{{ $message }}</div>
