@@ -1012,7 +1012,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // No scroll needed - CSS handles centering automatically
+    // Auto-scroll to modals when opened
+    const allModals = document.querySelectorAll('.modal');
+    allModals.forEach(function(modalElement) {
+        modalElement.addEventListener('shown.bs.modal', function() {
+            // Scroll the modal into view smoothly
+            setTimeout(function() {
+                const modalDialog = modalElement.querySelector('.modal-dialog');
+                if (modalDialog) {
+                    // Calculate center position
+                    const modalRect = modalDialog.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const modalTop = modalRect.top + scrollTop;
+                    const windowHeight = window.innerHeight;
+                    const modalHeight = modalRect.height;
+                    
+                    // Scroll to center the modal
+                    const scrollTo = modalTop - (windowHeight / 2) + (modalHeight / 2);
+                    
+                    window.scrollTo({
+                        top: scrollTo,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
+        });
+    });
     
 });
 </script>
