@@ -449,6 +449,7 @@
     
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    <script src="{{ asset('js/toyhaven-page-transitions.js') }}"></script>
     
     <script>
         // Auto-hide alerts after 5 seconds

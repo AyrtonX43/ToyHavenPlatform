@@ -432,3 +432,151 @@ html {
 .shadow-hover:hover {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 }
+
+/* ==================== LOADING OVERLAY ==================== */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-spinner {
+    text-align: center;
+    color: white;
+}
+
+.loading-spinner .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* ==================== TOAST NOTIFICATIONS ==================== */
+
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 9998;
+    min-width: 300px;
+    max-width: 400px;
+    border-left: 4px solid;
+}
+
+.toast-notification.toast-success {
+    border-left-color: #10b981;
+}
+
+.toast-notification.toast-error {
+    border-left-color: #ef4444;
+}
+
+.toast-notification.toast-info {
+    border-left-color: #3b82f6;
+}
+
+.toast-notification.toast-warning {
+    border-left-color: #f59e0b;
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+    color: #10b981;
+}
+
+.toast-error .toast-icon {
+    color: #ef4444;
+}
+
+.toast-info .toast-icon {
+    color: #3b82f6;
+}
+
+.toast-warning .toast-icon {
+    color: #f59e0b;
+}
+
+.toast-message {
+    flex: 1;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.toast-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #64748b;
+}
+
+.toast-fade-out {
+    animation: slideInRight 0.3s ease-out reverse;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+/* ==================== PAGE TRANSITION BODY ==================== */
+
+body.page-transition {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* ==================== CARD HOVER ==================== */
+
+.card-hover {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}

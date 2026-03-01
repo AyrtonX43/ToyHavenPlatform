@@ -1042,6 +1042,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Tabler JS -->
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    <!-- Page Transitions & Loading States -->
+    <script src="{{ asset('js/toyhaven-page-transitions.js') }}"></script>
     <style>
         /* Flash Notifications */
         .flash-notifications-container {
