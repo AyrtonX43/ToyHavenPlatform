@@ -541,23 +541,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const barangaySelect = document.getElementById('barangay');
     const API_BASE = 'https://psgc.cloud/api';
 
+    // Helper function to normalize special characters
+    function normalizeText(text) {
+        if (!text) return text;
+        return text
+            .replace(/ñ/g, 'n')
+            .replace(/Ñ/g, 'N')
+            .replace(/á/g, 'a')
+            .replace(/é/g, 'e')
+            .replace(/í/g, 'i')
+            .replace(/ó/g, 'o')
+            .replace(/ú/g, 'u')
+            .replace(/Á/g, 'A')
+            .replace(/É/g, 'E')
+            .replace(/Í/g, 'I')
+            .replace(/Ó/g, 'O')
+            .replace(/Ú/g, 'U');
+    }
+
     // Load regions on page load
-    fetch(`${API_BASE}/regions`, {
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json; charset=utf-8'
-        }
-    })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.text();
-        })
-        .then(text => {
-            const data = JSON.parse(text);
+    fetch(`${API_BASE}/regions`)
+        .then(response => response.json())
+        .then(data => {
             data.forEach(region => {
                 const option = document.createElement('option');
-                option.value = region.name;
-                option.textContent = region.name;
+                option.value = normalizeText(region.name);
+                option.textContent = normalizeText(region.name);
                 option.dataset.code = region.code;
                 regionSelect.appendChild(option);
             });
@@ -586,22 +595,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         const regionCode = selectedOption.dataset.code;
 
-        fetch(`${API_BASE}/regions/${regionCode}/provinces`, {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=utf-8'
-            }
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.text();
-            })
-            .then(text => {
-                const data = JSON.parse(text);
+        fetch(`${API_BASE}/regions/${regionCode}/provinces`)
+            .then(response => response.json())
+            .then(data => {
                 data.forEach(province => {
                     const option = document.createElement('option');
-                    option.value = province.name;
-                    option.textContent = province.name;
+                    option.value = normalizeText(province.name);
+                    option.textContent = normalizeText(province.name);
                     option.dataset.code = province.code;
                     provinceSelect.appendChild(option);
                 });
@@ -630,22 +630,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         const provinceCode = selectedOption.dataset.code;
 
-        fetch(`${API_BASE}/provinces/${provinceCode}/cities-municipalities`, {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=utf-8'
-            }
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.text();
-            })
-            .then(text => {
-                const data = JSON.parse(text);
+        fetch(`${API_BASE}/provinces/${provinceCode}/cities-municipalities`)
+            .then(response => response.json())
+            .then(data => {
                 data.forEach(city => {
                     const option = document.createElement('option');
-                    option.value = city.name;
-                    option.textContent = city.name;
+                    option.value = normalizeText(city.name);
+                    option.textContent = normalizeText(city.name);
                     option.dataset.code = city.code;
                     citySelect.appendChild(option);
                 });
@@ -671,22 +662,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         const cityCode = selectedOption.dataset.code;
 
-        fetch(`${API_BASE}/cities-municipalities/${cityCode}/barangays`, {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=utf-8'
-            }
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.text();
-            })
-            .then(text => {
-                const data = JSON.parse(text);
+        fetch(`${API_BASE}/cities-municipalities/${cityCode}/barangays`)
+            .then(response => response.json())
+            .then(data => {
                 data.forEach(barangay => {
                     const option = document.createElement('option');
-                    option.value = barangay.name;
-                    option.textContent = barangay.name;
+                    option.value = normalizeText(barangay.name);
+                    option.textContent = normalizeText(barangay.name);
                     barangaySelect.appendChild(option);
                 });
                 barangaySelect.disabled = false;
