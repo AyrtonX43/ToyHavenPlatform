@@ -332,8 +332,8 @@
                                     </td>
                                     <td class="py-3">
                                         @if($document->document_path)
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <button type="button" class="btn btn-sm btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
                                                     <i class="bi bi-eye me-1"></i> View
                                                 </button>
                                                 <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-secondary">
@@ -346,16 +346,16 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="py-3 text-center" style="min-width: 200px;">
+                                    <td class="py-3 text-center" style="min-width: 180px;">
                                         @if($document->status === 'pending')
                                             <div class="d-flex flex-column gap-2">
                                                 <form action="{{ route('admin.sellers.documents.approve', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST" class="w-100">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success w-100 fw-semibold py-2" onclick="return confirm('Approve this document?')">
+                                                    <button type="submit" class="btn btn-sm btn-success w-100 fw-semibold" onclick="return confirm('Approve this document?')">
                                                         <i class="bi bi-check-circle-fill me-1"></i> Approve
                                                     </button>
                                                 </form>
-                                                <button type="button" class="btn btn-sm btn-danger w-100 fw-semibold py-2" data-bs-toggle="modal" data-bs-target="#rejectDocumentModal{{ $document->id }}">
+                                                <button type="button" class="btn btn-sm btn-danger w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectDocumentModal{{ $document->id }}">
                                                     <i class="bi bi-x-circle-fill me-1"></i> Reject
                                                 </button>
                                             </div>
@@ -375,7 +375,7 @@
                                                 </span>
                                                 <form action="{{ route('admin.sellers.documents.approve', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST" class="w-100">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-success w-100 py-2" onclick="return confirm('Approve this document?')">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success w-100" onclick="return confirm('Approve this document?')">
                                                         <i class="bi bi-arrow-clockwise me-1"></i> Re-approve
                                                     </button>
                                                 </form>
@@ -397,14 +397,13 @@
             </div>
         </div>
         
-        <!-- Document Modals (Outside the table for proper rendering) -->
+        <!-- View Document Modals (Outside the table) -->
         @foreach($seller->documents as $document)
-            <!-- View Document Modal (Fullscreen) -->
-            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-                <div class="modal-dialog modal-fullscreen">
-                    <div class="modal-content bg-white">
-                        <div class="modal-header bg-primary text-white py-3 border-0">
-                            <h5 class="modal-title fw-bold" id="viewDocumentModalLabel{{ $document->id }}">
+            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-dark text-white">
+                            <h5 class="modal-title" id="viewDocumentModalLabel{{ $document->id }}">
                                 <i class="bi bi-file-earmark-text me-2"></i>
                                 @php
                                     $docLabel = match($document->document_type) {
@@ -421,74 +420,81 @@
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body bg-light d-flex align-items-center justify-content-center p-3" style="min-height: 80vh;">
+                        <div class="modal-body bg-dark text-center p-4" style="min-height: 500px; max-height: 80vh; overflow: auto;">
                             @php
                                 $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
                                 $isPdf = strtolower($extension) === 'pdf';
                             @endphp
                             @if($isPdf)
-                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: 2px solid #dee2e6; border-radius: 8px; background: white;" title="Document PDF"></iframe>
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>
                             @else
-                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="{{ $docLabel }}" class="img-fluid shadow-lg" style="max-width: 95%; max-height: 90vh; object-fit: contain; border-radius: 8px; background: white; padding: 10px;">
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" class="img-fluid" style="max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                             @endif
                         </div>
-                        <div class="modal-footer bg-white border-top py-3">
-                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-success">
+                        <div class="modal-footer bg-dark text-white">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
                                 <i class="bi bi-download me-1"></i> Download
                             </a>
-                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-info text-white">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
                                 <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
                             </a>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                                 <i class="bi bi-x-lg me-1"></i> Close
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Reject Document Modal -->
-            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
-                <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content shadow-lg">
+        @endforeach
+        
+        <!-- Reject Document Modals (Outside the table) -->
+        @foreach($seller->documents as $document)
+            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
                         <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                             @csrf
-                            <div class="modal-header bg-danger text-white border-0">
-                                <h5 class="modal-title fw-bold" id="rejectDocumentModalLabel{{ $document->id }}">
-                                    <i class="bi bi-x-circle-fill me-2"></i>Reject Document - Invalid
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="rejectDocumentModalLabel{{ $document->id }}">
+                                    <i class="bi bi-x-circle me-2"></i>Reject Document - Invalid Document
                                 </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body p-4 bg-white">
-                                <div class="alert alert-danger border-danger border-2 mb-3">
-                                    <div class="d-flex align-items-start">
-                                        <i class="bi bi-exclamation-triangle-fill me-3 text-danger" style="font-size: 1.8rem;"></i>
-                                        <div>
-                                            <strong class="d-block mb-2 fs-6">Warning</strong>
-                                            <p class="mb-0">Rejecting this document will mark it as invalid. The seller will be notified via email and must resubmit a valid document.</p>
-                                        </div>
-                                    </div>
+                            <div class="modal-body">
+                                <div class="alert alert-danger border-danger">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong>Warning:</strong> Rejecting this document will mark it as invalid. The seller will be notified via email that their required verification document is invalid and needs to be resubmitted.
                                 </div>
-                                <div class="alert alert-info border-info border-2 mb-4">
-                                    <strong class="fs-6"><i class="bi bi-info-circle-fill me-2"></i>Document Type:</strong> 
-                                    <span class="badge bg-info fs-6 ms-2 px-3 py-2">{{ $docLabel }}</span>
+                                <div class="alert alert-info border-info">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <strong>Document Type:</strong> 
+                                    @php
+                                        $docLabel = match($document->document_type) {
+                                            'id' => 'Primary ID',
+                                            'business_permit' => 'Business Permit',
+                                            'bir_certificate' => 'BIR Certificate',
+                                            'bank_statement' => 'Bank Statement',
+                                            'facial_verification' => 'Facial Verification',
+                                            'product_sample' => 'Product Sample',
+                                            default => ucfirst(str_replace('_', ' ', $document->document_type))
+                                        };
+                                    @endphp
+                                    {{ $docLabel }}
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold fs-6">
-                                        Rejection Reason <span class="text-danger">*</span>
-                                    </label>
-                                    <textarea name="reason" class="form-control form-control-lg" rows="6" placeholder="Provide a detailed reason (e.g., document is unclear, expired, doesn't match business information, etc.)..." required style="font-size: 1rem;">{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
-                                    <small class="text-muted d-block mt-2">
-                                        <i class="bi bi-envelope-fill me-1"></i>This reason will be sent to the seller via email notification.
+                                    <label class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                                    <textarea name="reason" class="form-control" rows="5" placeholder="Please provide a detailed reason why this document is invalid (e.g., document is unclear, expired, doesn't match business information, etc.)..." required>{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
+                                    <small class="text-muted">
+                                        <i class="bi bi-envelope me-1"></i>This reason will be sent to the seller via email notification and website notification.
                                     </small>
                                 </div>
                             </div>
-                            <div class="modal-footer bg-light border-top">
-                                <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal">
-                                    <i class="bi bi-x-lg me-2"></i> Cancel
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-lg me-1"></i> Cancel
                                 </button>
-                                <button type="submit" class="btn btn-danger btn-lg px-4 fw-semibold">
-                                    <i class="bi bi-x-circle-fill me-2"></i> Reject Document
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Reject Document (Invalid)
                                 </button>
                             </div>
                         </form>
@@ -769,22 +775,24 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Reject Seller Application</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectModalLabel">
+                        <i class="bi bi-x-octagon me-2"></i>Reject Seller Application
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Note:</strong> The seller will be notified via email about this rejection.
+                    <div class="alert alert-danger border-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Important:</strong> The seller will be notified via email and website notification about this rejection.
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Select Rejection Reason <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Select Rejection Reason <span class="text-danger">*</span></label>
                         <select name="rejection_type" id="rejection_type" class="form-select" required>
                             <option value="">-- Select a reason --</option>
                             <option value="incomplete_documents">Incomplete or Missing Documents</option>
@@ -798,14 +806,20 @@
                         <small class="text-muted">Choose a predefined reason or select "Other" to provide custom feedback.</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Additional Feedback / Custom Reason <span class="text-danger">*</span></label>
-                        <textarea name="reason" id="rejection_reason" class="form-control" rows="4" placeholder="Please provide detailed feedback or reason for rejection..." required></textarea>
-                        <small class="text-muted">This feedback will be sent to the seller via email.</small>
+                        <label class="form-label fw-semibold">Additional Feedback / Custom Reason <span class="text-danger">*</span></label>
+                        <textarea name="reason" id="rejection_reason" class="form-control" rows="5" placeholder="Please provide detailed feedback or reason for rejection..." required></textarea>
+                        <small class="text-muted">
+                            <i class="bi bi-envelope me-1"></i>This feedback will be sent to the seller via email and website notification.
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Reject Seller</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-octagon-fill me-1"></i> Reject Seller
+                    </button>
                 </div>
             </form>
         </div>
@@ -839,22 +853,24 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Suspend Business Account</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="suspendModalLabel">
+                        <i class="bi bi-pause-circle me-2"></i>Suspend Business Account
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Warning:</strong> Suspending this seller will also ban their user account. They will not be able to access their account, create new listings, or receive new orders. Existing orders will continue to be processed. The seller will be notified via email.
+                    <div class="alert alert-warning border-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Warning:</strong> Suspending this seller will also ban their user account. They will not be able to access their account, create new listings, or receive new orders. Existing orders will continue to be processed. The seller will be notified via email and website notification.
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Select Suspension Reason <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Select Suspension Reason <span class="text-danger">*</span></label>
                         <select name="suspension_type" id="suspension_type" class="form-select" required>
                             <option value="">-- Select a reason --</option>
                             <option value="policy_violation">Policy Violation</option>
@@ -870,12 +886,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         <small class="text-muted">Choose a predefined reason or select "Other" to provide custom feedback.</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Additional Feedback / Custom Reason <span class="text-danger">*</span></label>
-                        <textarea name="reason" id="suspension_reason" class="form-control" rows="4" placeholder="Please provide detailed feedback or reason for suspension..." required></textarea>
-                        <small class="text-muted">This feedback will be sent to the seller via email.</small>
+                        <label class="form-label fw-semibold">Additional Feedback / Custom Reason <span class="text-danger">*</span></label>
+                        <textarea name="reason" id="suspension_reason" class="form-control" rows="5" placeholder="Please provide detailed feedback or reason for suspension..." required></textarea>
+                        <small class="text-muted">
+                            <i class="bi bi-envelope me-1"></i>This feedback will be sent to the seller via email and website notification.
+                        </small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Related Report (Optional)</label>
+                        <label class="form-label fw-semibold">Related Report (Optional)</label>
                         <select name="report_id" class="form-select">
                             <option value="">No related report</option>
                             @foreach(\App\Models\Report::where('reportable_type', 'App\Models\Seller')->where('reportable_id', $seller->id)->orderBy('created_at', 'desc')->get() as $report)
@@ -886,8 +904,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Suspend Seller</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning text-dark fw-semibold">
+                        <i class="bi bi-pause-circle-fill me-1"></i> Suspend Seller
+                    </button>
                 </div>
             </form>
         </div>
@@ -976,30 +998,44 @@ tr:hover .bg-light.rounded-circle {
 }
 
 /* Modal improvements */
-.modal-fullscreen .modal-body {
-    background: #f8f9fa;
+.modal-xl .modal-body {
+    background: #1a1a1a;
 }
 
-.modal-fullscreen img {
+.modal-xl img {
     cursor: zoom-in;
 }
 
-/* Ensure modal backdrop is visible but not too dark */
-.modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
+/* Fix modal positioning and sizing */
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 3.5rem);
 }
 
-.modal-backdrop.show {
-    opacity: 0.5;
+.modal-dialog-scrollable {
+    max-height: calc(100vh - 3.5rem);
 }
 
-/* Ensure modal is above backdrop */
-.modal {
-    z-index: 1055;
+.modal-dialog-scrollable .modal-content {
+    max-height: calc(100vh - 3.5rem);
+    overflow: hidden;
 }
 
-.modal-backdrop {
-    z-index: 1050;
+.modal-dialog-scrollable .modal-body {
+    overflow-y: auto;
+}
+
+/* Ensure modals don't overflow */
+.modal-xl {
+    max-width: 90%;
+    margin: 1.75rem auto;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl {
+        max-width: 1140px;
+    }
 }
 
 /* Smooth transitions */

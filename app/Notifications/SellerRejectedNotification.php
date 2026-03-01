@@ -73,8 +73,14 @@ class SellerRejectedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'type' => 'seller_rejected',
+            'title' => 'Business Application Rejected',
+            'message' => 'Your business account application' . ($this->businessName ? ' for ' . $this->businessName : '') . ' has been rejected.',
             'reason' => $this->reason,
             'business_name' => $this->businessName,
+            'action_url' => url('/seller/registration'),
+            'icon' => 'x-octagon',
+            'color' => 'danger',
         ];
     }
 }

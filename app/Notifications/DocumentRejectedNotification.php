@@ -75,10 +75,18 @@ class DocumentRejectedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $documentName = ucfirst(str_replace('_', ' ', $this->documentType));
+        
         return [
+            'type' => 'document_rejected',
+            'title' => 'Verification Document Rejected',
+            'message' => 'Your ' . $documentName . ' document' . ($this->businessName ? ' for ' . $this->businessName : '') . ' has been rejected.',
             'document_type' => $this->documentType,
             'reason' => $this->reason,
             'business_name' => $this->businessName,
+            'action_url' => url('/seller/dashboard'),
+            'icon' => 'file-earmark-x',
+            'color' => 'danger',
         ];
     }
 }
