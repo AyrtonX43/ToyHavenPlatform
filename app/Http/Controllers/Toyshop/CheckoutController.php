@@ -570,15 +570,24 @@ class CheckoutController extends Controller
                 
                 Log::info('QR Ph payment confirmed', [
                     'order_number' => $order->order_number,
-                    'payment_intent_id' => $paymentIntentId
+                    'payment_intent_id' => $paymentIntentId,
+                    'receipt_generated' => $receiptGenerated,
+                    'receipt_path' => $order->receipt_path ?? 'none'
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Failed to confirm QR Ph payment', [
                     'order_number' => $order->order_number,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
                 ]);
-                return response()->json(['status' => 'error', 'message' => 'Failed to confirm payment']);
+                return response()->json([
+                    'status' => 'error', 
+                    'message' => 'Failed to confirm payment',
+                    'debug' => config('app.debug') ? $e->getMessage() : null
+                ]);
             }
         }
 
@@ -704,7 +713,9 @@ class CheckoutController extends Controller
                 Log::info('Payment confirmed successfully', [
                     'order_number' => $order->order_number,
                     'payment_intent_id' => $paymentIntentId,
-                    'user_id' => Auth::id()
+                    'user_id' => Auth::id(),
+                    'receipt_generated' => $receiptGenerated,
+                    'receipt_path' => $order->receipt_path ?? 'none'
                 ]);
 
                 return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful! Your order has been confirmed.');
@@ -712,7 +723,10 @@ class CheckoutController extends Controller
                 DB::rollBack();
                 Log::error('Payment confirmation failed', [
                     'order_number' => $order->order_number,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
                 ]);
                 return redirect()->route('checkout.payment', $order->order_number)
                     ->with('error', 'Failed to confirm payment. Please contact support.');
