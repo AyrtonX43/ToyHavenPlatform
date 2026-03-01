@@ -2,6 +2,38 @@
 
 @section('title', 'Seller Registration - ToyHaven')
 
+@php
+// PHP helper function to normalize special characters
+function normalizePhilippineText($text) {
+    if (empty($text)) return $text;
+    
+    $charMap = [
+        'ñ' => 'n', 'Ñ' => 'N',
+        'á' => 'a', 'Á' => 'A',
+        'é' => 'e', 'É' => 'E',
+        'í' => 'i', 'Í' => 'I',
+        'ó' => 'o', 'Ó' => 'O',
+        'ú' => 'u', 'Ú' => 'U',
+        'ü' => 'u', 'Ü' => 'U',
+        // Also handle the encoding issue
+        'Ã±' => 'n', 'Ã' => 'N',
+        'Ã¡' => 'a', 'Ã‰' => 'E',
+        'Ã©' => 'e', 'Ã­' => 'i',
+        'Ã³' => 'o', 'Ãº' => 'u',
+    ];
+    
+    return str_replace(array_keys($charMap), array_values($charMap), $text);
+}
+
+// Normalize pre-filled data
+if (isset($prefilledData)) {
+    $prefilledData['region'] = normalizePhilippineText($prefilledData['region'] ?? '');
+    $prefilledData['province'] = normalizePhilippineText($prefilledData['province'] ?? '');
+    $prefilledData['city'] = normalizePhilippineText($prefilledData['city'] ?? '');
+    $prefilledData['barangay'] = normalizePhilippineText($prefilledData['barangay'] ?? '');
+}
+@endphp
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
@@ -584,8 +616,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 regionSelect.appendChild(option);
             });
             
-            // Pre-select if old value exists
-            const oldRegion = "{{ old('region', $prefilledData['region'] ?? '') }}";
+            // Pre-select if old value exists (normalize it first)
+            const oldRegion = normalizeText("{{ old('region', $prefilledData['region'] ?? '') }}");
             if (oldRegion) {
                 regionSelect.value = oldRegion;
                 regionSelect.dispatchEvent(new Event('change'));
@@ -629,8 +661,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     citySelect.disabled = false;
                     
-                    // Pre-select if old value exists
-                    const oldCity = "{{ old('city', $prefilledData['city'] ?? '') }}";
+                    // Pre-select if old value exists (normalize it first)
+                    const oldCity = normalizeText("{{ old('city', $prefilledData['city'] ?? '') }}");
                     if (oldCity) {
                         citySelect.value = oldCity;
                         citySelect.dispatchEvent(new Event('change'));
@@ -651,12 +683,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     provinceSelect.disabled = false;
                     
-                    // Pre-select if old value exists
-                    const oldProvince = "{{ old('province', $prefilledData['province'] ?? '') }}";
-                    if (oldProvince) {
-                        provinceSelect.value = oldProvince;
-                        provinceSelect.dispatchEvent(new Event('change'));
-                    }
+                // Pre-select if old value exists (normalize it first)
+                const oldProvince = normalizeText("{{ old('province', $prefilledData['province'] ?? '') }}");
+                if (oldProvince) {
+                    provinceSelect.value = oldProvince;
+                    provinceSelect.dispatchEvent(new Event('change'));
+                }
                 })
                 .catch(error => console.error('Error loading provinces:', error));
         }
@@ -687,8 +719,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 citySelect.disabled = false;
                 
-                // Pre-select if old value exists
-                const oldCity = "{{ old('city', $prefilledData['city'] ?? '') }}";
+                // Pre-select if old value exists (normalize it first)
+                const oldCity = normalizeText("{{ old('city', $prefilledData['city'] ?? '') }}");
                 if (oldCity) {
                     citySelect.value = oldCity;
                     citySelect.dispatchEvent(new Event('change'));
@@ -718,8 +750,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 barangaySelect.disabled = false;
                 
-                // Pre-select if old value exists
-                const oldBarangay = "{{ old('barangay') }}";
+                // Pre-select if old value exists (normalize it first)
+                const oldBarangay = normalizeText("{{ old('barangay') }}");
                 if (oldBarangay) {
                     barangaySelect.value = oldBarangay;
                 }
