@@ -974,13 +974,35 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Fix modal z-index - use Bootstrap defaults */
-.modal-backdrop.show {
-    opacity: 0.5;
+/* Fix modal interaction - ensure modals work properly */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
-.modal.show .modal-dialog {
-    transform: none;
+.modal {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.modal-dialog {
+    pointer-events: none;
+}
+
+.modal-content {
+    pointer-events: auto;
+}
+
+/* Ensure all modal form elements are clickable */
+.modal input,
+.modal select,
+.modal textarea,
+.modal button,
+.modal .form-control,
+.modal .form-select,
+.modal .btn,
+.modal .btn-close {
+    pointer-events: auto !important;
+    position: relative;
 }
 
 /* Smooth transitions */
