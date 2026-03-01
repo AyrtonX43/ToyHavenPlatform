@@ -228,27 +228,31 @@
                                 
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3">
                                     <div class="d-flex flex-column gap-1">
-                                        <div class="quantity-control">
-                                            <form action="{{ route('cart.update', $item->id) }}" method="POST" class="d-inline" id="form-{{ $item->id }}">
-                                                @csrf
-                                                @method('PUT')
-                                                <button type="button" class="quantity-btn" onclick="decreaseQuantity({{ $item->id }})" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
-                                                    <i class="bi bi-dash"></i>
-                                                </button>
-                                                <input type="number" name="quantity" id="quantity-{{ $item->id }}" class="quantity-input" value="{{ $item->quantity }}" min="1" max="{{ $maxQty }}" data-item-id="{{ $item->id }}">
-                                                <button type="button" class="quantity-btn" onclick="increaseQuantity({{ $item->id }})" {{ $item->quantity >= $maxQty ? 'disabled' : '' }}>
-                                                    <i class="bi bi-plus"></i>
-                                                </button>
-                                            </form>
+                                        <div class="quantity-control" data-item-id="{{ $item->id }}" data-unit-price="{{ $unitPrice }}" data-max-qty="{{ $maxQty }}">
+                                            <button type="button" class="quantity-btn decrease-btn" data-item-id="{{ $item->id }}" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input type="number" 
+                                                   class="quantity-input" 
+                                                   data-item-id="{{ $item->id }}"
+                                                   data-update-url="{{ route('cart.update', $item->id) }}"
+                                                   value="{{ $item->quantity }}" 
+                                                   min="1" 
+                                                   max="{{ $maxQty }}">
+                                            <button type="button" class="quantity-btn increase-btn" data-item-id="{{ $item->id }}" {{ $item->quantity >= $maxQty ? 'disabled' : '' }}>
+                                                <i class="bi bi-plus"></i>
+                                            </button>
                                         </div>
                                         <small class="text-muted" style="font-size: 0.75rem;">
-                                            <i class="bi bi-box-seam me-1"></i>{{ $maxQty }} available
+                                            <i class="bi bi-box-seam me-1"></i><span class="stock-available" data-item-id="{{ $item->id }}">{{ $maxQty }}</span> available
                                         </small>
                                     </div>
                                     
                                     <div class="text-end">
-                                        <div class="cart-item-price" id="item-total-{{ $item->id }}" data-unit-price="{{ $unitPrice }}">₱{{ number_format($unitPrice * $item->quantity, 2) }}</div>
-                                        <small class="text-muted d-block" style="font-size: 0.75rem;" id="item-calc-{{ $item->id }}">₱{{ number_format($unitPrice, 2) }} × <span id="item-qty-display-{{ $item->id }}">{{ $item->quantity }}</span></small>
+                                        <div class="cart-item-price item-total" data-item-id="{{ $item->id }}">₱{{ number_format($unitPrice * $item->quantity, 2) }}</div>
+                                        <small class="text-muted d-block item-calculation" data-item-id="{{ $item->id }}" style="font-size: 0.75rem;">
+                                            ₱{{ number_format($unitPrice, 2) }} × <span class="qty-display">{{ $item->quantity }}</span>
+                                        </small>
                                     </div>
                                     
                                     <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this item from cart?');">
@@ -313,32 +317,52 @@
 
 @push('scripts')
 <script>
+(function() {
+    'use strict';
+    
     const taxRate = {{ $taxRate ?? 12 }} / 100;
     const commissionRate = {{ $commissionRate ?? 5 }} / 100;
-
-    function updateItemPrice(itemId, quantity) {
-        const itemTotalEl = document.getElementById('item-total-' + itemId);
-        const itemQtyDisplayEl = document.getElementById('item-qty-display-' + itemId);
-        const unitPrice = parseFloat(itemTotalEl.getAttribute('data-unit-price'));
+    
+    // Update item price display
+    function updateItemDisplay(itemId, quantity) {
+        const control = document.querySelector(`.quantity-control[data-item-id="${itemId}"]`);
+        if (!control) return;
         
-        // Update item total
+        const unitPrice = parseFloat(control.dataset.unitPrice);
+        const maxQty = parseInt(control.dataset.maxQty);
+        
+        // Calculate item total
         const itemTotal = unitPrice * quantity;
-        itemTotalEl.textContent = '₱' + itemTotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
-        // Update quantity display
-        if (itemQtyDisplayEl) {
-            itemQtyDisplayEl.textContent = quantity;
+        // Update item total display
+        const totalEl = document.querySelector(`.item-total[data-item-id="${itemId}"]`);
+        if (totalEl) {
+            totalEl.textContent = '₱' + itemTotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
+        
+        // Update quantity display in calculation
+        const calcEl = document.querySelector(`.item-calculation[data-item-id="${itemId}"] .qty-display`);
+        if (calcEl) {
+            calcEl.textContent = quantity;
+        }
+        
+        // Update button states
+        const decreaseBtn = document.querySelector(`.decrease-btn[data-item-id="${itemId}"]`);
+        const increaseBtn = document.querySelector(`.increase-btn[data-item-id="${itemId}"]`);
+        
+        if (decreaseBtn) decreaseBtn.disabled = quantity <= 1;
+        if (increaseBtn) increaseBtn.disabled = quantity >= maxQty;
         
         // Update cart summary
         updateCartSummary();
     }
     
+    // Update cart summary totals
     function updateCartSummary() {
         let subtotal = 0;
         
-        // Calculate new subtotal from all items
-        document.querySelectorAll('[id^="item-total-"]').forEach(function(el) {
+        // Calculate subtotal from all items
+        document.querySelectorAll('.item-total').forEach(function(el) {
             const priceText = el.textContent.replace(/[₱,]/g, '');
             const price = parseFloat(priceText) || 0;
             subtotal += price;
@@ -357,127 +381,128 @@
         if (vatEl) vatEl.textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
-
-    function validateQuantity(itemId, maxQty) {
-        const input = document.getElementById('quantity-' + itemId);
-        let value = parseInt(input.value) || 1;
-        
-        // Enforce min and max
-        if (value < 1) value = 1;
-        if (value > maxQty) value = maxQty;
-        
-        input.value = value;
-        
-        // Update button states
-        const form = document.getElementById('form-' + itemId);
-        const decreaseBtn = form.querySelector('.quantity-btn:first-child');
-        const increaseBtn = form.querySelector('.quantity-btn:last-child');
-        
-        decreaseBtn.disabled = value <= 1;
-        increaseBtn.disabled = value >= maxQty;
-        
-        // Update price display in real-time
-        updateItemPrice(itemId, value);
-    }
-
-    function increaseQuantity(itemId) {
-        const input = document.getElementById('quantity-' + itemId);
-        const max = parseInt(input.max);
-        const current = parseInt(input.value);
-        if (current < max) {
-            input.value = current + 1;
-            validateQuantity(itemId, max);
-            updateQuantity(itemId);
-        }
-    }
     
-    function decreaseQuantity(itemId) {
-        const input = document.getElementById('quantity-' + itemId);
-        const max = parseInt(input.max);
-        const current = parseInt(input.value);
-        if (current > 1) {
-            input.value = current - 1;
-            validateQuantity(itemId, max);
-            updateQuantity(itemId);
-        }
-    }
-    
-    function updateQuantity(itemId) {
-        const input = document.getElementById('quantity-' + itemId);
-        const form = input.closest('form');
-        const formData = new FormData(form);
-        const quantity = parseInt(input.value);
+    // Save quantity to server
+    function saveQuantity(itemId, quantity, input) {
+        const updateUrl = input.dataset.updateUrl;
         
-        formData.set('quantity', quantity);
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+        formData.append('_method', 'PUT');
         
-        // Show loading state
-        input.disabled = true;
-        const buttons = form.querySelectorAll('.quantity-btn');
-        buttons.forEach(btn => btn.disabled = true);
-        
-        fetch(form.action, {
+        fetch(updateUrl, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
             }
         })
-        .then(response => response.ok ? response : Promise.reject(response))
-        .then(() => {
-            // Re-enable controls
-            input.disabled = false;
-            const max = parseInt(input.max);
-            validateQuantity(itemId, max);
+        .then(response => {
+            if (!response.ok) throw new Error('Update failed');
+            return response.json();
+        })
+        .then(data => {
+            console.log('Quantity updated successfully');
         })
         .catch(error => {
             console.error('Error updating quantity:', error);
-            alert('Failed to update quantity. Please try again.');
-            location.reload();
+            alert('Failed to update quantity. Please refresh the page.');
         });
+    }
+    
+    // Handle quantity input changes
+    function handleQuantityChange(input) {
+        const itemId = input.dataset.itemId;
+        const control = input.closest('.quantity-control');
+        const maxQty = parseInt(control.dataset.maxQty);
+        
+        let quantity = parseInt(input.value) || 1;
+        
+        // Validate quantity
+        if (quantity < 1) quantity = 1;
+        if (quantity > maxQty) quantity = maxQty;
+        
+        input.value = quantity;
+        
+        // Update display immediately
+        updateItemDisplay(itemId, quantity);
+        
+        return quantity;
     }
     
     // Initialize event listeners
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Cart real-time updates initialized');
-        
-        document.querySelectorAll('.quantity-input').forEach(function(input) {
-            const itemId = input.getAttribute('data-item-id');
-            const max = parseInt(input.max);
-            
-            console.log('Setting up listeners for item:', itemId);
-            
-            // Update price in real-time as user types
-            input.addEventListener('input', function() {
-                console.log('Input event - Item:', itemId, 'Value:', this.value);
-                validateQuantity(itemId, max);
-            });
-            
-            // Enter key to save
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.blur(); // Trigger blur to save
-                }
-            });
-            
-            // Save to server on blur
-            input.addEventListener('blur', function() {
-                const oldValue = parseInt(this.defaultValue);
-                const newValue = parseInt(this.value);
+        // Decrease button click
+        document.querySelectorAll('.decrease-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                const input = document.querySelector(`.quantity-input[data-item-id="${itemId}"]`);
                 
-                console.log('Blur event - Item:', itemId, 'Old:', oldValue, 'New:', newValue);
-                
-                validateQuantity(itemId, max);
-                
-                // Only update server if value changed
-                if (oldValue !== newValue && newValue >= 1 && newValue <= max) {
-                    console.log('Saving to server...');
-                    updateQuantity(itemId);
-                    this.defaultValue = newValue;
+                let quantity = parseInt(input.value) || 1;
+                if (quantity > 1) {
+                    quantity--;
+                    input.value = quantity;
+                    updateItemDisplay(itemId, quantity);
+                    saveQuantity(itemId, quantity, input);
                 }
             });
         });
+        
+        // Increase button click
+        document.querySelectorAll('.increase-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                const input = document.querySelector(`.quantity-input[data-item-id="${itemId}"]`);
+                const control = input.closest('.quantity-control');
+                const maxQty = parseInt(control.dataset.maxQty);
+                
+                let quantity = parseInt(input.value) || 1;
+                if (quantity < maxQty) {
+                    quantity++;
+                    input.value = quantity;
+                    updateItemDisplay(itemId, quantity);
+                    saveQuantity(itemId, quantity, input);
+                }
+            });
+        });
+        
+        // Input field changes
+        document.querySelectorAll('.quantity-input').forEach(function(input) {
+            let oldValue = parseInt(input.value);
+            
+            // Real-time update as user types
+            input.addEventListener('input', function() {
+                const itemId = this.dataset.itemId;
+                handleQuantityChange(this);
+            });
+            
+            // Save to server when user finishes editing
+            input.addEventListener('blur', function() {
+                const itemId = this.dataset.itemId;
+                const newValue = handleQuantityChange(this);
+                
+                if (oldValue !== newValue) {
+                    saveQuantity(itemId, newValue, this);
+                    oldValue = newValue;
+                }
+            });
+            
+            // Save on Enter key
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+            });
+        });
+        
+        // Handle cart item selection for checkout
+        document.querySelectorAll('.cart-item-select').forEach(function(checkbox) {
+            checkbox.addEventListener('change', updateCartSummary);
+        });
     });
+})();
 </script>
 @endpush
 @endsection
