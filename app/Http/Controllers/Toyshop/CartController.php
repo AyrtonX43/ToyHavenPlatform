@@ -199,6 +199,13 @@ class CartController extends Controller
 
         $cartItem->delete();
 
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Item removed from cart.'
+            ]);
+        }
+
         return back()->with('success', 'Item removed from cart.');
     }
 }

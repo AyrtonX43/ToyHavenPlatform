@@ -255,13 +255,11 @@
                                         </small>
                                     </div>
                                     
-                                    <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this item from cart?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="bi bi-trash me-1"></i>Remove
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-item-btn" 
+                                            data-item-id="{{ $item->id }}"
+                                            data-remove-url="{{ route('cart.remove', $item->id) }}">
+                                        <i class="bi bi-trash me-1"></i>Remove
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -512,6 +510,69 @@
         // Handle cart item selection for checkout
         document.querySelectorAll('.cart-item-select').forEach(function(checkbox) {
             checkbox.addEventListener('change', updateCartSummary);
+        });
+        
+        // Handle remove item button
+        document.querySelectorAll('.remove-item-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (!confirm('Remove this item from cart?')) {
+                    return;
+                }
+                
+                const itemId = this.dataset.itemId;
+                const removeUrl = this.dataset.removeUrl;
+                const cartItemCard = document.querySelector(`.cart-item-card[data-item-id="${itemId}"]`);
+                
+                // Disable button during request
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Removing...';
+                
+                fetch(removeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new URLSearchParams({
+                        '_method': 'DELETE'
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to remove item');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Fade out and remove the cart item card
+                    if (cartItemCard) {
+                        cartItemCard.style.transition = 'opacity 0.3s ease';
+                        cartItemCard.style.opacity = '0';
+                        
+                        setTimeout(function() {
+                            cartItemCard.remove();
+                            
+                            // Update cart summary
+                            updateCartSummary();
+                            
+                            // Check if cart is empty
+                            const remainingItems = document.querySelectorAll('.cart-item-card');
+                            if (remainingItems.length === 0) {
+                                // Reload page to show empty cart message
+                                location.reload();
+                            }
+                        }, 300);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error removing item:', error);
+                    alert('Failed to remove item. Please try again.');
+                    // Re-enable button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-trash me-1"></i>Remove';
+                });
+            });
         });
     });
 })();
