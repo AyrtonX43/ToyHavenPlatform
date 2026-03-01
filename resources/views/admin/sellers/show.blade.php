@@ -333,9 +333,9 @@
                                     <td class="py-3">
                                         @if($document->document_path)
                                             <div class="d-flex gap-2">
-                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
+                                                <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-sm btn-primary">
                                                     <i class="bi bi-eye me-1"></i> View
-                                                </button>
+                                                </a>
                                                 <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-secondary">
                                                     <i class="bi bi-download me-1"></i> Download
                                                 </a>
