@@ -925,25 +925,9 @@ document.addEventListener('DOMContentLoaded', function() {
     letter-spacing: 0.3px;
 }
 
-/* Button hover effects */
-.btn {
-    transition: all 0.2s ease;
-}
+/* Button hover effects - disabled to prevent modal glitching */
 
-.btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Document icon styling */
-.bg-light.rounded-circle {
-    transition: all 0.2s ease;
-}
-
-tr:hover .bg-light.rounded-circle {
-    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
-    transform: scale(1.05);
-}
+/* Document icon styling - disabled to prevent modal glitching */
 
 /* Alert styling improvements */
 .alert {
@@ -976,10 +960,7 @@ tr:hover .bg-light.rounded-circle {
 
 /* Minimal modal fixes - no glitching */
 
-/* Smooth transitions - only for cards, not modals */
-.card {
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
+/* Smooth transitions - disabled to prevent modal glitching */
 
 /* Card header gradient */
 .bg-gradient {
