@@ -983,6 +983,34 @@ tr:hover .bg-light.rounded-circle {
     transform: none;
 }
 
+/* Force all modals to be centered on screen regardless of scroll position */
+.modal {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+}
+
+.modal-dialog {
+    margin: auto !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+
+.modal.show .modal-dialog {
+    transform: translate(-50%, -50%) !important;
+}
+
+/* Ensure modal content is scrollable if too tall */
+.modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
 /* Smooth transitions */
 * {
     transition: background-color 0.2s ease, border-color 0.2s ease;
