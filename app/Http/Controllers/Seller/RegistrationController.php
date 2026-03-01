@@ -104,19 +104,19 @@ class RegistrationController extends Controller
             return $id > 0;
         });
         
-        // Create seller
+        // Create seller with normalized text
         $seller = Seller::create([
             'user_id' => Auth::id(),
-            'business_name' => $request->business_name,
+            'business_name' => normalizePhilippineText($request->business_name),
             'business_slug' => Str::slug($request->business_name) . '-' . Auth::id(),
-            'description' => $request->description,
+            'description' => normalizePhilippineText($request->description),
             'phone' => $request->phone,
             'email' => $request->email,
-            'address' => $request->address,
-            'region' => $request->region,
-            'city' => $request->city,
-            'barangay' => $request->barangay,
-            'province' => $request->province,
+            'address' => normalizePhilippineText($request->address),
+            'region' => normalizePhilippineText($request->region),
+            'city' => normalizePhilippineText($request->city),
+            'barangay' => normalizePhilippineText($request->barangay),
+            'province' => normalizePhilippineText($request->province),
             'postal_code' => $request->postal_code,
             'facebook_url' => $request->facebook_url,
             'instagram_url' => $request->instagram_url,
@@ -124,7 +124,7 @@ class RegistrationController extends Controller
             'website_url' => $request->website_url,
             'toy_category_ids' => !empty($categoryIds) ? $categoryIds : null,
             'verification_status' => 'pending',
-            'is_verified_shop' => $isVerified, // Store verification type
+            'is_verified_shop' => $isVerified,
         ]);
 
         // Upload Primary ID document (required for all)

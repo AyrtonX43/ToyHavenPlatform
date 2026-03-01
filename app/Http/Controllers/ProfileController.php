@@ -101,6 +101,12 @@ class ProfileController extends Controller
 
         $validated['user_id'] = $request->user()->id;
         
+        // Normalize Philippine text to prevent encoding issues
+        $validated['label'] = normalizePhilippineText($validated['label'] ?? null);
+        $validated['address'] = normalizePhilippineText($validated['address']);
+        $validated['city'] = normalizePhilippineText($validated['city']);
+        $validated['province'] = normalizePhilippineText($validated['province']);
+        
         // Handle is_default checkbox (unchecked checkboxes don't send a value)
         $isDefault = $request->has('is_default') && $request->is_default == '1';
         $validated['is_default'] = $isDefault;
@@ -137,6 +143,12 @@ class ProfileController extends Controller
             'is_default' => 'nullable',
         ]);
 
+        // Normalize Philippine text to prevent encoding issues
+        $validated['label'] = normalizePhilippineText($validated['label'] ?? null);
+        $validated['address'] = normalizePhilippineText($validated['address']);
+        $validated['city'] = normalizePhilippineText($validated['city']);
+        $validated['province'] = normalizePhilippineText($validated['province']);
+
         // Handle is_default checkbox (unchecked checkboxes don't send a value)
         $isDefault = $request->has('is_default') && $request->is_default == '1';
         $validated['is_default'] = $isDefault;
@@ -152,7 +164,7 @@ class ProfileController extends Controller
 
         return Redirect::route('profile.edit')
             ->with('success', 'Address updated successfully!')
-            ->with('edited_address_id', null); // Clear any previous edit state
+            ->with('edited_address_id', null);
     }
 
     /**

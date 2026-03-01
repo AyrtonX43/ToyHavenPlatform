@@ -125,7 +125,7 @@
                 <div class="row">
                     <div class="col-12">
                         <strong>Description:</strong><br>
-                        <p class="mb-0">{{ $seller->description }}</p>
+                        <p class="mb-0" style="text-align: justify;">{{ $seller->description }}</p>
                     </div>
                 </div>
                 @endif
@@ -190,9 +190,9 @@
                                     </td>
                                     <td>
                                         @if($document->document_path)
-                                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewDocumentModal{{ $document->id }}">
                                                 <i class="bi bi-eye me-1"></i> View
-                                            </a>
+                                            </button>
                                             <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-sm btn-outline-secondary">
                                                 <i class="bi bi-download me-1"></i> Download
                                             </a>
@@ -233,6 +233,41 @@
                                             </form>
                                         @endif
                                         
+                                        <!-- View Document Modal (Fullscreen) -->
+                                        <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1">
+                                            <div class="modal-dialog modal-fullscreen">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-dark text-white">
+                                                        <h5 class="modal-title">
+                                                            <i class="bi bi-file-earmark-text me-2"></i>
+                                                            {{ ucfirst(str_replace('_', ' ', $document->document_type)) }} - {{ $seller->business_name }}
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body bg-dark d-flex align-items-center justify-content-center p-0">
+                                                        @php
+                                                            $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
+                                                            $isPdf = strtolower($extension) === 'pdf';
+                                                        @endphp
+                                                        @if($isPdf)
+                                                            <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: none;"></iframe>
+                                                        @else
+                                                            <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                                        @endif
+                                                    </div>
+                                                    <div class="modal-footer bg-dark text-white">
+                                                        <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
+                                                            <i class="bi bi-download me-1"></i> Download
+                                                        </a>
+                                                        <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
+                                                            <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
+                                                        </a>
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <!-- Reject Document Modal -->
                                         <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1">
                                             <div class="modal-dialog">
@@ -283,6 +318,43 @@
                 @endif
             </div>
         </div>
+        
+        <!-- View Document Modals (Outside the table) -->
+        @foreach($seller->documents as $document)
+            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1">
+                <div class="modal-dialog modal-fullscreen">
+                    <div class="modal-content">
+                        <div class="modal-header bg-dark text-white">
+                            <h5 class="modal-title">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                {{ ucfirst(str_replace('_', ' ', $document->document_type)) }} - {{ $seller->business_name }}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body bg-dark d-flex align-items-center justify-content-center p-0">
+                            @php
+                                $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
+                                $isPdf = strtolower($extension) === 'pdf';
+                            @endphp
+                            @if($isPdf)
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: none;"></iframe>
+                            @else
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="Document" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            @endif
+                        </div>
+                        <div class="modal-footer bg-dark text-white">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
+                                <i class="bi bi-download me-1"></i> Download
+                            </a>
+                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
         @else
         <div class="card mb-4">
             <div class="card-header">

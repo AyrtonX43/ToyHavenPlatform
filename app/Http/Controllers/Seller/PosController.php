@@ -125,20 +125,20 @@ class PosController extends Controller
         // Create order
         $order = Order::create([
             'order_number' => 'POS-' . strtoupper(Str::random(8)),
-            'user_id' => null, // POS orders may not have a registered user
+            'user_id' => null,
             'seller_id' => $seller->id,
             'total_amount' => $total,
             'shipping_fee' => 0,
             'total' => $total,
-            'status' => 'completed', // POS orders are immediately completed
+            'status' => 'completed',
             'payment_status' => 'paid',
             'payment_method' => $request->payment_method,
-            'shipping_address' => $request->customer_address ?? 'Walk-in Customer',
-            'shipping_city' => $seller->city ?? '',
-            'shipping_province' => $seller->province ?? '',
+            'shipping_address' => normalizePhilippineText($request->customer_address ?? 'Walk-in Customer'),
+            'shipping_city' => normalizePhilippineText($seller->city ?? ''),
+            'shipping_province' => normalizePhilippineText($seller->province ?? ''),
             'shipping_postal_code' => $seller->postal_code ?? '',
             'shipping_phone' => $request->customer_phone ?? $seller->phone ?? '',
-            'shipping_notes' => 'POS Order - Customer: ' . ($request->customer_name ?? 'Walk-in'),
+            'shipping_notes' => normalizePhilippineText('POS Order - Customer: ' . ($request->customer_name ?? 'Walk-in')),
         ]);
 
         // Create order items and update stock
