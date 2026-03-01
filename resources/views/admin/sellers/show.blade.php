@@ -383,14 +383,14 @@
                                         @endif
                                         
                                         <!-- Reject Document Modal -->
-                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
+                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="false">
                                             <div class="modal-dialog modal-dialog-centered">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                                                         @csrf
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Reject Document - Invalid Document</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            <h5 class="modal-title" id="rejectDocumentModalLabel{{ $document->id }}">Reject Document - Invalid Document</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <div class="alert alert-danger">
@@ -983,8 +983,35 @@ tr:hover .bg-light.rounded-circle {
     transform: none;
 }
 
-/* Smooth transitions */
-* {
+/* Fix modal glitching - disable transitions on modal elements */
+.modal,
+.modal *,
+.modal-dialog,
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer {
+    transition: none !important;
+    transform: none !important;
+}
+
+/* Ensure modal is stable and doesn't move */
+.modal-dialog-centered {
+    display: flex !important;
+    align-items: center !important;
+    min-height: calc(100% - 1rem) !important;
+}
+
+/* Prevent hover effects from causing glitches in modals */
+.modal .btn:hover,
+.modal input:hover,
+.modal textarea:hover,
+.modal select:hover {
+    transform: none !important;
+}
+
+/* Smooth transitions only for non-modal elements */
+body:not(.modal-open) * {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
