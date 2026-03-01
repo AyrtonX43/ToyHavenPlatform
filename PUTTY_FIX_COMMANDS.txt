@@ -1,0 +1,70 @@
+# ===================================================================
+# PASTE THESE COMMANDS INTO PUTTY - FINAL FIX
+# ===================================================================
+
+cd /home/u334258035/domains/toyhaven.online
+
+# Pull the latest changes
+git pull origin main
+
+# Clear ALL caches (this is critical)
+php artisan optimize:clear
+
+# Rebuild autoloader with optimization
+composer dump-autoload -o
+
+# Rebuild caches
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Verify the helper file exists
+ls -la app/Helpers/TextHelper.php
+
+# Verify the service provider exists
+ls -la app/Providers/HelperServiceProvider.php
+
+# Check if bootstrap loads it
+grep "TextHelper" bootstrap/app.php
+
+# Test the helper function works
+php artisan tinker
+# Then type this and press Enter:
+normalizePhilippineText('test Ã± text')
+# Press Ctrl+C to exit tinker
+
+# ===================================================================
+# IF STILL GETTING 500 ERROR - RUN THESE DEBUG COMMANDS
+# ===================================================================
+
+# See the actual error (last 100 lines)
+tail -100 storage/logs/laravel.log
+
+# Or search for today's errors
+grep "$(date +%Y-%m-%d)" storage/logs/laravel.log | tail -50
+
+# Check PHP version (should be 8.1 or higher)
+php -v
+
+# Check if composer autoload is working
+php -r "require 'vendor/autoload.php'; echo 'Autoload OK';"
+
+# ===================================================================
+# NUCLEAR OPTION - If nothing else works
+# ===================================================================
+
+# Clear Laravel cache manually
+rm -rf bootstrap/cache/*.php
+
+# Clear config cache
+php artisan config:clear
+
+# Rebuild everything from scratch
+composer dump-autoload -o
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Restart PHP-FPM (if you have access)
+# This might require sudo or contacting hosting support

@@ -30,7 +30,7 @@ class SellerApprovedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -86,8 +86,16 @@ class SellerApprovedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $isVerified = $this->shopType === 'Verified Trusted Toyshop';
+        
         return [
+            'title' => $isVerified ? 'Verified Trusted Toyshop Approved!' : 'Business Registration Approved!',
+            'message' => 'Congratulations! Your ' . $this->shopType . ' registration for ' . $this->businessName . ' has been approved.',
             'business_name' => $this->businessName,
+            'shop_type' => $this->shopType,
+            'action_url' => url('/seller/dashboard'),
+            'action_text' => 'Go to Seller Dashboard',
+            'type' => 'seller_approved',
         ];
     }
 }

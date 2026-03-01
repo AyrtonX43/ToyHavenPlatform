@@ -373,6 +373,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::post('/{id}/activate', [\App\Http\Controllers\Admin\SellerController::class, 'activate'])->name('activate');
             
             // Document management routes
+            Route::post('/{sellerId}/documents/approve-all', [\App\Http\Controllers\Admin\SellerController::class, 'approveAllDocuments'])->name('documents.approve-all');
             Route::post('/{sellerId}/documents/{documentId}/approve', [\App\Http\Controllers\Admin\SellerController::class, 'approveDocument'])->name('documents.approve');
             Route::post('/{sellerId}/documents/{documentId}/reject', [\App\Http\Controllers\Admin\SellerController::class, 'rejectDocument'])->name('documents.reject');
         });

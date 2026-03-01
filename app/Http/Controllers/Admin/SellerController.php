@@ -293,6 +293,40 @@ class SellerController extends Controller
     }
 
     /**
+     * Approve all pending documents
+     */
+    public function approveAllDocuments($sellerId)
+    {
+        $seller = Seller::with('documents')->findOrFail($sellerId);
+        
+        // Get all pending documents
+        $pendingDocuments = $seller->documents()->where('status', 'pending')->get();
+        
+        if ($pendingDocuments->isEmpty()) {
+            return back()->with('info', 'No pending documents to approve.');
+        }
+        
+        // Approve all pending documents
+        $seller->documents()->where('status', 'pending')->update([
+            'status' => 'approved',
+            'rejection_reason' => null
+        ]);
+        
+        $count = $pendingDocuments->count();
+        $message = $count . ' document(s) approved successfully.';
+        
+        // Check if all required documents are now approved
+        $requiredDocsCount = $seller->is_verified_shop ? 6 : 3;
+        $approvedDocsCount = $seller->documents()->where('status', 'approved')->count();
+        
+        if ($approvedDocsCount >= $requiredDocsCount && $seller->verification_status === 'pending') {
+            $message .= ' All required documents are now approved. You can now approve the seller.';
+        }
+        
+        return back()->with('success', $message);
+    }
+
+    /**
      * Approve a specific document
      */
     public function approveDocument(Request $request, $sellerId, $documentId)
@@ -306,12 +340,12 @@ class SellerController extends Controller
         ]);
         
         // Check if all required documents are now approved
-        $requiredDocsCount = $seller->is_verified_shop ? 3 : 1;
+        $requiredDocsCount = $seller->is_verified_shop ? 6 : 3;
         $approvedDocsCount = $seller->documents()->where('status', 'approved')->count();
         
         $message = 'Document approved successfully.';
         if ($approvedDocsCount >= $requiredDocsCount && $seller->verification_status === 'pending') {
-            $message .= ' All required documents are now approved. You can approve the seller.';
+            $message .= ' All required documents are now approved. You can now approve the seller.';
         }
         
         return back()->with('success', $message);

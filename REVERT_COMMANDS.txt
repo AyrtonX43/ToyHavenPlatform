@@ -1,0 +1,22 @@
+# ===================================================================
+# PASTE THESE COMMANDS INTO PUTTY - REVERT TO ORIGINAL
+# ===================================================================
+
+cd /home/u334258035/domains/toyhaven.online
+
+# Pull the reverted changes (this will reset to before all the encoding fixes)
+git fetch origin
+git reset --hard origin/main
+
+# Clear all caches
+php artisan optimize:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
+# Rebuild caches
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Done! The site should work now with the original code.
