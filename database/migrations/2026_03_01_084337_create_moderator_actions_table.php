@@ -23,7 +23,6 @@ return new class extends Migration
 
             $table->index('moderator_id');
             $table->index('action_type');
-            $table->index(['actionable_type', 'actionable_id']);
         });
     }
 
