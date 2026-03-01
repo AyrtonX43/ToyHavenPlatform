@@ -50,7 +50,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('seller.register.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('seller.register.store') }}" method="POST" enctype="multipart/form-data" accept-charset="UTF-8">
                         @csrf
                         <input type="hidden" name="registration_type" value="{{ $type ?? request('type', 'basic') }}">
 
@@ -379,37 +379,46 @@
                         <h5 class="mb-3 mt-4">Toy Categories You Sell</h5>
                         <div class="mb-4 {{ $errors->has('toy_category_ids') ? 'is-invalid' : '' }}">
                             <label class="form-label">Select 1-3 Categories <span class="text-danger">*</span></label>
-                            <div class="row g-3" id="toy-category-buttons">
-                                @foreach($categories ?? [] as $cat)
-                                    @php 
-                                        $oldIds = old('toy_category_ids', []); 
-                                        $isOld = is_array($oldIds) && in_array($cat->id, $oldIds);
-                                        $icon = $cat->getDisplayIcon();
-                                    @endphp
-                                    <div class="col-md-6 col-lg-4">
-                                        <input type="checkbox" class="btn-check category-checkbox" name="toy_category_ids[]" value="{{ $cat->id }}" id="toy_cat_{{ $cat->id }}" {{ $isOld ? 'checked' : '' }} autocomplete="off">
-                                        <label class="btn btn-outline-primary text-start w-100 h-100 p-3 category-card" for="toy_cat_{{ $cat->id }}">
-                                            <div class="d-flex align-items-start">
-                                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; min-width: 50px;">
-                                                    <i class="bi {{ $icon }} text-primary" style="font-size: 1.5rem;"></i>
+                            
+                            @if(isset($categories) && count($categories) > 0)
+                                <div class="row g-3" id="toy-category-buttons">
+                                    @foreach($categories as $cat)
+                                        @php 
+                                            $oldIds = old('toy_category_ids', []); 
+                                            $isOld = is_array($oldIds) && in_array($cat->id, $oldIds);
+                                            $icon = $cat->getDisplayIcon();
+                                        @endphp
+                                        <div class="col-md-6 col-lg-4">
+                                            <input type="checkbox" class="btn-check category-checkbox" name="toy_category_ids[]" value="{{ $cat->id }}" id="toy_cat_{{ $cat->id }}" {{ $isOld ? 'checked' : '' }} autocomplete="off">
+                                            <label class="btn btn-outline-primary text-start w-100 h-100 p-3 category-card" for="toy_cat_{{ $cat->id }}">
+                                                <div class="d-flex align-items-start">
+                                                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; min-width: 50px;">
+                                                        <i class="bi {{ $icon }} text-primary" style="font-size: 1.5rem;"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <div class="fw-semibold mb-1">{{ $cat->name }}</div>
+                                                        @if(!empty($cat->description))
+                                                            <small class="text-muted d-block lh-sm">{{ Str::limit($cat->description, 80) }}</small>
+                                                        @else
+                                                            <small class="text-muted d-block lh-sm">Quality {{ strtolower($cat->name) }} for all ages</small>
+                                                        @endif
+                                                    </div>
                                                 </div>
-                                                <div class="flex-grow-1">
-                                                    <div class="fw-semibold mb-1">{{ $cat->name }}</div>
-                                                    @if(!empty($cat->description))
-                                                        <small class="text-muted d-block lh-sm">{{ Str::limit($cat->description, 80) }}</small>
-                                                    @else
-                                                        <small class="text-muted d-block lh-sm">Quality {{ strtolower($cat->name) }} for all ages</small>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <small class="text-muted d-block mt-2">
-                                <i class="bi bi-info-circle me-1"></i>Select between 1 to 3 toy categories that best represent your product range. 
-                                <span id="category-count" class="fw-semibold">0 selected</span>
-                            </small>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>Select between 1 to 3 toy categories that best represent your product range. 
+                                    <span id="category-count" class="fw-semibold">0 selected</span>
+                                </small>
+                            @else
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>No categories available.</strong> Please contact the administrator to set up toy categories.
+                                </div>
+                            @endif
+                            
                             @error('toy_category_ids')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -533,13 +542,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const API_BASE = 'https://psgc.cloud/api';
 
     // Load regions on page load
-    fetch(`${API_BASE}/regions`)
-        .then(response => response.json())
-        .then(data => {
+    fetch(`${API_BASE}/regions`, {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(text => {
+            const data = JSON.parse(text);
             data.forEach(region => {
-                const option = new Option(region.name, region.name);
+                const option = document.createElement('option');
+                option.value = region.name;
+                option.textContent = region.name;
                 option.dataset.code = region.code;
-                regionSelect.add(option);
+                regionSelect.appendChild(option);
             });
             
             // Pre-select if old value exists
@@ -566,13 +586,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         const regionCode = selectedOption.dataset.code;
 
-        fetch(`${API_BASE}/regions/${regionCode}/provinces`)
-            .then(response => response.json())
-            .then(data => {
+        fetch(`${API_BASE}/regions/${regionCode}/provinces`, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                const data = JSON.parse(text);
                 data.forEach(province => {
-                    const option = new Option(province.name, province.name);
+                    const option = document.createElement('option');
+                    option.value = province.name;
+                    option.textContent = province.name;
                     option.dataset.code = province.code;
-                    provinceSelect.add(option);
+                    provinceSelect.appendChild(option);
                 });
                 provinceSelect.disabled = false;
                 
@@ -599,13 +630,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         const provinceCode = selectedOption.dataset.code;
 
-        fetch(`${API_BASE}/provinces/${provinceCode}/cities-municipalities`)
-            .then(response => response.json())
-            .then(data => {
+        fetch(`${API_BASE}/provinces/${provinceCode}/cities-municipalities`, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                const data = JSON.parse(text);
                 data.forEach(city => {
-                    const option = new Option(city.name, city.name);
+                    const option = document.createElement('option');
+                    option.value = city.name;
+                    option.textContent = city.name;
                     option.dataset.code = city.code;
-                    citySelect.add(option);
+                    citySelect.appendChild(option);
                 });
                 citySelect.disabled = false;
                 
@@ -629,12 +671,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOption = this.options[this.selectedIndex];
         const cityCode = selectedOption.dataset.code;
 
-        fetch(`${API_BASE}/cities-municipalities/${cityCode}/barangays`)
-            .then(response => response.json())
-            .then(data => {
+        fetch(`${API_BASE}/cities-municipalities/${cityCode}/barangays`, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                const data = JSON.parse(text);
                 data.forEach(barangay => {
-                    const option = new Option(barangay.name, barangay.name);
-                    barangaySelect.add(option);
+                    const option = document.createElement('option');
+                    option.value = barangay.name;
+                    option.textContent = barangay.name;
+                    barangaySelect.appendChild(option);
                 });
                 barangaySelect.disabled = false;
                 
