@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sellers', function (Blueprint $table) {
-            $table->enum('seller_type', ['individual', 'business'])->default('individual')->after('user_id');
-            $table->string('selfie_path')->nullable()->after('logo');
+            if (!Schema::hasColumn('sellers', 'seller_type')) {
+                $table->enum('seller_type', ['individual', 'business'])->default('individual')->after('user_id');
+            }
+            if (!Schema::hasColumn('sellers', 'selfie_path')) {
+                $table->string('selfie_path')->nullable()->after('logo');
+            }
         });
 
         Schema::table('seller_documents', function (Blueprint $table) {
