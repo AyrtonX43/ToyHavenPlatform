@@ -144,14 +144,19 @@ class SellerController extends Controller
         ]);
         
         // Send notification to seller
-        if ($seller->user) {
-            $shopType = $isVerifiedShop ? 'Verified Trusted Toyshop' : 'Local Business Toyshop';
-            $seller->user->notify(new SellerApprovedNotification($seller->business_name, $shopType));
+        try {
+            if ($seller->user) {
+                $shopType = $isVerifiedShop ? 'Verified Trusted Toyshop' : 'Local Business Toyshop';
+                $seller->user->notify(new SellerApprovedNotification($seller->business_name, $shopType));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send seller approval notification: ' . $e->getMessage());
+            // Continue even if notification fails
         }
         
         $message = $isVerifiedShop 
             ? 'Verified Trusted Toyshop approved successfully! The seller now has verified status and enhanced benefits.'
-            : 'Local Business Toyshop approved successfully! Seller has been notified via email.';
+            : 'Local Business Toyshop approved successfully! Seller has been notified.';
         
         return back()->with('success', $message);
     }

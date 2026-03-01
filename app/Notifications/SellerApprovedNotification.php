@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Schema;
 
 class SellerApprovedNotification extends Notification
 {
@@ -30,7 +31,16 @@ class SellerApprovedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        // Try database notification, fall back to mail only if it fails
+        try {
+            if (\Schema::hasTable('notifications')) {
+                return ['mail', 'database'];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Database notifications table not found, using mail only');
+        }
+        
+        return ['mail'];
     }
 
     /**
