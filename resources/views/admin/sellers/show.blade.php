@@ -744,7 +744,7 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
@@ -974,22 +974,35 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Ensure modal backdrop is clickable for fullscreen modals only */
-.modal-fullscreen ~ .modal-backdrop {
-    z-index: 1040;
+/* Ensure modal backdrop and modals have proper z-index */
+.modal-backdrop {
+    z-index: 1050 !important;
 }
 
-.modal-fullscreen {
-    z-index: 1045;
+.modal {
+    z-index: 1055 !important;
 }
 
-/* Regular modals should have proper z-index above backdrop */
-.modal:not(.modal-fullscreen) {
-    z-index: 1055;
+.modal-dialog {
+    z-index: 1056 !important;
 }
 
-.modal-backdrop.show {
-    z-index: 1050;
+/* Ensure modal content is always on top and interactive */
+.modal-content {
+    position: relative;
+    z-index: 1057 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure all form elements in modals are interactive */
+.modal-body input,
+.modal-body select,
+.modal-body textarea,
+.modal-body button,
+.modal-footer button {
+    pointer-events: auto !important;
+    z-index: 1058 !important;
+    position: relative;
 }
 
 /* Smooth transitions */
@@ -1045,30 +1058,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Fix z-index for reject and suspend modals
-    const rejectModal = document.getElementById('rejectModal');
-    const suspendModal = document.getElementById('suspendModal');
+    // Fix for Reject and Suspend modals - ensure they're always interactive
+    const actionModals = ['rejectModal', 'suspendModal'];
     
-    [rejectModal, suspendModal].forEach(function(modalElement) {
+    actionModals.forEach(function(modalId) {
+        const modalElement = document.getElementById(modalId);
         if (modalElement) {
+            // Ensure modal is properly initialized
             modalElement.addEventListener('show.bs.modal', function() {
-                // Ensure modal and backdrop have correct z-index
+                // Force modal and backdrop z-index
                 setTimeout(function() {
                     const backdrop = document.querySelector('.modal-backdrop');
                     if (backdrop) {
                         backdrop.style.zIndex = '1050';
                     }
                     modalElement.style.zIndex = '1055';
-                }, 0);
+                    
+                    // Ensure modal content is clickable
+                    const modalContent = modalElement.querySelector('.modal-content');
+                    if (modalContent) {
+                        modalContent.style.pointerEvents = 'auto';
+                        modalContent.style.zIndex = '1057';
+                    }
+                }, 10);
             });
             
-            // Ensure form elements are clickable
+            // Ensure all form elements are interactive
             modalElement.addEventListener('shown.bs.modal', function() {
                 const formElements = modalElement.querySelectorAll('input, select, textarea, button');
                 formElements.forEach(function(element) {
                     element.style.pointerEvents = 'auto';
                     element.style.position = 'relative';
-                    element.style.zIndex = '1';
+                    element.style.zIndex = '1058';
                 });
             });
         }
