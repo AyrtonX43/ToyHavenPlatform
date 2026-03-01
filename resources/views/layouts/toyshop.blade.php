@@ -776,14 +776,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link position-relative" href="{{ route('cart.index') }}" title="Shopping Cart">
+                            <a class="nav-link" href="{{ route('cart.index') }}" title="Shopping Cart">
                                 <i class="bi bi-cart3 fs-5"></i>
-                                @php
-                                    $cartCount = \App\Models\CartItem::where('user_id', auth()->id())->count();
-                                @endphp
-                                @if($cartCount > 0)
-                                <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" style="font-size: 0.65rem; padding: 0.25em 0.5em;">{{ $cartCount }}</span>
-                                @endif
                             </a>
                         </li>
                         @if(!Auth::user()->isSeller())
