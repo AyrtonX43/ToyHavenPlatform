@@ -13,10 +13,65 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Google Fonts - Quicksand: Toys and Joy style (clean, playful) -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link href="{{ asset('css/toyshop-animations.css') }}" rel="stylesheet">
+    <!-- Tabler CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet"/>
+    
+    <!-- Custom Animations -->
+    <link href="{{ asset('css/toyhaven-animations.css') }}" rel="stylesheet"/>
+    
     @stack('styles')
     <style>
+        /* ===== FIX CAROUSEL ARROWS - REMOVE HUGE ARROWS ===== */
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 45px !important;
+            height: 45px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background-color: rgba(8, 145, 178, 0.8) !important;
+            border-radius: 50% !important;
+            opacity: 0 !important;
+            transition: all 0.3s ease !important;
+            z-index: 10 !important;
+        }
+        
+        .carousel:hover .carousel-control-prev,
+        .carousel:hover .carousel-control-next {
+            opacity: 1 !important;
+        }
+        
+        .carousel-control-prev {
+            left: 15px !important;
+        }
+        
+        .carousel-control-next {
+            right: 15px !important;
+        }
+        
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            width: 20px !important;
+            height: 20px !important;
+            background-size: 100% 100% !important;
+        }
+        
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            background-color: rgba(8, 145, 178, 1) !important;
+            transform: translateY(-50%) scale(1.1) !important;
+        }
+        
+        /* Hide carousel arrows on mobile */
+        @media (max-width: 768px) {
+            .carousel-control-prev,
+            .carousel-control-next {
+                display: none !important;
+            }
+        }
+        
+        /* ===== END CAROUSEL FIX ===== */
+        
         /* Stable full-width layout: fill viewport, never overflow */
         html {
             box-sizing: border-box;
@@ -985,8 +1040,8 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom Animations JS -->
-    <script src="{{ asset('js/toyshop-animations.js') }}"></script>
+    <!-- Tabler JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
     <style>
         /* Flash Notifications */
         .flash-notifications-container {

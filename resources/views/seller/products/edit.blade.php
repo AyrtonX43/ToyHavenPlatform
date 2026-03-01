@@ -1,4 +1,4 @@
-@extends('layouts.seller')
+@extends('layouts.seller-new')
 
 @section('title', 'Edit Product - ToyHaven')
 
