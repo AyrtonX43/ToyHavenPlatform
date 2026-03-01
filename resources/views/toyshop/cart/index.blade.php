@@ -247,8 +247,8 @@
                                     </div>
                                     
                                     <div class="text-end">
-                                        <div class="cart-item-price" id="item-total-{{ $item->id }}">₱{{ number_format($unitPrice * $item->quantity, 2) }}</div>
-                                        <small class="text-muted d-block" style="font-size: 0.75rem;">₱{{ number_format($unitPrice, 2) }} × {{ $item->quantity }}</small>
+                                        <div class="cart-item-price" id="item-total-{{ $item->id }}" data-unit-price="{{ $unitPrice }}">₱{{ number_format($unitPrice * $item->quantity, 2) }}</div>
+                                        <small class="text-muted d-block" style="font-size: 0.75rem;" id="item-calc-{{ $item->id }}">₱{{ number_format($unitPrice, 2) }} × <span id="item-qty-display-{{ $item->id }}">{{ $item->quantity }}</span></small>
                                     </div>
                                     
                                     <form action="{{ route('cart.remove', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this item from cart?');">
@@ -341,6 +341,46 @@
     });
 })();
 
+    function updateItemPrice(itemId, quantity) {
+        const itemTotalEl = document.getElementById('item-total-' + itemId);
+        const itemQtyDisplayEl = document.getElementById('item-qty-display-' + itemId);
+        const unitPrice = parseFloat(itemTotalEl.getAttribute('data-unit-price'));
+        
+        // Update item total
+        const itemTotal = unitPrice * quantity;
+        itemTotalEl.textContent = '₱' + itemTotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        // Update quantity display
+        if (itemQtyDisplayEl) {
+            itemQtyDisplayEl.textContent = quantity;
+        }
+        
+        // Update cart summary
+        updateCartSummary();
+    }
+    
+    function updateCartSummary() {
+        let subtotal = 0;
+        
+        // Calculate new subtotal from all items
+        document.querySelectorAll('[id^="item-total-"]').forEach(function(el) {
+            const priceText = el.textContent.replace(/[₱,]/g, '');
+            const price = parseFloat(priceText) || 0;
+            subtotal += price;
+        });
+        
+        const taxRate = {{ $taxRate ?? 12 }} / 100;
+        const commissionRate = {{ $commissionRate ?? 5 }} / 100;
+        const commission = subtotal * commissionRate;
+        const vat = (subtotal + commission) * taxRate;
+        const total = subtotal + commission + vat;
+        
+        // Update summary display
+        document.getElementById('summary-subtotal').textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('summary-vat').textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('summary-total').textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
     function validateQuantity(itemId, maxQty) {
         const input = document.getElementById('quantity-' + itemId);
         let value = parseInt(input.value) || 1;
@@ -358,6 +398,9 @@
         
         decreaseBtn.disabled = value <= 1;
         increaseBtn.disabled = value >= maxQty;
+        
+        // Update price display in real-time
+        updateItemPrice(itemId, value);
     }
 
     function increaseQuantity(itemId) {
@@ -404,14 +447,15 @@
         })
         .then(response => response.ok ? response : Promise.reject(response))
         .then(() => {
-            // Reload page to update totals and cart
-            location.reload();
+            // Re-enable controls
+            input.disabled = false;
+            const max = parseInt(input.max);
+            validateQuantity(itemId, max);
         })
         .catch(error => {
             console.error('Error updating quantity:', error);
             alert('Failed to update quantity. Please try again.');
-            input.disabled = false;
-            buttons.forEach(btn => btn.disabled = false);
+            location.reload();
         });
     }
     
@@ -428,7 +472,14 @@
                 }
             });
             
-            // Validate on blur (when user clicks away)
+            // Update price in real-time as user types
+            input.addEventListener('input', function() {
+                const itemId = this.id.replace('quantity-', '');
+                const max = parseInt(this.max);
+                validateQuantity(itemId, max);
+            });
+            
+            // Save to server on blur
             input.addEventListener('blur', function() {
                 const itemId = this.id.replace('quantity-', '');
                 const max = parseInt(this.max);
@@ -437,9 +488,10 @@
                 
                 validateQuantity(itemId, max);
                 
-                // Only update if value changed
+                // Only update server if value changed
                 if (oldValue !== newValue) {
                     updateQuantity(itemId);
+                    this.defaultValue = newValue;
                 }
             });
         });
