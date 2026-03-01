@@ -472,27 +472,56 @@ class CheckoutController extends Controller
             return response()->json(['status' => 'unknown']);
         }
 
+        // Check payment intent status
         $intent = $this->payMongoService->getPaymentIntent($paymentIntentId);
         $status = $intent['attributes']['status'] ?? 'unknown';
 
+        // Only update if payment succeeded and order hasn't been paid yet
         if ($status === 'succeeded' && $order->payment_status !== 'paid') {
-            $order->update([
-                'payment_status' => 'paid',
-                'payment_reference' => $paymentIntentId,
-            ]);
-            OrderTracking::create([
-                'order_id' => $order->id,
-                'status' => 'payment_confirmed',
-                'description' => 'Payment confirmed via QR Ph.',
-                'updated_by' => Auth::id(),
-            ]);
-            
-            $receiptService = app(\App\Services\ReceiptService::class);
-            $receiptService->generateReceipt($order);
+            DB::beginTransaction();
+            try {
+                // Refresh to get latest status
+                $order->refresh();
+                
+                // Double-check it hasn't been paid in another request
+                if ($order->payment_status === 'paid') {
+                    DB::rollBack();
+                    return response()->json(['status' => 'succeeded', 'already_paid' => true]);
+                }
 
-            $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
-            $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
-            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+                $order->update([
+                    'payment_status' => 'paid',
+                    'payment_reference' => $paymentIntentId,
+                ]);
+                
+                OrderTracking::create([
+                    'order_id' => $order->id,
+                    'status' => 'payment_confirmed',
+                    'description' => 'Payment confirmed via QR Ph.',
+                    'updated_by' => Auth::id(),
+                ]);
+                
+                $receiptService = app(\App\Services\ReceiptService::class);
+                $receiptService->generateReceipt($order);
+
+                $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
+                $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
+                $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+
+                DB::commit();
+                
+                Log::info('QR Ph payment confirmed', [
+                    'order_number' => $order->order_number,
+                    'payment_intent_id' => $paymentIntentId
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Failed to confirm QR Ph payment', [
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage()
+                ]);
+                return response()->json(['status' => 'error', 'message' => 'Failed to confirm payment']);
+            }
         }
 
         return response()->json(['status' => $status]);
@@ -544,40 +573,78 @@ class CheckoutController extends Controller
         }
 
         if ($order->payment_status === 'paid') {
-            return redirect()->route('orders.show', $order->id)->with('success', 'Payment already completed.');
+            return redirect()->route('orders.show', $order->id)->with('info', 'This order has already been paid.');
         }
 
+        // Verify payment intent status with PayMongo
         $intent = $this->payMongoService->getPaymentIntent($paymentIntentId);
         $status = data_get($intent, 'attributes.status');
 
+        // Only mark as paid if payment was actually successful
         if ($status === 'succeeded') {
-            $order->update([
-                'payment_status' => 'paid',
-                'payment_reference' => $paymentIntentId,
-            ]);
-            OrderTracking::create([
-                'order_id' => $order->id,
-                'status' => 'payment_confirmed',
-                'description' => 'Payment confirmed.',
-                'updated_by' => Auth::id(),
-            ]);
+            DB::beginTransaction();
+            try {
+                // Double-check payment status hasn't changed
+                $order->refresh();
+                if ($order->payment_status === 'paid') {
+                    DB::rollBack();
+                    return redirect()->route('orders.show', $order->id)->with('info', 'This order has already been paid.');
+                }
 
-            $receiptService = app(\App\Services\ReceiptService::class);
-            $receiptService->generateReceipt($order);
+                $order->update([
+                    'payment_status' => 'paid',
+                    'payment_reference' => $paymentIntentId,
+                ]);
+                
+                OrderTracking::create([
+                    'order_id' => $order->id,
+                    'status' => 'payment_confirmed',
+                    'description' => 'Payment confirmed successfully.',
+                    'updated_by' => Auth::id(),
+                ]);
 
-            $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
-            $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
-            $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+                $receiptService = app(\App\Services\ReceiptService::class);
+                $receiptService->generateReceipt($order);
 
-            return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful!');
+                $order->user->notify(new \App\Notifications\PaymentSuccessNotification($order));
+                $order->user->notify(new \App\Notifications\OrderCreatedNotification($order));
+                $order->seller?->user?->notify(new \App\Notifications\OrderPaidNotification($order));
+
+                DB::commit();
+                
+                Log::info('Payment confirmed successfully', [
+                    'order_number' => $order->order_number,
+                    'payment_intent_id' => $paymentIntentId,
+                    'user_id' => Auth::id()
+                ]);
+
+                return redirect()->route('orders.show', $order->id)->with('success', 'Payment successful! Your order has been confirmed.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Payment confirmation failed', [
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage()
+                ]);
+                return redirect()->route('checkout.payment', $order->order_number)
+                    ->with('error', 'Failed to confirm payment. Please contact support.');
+            }
         }
 
-        if ($status === 'awaiting_payment_method') {
+        if ($status === 'awaiting_payment_method' || $status === 'cancelled') {
+            Log::info('Payment cancelled or failed', [
+                'order_number' => $order->order_number,
+                'status' => $status
+            ]);
             return redirect()
                 ->route('checkout.payment', $order->order_number)
                 ->with('error', 'Payment was cancelled or failed. Please try again.');
         }
 
+        // For any other status, redirect back to payment page
+        Log::warning('Unexpected payment status', [
+            'order_number' => $order->order_number,
+            'status' => $status
+        ]);
         return redirect()
             ->route('checkout.payment', $order->order_number)
             ->with('error', 'Payment could not be verified. Please try again or check your order status.');

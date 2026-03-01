@@ -838,11 +838,11 @@
                         <div class="quantity-selector">
                             <label class="fw-bold mb-0">Quantity:</label>
                             <div class="quantity-input-group">
-                                <button type="button" class="quantity-btn" onclick="decreaseQuantity()">
+                                <button type="button" class="quantity-btn" onclick="decreaseQuantity()" id="decreaseQtyBtn" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
                                     <i class="bi bi-dash"></i>
                                 </button>
-                                <input type="number" name="quantity" id="quantityInput" class="quantity-input" value="1" min="1" max="{{ $product->variations->isNotEmpty() ? 0 : $product->stock_quantity }}" {{ ($product->variations->isNotEmpty() || !$product->isInStock()) ? 'disabled' : '' }}>
-                                <button type="button" class="quantity-btn" onclick="increaseQuantity()">
+                                <input type="number" name="quantity" id="quantityInput" class="quantity-input" value="1" min="1" max="{{ $product->variations->isNotEmpty() ? 1 : $product->stock_quantity }}" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
+                                <button type="button" class="quantity-btn" onclick="increaseQuantity()" id="increaseQtyBtn" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
                                     <i class="bi bi-plus"></i>
                                 </button>
                             </div>
@@ -1591,8 +1591,17 @@
         function onVariationChange() {
             const val = select.value;
             formVariationInput.value = val || '';
+            const decreaseBtn = document.getElementById('decreaseQtyBtn');
+            const increaseBtn = document.getElementById('increaseQtyBtn');
+            
             if (!val) {
-                if (quantityInput) { quantityInput.max = 0; quantityInput.disabled = true; }
+                if (quantityInput) { 
+                    quantityInput.max = 1; 
+                    quantityInput.value = 1;
+                    quantityInput.disabled = true; 
+                }
+                if (decreaseBtn) decreaseBtn.disabled = true;
+                if (increaseBtn) increaseBtn.disabled = true;
                 if (addToCartBtn) addToCartBtn.disabled = true;
                 if (stockBadge) stockBadge.style.display = 'none';
                 return;
@@ -1602,8 +1611,11 @@
             if (quantityInput) {
                 quantityInput.max = stock;
                 quantityInput.disabled = stock <= 0;
-                if (parseInt(quantityInput.value, 10) > stock) quantityInput.value = stock;
+                if (parseInt(quantityInput.value, 10) > stock) quantityInput.value = Math.min(1, stock);
+                if (quantityInput.value < 1) quantityInput.value = 1;
             }
+            if (decreaseBtn) decreaseBtn.disabled = stock <= 0;
+            if (increaseBtn) increaseBtn.disabled = stock <= 0;
             if (addToCartBtn) addToCartBtn.disabled = stock <= 0;
             if (stockBadge && stockText) {
                 stockBadge.style.display = 'inline-flex';

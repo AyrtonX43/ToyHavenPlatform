@@ -154,7 +154,7 @@
 @section('content')
 <div class="container py-4">
     <div class="checkout-header reveal">
-        <h2 class="fw-bold mb-0"><i class="bi bi-credit-card me-2"></i>Checkout</h2>
+        <h2 class="fw-bold mb-0"><i class="bi bi-credit-card me-2"></i>Checkout and User Details Info</h2>
     </div>
 
     <form action="{{ route('checkout.process') }}" method="POST">
@@ -230,74 +230,111 @@
                     </div>
                 </div>
 
-                <!-- 4. Shipping Information -->
+                <!-- 4. Address Information -->
                 <div class="checkout-step reveal" style="animation-delay: 0.15s;">
                     <div class="step-header">
                         <div class="step-icon">4</div>
-                        <h3 class="step-title">Shipping Information</h3>
+                        <h3 class="step-title">Address Information</h3>
                     </div>
+                    
                     @php
-                        $addr = $defaultAddress ?? null;
-                        $prefillAddress = old('shipping_address') ?? ($addr?->address ?? '');
-                        $prefillCity = old('shipping_city') ?? ($addr?->city ?? '');
-                        $prefillProvince = old('shipping_province') ?? ($addr?->province ?? '');
-                        $prefillPostal = old('shipping_postal_code') ?? ($addr?->postal_code ?? '');
+                        $userAddresses = auth()->user()->addresses ?? collect();
+                        $defaultAddr = $defaultAddress ?? $userAddresses->where('is_default', true)->first() ?? $userAddresses->first();
                         $userPhone = auth()->user()->phone ?? '';
                         $raw = preg_replace('/\D/', '', $userPhone);
                         $phoneDigits = preg_match('/^63(\d{10})$/', $raw, $pm) ? $pm[1] : (strlen($raw) >= 10 ? substr($raw, -10) : '');
                         $prefillPhoneDisplay = old('shipping_phone') ? (preg_match('/^\+63(\d{10})$/', old('shipping_phone'), $om) ? $om[1] : '') : $phoneDigits;
                         $prefillPhone = old('shipping_phone') ?: ($phoneDigits ? '+63' . $phoneDigits : '');
                     @endphp
-                    <div class="mb-3">
-                        <label class="form-label">Full Address <span class="text-danger">*</span></label>
-                        <textarea name="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $prefillAddress }}</textarea>
-                        @error('shipping_address')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                        @if($defaultAddress ?? null)
-                            <small class="text-muted"><i class="bi bi-check-circle me-1"></i>Pre-filled from your saved address</small>
-                        @endif
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">City <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
-                            @error('shipping_city')
+
+                    @if($userAddresses->count() > 0)
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Select Saved Address <span class="text-danger">*</span></label>
+                            <select id="savedAddressSelect" class="form-select" onchange="loadSavedAddress()">
+                                <option value="">-- Select an address --</option>
+                                @foreach($userAddresses as $addr)
+                                    <option value="{{ $addr->id }}" 
+                                            data-address="{{ $addr->address }}"
+                                            data-city="{{ $addr->city }}"
+                                            data-province="{{ $addr->province }}"
+                                            data-postal="{{ $addr->postal_code }}"
+                                            {{ $addr->is_default || ($defaultAddr && $defaultAddr->id == $addr->id) ? 'selected' : '' }}>
+                                        {{ $addr->label ?? 'Address ' . $loop->iteration }} 
+                                        @if($addr->is_default) (Default) @endif
+                                        - {{ $addr->city }}, {{ $addr->province }}
+                                    </option>
+                                @endforeach
+                                <option value="new">+ Add New Address</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                <i class="bi bi-info-circle me-1"></i>You can manage your addresses in your 
+                                <a href="{{ route('profile.edit') }}" target="_blank" class="text-decoration-none">profile settings</a>
+                            </small>
+                        </div>
+                    @else
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You don't have any saved addresses. Please enter your delivery address below.
+                            You can save addresses in your <a href="{{ route('profile.edit') }}" target="_blank" class="text-decoration-none">profile settings</a>.
+                        </div>
+                    @endif
+
+                    <div id="addressFormContainer" style="{{ $userAddresses->count() > 0 && $defaultAddr ? '' : '' }}">
+                        @php
+                            $prefillAddress = old('shipping_address') ?? ($defaultAddr?->address ?? '');
+                            $prefillCity = old('shipping_city') ?? ($defaultAddr?->city ?? '');
+                            $prefillProvince = old('shipping_province') ?? ($defaultAddr?->province ?? '');
+                            $prefillPostal = old('shipping_postal_code') ?? ($defaultAddr?->postal_code ?? '');
+                        @endphp
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Full Address <span class="text-danger">*</span></label>
+                            <textarea name="shipping_address" id="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $prefillAddress }}</textarea>
+                            @error('shipping_address')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Province <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
-                            @error('shipping_province')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                            <input type="text" name="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
-                            @error('shipping_postal_code')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Phone Number <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
-                                <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">City <span class="text-danger">*</span></label>
+                                <input type="text" name="shipping_city" id="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
+                                @error('shipping_city')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
-                            <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
-                            @error('shipping_phone')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted">Philippines +63, 10 digits.</small>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Province <span class="text-danger">*</span></label>
+                                <input type="text" name="shipping_province" id="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
+                                @error('shipping_province')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Delivery Notes (Optional)</label>
-                        <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Postal Code <span class="text-danger">*</span></label>
+                                <input type="text" name="shipping_postal_code" id="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
+                                @error('shipping_postal_code')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
+                                    <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
+                                </div>
+                                <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
+                                @error('shipping_phone')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Philippines +63, 10 digits.</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Notes (Optional)</label>
+                            <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -377,6 +414,49 @@
         if (d.length === 10) hidden.value = '+63' + d;
     }
 })();
+
+// Load saved address functionality
+function loadSavedAddress() {
+    const select = document.getElementById('savedAddressSelect');
+    if (!select) return;
+    
+    const selectedOption = select.options[select.selectedIndex];
+    const value = selectedOption.value;
+    
+    if (value === 'new') {
+        // Clear all fields for new address
+        document.getElementById('shipping_address').value = '';
+        document.getElementById('shipping_city').value = '';
+        document.getElementById('shipping_province').value = '';
+        document.getElementById('shipping_postal_code').value = '';
+        document.getElementById('shipping_address').focus();
+        return;
+    }
+    
+    if (value === '') {
+        // No selection
+        return;
+    }
+    
+    // Load selected address data
+    const address = selectedOption.getAttribute('data-address');
+    const city = selectedOption.getAttribute('data-city');
+    const province = selectedOption.getAttribute('data-province');
+    const postal = selectedOption.getAttribute('data-postal');
+    
+    if (address) document.getElementById('shipping_address').value = address;
+    if (city) document.getElementById('shipping_city').value = city;
+    if (province) document.getElementById('shipping_province').value = province;
+    if (postal) document.getElementById('shipping_postal_code').value = postal;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('savedAddressSelect');
+    if (select && select.value && select.value !== '' && select.value !== 'new') {
+        loadSavedAddress();
+    }
+});
 </script>
 @endpush
 @endsection

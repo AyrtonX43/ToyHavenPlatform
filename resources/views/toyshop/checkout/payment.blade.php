@@ -173,10 +173,13 @@
                             <span class="secure-badge"><i class="bi bi-shield-lock-fill"></i> Secured by PayMongo</span>
                         </div>
 
-                        <div class="mt-3 text-center">
-                            <a href="{{ route('orders.show', $order->id) }}" class="text-muted small">
+                        <div class="mt-3 d-flex gap-2 justify-content-center">
+                            <a href="{{ route('orders.show', $order->id) }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>View Order Details
                             </a>
+                            <button type="button" id="cancel-payment-btn" class="btn btn-outline-danger" onclick="cancelPayment()">
+                                <i class="bi bi-x-circle me-1"></i>Cancel Payment
+                            </button>
                         </div>
                     @else
                         <div class="alert alert-warning mb-3">
@@ -197,11 +200,93 @@
         </div>
     </div>
 </div>
+
+<!-- Cancel Payment Confirmation Modal -->
+<div class="modal fade" id="cancelPaymentModal" tabindex="-1" aria-labelledby="cancelPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="cancelPaymentModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Cancel Payment?
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Are you sure you want to cancel this payment?</p>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Your order will remain in "Pending Payment" status. You can return to complete the payment anytime from your orders page.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i>Continue Payment
+                </button>
+                <a href="{{ route('orders.show', $order->id) }}" class="btn btn-danger">
+                    <i class="bi bi-x-circle me-1"></i>Yes, Cancel Payment
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Success Confirmation Modal -->
+<div class="modal fade" id="paymentSuccessModal" tabindex="-1" aria-labelledby="paymentSuccessModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-success text-white">
+                <h5 class="modal-title fw-bold" id="paymentSuccessModalLabel">
+                    <i class="bi bi-check-circle-fill me-2"></i>Payment Successful!
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Thank you for your payment!</h5>
+                <p class="text-muted mb-3">
+                    Your order <strong>#{{ $order->order_number }}</strong> has been confirmed and paid successfully.
+                </p>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    You will be redirected to your order details shortly...
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <a href="{{ route('orders.show', $order->id) }}" class="btn btn-primary">
+                    <i class="bi bi-eye me-1"></i>View Order Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 @if(($publicKey ?? false))
 <script>
+// Cancel payment function
+function cancelPayment() {
+    var modal = new bootstrap.Modal(document.getElementById('cancelPaymentModal'));
+    modal.show();
+}
+
+// Show payment success modal
+function showPaymentSuccess() {
+    var modal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
+    modal.show();
+}
+
+// Prevent accidental navigation during payment
+var paymentInProgress = false;
+window.addEventListener('beforeunload', function(e) {
+    if (paymentInProgress) {
+        e.preventDefault();
+        e.returnValue = 'Payment is in progress. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+});
+
 (function() {
     var publicKey = @json($publicKey);
     var csrfToken = @json(csrf_token());
@@ -220,6 +305,9 @@
     function setLoading(show) {
         document.getElementById('pay-btn').disabled = show;
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
+        var cancelBtn = document.getElementById('cancel-payment-btn');
+        if (cancelBtn) cancelBtn.disabled = show;
+        paymentInProgress = show;
     }
     function getSelectedMethod() {
         var checked = document.querySelector('input[name="pay_method"]:checked');
@@ -325,9 +413,14 @@
                 var data = await res.json();
                 if (data.status === 'succeeded') {
                     stopPolling();
-                    window.location.href = returnBaseUrl + '&payment_intent_id=' + encodeURIComponent(piId);
+                    paymentInProgress = false;
+                    showPaymentSuccess();
+                    setTimeout(function() {
+                        window.location.href = returnBaseUrl + '&payment_intent_id=' + encodeURIComponent(piId);
+                    }, 3000);
                 } else if (data.status === 'awaiting_payment_method') {
                     stopPolling();
+                    paymentInProgress = false;
                     setError('Payment failed or was cancelled. Please try again.');
                     document.getElementById('pay-btn').classList.remove('d-none');
                     document.getElementById('qr-display').classList.add('d-none');
@@ -395,16 +488,25 @@
 
             var redirectUrl = serverData.redirect_url;
             if (!redirectUrl && serverData.next_action) redirectUrl = findRedirectUrl(serverData.next_action);
-            if (redirectUrl) { window.location.href = redirectUrl; return; }
+            if (redirectUrl) { 
+                paymentInProgress = true;
+                window.location.href = redirectUrl; 
+                return; 
+            }
             if (serverData.error) throw new Error(serverData.error);
             if (serverData.status === 'succeeded' || serverData.status === 'processing') {
-                window.location.href = returnBaseUrl + '&payment_intent_id=done';
+                paymentInProgress = false;
+                showPaymentSuccess();
+                setTimeout(function() {
+                    window.location.href = returnBaseUrl + '&payment_intent_id=done';
+                }, 3000);
                 return;
             }
             throw new Error('Unexpected response. Please try again.');
         } catch (e) {
             setError(e.message || 'Payment failed. Please try again.');
             setLoading(false);
+            paymentInProgress = false;
         }
     });
 })();
