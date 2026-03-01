@@ -235,7 +235,7 @@
                                                 <button type="button" class="quantity-btn" onclick="decreaseQuantity({{ $item->id }})" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                                     <i class="bi bi-dash"></i>
                                                 </button>
-                                                <input type="number" name="quantity" id="quantity-{{ $item->id }}" class="quantity-input" value="{{ $item->quantity }}" min="1" max="{{ $maxQty }}" onchange="updateQuantity({{ $item->id }})" oninput="validateQuantity({{ $item->id }}, {{ $maxQty }})">
+                                                <input type="number" name="quantity" id="quantity-{{ $item->id }}" class="quantity-input" value="{{ $item->quantity }}" min="1" max="{{ $maxQty }}" data-item-id="{{ $item->id }}">
                                                 <button type="button" class="quantity-btn" onclick="increaseQuantity({{ $item->id }})" {{ $item->quantity >= $maxQty ? 'disabled' : '' }}>
                                                     <i class="bi bi-plus"></i>
                                                 </button>
@@ -313,33 +313,8 @@
 
 @push('scripts')
 <script>
-(function() {
-    var taxRate = {{ $taxRate ?? 12 }};
-    var cartItems = @json($cartItems->mapWithKeys(function($item) {
-        $adj = $item->variation ? (float)$item->variation->price_adjustment : 0;
-        return [$item->id => ($item->product->price + $adj) * $item->quantity];
-    })->toArray());
-
-    function updateCartSummary() {
-        var checked = document.querySelectorAll('.cart-item-select:checked');
-        var subtotal = 0;
-        checked.forEach(function(cb) {
-            var id = parseInt(cb.value, 10);
-            if (cartItems[id] !== undefined) subtotal += cartItems[id];
-        });
-        var commissionRate = {{ $commissionRate ?? 5 }} / 100;
-        var commission = subtotal * commissionRate;
-        var vat = (subtotal + commission) * (taxRate / 100);
-        var total = subtotal + commission + vat;
-        document.getElementById('summary-subtotal') && (document.getElementById('summary-subtotal').textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2}));
-        document.getElementById('summary-vat') && (document.getElementById('summary-vat').textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2}));
-        document.getElementById('summary-total') && (document.getElementById('summary-total').textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2}));
-    }
-
-    document.querySelectorAll('.cart-item-select').forEach(function(cb) {
-        cb.addEventListener('change', updateCartSummary);
-    });
-})();
+    const taxRate = {{ $taxRate ?? 12 }} / 100;
+    const commissionRate = {{ $commissionRate ?? 5 }} / 100;
 
     function updateItemPrice(itemId, quantity) {
         const itemTotalEl = document.getElementById('item-total-' + itemId);
@@ -369,16 +344,18 @@
             subtotal += price;
         });
         
-        const taxRate = {{ $taxRate ?? 12 }} / 100;
-        const commissionRate = {{ $commissionRate ?? 5 }} / 100;
         const commission = subtotal * commissionRate;
         const vat = (subtotal + commission) * taxRate;
         const total = subtotal + commission + vat;
         
         // Update summary display
-        document.getElementById('summary-subtotal').textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('summary-vat').textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('summary-total').textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const subtotalEl = document.getElementById('summary-subtotal');
+        const vatEl = document.getElementById('summary-vat');
+        const totalEl = document.getElementById('summary-total');
+        
+        if (subtotalEl) subtotalEl.textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (vatEl) vatEl.textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
     function validateQuantity(itemId, maxQty) {
@@ -459,37 +436,42 @@
         });
     }
     
-    // Allow Enter key to update quantity
+    // Initialize event listeners
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Cart real-time updates initialized');
+        
         document.querySelectorAll('.quantity-input').forEach(function(input) {
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const itemId = this.id.replace('quantity-', '');
-                    const max = parseInt(this.max);
-                    validateQuantity(itemId, max);
-                    updateQuantity(itemId);
-                }
-            });
+            const itemId = input.getAttribute('data-item-id');
+            const max = parseInt(input.max);
+            
+            console.log('Setting up listeners for item:', itemId);
             
             // Update price in real-time as user types
             input.addEventListener('input', function() {
-                const itemId = this.id.replace('quantity-', '');
-                const max = parseInt(this.max);
+                console.log('Input event - Item:', itemId, 'Value:', this.value);
                 validateQuantity(itemId, max);
+            });
+            
+            // Enter key to save
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur(); // Trigger blur to save
+                }
             });
             
             // Save to server on blur
             input.addEventListener('blur', function() {
-                const itemId = this.id.replace('quantity-', '');
-                const max = parseInt(this.max);
                 const oldValue = parseInt(this.defaultValue);
                 const newValue = parseInt(this.value);
+                
+                console.log('Blur event - Item:', itemId, 'Old:', oldValue, 'New:', newValue);
                 
                 validateQuantity(itemId, max);
                 
                 // Only update server if value changed
-                if (oldValue !== newValue) {
+                if (oldValue !== newValue && newValue >= 1 && newValue <= max) {
+                    console.log('Saving to server...');
                     updateQuantity(itemId);
                     this.defaultValue = newValue;
                 }
