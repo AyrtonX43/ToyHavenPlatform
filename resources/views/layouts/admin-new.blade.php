@@ -79,7 +79,7 @@
             height: 100vh;
             background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-light) 100%);
             color: white;
-            width: 280px;
+            width: 320px;
             position: fixed;
             left: 0;
             top: 0;
@@ -304,7 +304,7 @@
 
         /* Main Content */
         .admin-content {
-            margin-left: 280px;
+            margin-left: 320px;
             padding: 28px;
             min-height: 100vh;
             animation: fadeIn 0.5s ease-in;
@@ -675,7 +675,7 @@
         <nav>
             {{-- Analytics Dashboard --}}
             <a href="{{ route('admin.analytics.index') }}"
-               class="sidebar-link {{ request()->routeIs('admin.analytics.*') || request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+               class="sidebar-link {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
                 <i class="bi bi-graph-up menu-icon"></i> Analytics Dashboard
             </a>
 

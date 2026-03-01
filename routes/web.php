@@ -55,9 +55,9 @@ Route::get('/seller/verify-business-email', [\App\Http\Controllers\Seller\Busine
 
 // Dashboard
 Route::get('/dashboard', function () {
-    // Redirect admins to admin dashboard
+    // Redirect admins to analytics dashboard
     if (auth()->user()->isAdmin()) {
-        return redirect()->route('admin.dashboard')
+        return redirect()->route('admin.analytics.index')
             ->with('info', 'Admins cannot access customer features. Please use the Admin Panel.');
     }
     
@@ -347,8 +347,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Admin Routes
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
-        
         Route::prefix('conversation-reports')->name('conversation-reports.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ConversationReportController::class, 'index'])->name('index');
             Route::get('/{report}', [\App\Http\Controllers\Admin\ConversationReportController::class, 'show'])->name('show');

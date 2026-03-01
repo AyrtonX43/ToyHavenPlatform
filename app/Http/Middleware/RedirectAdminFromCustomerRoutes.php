@@ -47,7 +47,7 @@ class RedirectAdminFromCustomerRoutes
             // Check if current route is a customer route
             $routeName = $request->route()?->getName();
             if ($routeName && in_array($routeName, $customerRoutes)) {
-                return redirect()->route('admin.dashboard')
+                return redirect()->route('admin.analytics.index')
                     ->with('info', 'Admins cannot access customer features. Please use the Admin Panel.');
             }
 
@@ -64,7 +64,7 @@ class RedirectAdminFromCustomerRoutes
 
             foreach ($customerPathPatterns as $pattern) {
                 if (str_starts_with($path, $pattern)) {
-                    return redirect()->route('admin.dashboard')
+                    return redirect()->route('admin.analytics.index')
                         ->with('info', 'Admins cannot access customer features. Please use the Admin Panel.');
                 }
             }

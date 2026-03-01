@@ -177,7 +177,7 @@
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-save me-1"></i> Save Settings
         </button>
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+        <a href="{{ route('admin.analytics.index') }}" class="btn btn-outline-secondary">Cancel</a>
     </div>
 </form>
 @endsection

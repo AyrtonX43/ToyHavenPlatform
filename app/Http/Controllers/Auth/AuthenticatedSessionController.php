@@ -89,9 +89,9 @@ class AuthenticatedSessionController extends Controller
 
         // Redirect based on user role
         if ($user->isAdmin()) {
-            // Clear any intended URL to ensure admin always goes to admin dashboard
+            // Clear any intended URL to ensure admin always goes to analytics dashboard
             $request->session()->forget('url.intended');
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('admin.analytics.index');
         }
 
         if ($user->isSeller()) {
