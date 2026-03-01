@@ -67,9 +67,9 @@
             -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Toys and Joy style top bar */
+        /* Sky Blue theme top bar */
         .top-bar {
-            background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);
+            background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
             color: #fff;
             font-size: 0.8125rem;
             padding: 0.4rem 0;
@@ -93,7 +93,7 @@
             font-weight: 700;
             font-size: 1.5rem;
             letter-spacing: -0.02em;
-            color: #0891b2 !important;
+            color: #0ea5e9 !important;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -114,12 +114,12 @@
         }
         
         .nav-link:hover {
-            color: #0891b2 !important;
-            background: #ecfeff;
+            color: #0ea5e9 !important;
+            background: #e0f2fe;
         }
         
         .nav-link.active {
-            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
             color: white !important;
         }
         
@@ -147,11 +147,11 @@
         }
         
         footer {
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important;
+            background: linear-gradient(180deg, #0c4a6e 0%, #075985 100%) !important;
             color: rgba(255,255,255,0.92);
             padding: 3.5rem 0 1.5rem;
             margin-top: 4rem;
-            border-top: 3px solid #0891b2;
+            border-top: 3px solid #0ea5e9;
         }
         
         footer h5, footer h6 {
@@ -202,17 +202,17 @@
         }
         .search-input:focus {
             background: #fff;
-            border-color: #0891b2;
-            box-shadow: 0 0 0 3px rgba(8,145,178,0.15);
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
         }
         .search-input::placeholder {
             color: #94a3b8;
             font-size: 0.9375rem;
         }
         .search-btn {
-            background: #0891b2;
+            background: #0ea5e9;
             color: #fff;
-            border: 2px solid #0891b2;
+            border: 2px solid #0ea5e9;
             border-radius: 0 12px 12px 0;
             padding: 0.75rem 1.25rem;
             min-height: 48px;
@@ -220,8 +220,8 @@
             transition: background 0.2s;
         }
         .search-btn:hover, .search-btn:focus {
-            background: #0e7490;
-            border-color: #0e7490;
+            background: #0284c7;
+            border-color: #0284c7;
             color: #fff;
         }
 
@@ -274,19 +274,19 @@
         .search-suggest-item .suggest-price {
             font-weight: 700;
             font-size: 0.875rem;
-            color: #0891b2;
+            color: #0ea5e9;
         }
         .search-suggest-item .suggest-store-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #ecfeff, #f0fdfa);
+            background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             font-size: 1.125rem;
-            color: #0891b2;
+            color: #0ea5e9;
         }
         .search-suggest-item .suggest-store-name {
             font-weight: 600;
