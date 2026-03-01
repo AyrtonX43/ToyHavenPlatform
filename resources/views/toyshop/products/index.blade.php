@@ -269,25 +269,71 @@
     
     .pagination-wrapper {
         margin-top: 2.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .page-item {
+        margin: 0;
     }
     
     .page-link {
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        margin: 0 0.15rem;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        padding: 0.625rem 1rem;
         color: #0891b2;
-        font-weight: 500;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        transition: all 0.3s ease;
+        background: white;
+        min-width: 44px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .page-link:hover {
         background: #0891b2;
         border-color: #0891b2;
         color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
     }
     
     .page-item.active .page-link {
         background: #0891b2;
         border-color: #0891b2;
+        color: white;
+        box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    }
+    
+    .page-item.disabled .page-link {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #cbd5e1;
+        cursor: not-allowed;
+    }
+    
+    .page-link .bi {
+        font-size: 1rem;
+    }
+    
+    /* Pagination info text */
+    .pagination-info {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #64748b;
+        font-size: 0.9375rem;
+        font-weight: 500;
     }
     
     /* Tablet */
@@ -296,6 +342,16 @@
         .filter-card .card-body { padding: 1.25rem; }
         .products-header { padding: 1.25rem; }
         .products-header h2 { font-size: 1.25rem; }
+        
+        .page-link {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            min-width: 40px;
+        }
+        
+        .pagination-info {
+            font-size: 0.875rem;
+        }
     }
 
     @media (max-width: 768px) {
@@ -360,6 +416,21 @@
         .empty-state { padding: 2.5rem 1.25rem; }
         .empty-state-icon { font-size: 2.5rem; }
         .empty-state h4 { font-size: 1.0625rem; }
+        
+        .page-link {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8125rem;
+            min-width: 36px;
+        }
+        
+        .pagination {
+            gap: 0.25rem;
+        }
+        
+        .pagination-info {
+            font-size: 0.8125rem;
+            margin-bottom: 0.75rem;
+        }
     }
 
     /* Extra small phones */
@@ -621,9 +692,19 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="pagination-wrapper">
-                    {{ $products->links() }}
+                @if($products->hasPages())
+                <div class="pagination-wrapper mt-4">
+                    <div class="w-100">
+                        <div class="pagination-info mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} results
+                        </div>
+                        <nav aria-label="Product pagination">
+                            {{ $products->links('pagination::bootstrap-5') }}
+                        </nav>
+                    </div>
                 </div>
+                @endif
             @else
                 <div class="empty-state reveal">
                     <i class="bi bi-inbox empty-state-icon"></i>
