@@ -742,19 +742,28 @@
                         $discountPercentage = $isDiscounted ? $product->getPriceDifferencePercentage() : null;
                     @endphp
                     
-                    @if($isDiscounted)
-                        <div class="current-price">₱{{ number_format($product->price, 2) }}</div>
-                        <div class="d-flex align-items-center flex-wrap gap-2">
-                            <span class="original-price">₱{{ number_format($product->amazon_reference_price, 2) }}</span>
-                            @if($discountPercentage)
-                                <span class="discount-badge">
-                                    <i class="bi bi-tag-fill me-1"></i>Save {{ number_format(abs($discountPercentage), 0) }}%
-                                </span>
-                            @endif
-                        </div>
-                    @else
-                        <div class="current-price">₱{{ number_format($product->price, 2) }}</div>
-                    @endif
+                    <div class="mb-2">
+                        <small class="text-muted d-block" style="font-size: 0.875rem;">Unit Price:</small>
+                        @if($isDiscounted)
+                            <div class="current-price" id="unitPrice">₱{{ number_format($product->price, 2) }}</div>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <span class="original-price">₱{{ number_format($product->amazon_reference_price, 2) }}</span>
+                                @if($discountPercentage)
+                                    <span class="discount-badge">
+                                        <i class="bi bi-tag-fill me-1"></i>Save {{ number_format(abs($discountPercentage), 0) }}%
+                                    </span>
+                                @endif
+                            </div>
+                        @else
+                            <div class="current-price" id="unitPrice">₱{{ number_format($product->price, 2) }}</div>
+                        @endif
+                    </div>
+                    
+                    <div id="totalPriceSection" style="display: none;">
+                        <small class="text-muted d-block" style="font-size: 0.875rem;">Total Price:</small>
+                        <div class="current-price text-success" id="totalPrice" style="font-size: 2.5rem;">₱{{ number_format($product->price, 2) }}</div>
+                        <small class="text-muted" id="priceCalculation">₱{{ number_format($product->price, 2) }} × 1</small>
+                    </div>
                 </div>
 
                 <!-- Product options (variations: color, size, model, etc.) -->
@@ -838,10 +847,10 @@
                         <div class="quantity-selector">
                             <label class="fw-bold mb-0">Quantity:</label>
                             <div class="quantity-input-group">
-                                <button type="button" class="quantity-btn" onclick="decreaseQuantity()" id="decreaseQtyBtn" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
+                                <button type="button" class="quantity-btn" onclick="decreaseQuantity()" id="decreaseQtyBtn" disabled>
                                     <i class="bi bi-dash"></i>
                                 </button>
-                                <input type="number" name="quantity" id="quantityInput" class="quantity-input" value="1" min="1" max="{{ $product->variations->isNotEmpty() ? 1 : $product->stock_quantity }}" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
+                                <input type="number" name="quantity" id="quantityInput" class="quantity-input" value="1" min="1" max="{{ $product->variations->isNotEmpty() ? 1 : $product->stock_quantity }}" oninput="updatePriceDisplay()" onchange="updatePriceDisplay()" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
                                 <button type="button" class="quantity-btn" onclick="increaseQuantity()" id="increaseQtyBtn" {{ !$product->isInStock() && $product->variations->isEmpty() ? 'disabled' : '' }}>
                                     <i class="bi bi-plus"></i>
                                 </button>
@@ -1561,12 +1570,50 @@
         });
     }
     
+    // Store base price (will be updated when variation is selected)
+    var basePrice = {{ $product->price }};
+    var currentStock = {{ $product->variations->isEmpty() ? $product->stock_quantity : 1 }};
+    
+    function updatePriceDisplay() {
+        const input = document.getElementById('quantityInput');
+        const decreaseBtn = document.getElementById('decreaseQtyBtn');
+        const increaseBtn = document.getElementById('increaseQtyBtn');
+        const totalPriceSection = document.getElementById('totalPriceSection');
+        const totalPriceEl = document.getElementById('totalPrice');
+        const priceCalcEl = document.getElementById('priceCalculation');
+        
+        let quantity = parseInt(input.value, 10) || 1;
+        const max = parseInt(input.max, 10) || 999;
+        
+        // Validate quantity
+        if (quantity < 1) quantity = 1;
+        if (quantity > max) quantity = max;
+        input.value = quantity;
+        
+        // Update button states
+        decreaseBtn.disabled = quantity <= 1;
+        increaseBtn.disabled = quantity >= max;
+        
+        // Calculate and display total price
+        const totalPrice = basePrice * quantity;
+        
+        // Show/hide total price section
+        if (quantity > 1) {
+            totalPriceSection.style.display = 'block';
+            totalPriceEl.textContent = '₱' + totalPrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            priceCalcEl.textContent = '₱' + basePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' × ' + quantity;
+        } else {
+            totalPriceSection.style.display = 'none';
+        }
+    }
+    
     function increaseQuantity() {
         const input = document.getElementById('quantityInput');
         const max = parseInt(input.max, 10) || 999;
         const current = parseInt(input.value, 10) || 1;
         if (current < max) {
             input.value = current + 1;
+            updatePriceDisplay();
         }
     }
     
@@ -1575,6 +1622,7 @@
         const current = parseInt(input.value, 10) || 1;
         if (current > 1) {
             input.value = current - 1;
+            updatePriceDisplay();
         }
     }
     
@@ -1593,6 +1641,7 @@
             formVariationInput.value = val || '';
             const decreaseBtn = document.getElementById('decreaseQtyBtn');
             const increaseBtn = document.getElementById('increaseQtyBtn');
+            const unitPriceEl = document.getElementById('unitPrice');
             
             if (!val) {
                 if (quantityInput) { 
@@ -1604,17 +1653,29 @@
                 if (increaseBtn) increaseBtn.disabled = true;
                 if (addToCartBtn) addToCartBtn.disabled = true;
                 if (stockBadge) stockBadge.style.display = 'none';
+                // Reset to base price
+                basePrice = {{ $product->price }};
+                if (unitPriceEl) unitPriceEl.textContent = '₱' + basePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                updatePriceDisplay();
                 return;
             }
             const opt = select.options[select.selectedIndex];
             const stock = parseInt(opt.getAttribute('data-stock'), 10) || 0;
+            const priceAdjustment = parseFloat(opt.getAttribute('data-price-adjustment')) || 0;
+            
+            // Update base price with variation adjustment
+            basePrice = {{ $product->price }} + priceAdjustment;
+            if (unitPriceEl) {
+                unitPriceEl.textContent = '₱' + basePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+            
             if (quantityInput) {
                 quantityInput.max = stock;
                 quantityInput.disabled = stock <= 0;
                 if (parseInt(quantityInput.value, 10) > stock) quantityInput.value = Math.min(1, stock);
                 if (quantityInput.value < 1) quantityInput.value = 1;
             }
-            if (decreaseBtn) decreaseBtn.disabled = stock <= 0;
+            if (decreaseBtn) decreaseBtn.disabled = parseInt(quantityInput.value, 10) <= 1 || stock <= 0;
             if (increaseBtn) increaseBtn.disabled = stock <= 0;
             if (addToCartBtn) addToCartBtn.disabled = stock <= 0;
             if (stockBadge && stockText) {
@@ -1622,6 +1683,9 @@
                 stockText.textContent = stock > 0 ? (stock + ' in stock') : 'Out of stock';
                 stockBadge.className = 'stock-badge ' + (stock > 0 ? 'bg-success text-white' : 'bg-danger text-white');
             }
+            
+            // Update price display with new base price
+            updatePriceDisplay();
         }
         
         select.addEventListener('change', onVariationChange);
@@ -1635,6 +1699,22 @@
             }
         });
     })();
+    
+    // Initialize price display on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePriceDisplay();
+        
+        // Add keyboard support for quantity input
+        const qtyInput = document.getElementById('quantityInput');
+        if (qtyInput) {
+            qtyInput.addEventListener('keypress', function(e) {
+                // Only allow numbers
+                if (e.key && !/\d/.test(e.key) && e.key !== 'Enter' && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
 </script>
 @endpush
 @endsection
