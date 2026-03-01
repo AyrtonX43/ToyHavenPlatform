@@ -202,7 +202,7 @@
 </div>
 
 <!-- Cancel Payment Confirmation Modal -->
-<div class="modal fade" id="cancelPaymentModal" tabindex="-1" aria-labelledby="cancelPaymentModalLabel" aria-hidden="true">
+<div class="modal fade" id="cancelPaymentModal" tabindex="-1" aria-labelledby="cancelPaymentModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-0">
@@ -212,19 +212,26 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Are you sure you want to cancel this payment?</p>
+                <p class="mb-2 fw-semibold">Are you sure you want to cancel this payment?</p>
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Cancelling will delete this order and return items to your cart.
+                </div>
                 <p class="text-muted small mb-0">
                     <i class="bi bi-info-circle me-1"></i>
-                    Your order will remain in "Pending Payment" status. You can return to complete the payment anytime from your orders page.
+                    You will need to checkout again if you want to purchase these items.
                 </p>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-arrow-left me-1"></i>Continue Payment
                 </button>
-                <a href="{{ route('orders.show', $order->id) }}" class="btn btn-danger">
-                    <i class="bi bi-x-circle me-1"></i>Yes, Cancel Payment
-                </a>
+                <form action="{{ route('checkout.cancel-payment', $order->order_number) }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Yes, Cancel & Return to Cart
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -277,14 +284,33 @@ function showPaymentSuccess() {
     modal.show();
 }
 
-// Prevent accidental navigation during payment
-var paymentInProgress = false;
+// Track if payment is completed
+var paymentCompleted = false;
+
+// ALWAYS prevent navigation away from payment page unless payment is completed
 window.addEventListener('beforeunload', function(e) {
-    if (paymentInProgress) {
+    if (!paymentCompleted) {
         e.preventDefault();
-        e.returnValue = 'Payment is in progress. Are you sure you want to leave?';
+        e.returnValue = 'Your payment is not complete. If you leave now, your order will be cancelled and items returned to cart. Are you sure?';
         return e.returnValue;
     }
+});
+
+// Intercept all link clicks on the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all links except the cancel button form
+    var links = document.querySelectorAll('a:not([data-allow-navigation])');
+    links.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            if (!paymentCompleted && !link.closest('#cancelPaymentModal') && !link.closest('#paymentSuccessModal')) {
+                e.preventDefault();
+                if (confirm('Your payment is not complete. If you leave now, your order will be cancelled and items returned to cart. Do you want to leave?')) {
+                    // User confirmed, show cancel modal
+                    cancelPayment();
+                }
+            }
+        });
+    });
 });
 
 (function() {
@@ -307,7 +333,6 @@ window.addEventListener('beforeunload', function(e) {
         document.getElementById('pay-loading').classList.toggle('d-none', !show);
         var cancelBtn = document.getElementById('cancel-payment-btn');
         if (cancelBtn) cancelBtn.disabled = show;
-        paymentInProgress = show;
     }
     function getSelectedMethod() {
         var checked = document.querySelector('input[name="pay_method"]:checked');
@@ -413,14 +438,13 @@ window.addEventListener('beforeunload', function(e) {
                 var data = await res.json();
                 if (data.status === 'succeeded') {
                     stopPolling();
-                    paymentInProgress = false;
+                    paymentCompleted = true;
                     showPaymentSuccess();
                     setTimeout(function() {
                         window.location.href = returnBaseUrl + '&payment_intent_id=' + encodeURIComponent(piId);
                     }, 3000);
                 } else if (data.status === 'awaiting_payment_method') {
                     stopPolling();
-                    paymentInProgress = false;
                     setError('Payment failed or was cancelled. Please try again.');
                     document.getElementById('pay-btn').classList.remove('d-none');
                     document.getElementById('qr-display').classList.add('d-none');
@@ -489,13 +513,13 @@ window.addEventListener('beforeunload', function(e) {
             var redirectUrl = serverData.redirect_url;
             if (!redirectUrl && serverData.next_action) redirectUrl = findRedirectUrl(serverData.next_action);
             if (redirectUrl) { 
-                paymentInProgress = true;
+                paymentCompleted = true;
                 window.location.href = redirectUrl; 
                 return; 
             }
             if (serverData.error) throw new Error(serverData.error);
             if (serverData.status === 'succeeded' || serverData.status === 'processing') {
-                paymentInProgress = false;
+                paymentCompleted = true;
                 showPaymentSuccess();
                 setTimeout(function() {
                     window.location.href = returnBaseUrl + '&payment_intent_id=done';
@@ -506,7 +530,6 @@ window.addEventListener('beforeunload', function(e) {
         } catch (e) {
             setError(e.message || 'Payment failed. Please try again.');
             setLoading(false);
-            paymentInProgress = false;
         }
     });
 })();

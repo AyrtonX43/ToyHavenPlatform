@@ -8,6 +8,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderTracking;
+use App\Models\Product;
 use App\Services\PayMongoService;
 use App\Services\PriceCalculationService;
 use Illuminate\Http\Request;
@@ -648,5 +649,108 @@ class CheckoutController extends Controller
         return redirect()
             ->route('checkout.payment', $order->order_number)
             ->with('error', 'Payment could not be verified. Please try again or check your order status.');
+    }
+
+    /**
+     * Cancel payment and return items to cart
+     */
+    public function cancelPayment($orderNumber)
+    {
+        $order = Order::where('order_number', $orderNumber)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('cart.index')->with('error', 'Order not found.');
+        }
+
+        // Only allow cancellation if payment is still pending
+        if ($order->payment_status === 'paid') {
+            return redirect()->route('orders.show', $order->id)
+                ->with('error', 'Cannot cancel a paid order.');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Get order items before deleting
+            $orderItems = $order->items;
+
+            // Return items to cart
+            foreach ($orderItems as $orderItem) {
+                // Check if product still exists and is active
+                $product = Product::with('seller')->find($orderItem->product_id);
+                
+                if ($product && 
+                    $product->status === 'active' && 
+                    $product->seller && 
+                    $product->seller->is_active && 
+                    $product->seller->verification_status === 'approved') {
+                    
+                    // Check if item already in cart
+                    $existingCartItem = CartItem::where('user_id', Auth::id())
+                        ->where('product_id', $orderItem->product_id)
+                        ->whereNull('product_variation_id')
+                        ->first();
+
+                    if ($existingCartItem) {
+                        // Update quantity
+                        $newQuantity = $existingCartItem->quantity + $orderItem->quantity;
+                        $maxStock = $product->stock_quantity;
+                        
+                        if ($newQuantity <= $maxStock) {
+                            $existingCartItem->update(['quantity' => $newQuantity]);
+                        } else {
+                            $existingCartItem->update(['quantity' => $maxStock]);
+                        }
+                    } else {
+                        // Add new cart item
+                        $maxStock = $product->stock_quantity;
+                        $quantity = min($orderItem->quantity, $maxStock);
+                        
+                        if ($quantity > 0) {
+                            CartItem::create([
+                                'user_id' => Auth::id(),
+                                'product_id' => $orderItem->product_id,
+                                'product_variation_id' => null,
+                                'quantity' => $quantity,
+                            ]);
+                        }
+                    }
+
+                    // Restore product stock
+                    $product->increment('stock_quantity', $orderItem->quantity);
+                }
+            }
+
+            // Delete order tracking
+            OrderTracking::where('order_id', $order->id)->delete();
+
+            // Delete order items
+            $order->items()->delete();
+
+            // Delete the order
+            $order->delete();
+
+            DB::commit();
+
+            Log::info('Payment cancelled and order deleted', [
+                'order_number' => $orderNumber,
+                'user_id' => Auth::id(),
+                'items_returned' => $orderItems->count()
+            ]);
+
+            return redirect()->route('cart.index')
+                ->with('success', 'Payment cancelled. Items have been returned to your cart.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to cancel payment', [
+                'order_number' => $orderNumber,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('orders.show', $order->id)
+                ->with('error', 'Failed to cancel payment. Please contact support.');
+        }
     }
 }

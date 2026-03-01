@@ -129,6 +129,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/process-payment/{order_number}', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'processPayment'])->name('process-payment');
         Route::get('/check-payment/{order_number}', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'checkPaymentStatus'])->name('check-payment');
         Route::get('/return', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'paymentReturn'])->name('return');
+        Route::post('/cancel-payment/{order_number}', [\App\Http\Controllers\Toyshop\CheckoutController::class, 'cancelPayment'])->name('cancel-payment');
     });
 
     // Order Routes
