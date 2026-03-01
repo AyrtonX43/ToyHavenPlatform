@@ -384,7 +384,7 @@
                                         
                                         <!-- Reject Document Modal -->
                                         <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
-                                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-dialog modal-dialog-centered">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                                                         @csrf
@@ -745,7 +745,7 @@
 
 <!-- Reject Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
@@ -815,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Suspend Seller Modal -->
 <div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
@@ -1033,6 +1033,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.removeEventListener('keydown', escHandler);
                 }
             });
+        });
+    });
+    
+    // Auto-scroll to modal when Reject or Suspend buttons are clicked
+    const rejectModal = document.getElementById('rejectModal');
+    const suspendModal = document.getElementById('suspendModal');
+    
+    if (rejectModal) {
+        rejectModal.addEventListener('shown.bs.modal', function() {
+            const modalDialog = rejectModal.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+    
+    if (suspendModal) {
+        suspendModal.addEventListener('shown.bs.modal', function() {
+            const modalDialog = suspendModal.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+    
+    // Auto-scroll for document rejection modals
+    const documentRejectModals = document.querySelectorAll('[id^="rejectDocumentModal"]');
+    documentRejectModals.forEach(function(modalElement) {
+        modalElement.addEventListener('shown.bs.modal', function() {
+            const modalDialog = modalElement.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         });
     });
     
