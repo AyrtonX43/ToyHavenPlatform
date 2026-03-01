@@ -941,67 +941,63 @@ document.addEventListener('DOMContentLoaded', function() {
             suspensionReason.placeholder = 'Please provide a detailed reason for suspension...';
         }
     });
-});
-
-// Fix modal responsiveness and interaction issues
-document.addEventListener('DOMContentLoaded', function() {
-    // Ensure all modals can be closed and are interactive
-    const allModals = document.querySelectorAll('.modal');
     
-    allModals.forEach(function(modalElement) {
-        // Fix backdrop click to close
-        modalElement.addEventListener('click', function(e) {
-            if (e.target === modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement);
+    // FIX: Ensure modals are interactive and backdrop doesn't block clicks
+    // Force Bootstrap modals to use correct z-index and pointer events
+    document.querySelectorAll('.modal').forEach(function(modalElement) {
+        modalElement.addEventListener('show.bs.modal', function (event) {
+            // Ensure modal and its content are above backdrop
+            setTimeout(() => {
+                const modal = event.target;
+                const backdrop = document.querySelector('.modal-backdrop');
+                
                 if (modal) {
-                    modal.hide();
+                    modal.style.zIndex = '1060';
+                    modal.style.pointerEvents = 'auto';
+                    
+                    const dialog = modal.querySelector('.modal-dialog');
+                    if (dialog) {
+                        dialog.style.zIndex = '1061';
+                        dialog.style.pointerEvents = 'auto';
+                    }
+                    
+                    const content = modal.querySelector('.modal-content');
+                    if (content) {
+                        content.style.zIndex = '1062';
+                        content.style.pointerEvents = 'auto';
+                    }
                 }
-            }
+                
+                if (backdrop) {
+                    backdrop.style.zIndex = '1055';
+                    backdrop.style.pointerEvents = 'auto';
+                }
+            }, 10);
         });
         
-        // Ensure modal is properly initialized
-        modalElement.addEventListener('shown.bs.modal', function() {
-            // Force z-index to be correct
-            this.style.zIndex = '1056';
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.style.zIndex = '1055';
-            }
-            
-            // Ensure body scroll is managed correctly
-            document.body.style.overflow = 'hidden';
-            document.body.style.paddingRight = '0px';
-        });
-        
-        // Clean up when modal is hidden
-        modalElement.addEventListener('hidden.bs.modal', function() {
+        // Ensure modal closes properly
+        modalElement.addEventListener('hidden.bs.modal', function (event) {
+            // Clean up any leftover backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
             // Re-enable body scroll
             document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-            
-            // Remove any stuck backdrops
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
         });
     });
     
-    // Ensure close buttons work
-    const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
-    closeButtons.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const modalElement = this.closest('.modal');
-            if (modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) {
-                    modal.hide();
-                } else {
-                    const newModal = new bootstrap.Modal(modalElement);
-                    newModal.hide();
+    // Ensure backdrop clicks close the modal (Bootstrap default behavior)
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal-backdrop')) {
+            const openModal = document.querySelector('.modal.show');
+            if (openModal) {
+                const bsModal = bootstrap.Modal.getInstance(openModal);
+                if (bsModal) {
+                    bsModal.hide();
                 }
             }
-        });
+        }
     });
 });
 </script>
@@ -1068,81 +1064,83 @@ tr:hover .bg-light.rounded-circle {
     cursor: zoom-in;
 }
 
-/* Fix modal z-index and interaction issues */
-.modal {
-    z-index: 1056 !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-}
-
-.modal-backdrop {
-    z-index: 1055 !important;
-}
-
-.modal.show {
-    display: block !important;
-}
-
 /* Fix modal positioning and sizing */
 .modal-dialog-centered {
-    display: flex !important;
-    align-items: center !important;
-    min-height: calc(100% - 3.5rem) !important;
-    margin: 1.75rem auto !important;
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 3.5rem);
 }
 
 .modal-dialog-scrollable {
-    max-height: calc(100vh - 3.5rem) !important;
+    max-height: calc(100vh - 3.5rem);
 }
 
 .modal-dialog-scrollable .modal-content {
-    max-height: calc(100vh - 3.5rem) !important;
-    overflow: hidden !important;
+    max-height: calc(100vh - 3.5rem);
+    overflow: hidden;
 }
 
 .modal-dialog-scrollable .modal-body {
-    overflow-y: auto !important;
-    max-height: calc(100vh - 12rem) !important;
+    overflow-y: auto;
 }
 
 /* Ensure modals don't overflow */
 .modal-xl {
-    max-width: 90% !important;
-    margin: 1.75rem auto !important;
+    max-width: 90%;
+    margin: 1.75rem auto;
 }
 
 @media (min-width: 1200px) {
     .modal-xl {
-        max-width: 1140px !important;
+        max-width: 1140px;
     }
 }
 
-/* Ensure modal content is clickable */
+/* FIX: Modal z-index and interaction issues */
+.modal {
+    z-index: 1060 !important;
+    pointer-events: none !important;
+}
+
+.modal.show {
+    pointer-events: auto !important;
+}
+
+.modal-backdrop {
+    z-index: 1055 !important;
+    pointer-events: auto !important;
+}
+
+.modal-dialog {
+    z-index: 1061 !important;
+    position: relative;
+    pointer-events: auto !important;
+}
+
 .modal-content {
-    position: relative !important;
-    z-index: 1 !important;
     pointer-events: auto !important;
+    position: relative;
+    z-index: 1062 !important;
 }
 
-.modal-header,
-.modal-body,
-.modal-footer {
-    pointer-events: auto !important;
-}
-
-/* Ensure buttons are clickable */
+/* Ensure modal buttons and all interactive elements are clickable */
 .modal button,
 .modal .btn,
-.modal .btn-close {
+.modal .btn-close,
+.modal input,
+.modal select,
+.modal textarea,
+.modal a {
     pointer-events: auto !important;
     cursor: pointer !important;
-    z-index: 2 !important;
+    position: relative;
 }
 
-/* Fix body scroll lock */
-body.modal-open {
-    overflow: hidden !important;
-    padding-right: 0 !important;
+/* Ensure form elements are interactive */
+.modal form,
+.modal .form-control,
+.modal .form-select {
+    pointer-events: auto !important;
 }
 
 /* Smooth transitions */
