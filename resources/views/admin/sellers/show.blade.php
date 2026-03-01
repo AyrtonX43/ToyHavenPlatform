@@ -400,10 +400,10 @@
         <!-- Document Modals (Outside the table for proper rendering) -->
         @foreach($seller->documents as $document)
             <!-- View Document Modal (Fullscreen) -->
-            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true">
+            <div class="modal fade" id="viewDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="viewDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
                 <div class="modal-dialog modal-fullscreen">
-                    <div class="modal-content">
-                        <div class="modal-header bg-dark text-white py-3">
+                    <div class="modal-content bg-white">
+                        <div class="modal-header bg-primary text-white py-3 border-0">
                             <h5 class="modal-title fw-bold" id="viewDocumentModalLabel{{ $document->id }}">
                                 <i class="bi bi-file-earmark-text me-2"></i>
                                 @php
@@ -421,25 +421,25 @@
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body bg-dark d-flex align-items-center justify-content-center p-0" style="min-height: 80vh;">
+                        <div class="modal-body bg-light d-flex align-items-center justify-content-center p-3" style="min-height: 80vh;">
                             @php
                                 $extension = pathinfo($document->document_path, PATHINFO_EXTENSION);
                                 $isPdf = strtolower($extension) === 'pdf';
                             @endphp
                             @if($isPdf)
-                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: none;" title="Document PDF"></iframe>
+                                <iframe src="{{ asset('storage/' . $document->document_path) }}" style="width: 100%; height: 100%; border: 2px solid #dee2e6; border-radius: 8px; background: white;" title="Document PDF"></iframe>
                             @else
-                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="{{ $docLabel }}" class="img-fluid" style="max-width: 95%; max-height: 95vh; object-fit: contain;">
+                                <img src="{{ asset('storage/' . $document->document_path) }}" alt="{{ $docLabel }}" class="img-fluid shadow-lg" style="max-width: 95%; max-height: 90vh; object-fit: contain; border-radius: 8px; background: white; padding: 10px;">
                             @endif
                         </div>
-                        <div class="modal-footer bg-dark text-white py-3">
-                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-outline-light">
+                        <div class="modal-footer bg-white border-top py-3">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" download class="btn btn-success">
                                 <i class="bi bi-download me-1"></i> Download
                             </a>
-                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-outline-light">
+                            <a href="{{ asset('storage/' . $document->document_path) }}" target="_blank" class="btn btn-info text-white">
                                 <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
                             </a>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <i class="bi bi-x-lg me-1"></i> Close
                             </button>
                         </div>
@@ -448,47 +448,47 @@
             </div>
 
             <!-- Reject Document Modal -->
-            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
+            <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" aria-labelledby="rejectDocumentModalLabel{{ $document->id }}" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content shadow-lg">
                         <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                             @csrf
-                            <div class="modal-header bg-danger text-white">
+                            <div class="modal-header bg-danger text-white border-0">
                                 <h5 class="modal-title fw-bold" id="rejectDocumentModalLabel{{ $document->id }}">
-                                    <i class="bi bi-x-circle me-2"></i>Reject Document - Invalid
+                                    <i class="bi bi-x-circle-fill me-2"></i>Reject Document - Invalid
                                 </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <div class="modal-body p-4">
-                                <div class="alert alert-danger border-danger">
+                            <div class="modal-body p-4 bg-white">
+                                <div class="alert alert-danger border-danger border-2 mb-3">
                                     <div class="d-flex align-items-start">
-                                        <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem;"></i>
+                                        <i class="bi bi-exclamation-triangle-fill me-3 text-danger" style="font-size: 1.8rem;"></i>
                                         <div>
-                                            <strong class="d-block mb-1">Warning</strong>
-                                            <p class="mb-0 small">Rejecting this document will mark it as invalid. The seller will be notified via email and must resubmit a valid document.</p>
+                                            <strong class="d-block mb-2 fs-6">Warning</strong>
+                                            <p class="mb-0">Rejecting this document will mark it as invalid. The seller will be notified via email and must resubmit a valid document.</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="alert alert-info border-info mb-4">
-                                    <strong><i class="bi bi-info-circle me-1"></i>Document Type:</strong> 
-                                    <span class="badge bg-info ms-2">{{ $docLabel }}</span>
+                                <div class="alert alert-info border-info border-2 mb-4">
+                                    <strong class="fs-6"><i class="bi bi-info-circle-fill me-2"></i>Document Type:</strong> 
+                                    <span class="badge bg-info fs-6 ms-2 px-3 py-2">{{ $docLabel }}</span>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">
+                                    <label class="form-label fw-bold fs-6">
                                         Rejection Reason <span class="text-danger">*</span>
                                     </label>
-                                    <textarea name="reason" class="form-control" rows="5" placeholder="Provide a detailed reason (e.g., document is unclear, expired, doesn't match business information, etc.)..." required>{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
-                                    <small class="text-muted">
-                                        <i class="bi bi-envelope me-1"></i>This reason will be sent to the seller via email notification.
+                                    <textarea name="reason" class="form-control form-control-lg" rows="6" placeholder="Provide a detailed reason (e.g., document is unclear, expired, doesn't match business information, etc.)..." required style="font-size: 1rem;">{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-envelope-fill me-1"></i>This reason will be sent to the seller via email notification.
                                     </small>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <i class="bi bi-x-lg me-1"></i> Cancel
+                            <div class="modal-footer bg-light border-top">
+                                <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-lg me-2"></i> Cancel
                                 </button>
-                                <button type="submit" class="btn btn-danger fw-semibold">
-                                    <i class="bi bi-x-circle-fill me-1"></i> Reject Document
+                                <button type="submit" class="btn btn-danger btn-lg px-4 fw-semibold">
+                                    <i class="bi bi-x-circle-fill me-2"></i> Reject Document
                                 </button>
                             </div>
                         </form>
@@ -977,11 +977,29 @@ tr:hover .bg-light.rounded-circle {
 
 /* Modal improvements */
 .modal-fullscreen .modal-body {
-    background: #1a1a1a;
+    background: #f8f9fa;
 }
 
 .modal-fullscreen img {
     cursor: zoom-in;
+}
+
+/* Ensure modal backdrop is visible but not too dark */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
+}
+
+/* Ensure modal is above backdrop */
+.modal {
+    z-index: 1055;
+}
+
+.modal-backdrop {
+    z-index: 1050;
 }
 
 /* Smooth transitions */
