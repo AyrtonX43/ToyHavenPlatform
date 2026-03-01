@@ -489,6 +489,9 @@
 
 @push('scripts')
 <script>
+// Cache buster - force reload of this script
+console.log('Seller Registration Form Script Loaded - Version 2.1');
+
 document.addEventListener('DOMContentLoaded', function() {
     // Phone number formatting
     const phoneDisplay = document.getElementById('phone_display');
@@ -544,29 +547,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper function to normalize special characters
     function normalizeText(text) {
         if (!text) return text;
-        return text
-            .replace(/ñ/g, 'n')
-            .replace(/Ñ/g, 'N')
-            .replace(/á/g, 'a')
-            .replace(/é/g, 'e')
-            .replace(/í/g, 'i')
-            .replace(/ó/g, 'o')
-            .replace(/ú/g, 'u')
-            .replace(/Á/g, 'A')
-            .replace(/É/g, 'E')
-            .replace(/Í/g, 'I')
-            .replace(/Ó/g, 'O')
-            .replace(/Ú/g, 'U');
+        
+        // Create a mapping of special characters to their normalized versions
+        const charMap = {
+            'ñ': 'n', 'Ñ': 'N',
+            'á': 'a', 'Á': 'A',
+            'é': 'e', 'É': 'E',
+            'í': 'i', 'Í': 'I',
+            'ó': 'o', 'Ó': 'O',
+            'ú': 'u', 'Ú': 'U',
+            'ü': 'u', 'Ü': 'U',
+            // Handle encoding issues
+            'Ã±': 'n', 'Ã'': 'N',
+            'Ã¡': 'a', 'Ã©': 'e', 'Ã­': 'i', 'Ã³': 'o', 'Ãº': 'u'
+        };
+        
+        let normalized = text;
+        for (const [special, normal] of Object.entries(charMap)) {
+            normalized = normalized.split(special).join(normal);
+        }
+        
+        return normalized;
     }
 
     // Load regions on page load
     fetch(`${API_BASE}/regions`)
         .then(response => response.json())
         .then(data => {
+            console.log('Regions loaded:', data.length);
             data.forEach(region => {
+                const originalName = region.name;
+                const normalizedName = normalizeText(region.name);
+                
+                // Debug: Log if normalization changed anything
+                if (originalName !== normalizedName) {
+                    console.log('Normalized:', originalName, '→', normalizedName);
+                }
+                
                 const option = document.createElement('option');
-                option.value = normalizeText(region.name);
-                option.textContent = normalizeText(region.name);
+                option.value = normalizedName;
+                option.textContent = normalizedName;
                 option.dataset.code = region.code;
                 regionSelect.appendChild(option);
             });
@@ -594,27 +614,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const selectedOption = this.options[this.selectedIndex];
         const regionCode = selectedOption.dataset.code;
+        const regionName = this.value;
 
-        fetch(`${API_BASE}/regions/${regionCode}/provinces`)
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(province => {
-                    const option = document.createElement('option');
-                    option.value = normalizeText(province.name);
-                    option.textContent = normalizeText(province.name);
-                    option.dataset.code = province.code;
-                    provinceSelect.appendChild(option);
-                });
-                provinceSelect.disabled = false;
-                
-                // Pre-select if old value exists
-                const oldProvince = "{{ old('province', $prefilledData['province'] ?? '') }}";
-                if (oldProvince) {
-                    provinceSelect.value = oldProvince;
-                    provinceSelect.dispatchEvent(new Event('change'));
-                }
-            })
-            .catch(error => console.error('Error loading provinces:', error));
+        // Check if NCR (National Capital Region) - it has no provinces, only cities
+        if (regionName.includes('NCR') || regionName.includes('National Capital Region') || regionName.includes('Metro Manila')) {
+            // For NCR, load cities directly
+            provinceSelect.innerHTML = '<option value="Metro Manila">Metro Manila</option>';
+            provinceSelect.value = 'Metro Manila';
+            provinceSelect.disabled = true; // Disable since there's only one option
+            
+            // Load cities for NCR
+            fetch(`${API_BASE}/regions/${regionCode}/cities-municipalities`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = normalizeText(city.name);
+                        option.textContent = normalizeText(city.name);
+                        option.dataset.code = city.code;
+                        citySelect.appendChild(option);
+                    });
+                    citySelect.disabled = false;
+                    
+                    // Pre-select if old value exists
+                    const oldCity = "{{ old('city', $prefilledData['city'] ?? '') }}";
+                    if (oldCity) {
+                        citySelect.value = oldCity;
+                        citySelect.dispatchEvent(new Event('change'));
+                    }
+                })
+                .catch(error => console.error('Error loading NCR cities:', error));
+        } else {
+            // For other regions, load provinces normally
+            fetch(`${API_BASE}/regions/${regionCode}/provinces`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        // If no provinces, try loading cities directly
+                        fetch(`${API_BASE}/regions/${regionCode}/cities-municipalities`)
+                            .then(response => response.json())
+                            .then(cityData => {
+                                cityData.forEach(city => {
+                                    const option = document.createElement('option');
+                                    option.value = normalizeText(city.name);
+                                    option.textContent = normalizeText(city.name);
+                                    option.dataset.code = city.code;
+                                    citySelect.appendChild(option);
+                                });
+                                citySelect.disabled = false;
+                            })
+                            .catch(error => console.error('Error loading cities:', error));
+                    } else {
+                        data.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = normalizeText(province.name);
+                            option.textContent = normalizeText(province.name);
+                            option.dataset.code = province.code;
+                            provinceSelect.appendChild(option);
+                        });
+                        provinceSelect.disabled = false;
+                        
+                        // Pre-select if old value exists
+                        const oldProvince = "{{ old('province', $prefilledData['province'] ?? '') }}";
+                        if (oldProvince) {
+                            provinceSelect.value = oldProvince;
+                            provinceSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading provinces:', error));
+        }
     });
 
     // Load cities when province changes
