@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 
 class SellerApprovedNotification extends Notification
 {
-    // Removed Queueable to send immediately instead of queuing
+    use Queueable;
 
     protected $businessName;
     protected $shopType;
@@ -31,8 +31,7 @@ class SellerApprovedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        // Use mail only for now to ensure it works
-        // Can add 'database' back later once mail is confirmed working
+        // Use mail only for now - database notifications require migration
         return ['mail'];
     }
 
