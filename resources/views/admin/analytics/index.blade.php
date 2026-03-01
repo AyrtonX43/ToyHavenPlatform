@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Analytics Dashboard - ToyHaven')
 @section('page-title', 'Analytics Dashboard')

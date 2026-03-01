@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Trade Listings - Admin')
 @section('page-title', 'Trade Listings')

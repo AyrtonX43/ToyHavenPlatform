@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Create Auction - Admin')
 

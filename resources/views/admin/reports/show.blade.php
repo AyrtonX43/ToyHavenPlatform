@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Report Details - ToyHaven')
 @section('page-title', 'Report Details #' . $report->id)

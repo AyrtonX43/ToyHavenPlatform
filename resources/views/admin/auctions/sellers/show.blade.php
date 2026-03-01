@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Auction Seller: ' . $seller->getDisplayName() . ' - ToyHaven')
 @section('page-title', 'Auction Seller Details')

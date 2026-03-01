@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Sellers Management - ToyHaven')
 @section('page-title', 'Sellers Management')

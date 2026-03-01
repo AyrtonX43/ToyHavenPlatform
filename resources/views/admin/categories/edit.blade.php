@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Edit Category - ToyHaven')
 @section('page-title', 'Edit Category: ' . $category->name)

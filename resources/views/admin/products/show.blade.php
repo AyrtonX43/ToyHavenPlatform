@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Product Details - ToyHaven')
 @section('page-title', 'Product: ' . $product->name)

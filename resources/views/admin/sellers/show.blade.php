@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Seller Details - ToyHaven')
 @section('page-title', 'Seller Details: ' . $seller->business_name)

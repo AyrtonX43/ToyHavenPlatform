@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Rejected Products - ToyHaven')
 @section('page-title', 'Rejected Products Organizer')

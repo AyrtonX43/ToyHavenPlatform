@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-new')
 
 @section('title', 'Order Details - ToyHaven')
 @section('page-title', 'Order: ' . $order->order_number)
