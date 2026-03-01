@@ -173,10 +173,7 @@
                             <span class="secure-badge"><i class="bi bi-shield-lock-fill"></i> Secured by PayMongo</span>
                         </div>
 
-                        <div class="mt-3 d-flex gap-2 justify-content-center">
-                            <a href="{{ route('orders.show', $order->id) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>View Order Details
-                            </a>
+                        <div class="mt-3 text-center">
                             <button type="button" id="cancel-payment-btn" class="btn btn-outline-danger" onclick="cancelPayment()">
                                 <i class="bi bi-x-circle me-1"></i>Cancel Payment
                             </button>
@@ -189,11 +186,6 @@
                         <a href="{{ route('checkout.payment', $order->order_number) }}" class="btn btn-primary w-100 mb-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
                             <i class="bi bi-arrow-clockwise me-2"></i>Retry Payment
                         </a>
-                        <div class="mt-2 text-center">
-                            <a href="{{ route('orders.show', $order->id) }}" class="text-muted small">
-                                <i class="bi bi-arrow-left me-1"></i>View Order Details
-                            </a>
-                        </div>
                     @endif
                 </div>
             </div>
