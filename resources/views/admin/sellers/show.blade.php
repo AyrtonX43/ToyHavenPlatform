@@ -384,7 +384,7 @@
                                         
                                         <!-- Reject Document Modal -->
                                         <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
-                                            <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-dialog modal-dialog-centered modal-lg">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                                                         @csrf
@@ -745,7 +745,7 @@
 
 <!-- Reject Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
@@ -815,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Suspend Seller Modal -->
 <div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
@@ -981,25 +981,6 @@ tr:hover .bg-light.rounded-circle {
 
 .modal.show .modal-dialog {
     transform: none;
-}
-
-/* Ensure modals are perfectly centered and visible */
-.modal-dialog-centered {
-    display: flex !important;
-    align-items: center !important;
-    min-height: calc(100% - 1rem) !important;
-}
-
-#rejectModal .modal-content,
-#suspendModal .modal-content,
-[id^="rejectDocumentModal"] .modal-content {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5) !important;
-    border: 2px solid #dee2e6 !important;
-}
-
-/* Ensure modal appears on top without backdrop */
-.modal {
-    background-color: rgba(0, 0, 0, 0.3);
 }
 
 /* Smooth transitions */
