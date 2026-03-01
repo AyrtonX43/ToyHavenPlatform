@@ -383,8 +383,8 @@
                                         @endif
                                         
                                         <!-- Reject Document Modal -->
-                                        <div class="modal" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="false">
-                                            <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal fade" id="rejectDocumentModal{{ $document->id }}" tabindex="-1" data-bs-backdrop="static">
+                                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                                                 <div class="modal-content">
                                                     <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                                                         @csrf
@@ -744,8 +744,8 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
                 @csrf
@@ -814,8 +814,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
                 @csrf
@@ -974,96 +974,62 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Fix modal z-index - use Bootstrap defaults */
+/* Modal backdrop with blur effect */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(5px) !important;
+    -webkit-backdrop-filter: blur(5px) !important;
+}
+
 .modal-backdrop.show {
-    opacity: 0.5;
+    opacity: 1 !important;
 }
 
-.modal.show .modal-dialog {
-    transform: none;
-}
-
-/* Fix reject document modal positioning and prevent glitching */
+/* Center all modals properly */
 .modal {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 1055 !important;
-    width: 100% !important;
-    height: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    outline: 0 !important;
-}
-
-.modal.show {
-    display: block !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .modal-dialog-centered {
-    display: flex !important;
-    align-items: center !important;
-    min-height: calc(100% - 1rem) !important;
-    margin: 0.5rem auto !important;
+    margin: auto !important;
 }
 
 .modal-dialog {
-    position: relative !important;
-    width: auto !important;
-    max-width: 500px !important;
-    margin: 1.75rem auto !important;
-    pointer-events: auto !important;
+    max-width: 600px !important;
+    width: 90% !important;
 }
 
 .modal-content {
-    position: relative !important;
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    pointer-events: auto !important;
-    background-color: #fff !important;
-    background-clip: padding-box !important;
-    border: 1px solid rgba(0,0,0,.2) !important;
-    border-radius: 0.3rem !important;
-    outline: 0 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Ensure modal form elements don't glitch */
-.modal-body,
-.modal-header,
-.modal-footer {
-    pointer-events: auto !important;
-}
-
-.modal-body input,
-.modal-body textarea,
-.modal-body select,
-.modal-body button,
-.modal-footer button,
-.modal-header button {
-    pointer-events: auto !important;
-    position: relative !important;
-    cursor: pointer !important;
-}
-
-/* Remove ALL transitions from modals to prevent glitching */
+/* Fix glitching - disable all transitions on modals */
 .modal,
 .modal *,
-.modal *::before,
-.modal *::after,
-.modal-dialog,
-.modal-content,
-.modal-body,
-.modal-header,
-.modal-footer {
+.modal-backdrop {
     transition: none !important;
-    animation: none !important;
+    -webkit-transition: none !important;
 }
 
-/* Smooth transitions only for non-modal elements */
-.card,
-.btn:not(.modal *),
-.table-hover tbody tr {
+/* Ensure form elements are always interactive */
+.modal input,
+.modal textarea,
+.modal select,
+.modal button {
+    pointer-events: auto !important;
+}
+
+.modal-body,
+.modal-footer,
+.modal-header {
+    pointer-events: auto !important;
+}
+
+/* Smooth transitions */
+* {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1115,46 +1081,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Auto-scroll to modal when Reject or Suspend buttons are clicked
-    const rejectModal = document.getElementById('rejectModal');
-    const suspendModal = document.getElementById('suspendModal');
+    // Ensure all modals are centered and interactive when opened
+    const allModals = document.querySelectorAll('.modal');
     
-    if (rejectModal) {
-        rejectModal.addEventListener('shown.bs.modal', function() {
-            const modalDialog = rejectModal.querySelector('.modal-dialog');
-            if (modalDialog) {
-                modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-    }
-    
-    if (suspendModal) {
-        suspendModal.addEventListener('shown.bs.modal', function() {
-            const modalDialog = suspendModal.querySelector('.modal-dialog');
-            if (modalDialog) {
-                modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-    }
-    
-    // Auto-scroll for document rejection modals with glitch prevention
-    const documentRejectModals = document.querySelectorAll('[id^="rejectDocumentModal"]');
-    documentRejectModals.forEach(function(modalElement) {
+    allModals.forEach(function(modalElement) {
         modalElement.addEventListener('shown.bs.modal', function() {
-            // Prevent glitching by using setTimeout
-            setTimeout(function() {
-                const modalDialog = modalElement.querySelector('.modal-dialog');
-                if (modalDialog) {
-                    // Scroll to center the modal
-                    modalDialog.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Ensure all form elements are interactive
-                    const formElements = modalElement.querySelectorAll('input, textarea, select, button');
-                    formElements.forEach(function(element) {
-                        element.style.pointerEvents = 'auto';
-                    });
-                }
-            }, 100);
+            // Ensure modal is centered
+            modalElement.style.display = 'flex';
+            modalElement.style.alignItems = 'center';
+            modalElement.style.justifyContent = 'center';
+            
+            // Ensure all form elements are interactive
+            const formElements = modalElement.querySelectorAll('input, textarea, select, button');
+            formElements.forEach(function(element) {
+                element.style.pointerEvents = 'auto';
+            });
         });
     });
     
