@@ -744,7 +744,7 @@
 </div>
 
 <!-- Reject Modal -->
-<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.reject', $seller->id) }}" method="POST" id="rejectForm">
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Suspend Seller Modal -->
-<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+<div class="modal fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.suspend', $seller->id) }}" method="POST" id="suspendForm">
@@ -974,35 +974,13 @@ tr:hover .bg-light.rounded-circle {
     user-select: none;
 }
 
-/* Fix modal interaction - ensure modals work properly */
-.modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
+/* Fix modal z-index - use Bootstrap defaults */
+.modal-backdrop.show {
+    opacity: 0.5;
 }
 
-.modal {
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-.modal-dialog {
-    pointer-events: none;
-}
-
-.modal-content {
-    pointer-events: auto;
-}
-
-/* Ensure all modal form elements are clickable */
-.modal input,
-.modal select,
-.modal textarea,
-.modal button,
-.modal .form-control,
-.modal .form-select,
-.modal .btn,
-.modal .btn-close {
-    pointer-events: auto !important;
-    position: relative;
+.modal.show .modal-dialog {
+    transform: none;
 }
 
 /* Smooth transitions */
