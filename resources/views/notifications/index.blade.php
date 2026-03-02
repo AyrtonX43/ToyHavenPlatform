@@ -1056,6 +1056,38 @@
                 }
             });
     }
+
+    // Auto-open notification modal if 'open' parameter is present in URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const notificationIdToOpen = urlParams.get('open');
+        
+        if (notificationIdToOpen) {
+            // Find the notification item
+            const notificationItem = document.querySelector(`[data-notification-id="${notificationIdToOpen}"]`);
+            if (notificationItem) {
+                // Scroll to the notification
+                notificationItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Highlight the notification briefly
+                notificationItem.style.transition = 'all 0.3s ease';
+                notificationItem.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.3)';
+                
+                // Trigger click to open modal after a short delay
+                setTimeout(() => {
+                    notificationItem.click();
+                    // Remove highlight
+                    setTimeout(() => {
+                        notificationItem.style.boxShadow = '';
+                    }, 500);
+                }, 300);
+                
+                // Clean URL without reloading
+                const cleanUrl = window.location.pathname + (urlParams.toString().replace(/&?open=[^&]*/, '').replace(/^\?$/, '') ? '?' + urlParams.toString().replace(/&?open=[^&]*/, '').replace(/^&/, '') : '');
+                window.history.replaceState({}, document.title, cleanUrl || window.location.pathname);
+            }
+        }
+    });
 </script>
 @endpush
 @endsection

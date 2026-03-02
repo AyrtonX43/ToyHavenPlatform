@@ -710,33 +710,10 @@
                                                     $icon = $icons[$type] ?? 'bi-bell';
                                                     $color = $colors[$type] ?? 'secondary';
                                                     
-                                                    $url = '#';
-                                                    switch ($type) {
-                                                        case 'order_status':
-                                                            $url = isset($data['order_id']) ? route('orders.show', $data['order_id']) : route('orders.index');
-                                                            break;
-                                                        case 'trade_offer_received':
-                                                        case 'trade_offer_accepted':
-                                                            $url = isset($data['offer_id']) ? route('trading.offers.show', $data['offer_id']) : route('trading.offers.received');
-                                                            break;
-                                                        case 'trade_status_updated':
-                                                            $url = isset($data['trade_id']) ? route('trading.trades.show', $data['trade_id']) : route('trading.trades.index');
-                                                            break;
-                                                        case 'seller_approved':
-                                                        case 'seller_rejected':
-                                                        case 'seller_suspended':
-                                                            $url = route('seller.dashboard');
-                                                            break;
-                                                        case 'profile_update':
-                                                            $url = route('profile.edit');
-                                                            break;
-                                                        case 'auction_won':
-                                                        case 'auction_outbid':
-                                                            $url = isset($data['auction_id']) ? route('auctions.show', $data['auction_id']) : route('auctions.index');
-                                                            break;
-                                                    }
+                                                    // Redirect to notifications page with notification ID to auto-open
+                                                    $url = route('notifications.index', ['open' => $notification->id]);
                                                 @endphp
-                                                <a href="{{ $url }}" class="dropdown-item notification-item-dropdown {{ $isUnread ? 'unread' : '' }}" onclick="markNotificationAsRead('{{ $notification->id }}', event)">
+                                                <a href="{{ $url }}" class="dropdown-item notification-item-dropdown {{ $isUnread ? 'unread' : '' }}">
                                                     <div class="d-flex align-items-start">
                                                         <div class="notification-icon-small bg-{{ $color }} text-white me-2" style="width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
                                                             <i class="bi {{ $icon }}"></i>
