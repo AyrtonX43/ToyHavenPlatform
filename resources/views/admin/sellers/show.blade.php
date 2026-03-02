@@ -208,6 +208,40 @@
                     </div>
                 </div>
                 @endif
+                
+                @if($seller->facebook_url || $seller->instagram_url || $seller->tiktok_url || $seller->website_url)
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="border-top pt-3">
+                            <label class="text-muted small mb-2">
+                                <i class="bi bi-share me-1"></i>Social Media Links
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @if($seller->facebook_url)
+                                    <a href="{{ $seller->facebook_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-facebook me-1"></i> Facebook
+                                    </a>
+                                @endif
+                                @if($seller->instagram_url)
+                                    <a href="{{ $seller->instagram_url }}" target="_blank" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-instagram me-1"></i> Instagram
+                                    </a>
+                                @endif
+                                @if($seller->tiktok_url)
+                                    <a href="{{ $seller->tiktok_url }}" target="_blank" class="btn btn-sm btn-outline-dark">
+                                        <i class="bi bi-tiktok me-1"></i> TikTok
+                                    </a>
+                                @endif
+                                @if($seller->website_url)
+                                    <a href="{{ $seller->website_url }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-globe me-1"></i> Website
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -222,6 +256,21 @@
                         <span class="badge bg-primary px-3 py-2">
                             <i class="bi bi-files me-1"></i>{{ $seller->documents->count() }} Document(s)
                         </span>
+                        @php
+                            $isVerifiedShop = $seller->is_verified_shop ?? false;
+                            $requiredDocsCount = $isVerifiedShop ? 6 : 3;
+                            $uploadedDocsCount = $seller->documents->count();
+                            $pendingDocsCount = $seller->documents->where('status', 'pending')->count();
+                            $canAutoApprove = $uploadedDocsCount >= $requiredDocsCount && $pendingDocsCount > 0;
+                        @endphp
+                        @if($canAutoApprove)
+                            <form action="{{ route('admin.sellers.documents.approve-all', $seller->id) }}" method="POST" class="mb-0">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Auto-approve all {{ $pendingDocsCount }} pending document(s)? This will mark all uploaded documents as approved.')">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Auto Approve All Documents
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -462,28 +511,24 @@
                         <form action="{{ route('admin.sellers.documents.reject', ['sellerId' => $seller->id, 'documentId' => $document->id]) }}" method="POST">
                             @csrf
                             <div class="modal-header">
-                                <h5 class="modal-title" id="rejectDocumentModalLabel{{ $document->id }}">Reject Document - Invalid Document</h5>
+                                <h5 class="modal-title" id="rejectDocumentModalLabel{{ $document->id }}">Reject Document</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="alert alert-danger">
+                                <div class="alert alert-warning">
                                     <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <strong>Warning:</strong> Rejecting this document will mark it as invalid. The seller will be notified that their required verification document is invalid and needs to be resubmitted.
+                                    <strong>Warning:</strong> This will mark the document as rejected. The document will be flagged as invalid and the seller will need to resubmit it.
                                 </div>
                                 <div class="alert alert-info">
                                     <i class="bi bi-info-circle me-2"></i>
                                     <strong>Document Type:</strong> {{ ucfirst(str_replace('_', ' ', $document->document_type)) }}
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
-                                    <textarea name="reason" class="form-control" rows="4" placeholder="Please provide a detailed reason why this document is invalid (e.g., document is unclear, expired, doesn't match business information, etc.)..." required>{{ old('reason', $document->rejection_reason ?? '') }}</textarea>
-                                    <small class="text-muted">This reason will be sent to the seller via email notification. They will be informed that their required document is invalid and needs to be resubmitted.</small>
-                                </div>
+                                <p class="mb-0">Are you sure you want to reject this document?</p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-danger">
-                                    <i class="bi bi-x-circle me-1"></i> Reject Document (Invalid)
+                                    <i class="bi bi-x-circle me-1"></i> Reject Document
                                 </button>
                             </div>
                         </form>

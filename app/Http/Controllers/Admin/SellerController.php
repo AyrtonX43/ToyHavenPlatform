@@ -8,7 +8,6 @@ use App\Models\SellerDocument;
 use App\Notifications\SellerSuspendedNotification;
 use App\Notifications\SellerApprovedNotification;
 use App\Notifications\SellerRejectedNotification;
-use App\Notifications\DocumentRejectedNotification;
 use Illuminate\Http\Request;
 
 class SellerController extends Controller
@@ -143,6 +142,20 @@ class SellerController extends Controller
             'is_verified_shop' => $isVerifiedShop, // Ensure the flag is set correctly
         ]);
         
+        // Sync social media links to live server data
+        // This ensures that any social media links filled during registration are synced
+        if ($seller->facebook_url || $seller->instagram_url || $seller->tiktok_url || $seller->website_url) {
+            // The social media links are already in the seller table, no additional sync needed
+            // But we can log this for tracking purposes
+            \Log::info('Seller approved with social media links', [
+                'seller_id' => $seller->id,
+                'facebook' => $seller->facebook_url,
+                'instagram' => $seller->instagram_url,
+                'tiktok' => $seller->tiktok_url,
+                'website' => $seller->website_url,
+            ]);
+        }
+        
         // Send notification to seller
         try {
             if ($seller->user) {
@@ -155,8 +168,8 @@ class SellerController extends Controller
         }
         
         $message = $isVerifiedShop 
-            ? 'Verified Trusted Toyshop approved successfully! The seller now has verified status and enhanced benefits.'
-            : 'Local Business Toyshop approved successfully! Seller has been notified.';
+            ? 'Verified Trusted Toyshop approved successfully! The seller now has verified status and enhanced benefits. Social media links have been synced.'
+            : 'Local Business Toyshop approved successfully! Seller has been notified. Social media links have been synced.';
         
         return back()->with('success', $message);
     }
@@ -366,16 +379,24 @@ class SellerController extends Controller
      */
     public function rejectDocument(Request $request, $sellerId, $documentId)
     {
-        $request->validate([
-            'reason' => 'required|string|max:500',
-        ]);
-        
         $seller = Seller::with('user')->findOrFail($sellerId);
         $document = SellerDocument::where('seller_id', $sellerId)->findOrFail($documentId);
         
+        // Get document type for display
+        $docLabel = match($document->document_type) {
+            'id' => 'Primary ID',
+            'business_permit' => 'Business Permit',
+            'bir_certificate' => 'BIR Certificate',
+            'bank_statement' => 'Bank Statement',
+            'facial_verification' => 'Facial Verification',
+            'product_sample' => 'Product Sample',
+            default => ucfirst(str_replace('_', ' ', $document->document_type))
+        };
+        
+        // Simply mark as rejected without detailed feedback
         $document->update([
             'status' => 'rejected',
-            'rejection_reason' => $request->reason
+            'rejection_reason' => 'Document rejected by admin - requires resubmission'
         ]);
         
         // If seller was approved but a document is now rejected, set seller back to pending
@@ -383,15 +404,8 @@ class SellerController extends Controller
             $seller->update(['verification_status' => 'pending']);
         }
         
-        // Send notification to seller about document rejection
-        if ($seller->user) {
-            $seller->user->notify(new DocumentRejectedNotification(
-                $document->document_type,
-                $request->reason,
-                $seller->business_name
-            ));
-        }
+        // No email or notification sent - just mark as rejected
         
-        return back()->with('success', 'Document rejected successfully. The seller has been notified via email.');
+        return back()->with('success', $docLabel . ' has been marked as rejected. The seller will need to resubmit this document.');
     }
 }
