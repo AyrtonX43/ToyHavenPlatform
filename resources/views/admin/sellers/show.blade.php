@@ -11,7 +11,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h3 class="mb-2 fw-bold">
-                            @if($seller->is_verified_shop)
+                            @if($seller->is_verified_shop ?? false)
                                 <i class="bi bi-shield-check text-success me-2"></i>
                             @else
                                 <i class="bi bi-shop text-primary me-2"></i>
@@ -403,16 +403,17 @@
                     </table>
                 </div>
                 @php
-                    $requiredDocs = $seller->is_verified_shop ? 6 : 3;
+                    $isVerifiedShop = $seller->is_verified_shop ?? false;
+                    $requiredDocs = $isVerifiedShop ? 6 : 3;
                     $uploadedDocs = $seller->documents->count();
                 @endphp
-                @if($seller->is_verified_shop && $uploadedDocs < $requiredDocs)
+                @if($isVerifiedShop && $uploadedDocs < $requiredDocs)
                     <div class="alert alert-warning mt-3">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Warning:</strong> This seller registered as Verified Trusted Toyshop but is missing some required documents ({{ $uploadedDocs }}/{{ $requiredDocs }}).
                         <br><strong>Expected:</strong> Primary ID, Facial Verification, Bank Statement, Business Permit, BIR Certificate, Product Sample.
                     </div>
-                @elseif(!$seller->is_verified_shop && $uploadedDocs < $requiredDocs)
+                @elseif(!$isVerifiedShop && $uploadedDocs < $requiredDocs)
                     <div class="alert alert-warning mt-3">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Warning:</strong> This seller registered as Local Business Toyshop but is missing some required documents ({{ $uploadedDocs }}/{{ $requiredDocs }}).
@@ -623,7 +624,8 @@
             </div>
             <div class="card-body p-4">
                 @php
-                    $requiredDocsCount = $seller->is_verified_shop ? 6 : 3;
+                    $isVerified = $seller->is_verified_shop ?? false;
+                    $requiredDocsCount = $isVerified ? 6 : 3;
                     $approvedDocsCount = $seller->documents->where('status', 'approved')->count();
                     $pendingDocsCount = $seller->documents->where('status', 'pending')->count();
                     $rejectedDocsCount = $seller->documents->where('status', 'rejected')->count();

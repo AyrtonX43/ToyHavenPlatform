@@ -121,7 +121,7 @@ class SellerController extends Controller
         $seller = Seller::with(['user', 'documents'])->findOrFail($id);
         
         // Determine if this is a Verified Trusted Toyshop registration
-        $isVerifiedShop = $seller->is_verified_shop;
+        $isVerifiedShop = $seller->is_verified_shop ?? false;
         
         // Check if all required documents are approved
         // Verified Trusted: ID + Facial Verification + Bank Statement + Business Permit + BIR Certificate + Product Sample = 6
