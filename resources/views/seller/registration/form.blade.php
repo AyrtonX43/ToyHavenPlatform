@@ -644,7 +644,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // For NCR, load cities directly from the region
             provinceSelect.innerHTML = '<option value="Metro Manila">Metro Manila</option>';
             provinceSelect.value = 'Metro Manila';
-            provinceSelect.disabled = true; // Disable since NCR has no provinces
+            // Make it readonly instead of disabled so the value gets submitted
+            provinceSelect.style.backgroundColor = '#e9ecef';
+            provinceSelect.style.cursor = 'not-allowed';
+            provinceSelect.setAttribute('readonly', true);
+            // Remove disabled attribute to ensure form submission includes this field
+            provinceSelect.disabled = false;
+            
+            // Prevent changing the value
+            provinceSelect.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                return false;
+            });
             
             // Load cities directly for NCR
             fetch(`${API_BASE}/regions/${regionCode}/cities-municipalities`)
@@ -669,6 +680,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 .catch(error => console.error('Error loading NCR cities:', error));
         } else {
             // For other regions, load provinces normally
+            // Re-enable province select and restore normal styling
+            provinceSelect.style.backgroundColor = '';
+            provinceSelect.style.cursor = '';
+            provinceSelect.removeAttribute('readonly');
+            provinceSelect.disabled = false;
+            
             fetch(`${API_BASE}/regions/${regionCode}/provinces`)
                 .then(response => response.json())
                 .then(data => {
