@@ -30,7 +30,7 @@ class SellerRejectedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -73,8 +73,14 @@ class SellerRejectedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'title' => 'Business Application Rejected',
+            'message' => $this->businessName 
+                ? 'Your business application for "' . $this->businessName . '" has been rejected.' 
+                : 'Your business application has been rejected.',
             'reason' => $this->reason,
             'business_name' => $this->businessName,
+            'type' => 'seller_rejected',
+            'action_url' => route('seller.registration.index'),
         ];
     }
 }
