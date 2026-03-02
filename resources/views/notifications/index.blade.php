@@ -471,6 +471,12 @@
                             @if(isset($data['listing_title']))
                                 <div class="notification-message">{{ $data['listing_title'] }}</div>
                             @endif
+                            @if(isset($data['business_name']))
+                                <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
+                            @endif
+                            @if(isset($data['reason']))
+                                <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
+                            @endif
                             <div class="notification-time">
                                 <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
                             </div>

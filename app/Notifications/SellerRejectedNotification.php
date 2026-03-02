@@ -73,6 +73,8 @@ class SellerRejectedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'type' => 'seller_rejected',
+            'message' => 'Your seller application has been rejected',
             'reason' => $this->reason,
             'business_name' => $this->businessName,
         ];
