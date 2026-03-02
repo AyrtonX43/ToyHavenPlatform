@@ -82,6 +82,7 @@
         border: 1px solid #f1f5f9;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
     }
     
     .notification-item:hover {
@@ -111,7 +112,7 @@
         z-index: 1;
     }
     
-    .notification-item-link {
+    .notification-item-content {
         display: flex;
         align-items: flex-start;
         padding: 1rem 1.25rem 1rem 1.5rem;
@@ -120,7 +121,7 @@
         transition: background 0.15s ease;
     }
     
-    .notification-item-link:hover {
+    .notification-item-content:hover {
         background: #fafbfc;
     }
     
@@ -177,6 +178,7 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.15s ease;
+        z-index: 10;
     }
     
     .notification-delete-btn:hover {
@@ -314,6 +316,181 @@
         font-size: 0.875rem;
         font-weight: 500;
     }
+
+    /* Full notification detail view */
+    .notification-detail-view {
+        background: white;
+        border-radius: 14px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+
+    .notification-detail-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .notification-detail-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        flex-shrink: 0;
+    }
+
+    .notification-detail-header-content {
+        flex: 1;
+    }
+
+    .notification-detail-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .notification-detail-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .notification-detail-body {
+        margin-bottom: 1.5rem;
+    }
+
+    .notification-detail-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .notification-detail-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .notification-detail-text {
+        font-size: 0.9375rem;
+        color: #475569;
+        line-height: 1.7;
+        white-space: pre-wrap;
+    }
+
+    .notification-detail-box {
+        background: #f8fafc;
+        border-left: 4px solid #cbd5e1;
+        padding: 1.25rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .notification-detail-box.danger {
+        background: #fef2f2;
+        border-left-color: #dc2626;
+    }
+
+    .notification-detail-box.warning {
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+    }
+
+    .notification-detail-box.success {
+        background: #f0fdf4;
+        border-left-color: #10b981;
+    }
+
+    .notification-detail-box.info {
+        background: #eff6ff;
+        border-left-color: #3b82f6;
+    }
+
+    .notification-detail-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .notification-detail-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .notification-detail-btn-primary {
+        background: #0ea5e9;
+        color: white;
+    }
+
+    .notification-detail-btn-primary:hover {
+        background: #0284c7;
+        color: white;
+        box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    }
+
+    .notification-detail-btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .notification-detail-btn-secondary:hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .notification-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .notification-info-item {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .notification-info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+    }
+
+    .notification-info-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
 </style>
 @endpush
 
@@ -408,12 +585,23 @@
                         'trade_offer_accepted' => 'bi-check-circle',
                         'trade_status_updated' => 'bi-arrow-repeat',
                         'trade_listing_submitted' => 'bi-hourglass-split',
+                        'trade_listing_approved' => 'bi-check-circle',
+                        'trade_listing_rejected' => 'bi-x-circle',
                         'seller_approved' => 'bi-shield-check',
                         'seller_rejected' => 'bi-x-circle',
                         'seller_suspended' => 'bi-exclamation-triangle',
                         'account_banned' => 'bi-ban',
                         'account_suspended' => 'bi-pause-circle',
                         'profile_update' => 'bi-person-check',
+                        'auction_won' => 'bi-trophy',
+                        'auction_outbid' => 'bi-hammer',
+                        'order_shipped' => 'bi-truck',
+                        'order_delivered' => 'bi-check-circle',
+                        'payment_success' => 'bi-credit-card-2-front',
+                        'product_rejected' => 'bi-x-circle',
+                        'document_rejected' => 'bi-file-earmark-x',
+                        'business_page_revision_approved' => 'bi-check-circle',
+                        'business_page_revision_rejected' => 'bi-x-circle',
                     ];
                     
                     $colors = [
@@ -422,52 +610,32 @@
                         'trade_offer_accepted' => 'success',
                         'trade_status_updated' => 'info',
                         'trade_listing_submitted' => 'warning',
+                        'trade_listing_approved' => 'success',
+                        'trade_listing_rejected' => 'danger',
                         'seller_approved' => 'success',
                         'seller_rejected' => 'danger',
                         'seller_suspended' => 'warning',
                         'account_banned' => 'danger',
                         'account_suspended' => 'warning',
                         'profile_update' => 'primary',
+                        'auction_won' => 'success',
+                        'auction_outbid' => 'warning',
+                        'order_shipped' => 'info',
+                        'order_delivered' => 'success',
+                        'payment_success' => 'success',
+                        'product_rejected' => 'danger',
+                        'document_rejected' => 'danger',
+                        'business_page_revision_approved' => 'success',
+                        'business_page_revision_rejected' => 'danger',
                     ];
                     
                     $icon = $icons[$type] ?? 'bi-bell';
                     $color = $colors[$type] ?? 'secondary';
-                    
-                    // Get URL
-                    $url = '#';
-                    switch ($type) {
-                        case 'order_status':
-                            $url = isset($data['order_id']) ? route('orders.show', $data['order_id']) : route('orders.index');
-                            break;
-                        case 'trade_offer_received':
-                        case 'trade_offer_accepted':
-                            $url = isset($data['offer_id']) ? route('trading.offers.show', $data['offer_id']) : route('trading.offers.received');
-                            break;
-                        case 'trade_status_updated':
-                            $url = isset($data['trade_id']) ? route('trading.trades.show', $data['trade_id']) : route('trading.trades.index');
-                            break;
-                        case 'trade_listing_submitted':
-                            $url = isset($data['listing_id']) ? route('trading.listings.show', $data['listing_id']) : route('trading.index');
-                            break;
-                        case 'seller_approved':
-                        case 'seller_rejected':
-                        case 'seller_suspended':
-                            $url = route('seller.dashboard');
-                            break;
-                        case 'profile_update':
-                            $url = route('profile.edit');
-                            break;
-                    }
                 @endphp
                 
-                <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}">
+                <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}" onclick="viewNotification('{{ $notification->id }}', event)">
                     <span class="notification-dot"></span>
-                    @if(in_array($type, ['seller_rejected', 'seller_suspended']))
-                        <a href="javascript:void(0)" class="notification-item-link" 
-                           onclick="showNotificationModal('{{ $notification->id }}', '{{ $type }}', {{ json_encode($data) }}, event)">
-                    @else
-                        <a href="{{ $data['action_url'] ?? $url }}" class="notification-item-link" onclick="markAsRead('{{ $notification->id }}', event)">
-                    @endif
+                    <div class="notification-item-content">
                         <div class="notification-icon bg-{{ $color }} text-white">
                             <i class="bi {{ $icon }}"></i>
                         </div>
@@ -478,11 +646,9 @@
                                     <i class="bi bi-shop me-1"></i>{{ $data['business_name'] }}
                                 </div>
                             @endif
-                            @if(in_array($type, ['seller_rejected', 'seller_suspended']) && isset($data['reason']))
-                                <div class="mt-2">
-                                    <span class="badge bg-{{ $type === 'seller_rejected' ? 'danger' : 'warning' }} px-3 py-1">
-                                        <i class="bi bi-info-circle me-1"></i>Click to view details
-                                    </span>
+                            @if(isset($data['message']) && isset($data['title']) && $data['message'] !== $data['title'])
+                                <div class="notification-message">
+                                    {{ Str::limit($data['message'], 100) }}
                                 </div>
                             @endif
                             <div class="notification-time mt-2">
@@ -494,7 +660,7 @@
                                 <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
                             @endif
                         </div>
-                    </a>
+                    </div>
                     <button type="button" class="notification-delete-btn" onclick="deleteNotification('{{ $notification->id }}', event)" title="Delete notification" aria-label="Delete notification">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -517,24 +683,13 @@
 
 <!-- Notification Detail Modal -->
 <div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content" style="border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-            <div class="modal-header" id="modalHeader" style="border-bottom: 2px solid #e2e8f0;">
-                <h5 class="modal-title fw-bold" id="notificationDetailModalLabel">
-                    <i class="bi bi-bell-fill me-2"></i>Notification Details
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-0" id="modalBody" style="max-height: 70vh; overflow-y: auto;">
+            <div class="modal-body p-4" id="notificationModalBody">
                 <!-- Content will be injected here -->
-            </div>
-            <div class="modal-footer" style="border-top: 2px solid #e2e8f0;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Close
-                </button>
-                <a href="#" id="modalActionBtn" class="btn btn-primary" style="display: none;">
-                    <i class="bi bi-arrow-right-circle me-1"></i>Go to Dashboard
-                </a>
             </div>
         </div>
     </div>
@@ -542,105 +697,262 @@
 
 @push('scripts')
 <script>
-    function showNotificationModal(notificationId, type, data, event) {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        const modalHeader = document.getElementById('modalHeader');
-        const modalTitle = document.getElementById('notificationDetailModalLabel');
-        const modalBody = document.getElementById('modalBody');
-        const actionBtn = document.getElementById('modalActionBtn');
-        const closeBtn = modalHeader.querySelector('.btn-close');
-        
-        // Reset and set header
-        modalHeader.className = 'modal-header';
-        modalHeader.style.borderBottom = '2px solid #e2e8f0';
-        
-        if (type === 'seller_rejected') {
-            modalHeader.classList.add('bg-danger', 'text-white');
-            modalTitle.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Business Application Rejected';
-            if (closeBtn) closeBtn.classList.add('btn-close-white');
-        } else if (type === 'seller_suspended') {
-            modalHeader.classList.add('bg-warning', 'text-dark');
-            modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Business Account Suspended';
-            if (closeBtn) closeBtn.classList.remove('btn-close-white');
+    function viewNotification(notificationId, event) {
+        // Don't trigger if clicking delete button
+        if (event.target.closest('.notification-delete-btn')) {
+            return;
         }
+
+        // Mark as read
+        fetch(`/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        }).then(() => {
+            const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (item) {
+                item.classList.remove('unread');
+                const badge = item.querySelector('.badge');
+                if (badge) badge.remove();
+                const dot = item.querySelector('.notification-dot');
+                if (dot) dot.style.display = 'none';
+            }
+            updateNotificationCount();
+        });
+
+        // Get notification data
+        const notificationItem = event.currentTarget;
+        const notificationData = @json($notifications->keyBy('id')->map(function($n) {
+            return $n->data;
+        }));
+
+        const data = notificationData[notificationId];
+        if (!data) return;
+
+        const type = data.type || '';
         
-        // Build content
-        let content = '<div class="p-4">';
+        // Build modal content
+        showNotificationDetailModal(notificationId, type, data);
+    }
+
+    function showNotificationDetailModal(notificationId, type, data) {
+        const modalBody = document.getElementById('notificationModalBody');
         
-        if (data.business_name) {
-            content += `
-                <div class="mb-4 pb-3" style="border-bottom: 1px solid #e2e8f0;">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
-                            <i class="bi bi-shop fs-5"></i>
-                        </div>
-                        <div>
-                            <small class="text-muted d-block mb-1">Business Name</small>
-                            <strong class="fs-5">${data.business_name}</strong>
-                        </div>
+        // Get icon and color
+        const icons = {
+            'order_status': 'bi-box-seam',
+            'trade_offer_received': 'bi-arrow-left-right',
+            'trade_offer_accepted': 'bi-check-circle',
+            'trade_status_updated': 'bi-arrow-repeat',
+            'trade_listing_submitted': 'bi-hourglass-split',
+            'trade_listing_approved': 'bi-check-circle',
+            'trade_listing_rejected': 'bi-x-circle',
+            'seller_approved': 'bi-shield-check',
+            'seller_rejected': 'bi-x-circle',
+            'seller_suspended': 'bi-exclamation-triangle',
+            'account_banned': 'bi-ban',
+            'account_suspended': 'bi-pause-circle',
+            'profile_update': 'bi-person-check',
+            'auction_won': 'bi-trophy',
+            'auction_outbid': 'bi-hammer',
+            'order_shipped': 'bi-truck',
+            'order_delivered': 'bi-check-circle',
+            'payment_success': 'bi-credit-card-2-front',
+            'product_rejected': 'bi-x-circle',
+            'document_rejected': 'bi-file-earmark-x',
+            'business_page_revision_approved': 'bi-check-circle',
+            'business_page_revision_rejected': 'bi-x-circle',
+        };
+        
+        const colors = {
+            'order_status': 'primary',
+            'trade_offer_received': 'info',
+            'trade_offer_accepted': 'success',
+            'trade_status_updated': 'info',
+            'trade_listing_submitted': 'warning',
+            'trade_listing_approved': 'success',
+            'trade_listing_rejected': 'danger',
+            'seller_approved': 'success',
+            'seller_rejected': 'danger',
+            'seller_suspended': 'warning',
+            'account_banned': 'danger',
+            'account_suspended': 'warning',
+            'profile_update': 'primary',
+            'auction_won': 'success',
+            'auction_outbid': 'warning',
+            'order_shipped': 'info',
+            'order_delivered': 'success',
+            'payment_success': 'success',
+            'product_rejected': 'danger',
+            'document_rejected': 'danger',
+            'business_page_revision_approved': 'success',
+            'business_page_revision_rejected': 'danger',
+        };
+
+        const boxColors = {
+            'seller_rejected': 'danger',
+            'seller_suspended': 'warning',
+            'seller_approved': 'success',
+            'trade_listing_rejected': 'danger',
+            'trade_listing_approved': 'success',
+            'product_rejected': 'danger',
+            'document_rejected': 'danger',
+            'business_page_revision_rejected': 'danger',
+            'business_page_revision_approved': 'success',
+            'account_banned': 'danger',
+            'account_suspended': 'warning',
+        };
+        
+        const icon = icons[type] || 'bi-bell';
+        const color = colors[type] || 'secondary';
+        const boxColor = boxColors[type] || 'info';
+        
+        let content = `
+            <div class="notification-detail-view">
+                <div class="notification-detail-header">
+                    <div class="notification-detail-icon bg-${color} text-white">
+                        <i class="bi ${icon}"></i>
                     </div>
-                </div>`;
-        }
-        
-        content += `
-            <div class="mb-4">
-                <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} border-${type === 'seller_rejected' ? 'danger' : 'warning'}" style="border-left-width: 4px;">
-                    <div class="d-flex align-items-start">
-                        <i class="bi bi-info-circle-fill me-2 mt-1 fs-5"></i>
-                        <div>
-                            <strong class="d-block mb-2">${data.title || 'Notification'}</strong>
-                            <p class="mb-0">${data.message || ''}</p>
+                    <div class="notification-detail-header-content">
+                        <h3 class="notification-detail-title">${data.title || 'Notification'}</h3>
+                        <div class="notification-detail-meta">
+                            <span><i class="bi bi-clock me-1"></i>${data.created_at || 'Just now'}</span>
+                            ${data.business_name ? `<span><i class="bi bi-shop me-1"></i>${data.business_name}</span>` : ''}
                         </div>
                     </div>
                 </div>
-            </div>`;
-        
+                <div class="notification-detail-body">`;
+
+        // Add message
+        if (data.message) {
+            content += `
+                <div class="notification-detail-section">
+                    <div class="notification-detail-box ${boxColor}">
+                        <div class="notification-detail-text">${data.message}</div>
+                    </div>
+                </div>`;
+        }
+
+        // Add reason if exists
         if (data.reason) {
             content += `
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-3">
-                        <i class="bi bi-file-text-fill me-2 text-${type === 'seller_rejected' ? 'danger' : 'warning'}"></i>
+                <div class="notification-detail-section">
+                    <div class="notification-detail-section-title">
+                        <i class="bi bi-file-text-fill text-${color}"></i>
                         Detailed Reason
-                    </h6>
-                    <div class="bg-light p-4 rounded" style="border-left: 4px solid ${type === 'seller_rejected' ? '#dc3545' : '#ffc107'};">
-                        <div style="white-space: pre-wrap; font-size: 1rem; line-height: 1.7;">${data.reason}</div>
                     </div>
+                    <div class="notification-detail-box ${boxColor}">
+                        <div class="notification-detail-text">${data.reason}</div>
+                    </div>
+                </div>`;
+        }
+
+        // Add additional info grid
+        let hasAdditionalInfo = false;
+        let additionalInfoHtml = '<div class="notification-info-grid">';
+        
+        if (data.order_id) {
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Order ID</div>
+                    <div class="notification-info-value">#${data.order_id}</div>
+                </div>`;
+        }
+        
+        if (data.order_number) {
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Order Number</div>
+                    <div class="notification-info-value">${data.order_number}</div>
+                </div>`;
+        }
+        
+        if (data.tracking_number) {
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Tracking Number</div>
+                    <div class="notification-info-value">${data.tracking_number}</div>
                 </div>`;
         }
         
         if (data.report_id) {
-            content += `
-                <div class="mb-4">
-                    <div class="d-flex align-items-center p-3 bg-light rounded">
-                        <i class="bi bi-flag-fill me-2 text-danger fs-5"></i>
-                        <div>
-                            <small class="text-muted d-block">Related Report</small>
-                            <strong>Report ID: #${data.report_id}</strong>
-                        </div>
-                    </div>
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Report ID</div>
+                    <div class="notification-info-value">#${data.report_id}</div>
+                </div>`;
+        }
+
+        if (data.listing_id) {
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Listing ID</div>
+                    <div class="notification-info-value">#${data.listing_id}</div>
+                </div>`;
+        }
+
+        if (data.product_id) {
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Product ID</div>
+                    <div class="notification-info-value">#${data.product_id}</div>
+                </div>`;
+        }
+
+        if (data.auction_id) {
+            hasAdditionalInfo = true;
+            additionalInfoHtml += `
+                <div class="notification-info-item">
+                    <div class="notification-info-label">Auction ID</div>
+                    <div class="notification-info-value">#${data.auction_id}</div>
                 </div>`;
         }
         
-        content += '</div>';
+        additionalInfoHtml += '</div>';
+        
+        if (hasAdditionalInfo) {
+            content += `
+                <div class="notification-detail-section">
+                    <div class="notification-detail-section-title">
+                        <i class="bi bi-info-circle-fill text-${color}"></i>
+                        Additional Information
+                    </div>
+                    ${additionalInfoHtml}
+                </div>`;
+        }
+
+        content += `</div>`;
+
+        // Add action buttons
+        if (data.action_url) {
+            content += `
+                <div class="notification-detail-actions">
+                    <a href="${data.action_url}" class="notification-detail-btn notification-detail-btn-primary">
+                        <i class="bi bi-arrow-right-circle"></i>
+                        View Details
+                    </a>
+                    <button type="button" class="notification-detail-btn notification-detail-btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Close
+                    </button>
+                </div>`;
+        }
+
+        content += `</div>`;
         
         modalBody.innerHTML = content;
-        
-        // Set action button
-        if (data.action_url) {
-            actionBtn.style.display = 'inline-block';
-            actionBtn.href = data.action_url;
-        } else {
-            actionBtn.style.display = 'none';
-        }
         
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
         modal.show();
-        
-        // Mark as read
-        markAsRead(notificationId, event);
     }
     
     function deleteNotification(notificationId, event) {
@@ -683,30 +995,6 @@
             } else {
                 alert('Something went wrong.');
             }
-        });
-    }
-    
-    function markAsRead(notificationId, event) {
-        // Don't prevent default if it's already read
-        fetch(`/notifications/${notificationId}/read`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        }).then(() => {
-            // Update UI
-            const item = event.currentTarget.closest('.notification-item');
-            if (item) {
-                item.classList.remove('unread');
-                const badge = item.querySelector('.badge');
-                if (badge) badge.remove();
-                const dot = item.querySelector('.notification-dot');
-                if (dot) dot.style.display = 'none';
-            }
-            
-            // Update count
-            updateNotificationCount();
         });
     }
     
