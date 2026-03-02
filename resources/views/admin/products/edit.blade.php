@@ -65,8 +65,8 @@
                     <label class="form-label">Amazon Reference Image URL (from seller)</label>
                     <input type="url" name="amazon_reference_image" class="form-control" value="{{ old('amazon_reference_image', $product->amazon_reference_image) }}" placeholder="https://...">
                     @if($product->amazon_reference_image)
-                        <small class="text-muted d-block mt-1">Preview:</small>
-                        <img src="{{ $product->amazon_reference_image }}" alt="Reference" class="img-thumbnail mt-1" style="max-width: 80px; max-height: 80px; object-fit: contain;" onerror="this.style.display='none'">
+                        <small class="text-muted d-block mt-1">Preview (1080P–4K HDR):</small>
+                        <img src="{{ $product->amazon_reference_image_hd ?? $product->amazon_reference_image }}" alt="Reference" class="img-thumbnail mt-1" style="min-width: 320px; min-height: 180px; max-width: 100%; width: auto; height: auto; object-fit: contain;" onerror="this.style.display='none'">
                     @endif
                 </div>
                 <div class="col-md-6">
