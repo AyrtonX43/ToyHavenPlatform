@@ -315,6 +315,14 @@
         letter-spacing: 1px;
     }
     
+    /* Review comments section - full width below product grid */
+    .product-reviews-section {
+        grid-column: 1 / -1;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
     .product-price {
         font-size: 2rem;
         font-weight: 700;
@@ -636,6 +644,80 @@
                         <p class="mb-0">{{ $product->description }}</p>
                     </div>
                 </div>
+                @endif
+            </div>
+
+            <!-- Review Comments Section (full width) -->
+            @php
+                $approvedReviews = $product->reviews->where('status', 'approved')->sortByDesc('created_at');
+            @endphp
+            <div class="product-reviews-section">
+                <h5 class="mb-4">
+                    <i class="bi bi-chat-square-text me-2"></i>Customer Reviews
+                    @if($reviewsCount > 0)
+                        <span class="text-muted fw-normal fs-6">({{ $reviewsCount }} {{ Str::plural('review', $reviewsCount) }})</span>
+                    @endif
+                </h5>
+                @if($approvedReviews->count() > 0)
+                    <div class="review-summary mb-4">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="product-rating-stars text-warning" style="font-size: 1.5rem;">
+                                @for($i = 1; $i <= 5; $i++)
+                                    @if($i <= $fullStars)
+                                        <i class="bi bi-star-fill"></i>
+                                    @elseif($i == $fullStars + 1 && $hasHalfStar)
+                                        <i class="bi bi-star-half"></i>
+                                    @else
+                                        <i class="bi bi-star"></i>
+                                    @endif
+                                @endfor
+                            </div>
+                            <span class="fw-bold fs-4">{{ number_format($avgRating, 1) }}</span>
+                            <span class="text-muted">out of 5</span>
+                        </div>
+                    </div>
+                    <div class="review-comments-list">
+                        @foreach($approvedReviews as $review)
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <strong>{{ $review->user->name ?? 'Anonymous' }}</strong>
+                                            @if($review->isVerifiedPurchase())
+                                                <span class="badge bg-success" style="font-size: 0.7rem;">Verified Purchase</span>
+                                            @endif
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="text-warning">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <i class="bi bi-star{{ $i <= $review->rating ? '-fill' : '' }}"></i>
+                                                @endfor
+                                            </div>
+                                            <small class="text-muted">{{ $review->created_at->format('M d, Y') }}</small>
+                                        </div>
+                                    </div>
+                                    @if($review->review_text)
+                                        <p class="mb-0">{{ $review->review_text }}</p>
+                                    @endif
+                                    @if($review->review_images && count($review->review_images) > 0)
+                                        <div class="d-flex gap-2 mt-2 flex-wrap">
+                                            @foreach($review->review_images as $imgPath)
+                                                <a href="{{ asset('storage/' . $imgPath) }}" target="_blank" class="d-inline-block">
+                                                    <img src="{{ asset('storage/' . $imgPath) }}" alt="Review image" class="rounded" style="max-width: 80px; max-height: 80px; object-fit: cover;">
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="alert alert-light border">
+                        <p class="mb-0 text-muted">
+                            <i class="bi bi-info-circle me-2"></i>No reviews yet. Be the first to review this product!
+                        </p>
+                    </div>
                 @endif
             </div>
         </div>
