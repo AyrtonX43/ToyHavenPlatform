@@ -318,9 +318,9 @@
         <!-- Breadcrumb -->
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('toyshop.index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('toyshop.products.index') }}">Products</a></li>
-                @if($product->categories->first())
+                @if($product->categories && $product->categories->first())
                     <li class="breadcrumb-item"><a href="{{ route('toyshop.products.index', ['category' => $product->categories->first()->id]) }}">{{ $product->categories->first()->name }}</a></li>
                 @endif
                 <li class="breadcrumb-item active">{{ Str::limit($product->name, 50) }}</li>
