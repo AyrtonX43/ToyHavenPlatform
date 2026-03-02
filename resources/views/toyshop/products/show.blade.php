@@ -66,11 +66,8 @@
         max-height: 100%;
         object-fit: contain;
         cursor: crosshair;
-        image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
     }
     
     /* 4K Badge */
@@ -158,11 +155,8 @@
         width: auto !important;
         height: auto !important;
         max-width: none !important;
-        image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
     }
     
     /* Zoom Indicator */
@@ -270,8 +264,12 @@
     }
     
     .fullscreen-image {
-        width: 100%;
-        height: 100%;
+        width: auto !important;
+        height: auto !important;
+        min-width: 85vw;
+        min-height: 85vh;
+        max-width: 98vw;
+        max-height: 98vh;
         object-fit: contain;
         image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
@@ -611,14 +609,11 @@
         const thumbnails = Array.from(document.querySelectorAll('.thumbnail'));
         currentImageIndex = thumbnails.indexOf(element);
         
-        // Reset zoom initialization flag and reinitialize
-        zoomInitialized = false;
+        // Reinitialize zoom for new image
         initHoverZoom();
     }
     
     // Amazon-style hover zoom
-    let zoomInitialized = false;
-    
     function initHoverZoom() {
         const wrapper = document.getElementById('mainImageWrapper');
         const mainImage = document.getElementById('mainImage');
@@ -639,82 +634,63 @@
             return;
         }
         
-        // Remove old listeners if reinitializing
-        if (zoomInitialized) {
-            const newWrapper = wrapper.cloneNode(true);
-            wrapper.parentNode.replaceChild(newWrapper, wrapper);
-            return initHoverZoom(); // Reinitialize with clean element
-        }
-        zoomInitialized = true;
-        
         const zoomLevel = 2.5;
         const indicatorSize = 150;
         let imageNaturalDimensions = { width: 0, height: 0 };
-        let isZoomActive = false;
         
         // Preload image dimensions
-        function loadImageDimensions() {
-            const preloadImg = new Image();
-            preloadImg.onload = function() {
-                imageNaturalDimensions.width = this.naturalWidth;
-                imageNaturalDimensions.height = this.naturalHeight;
-                console.log('Image dimensions loaded:', imageNaturalDimensions, 'from:', mainImage.src);
-            };
-            preloadImg.src = mainImage.src;
-        }
-        loadImageDimensions();
+        const preloadImg = new Image();
+        preloadImg.onload = function() {
+            imageNaturalDimensions.width = this.naturalWidth;
+            imageNaturalDimensions.height = this.naturalHeight;
+            console.log('Image dimensions loaded:', imageNaturalDimensions);
+        };
+        preloadImg.src = mainImage.src;
         
         wrapper.addEventListener('mouseenter', function() {
             console.log('Mouse entered wrapper');
-            isZoomActive = true;
             zoomWindow.classList.add('active');
             if (zoomIndicator) zoomIndicator.classList.add('active');
             
-            // Update zoom window image
+            // Update zoom window image and reload dimensions
             zoomWindowImage.src = mainImage.src;
-            loadImageDimensions();
+            
+            // Reload image dimensions
+            const reloadImg = new Image();
+            reloadImg.onload = function() {
+                imageNaturalDimensions.width = this.naturalWidth;
+                imageNaturalDimensions.height = this.naturalHeight;
+                console.log('Zoom image dimensions reloaded:', imageNaturalDimensions);
+            };
+            reloadImg.src = mainImage.src;
         });
         
         wrapper.addEventListener('mouseleave', function() {
             console.log('Mouse left wrapper');
-            isZoomActive = false;
             zoomWindow.classList.remove('active');
             if (zoomIndicator) zoomIndicator.classList.remove('active');
         });
         
         wrapper.addEventListener('mousemove', function(e) {
-            if (!isZoomActive || imageNaturalDimensions.width === 0) return;
+            if (!zoomWindow.classList.contains('active')) return;
             
-            // Get the actual displayed image dimensions and position
+            // Get the actual image position and size
             const imageRect = mainImage.getBoundingClientRect();
             const wrapperRect = wrapper.getBoundingClientRect();
             
-            // Mouse position relative to the actual displayed image
-            const mouseX = e.clientX - imageRect.left;
-            const mouseY = e.clientY - imageRect.top;
+            // Calculate mouse position relative to the ACTUAL IMAGE, not the wrapper
+            const x = e.clientX - imageRect.left;
+            const y = e.clientY - imageRect.top;
             
-            // Check if mouse is over the image
-            if (mouseX < 0 || mouseX > imageRect.width || mouseY < 0 || mouseY > imageRect.height) {
-                if (zoomIndicator) zoomIndicator.style.display = 'none';
+            // Check if mouse is actually over the image
+            if (x < 0 || x > imageRect.width || y < 0 || y > imageRect.height) {
                 return;
             }
             
-            if (zoomIndicator) zoomIndicator.style.display = 'block';
+            const xPercent = x / imageRect.width;
+            const yPercent = y / imageRect.height;
             
-            // Calculate percentage position on the displayed image
-            const xPercent = mouseX / imageRect.width;
-            const yPercent = mouseY / imageRect.height;
-            
-            console.log('Zoom position:', {
-                mouseX: mouseX.toFixed(0),
-                mouseY: mouseY.toFixed(0),
-                xPercent: (xPercent * 100).toFixed(1) + '%',
-                yPercent: (yPercent * 100).toFixed(1) + '%',
-                imageWidth: imageRect.width.toFixed(0),
-                imageHeight: imageRect.height.toFixed(0)
-            });
-            
-            // Position indicator (relative to wrapper for visual consistency)
+            // Position indicator relative to wrapper (for visual consistency)
             if (zoomIndicator) {
                 const indicatorX = Math.max(0, Math.min(wrapperRect.width - indicatorSize, e.clientX - wrapperRect.left - indicatorSize / 2));
                 const indicatorY = Math.max(0, Math.min(wrapperRect.height - indicatorSize, e.clientY - wrapperRect.top - indicatorSize / 2));
@@ -725,24 +701,21 @@
                 zoomIndicator.style.height = indicatorSize + 'px';
             }
             
-            // Scale the zoom window image to show zoomed portion
-            const scaledWidth = imageNaturalDimensions.width * zoomLevel;
-            const scaledHeight = imageNaturalDimensions.height * zoomLevel;
-            
-            zoomWindowImage.style.width = scaledWidth + 'px';
-            zoomWindowImage.style.height = scaledHeight + 'px';
-            
-            // Calculate the position to show in zoom window
-            // This positions the zoomed image so the hovered point is centered in the zoom window
-            const moveX = -xPercent * scaledWidth + (zoomWindow.offsetWidth / 2);
-            const moveY = -yPercent * scaledHeight + (zoomWindow.offsetHeight / 2);
-            
-            // Clamp to prevent showing beyond image bounds
-            const clampedX = Math.min(0, Math.max(moveX, zoomWindow.offsetWidth - scaledWidth));
-            const clampedY = Math.min(0, Math.max(moveY, zoomWindow.offsetHeight - scaledHeight));
-            
-            zoomWindowImage.style.left = clampedX + 'px';
-            zoomWindowImage.style.top = clampedY + 'px';
+            // Position zoomed image based on ACTUAL image coordinates
+            if (imageNaturalDimensions.width > 0) {
+                const scaledWidth = imageNaturalDimensions.width * zoomLevel;
+                const scaledHeight = imageNaturalDimensions.height * zoomLevel;
+                
+                zoomWindowImage.style.width = scaledWidth + 'px';
+                zoomWindowImage.style.height = scaledHeight + 'px';
+                
+                // Calculate movement based on the percentage of the ACTUAL image
+                const moveX = -xPercent * (scaledWidth - zoomWindow.offsetWidth);
+                const moveY = -yPercent * (scaledHeight - zoomWindow.offsetHeight);
+                
+                zoomWindowImage.style.left = moveX + 'px';
+                zoomWindowImage.style.top = moveY + 'px';
+            }
         });
         
         // Click to open fullscreen
@@ -757,9 +730,17 @@
         const viewer = document.getElementById('fullscreenViewer');
         const fullscreenImage = document.getElementById('fullscreenImage');
         
-        console.log('Opening fullscreen with image:', productImages[currentImageIndex]);
+        const imageUrl = productImages[currentImageIndex];
+        console.log('Opening fullscreen with image:', imageUrl);
         
-        fullscreenImage.src = productImages[currentImageIndex];
+        // Force browser to load at full resolution by setting explicit dimensions
+        fullscreenImage.style.width = 'auto';
+        fullscreenImage.style.height = 'auto';
+        fullscreenImage.style.maxWidth = '98vw';
+        fullscreenImage.style.maxHeight = '98vh';
+        
+        // Load the image
+        fullscreenImage.src = imageUrl;
         
         // Force image to load at full resolution
         fullscreenImage.onload = function() {
@@ -767,8 +748,24 @@
                 naturalWidth: this.naturalWidth,
                 naturalHeight: this.naturalHeight,
                 displayWidth: this.width,
-                displayHeight: this.height
+                displayHeight: this.height,
+                url: imageUrl
             });
+            
+            // Ensure it's displayed at maximum size while maintaining aspect ratio
+            const aspectRatio = this.naturalWidth / this.naturalHeight;
+            const viewportWidth = window.innerWidth * 0.98;
+            const viewportHeight = window.innerHeight * 0.98;
+            
+            if (aspectRatio > viewportWidth / viewportHeight) {
+                // Width-constrained
+                this.style.width = viewportWidth + 'px';
+                this.style.height = 'auto';
+            } else {
+                // Height-constrained
+                this.style.height = viewportHeight + 'px';
+                this.style.width = 'auto';
+            }
         };
         
         viewer.classList.add('active');
