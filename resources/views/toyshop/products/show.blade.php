@@ -38,6 +38,7 @@
     /* Image Gallery Section */
     .image-gallery {
         position: relative;
+        overflow: visible;
     }
     
     .main-image-container {
@@ -45,7 +46,7 @@
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
-        overflow: hidden;
+        overflow: visible;
         margin-bottom: 1rem;
     }
     
@@ -57,6 +58,7 @@
         align-items: center;
         justify-content: center;
         background: white;
+        overflow: hidden;
     }
     
     .main-image {
@@ -251,7 +253,7 @@
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: rgba(0, 0, 0, 0.95);
+        background: rgba(0, 0, 0, 0.98);
         z-index: 999999;
         align-items: center;
         justify-content: center;
@@ -262,11 +264,14 @@
     }
     
     .fullscreen-image {
-        max-width: 95vw;
-        max-height: 95vh;
-        object-fit: contain;
+        width: auto !important;
+        height: auto !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        object-fit: contain !important;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
+        display: block;
     }
     
     .fullscreen-close {
@@ -289,9 +294,13 @@
     }
     
     /* Responsive */
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
         .zoom-window {
             display: none !important;
+        }
+        
+        .main-image {
+            cursor: zoom-in !important;
         }
     }
     
@@ -569,9 +578,13 @@
     }
     
     // Sync quantity inputs
-    document.getElementById('quantity').addEventListener('change', function() {
-        document.getElementById('cart_quantity').value = this.value;
-    });
+    const qtyInput = document.getElementById('quantity');
+    const cartQtyInput = document.getElementById('cart_quantity');
+    if (qtyInput && cartQtyInput) {
+        qtyInput.addEventListener('change', function() {
+            cartQtyInput.value = this.value;
+        });
+    }
     
     // Change image
     function changeImage(src, element) {
@@ -600,19 +613,45 @@
         const zoomWindowImage = document.getElementById('zoomWindowImage');
         const zoomIndicator = document.getElementById('zoomIndicator');
         
-        if (!wrapper || !mainImage || !zoomWindow) return;
+        console.log('Initializing hover zoom...', {
+            wrapper: !!wrapper,
+            mainImage: !!mainImage,
+            zoomWindow: !!zoomWindow,
+            zoomWindowImage: !!zoomWindowImage,
+            zoomIndicator: !!zoomIndicator
+        });
+        
+        if (!wrapper || !mainImage || !zoomWindow || !zoomWindowImage || !zoomIndicator) {
+            console.error('Missing zoom elements');
+            return;
+        }
         
         const zoomLevel = 2.5;
         const indicatorSize = 150;
+        let imageNaturalDimensions = { width: 0, height: 0 };
+        
+        // Preload image dimensions
+        const preloadImg = new Image();
+        preloadImg.onload = function() {
+            imageNaturalDimensions.width = this.naturalWidth;
+            imageNaturalDimensions.height = this.naturalHeight;
+            console.log('Image dimensions loaded:', imageNaturalDimensions);
+        };
+        preloadImg.src = mainImage.src;
         
         wrapper.addEventListener('mouseenter', function() {
+            console.log('Mouse entered wrapper');
             zoomWindow.classList.add('active');
-            zoomIndicator.classList.add('active');
+            if (zoomIndicator) zoomIndicator.classList.add('active');
+            
+            // Update zoom window image
+            zoomWindowImage.src = mainImage.src;
         });
         
         wrapper.addEventListener('mouseleave', function() {
+            console.log('Mouse left wrapper');
             zoomWindow.classList.remove('active');
-            zoomIndicator.classList.remove('active');
+            if (zoomIndicator) zoomIndicator.classList.remove('active');
         });
         
         wrapper.addEventListener('mousemove', function(e) {
@@ -626,20 +665,20 @@
             const yPercent = y / rect.height;
             
             // Position indicator
-            const indicatorX = Math.max(0, Math.min(rect.width - indicatorSize, x - indicatorSize / 2));
-            const indicatorY = Math.max(0, Math.min(rect.height - indicatorSize, y - indicatorSize / 2));
-            
-            zoomIndicator.style.left = indicatorX + 'px';
-            zoomIndicator.style.top = indicatorY + 'px';
-            zoomIndicator.style.width = indicatorSize + 'px';
-            zoomIndicator.style.height = indicatorSize + 'px';
+            if (zoomIndicator) {
+                const indicatorX = Math.max(0, Math.min(rect.width - indicatorSize, x - indicatorSize / 2));
+                const indicatorY = Math.max(0, Math.min(rect.height - indicatorSize, y - indicatorSize / 2));
+                
+                zoomIndicator.style.left = indicatorX + 'px';
+                zoomIndicator.style.top = indicatorY + 'px';
+                zoomIndicator.style.width = indicatorSize + 'px';
+                zoomIndicator.style.height = indicatorSize + 'px';
+            }
             
             // Position zoomed image
-            const img = new Image();
-            img.src = mainImage.src;
-            img.onload = function() {
-                const scaledWidth = this.naturalWidth * zoomLevel;
-                const scaledHeight = this.naturalHeight * zoomLevel;
+            if (imageNaturalDimensions.width > 0) {
+                const scaledWidth = imageNaturalDimensions.width * zoomLevel;
+                const scaledHeight = imageNaturalDimensions.height * zoomLevel;
                 
                 zoomWindowImage.style.width = scaledWidth + 'px';
                 zoomWindowImage.style.height = scaledHeight + 'px';
@@ -649,11 +688,12 @@
                 
                 zoomWindowImage.style.left = moveX + 'px';
                 zoomWindowImage.style.top = moveY + 'px';
-            };
+            }
         });
         
         // Click to open fullscreen
         wrapper.addEventListener('click', function() {
+            console.log('Opening fullscreen');
             openFullscreen();
         });
     }
@@ -663,7 +703,20 @@
         const viewer = document.getElementById('fullscreenViewer');
         const fullscreenImage = document.getElementById('fullscreenImage');
         
+        console.log('Opening fullscreen with image:', productImages[currentImageIndex]);
+        
         fullscreenImage.src = productImages[currentImageIndex];
+        
+        // Force image to load at full resolution
+        fullscreenImage.onload = function() {
+            console.log('Fullscreen image loaded:', {
+                naturalWidth: this.naturalWidth,
+                naturalHeight: this.naturalHeight,
+                displayWidth: this.width,
+                displayHeight: this.height
+            });
+        };
+        
         viewer.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
