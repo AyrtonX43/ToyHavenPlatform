@@ -683,11 +683,11 @@
                         </button>
                     @endif
 
-                    @if($seller->is_active)
+                    @if($seller->is_active && $seller->verification_status === 'approved')
                         <button type="button" class="btn btn-warning w-100 py-3 fw-bold" data-bs-toggle="modal" data-bs-target="#suspendModal">
                             <i class="bi bi-pause-circle-fill me-2"></i> Suspend Seller
                         </button>
-                    @else
+                    @elseif(!$seller->is_active)
                         <div class="alert alert-danger border-danger mb-3">
                             <div class="d-flex align-items-start">
                                 <i class="bi bi-exclamation-octagon-fill me-2 mt-1"></i>
