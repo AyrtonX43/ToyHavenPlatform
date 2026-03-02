@@ -2,7 +2,25 @@
 
 @section('title', ($pageSettings->page_name ?? $seller->business_name) . ' - ToyHaven')
 
+@push('styles')
+<style>
+    .business-page { background: #f8fafc; padding: 2rem 0; }
+    .business-header-card { border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    .business-logo { max-height: 140px; border-radius: 12px; object-fit: contain; }
+    .business-logo-placeholder { width: 140px; height: 140px; background: linear-gradient(135deg, #0ea5e9, #38bdf8); border-radius: 12px; }
+    .about-us-text { text-align: justify; line-height: 1.75; }
+    .social-link-btn { border-radius: 10px; font-weight: 600; padding: 0.5rem 1rem; transition: all 0.2s; }
+    .social-link-btn:hover { transform: translateY(-2px); }
+    .stat-card { border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: all 0.2s; }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .product-card-business { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: all 0.3s; }
+    .product-card-business:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .review-card { border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+</style>
+@endpush
+
 @section('content')
+<div class="business-page">
 <div class="container">
     <!-- Business Banner (from page settings) -->
     @if($pageSettings && $pageSettings->banner_path)
@@ -15,7 +33,7 @@
     @endif
 
     <!-- Business Header -->
-    <div class="card mb-4">
+    <div class="card mb-4 business-header-card">
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-2 text-center">
@@ -50,31 +68,53 @@
 
     <!-- About Us -->
     @if($pageSettings && ($pageSettings->business_description ?? null))
-        <div class="card mb-4">
+        <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">About Us</h5>
-                <p class="text-muted mb-0">{{ $pageSettings->business_description }}</p>
+                <h5 class="card-title mb-3"><i class="bi bi-info-circle me-2"></i>About Us</h5>
+                <p class="text-muted mb-0 about-us-text">{{ $pageSettings->business_description }}</p>
             </div>
         </div>
     @elseif($seller->description)
-        <div class="card mb-4">
+        <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">About Us</h5>
-                <p class="text-muted mb-0">{{ $seller->description }}</p>
+                <h5 class="card-title mb-3"><i class="bi bi-info-circle me-2"></i>About Us</h5>
+                <p class="text-muted mb-0 about-us-text">{{ $seller->description }}</p>
             </div>
         </div>
     @endif
 
-    <!-- Social Media Links -->
-    @if($socialLinks && $socialLinks->count() > 0)
-        <div class="card mb-4">
+    <!-- Social Media Links - from business page settings and registration -->
+    @php
+        $allSocialLinks = collect();
+        $platformsAdded = [];
+        if ($socialLinks && $socialLinks->count() > 0) {
+            foreach ($socialLinks->where('is_active', true) as $link) {
+                $allSocialLinks->push((object)['platform' => $link->platform, 'url' => $link->url, 'display_name' => $link->display_name ?? ucfirst($link->platform), 'icon' => $link->getPlatformIcon()]);
+                $platformsAdded[] = $link->platform;
+            }
+        }
+        if ($seller->facebook_url && !in_array('facebook', $platformsAdded)) {
+            $allSocialLinks->push((object)['platform' => 'facebook', 'url' => $seller->facebook_url, 'display_name' => 'Facebook', 'icon' => 'bi-facebook']);
+        }
+        if ($seller->instagram_url && !in_array('instagram', $platformsAdded)) {
+            $allSocialLinks->push((object)['platform' => 'instagram', 'url' => $seller->instagram_url, 'display_name' => 'Instagram', 'icon' => 'bi-instagram']);
+        }
+        if ($seller->tiktok_url && !in_array('tiktok', $platformsAdded)) {
+            $allSocialLinks->push((object)['platform' => 'tiktok', 'url' => $seller->tiktok_url, 'display_name' => 'TikTok', 'icon' => 'bi-tiktok']);
+        }
+        if ($seller->website_url && !in_array('website', $platformsAdded)) {
+            $allSocialLinks->push((object)['platform' => 'other', 'url' => $seller->website_url, 'display_name' => 'Website', 'icon' => 'bi-link-45deg']);
+        }
+    @endphp
+    @if($allSocialLinks->count() > 0)
+        <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">Follow Us</h5>
+                <h5 class="card-title mb-3"><i class="bi bi-share me-2"></i>Connect With Us</h5>
                 <div class="d-flex flex-wrap gap-2">
-                    @foreach($socialLinks as $link)
-                        <a href="{{ $link->url }}" target="_blank" class="btn btn-outline-primary btn-sm" rel="noopener noreferrer">
-                            <i class="bi {{ $link->getPlatformIcon() }} me-1"></i>
-                            {{ $link->display_name ?? ucfirst($link->platform) }}
+                    @foreach($allSocialLinks as $link)
+                        <a href="{{ $link->url }}" target="_blank" class="btn social-link-btn {{ $link->platform === 'facebook' ? 'btn-outline-primary' : ($link->platform === 'instagram' ? 'btn-outline-danger' : ($link->platform === 'tiktok' ? 'btn-outline-dark' : 'btn-outline-secondary')) }}" rel="noopener noreferrer">
+                            <i class="bi {{ $link->icon }} me-1"></i>
+                            {{ $link->display_name }}
                         </a>
                     @endforeach
                 </div>
@@ -83,36 +123,36 @@
     @endif
 
     <!-- Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4 class="text-primary">{{ $stats['total_products'] }}</h4>
-                    <p class="text-muted mb-0">Products</p>
+    <div class="row mb-4 g-3">
+        <div class="col-md-3 col-6">
+            <div class="card text-center stat-card h-100">
+                <div class="card-body py-4">
+                    <h4 class="text-primary mb-1">{{ $stats['total_products'] }}</h4>
+                    <p class="text-muted mb-0 small fw-semibold">Products</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4 class="text-success">{{ $stats['total_sales'] }}</h4>
-                    <p class="text-muted mb-0">Total Sales</p>
+        <div class="col-md-3 col-6">
+            <div class="card text-center stat-card h-100">
+                <div class="card-body py-4">
+                    <h4 class="text-success mb-1">{{ $stats['total_sales'] }}</h4>
+                    <p class="text-muted mb-0 small fw-semibold">Total Sales</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4 class="text-warning">{{ $stats['rating'] }}</h4>
-                    <p class="text-muted mb-0">Rating</p>
+        <div class="col-md-3 col-6">
+            <div class="card text-center stat-card h-100">
+                <div class="card-body py-4">
+                    <h4 class="text-warning mb-1">{{ $stats['rating'] }}</h4>
+                    <p class="text-muted mb-0 small fw-semibold">Rating</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h4 class="text-info">{{ $stats['total_reviews'] }}</h4>
-                    <p class="text-muted mb-0">Reviews</p>
+        <div class="col-md-3 col-6">
+            <div class="card text-center stat-card h-100">
+                <div class="card-body py-4">
+                    <h4 class="text-info mb-1">{{ $stats['total_reviews'] }}</h4>
+                    <p class="text-muted mb-0 small fw-semibold">Reviews</p>
                 </div>
             </div>
         </div>
@@ -126,7 +166,7 @@
                 <div class="row g-4">
                     @foreach($products as $product)
                         <div class="col-md-4 mb-4">
-                            <div class="card product-card h-100" style="cursor: pointer; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: all 0.3s ease;" onclick="window.location.href='{{ route('toyshop.products.show', $product->slug) }}'">
+                            <div class="card product-card-business h-100" style="cursor: pointer;" onclick="window.location.href='{{ route('toyshop.products.show', $product->slug) }}'">
                                 <div style="height: 200px; overflow: hidden; background: #f8fafc;">
                                     @if($product->images->first())
                                         <img src="{{ asset('storage/' . $product->images->first()->image_path) }}" 
@@ -206,7 +246,7 @@
             <h3 class="mb-4">Recent Reviews</h3>
             @if($recentReviews->count() > 0)
                 @foreach($recentReviews as $review)
-                    <div class="card mb-3">
+                    <div class="card mb-3 review-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
                                 <strong>{{ $review->user->name }}</strong>
@@ -230,5 +270,6 @@
             @endif
         </div>
     </div>
+</div>
 </div>
 @endsection
