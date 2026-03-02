@@ -319,12 +319,9 @@
         letter-spacing: 1px;
     }
     
-    /* Review comments section - full width below product grid */
+    /* Customer Reviews section (right column) */
     .product-reviews-section {
-        grid-column: 1 / -1;
-        margin-top: 2rem;
-        padding-top: 2rem;
-        border-top: 1px solid #e5e7eb;
+        padding-top: 0;
     }
     
     .product-price {
@@ -443,10 +440,6 @@
             gap: 8px;
         }
         
-        .product-reviews-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-        }
     }
 </style>
 @endpush
@@ -501,6 +494,16 @@
                              class="thumbnail {{ $index === 0 ? 'active' : '' }}"
                              onclick="changeImage('{{ $thumbUrl }}', {{ $index }}, this)">
                     @endforeach
+                </div>
+                @endif
+
+                <!-- Description (left column) -->
+                @if($product->description)
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Description</h5>
+                        <p class="mb-0">{{ $product->description }}</p>
+                    </div>
                 </div>
                 @endif
             </div>
@@ -656,22 +659,11 @@
                     </div>
                 </div>
 
-                <!-- Description -->
-                @if($product->description)
-                <div class="card mt-3">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Description</h5>
-                        <p class="mb-0">{{ $product->description }}</p>
-                    </div>
-                </div>
-                @endif
-            </div>
-
-            <!-- Review Comments Section (full width) -->
-            @php
-                $approvedReviews = $product->reviews->where('status', 'approved')->sortByDesc('created_at');
-            @endphp
-            <div class="product-reviews-section">
+                <!-- Customer Reviews (right column) -->
+                @php
+                    $approvedReviews = $product->reviews->where('status', 'approved')->sortByDesc('created_at');
+                @endphp
+                <div class="product-reviews-section mt-4">
                 <h5 class="mb-4">
                     <i class="bi bi-chat-square-text me-2"></i>Customer Reviews
                     @if($reviewsCount > 0)
@@ -739,6 +731,7 @@
                         </p>
                     </div>
                 @endif
+                </div>
             </div>
         </div>
     </div>
