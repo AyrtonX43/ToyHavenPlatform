@@ -30,12 +30,14 @@ class RegistrationController extends Controller
             // Get default address or fallback to user's address fields
             $defaultAddress = $user->defaultAddress;
             
-            // Prepare pre-filled data
+            // Prepare pre-filled data from user profile ONLY (not from rejected seller data)
             $phoneDisplay = '';
             if ($user->phone) {
                 $phoneDisplay = strpos($user->phone, '+63') === 0 ? substr($user->phone, 3) : $user->phone;
             }
             
+            // Only pre-fill basic user info, NOT rejected seller data
+            // This gives rejected sellers a fresh start
             $prefilledData = [
                 'phone' => $phoneDisplay,
                 'email' => $user->email ?? '',
@@ -46,26 +48,6 @@ class RegistrationController extends Controller
                 'province' => $defaultAddress ? $defaultAddress->province : ($user->province ?? ''),
                 'postal_code' => $defaultAddress ? $defaultAddress->postal_code : ($user->postal_code ?? ''),
             ];
-            
-            // If re-registering after rejection, show previous data
-            if ($existingSeller && $existingSeller->verification_status === 'rejected') {
-                $prefilledData = array_merge($prefilledData, [
-                    'business_name' => $existingSeller->business_name ?? '',
-                    'description' => $existingSeller->description ?? '',
-                    'phone' => strpos($existingSeller->phone ?? '', '+63') === 0 ? substr($existingSeller->phone, 3) : ($existingSeller->phone ?? $phoneDisplay),
-                    'email' => $existingSeller->email ?? $prefilledData['email'],
-                    'address' => $existingSeller->address ?? $prefilledData['address'],
-                    'region' => $existingSeller->region ?? $prefilledData['region'],
-                    'city' => $existingSeller->city ?? $prefilledData['city'],
-                    'barangay' => $existingSeller->barangay ?? $prefilledData['barangay'],
-                    'province' => $existingSeller->province ?? $prefilledData['province'],
-                    'postal_code' => $existingSeller->postal_code ?? $prefilledData['postal_code'],
-                    'facebook_url' => $existingSeller->facebook_url ?? '',
-                    'instagram_url' => $existingSeller->instagram_url ?? '',
-                    'tiktok_url' => $existingSeller->tiktok_url ?? '',
-                    'website_url' => $existingSeller->website_url ?? '',
-                ]);
-            }
             
             $categories = Category::where('is_active', true)->orderBy('display_order')->orderBy('name')->get();
             $rejectionReason = $existingSeller && $existingSeller->verification_status === 'rejected' ? $existingSeller->rejection_reason : null;
