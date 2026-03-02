@@ -153,8 +153,6 @@
         font-size: 0.8125rem;
         color: #64748b;
         margin-bottom: 0.3rem;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
     }
     
     .notification-time {
@@ -465,64 +463,39 @@
                 <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}">
                     <span class="notification-dot"></span>
                     @if(in_array($type, ['seller_rejected', 'seller_suspended']))
-                        <div class="notification-item-link" style="cursor: default;" onclick="markAsRead('{{ $notification->id }}', event)">
-                            <div class="notification-icon bg-{{ $color }} text-white">
-                                <i class="bi {{ $icon }}"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">{{ $data['message'] ?? 'New notification' }}</div>
-                                @if(isset($data['business_name']))
-                                    <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
-                                @endif
-                                @if(isset($data['reason']))
-                                    <div class="notification-message" style="white-space: pre-wrap; max-height: none; overflow: visible;">
-                                        <strong>Reason:</strong><br>{{ $data['reason'] }}
-                                    </div>
-                                @endif
-                                <div class="notification-time">
-                                    <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
-                                </div>
-                                @if($type === 'seller_rejected')
-                                    <div class="mt-2">
-                                        <a href="{{ route('seller.register') }}" class="btn btn-sm btn-primary">
-                                            <i class="bi bi-arrow-clockwise me-1"></i>Reapply
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="notification-actions">
-                                @if($isUnread)
-                                    <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
-                                @endif
-                            </div>
-                        </div>
+                        <a href="javascript:void(0)" class="notification-item-link" onclick="showNotificationDetail('{{ $notification->id }}', event)">
                     @else
                         <a href="{{ $url }}" class="notification-item-link" onclick="markAsRead('{{ $notification->id }}', event)">
-                            <div class="notification-icon bg-{{ $color }} text-white">
-                                <i class="bi {{ $icon }}"></i>
-                            </div>
-                            <div class="notification-content">
-                                <div class="notification-title">{{ $data['message'] ?? 'New notification' }}</div>
-                                @if(isset($data['listing_title']))
-                                    <div class="notification-message">{{ $data['listing_title'] }}</div>
-                                @endif
-                                @if(isset($data['business_name']))
-                                    <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
-                                @endif
-                                @if(isset($data['reason']))
-                                    <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
-                                @endif
-                                <div class="notification-time">
-                                    <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
-                                </div>
-                            </div>
-                            <div class="notification-actions">
-                                @if($isUnread)
-                                    <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
-                                @endif
-                            </div>
-                        </a>
                     @endif
+                        <div class="notification-icon bg-{{ $color }} text-white">
+                            <i class="bi {{ $icon }}"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">{{ $data['message'] ?? 'New notification' }}</div>
+                            @if(isset($data['listing_title']))
+                                <div class="notification-message">{{ $data['listing_title'] }}</div>
+                            @endif
+                            @if(isset($data['business_name']))
+                                <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
+                            @endif
+                            @if(isset($data['reason']) && !in_array($type, ['seller_rejected', 'seller_suspended']))
+                                <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
+                            @elseif(isset($data['reason']))
+                                <div class="notification-message text-muted" style="max-height: 3em; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ Str::limit($data['reason'], 100) }}
+                                </div>
+                                <small class="text-primary"><i class="bi bi-eye me-1"></i>Click to view full details</small>
+                            @endif
+                            <div class="notification-time">
+                                <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
+                            </div>
+                        </div>
+                        <div class="notification-actions">
+                            @if($isUnread)
+                                <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
+                            @endif
+                        </div>
+                    </a>
                     <button type="button" class="notification-delete-btn" onclick="deleteNotification('{{ $notification->id }}', event)" title="Delete notification" aria-label="Delete notification">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -543,8 +516,112 @@
 </div>
 </div>
 
+<!-- Notification Detail Modal -->
+<div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <h5 class="modal-title" id="notificationDetailModalLabel">
+                    <i class="bi bi-bell-fill me-2"></i>Notification Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be injected here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="modalActionBtn" class="btn btn-primary" style="display: none;">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+    const notificationsData = @json($notifications->items());
+    
+    function showNotificationDetail(notificationId, event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Find notification data
+        const notification = notificationsData.find(n => n.id === notificationId);
+        if (!notification) return;
+        
+        const data = notification.data;
+        const type = data.type || notification.type;
+        
+        // Update modal header based on type
+        const modalHeader = document.getElementById('modalHeader');
+        const modalTitle = document.getElementById('notificationDetailModalLabel');
+        const modalBody = document.getElementById('modalBody');
+        const actionBtn = document.getElementById('modalActionBtn');
+        
+        // Set header color
+        modalHeader.className = 'modal-header';
+        if (type === 'seller_rejected') {
+            modalHeader.classList.add('bg-danger', 'text-white');
+            modalTitle.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Seller Application Rejected';
+        } else if (type === 'seller_suspended') {
+            modalHeader.classList.add('bg-warning', 'text-dark');
+            modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Seller Account Suspended';
+        }
+        
+        // Build modal content
+        let content = '<div class="p-3">';
+        
+        if (data.business_name) {
+            content += `<div class="mb-3">
+                <strong class="d-block mb-1"><i class="bi bi-shop me-2"></i>Business Name:</strong>
+                <p class="mb-0 ps-4">${data.business_name}</p>
+            </div>`;
+        }
+        
+        content += `<div class="mb-3">
+            <strong class="d-block mb-1"><i class="bi bi-info-circle me-2"></i>Message:</strong>
+            <p class="mb-0 ps-4">${data.message || 'No message'}</p>
+        </div>`;
+        
+        if (data.reason) {
+            content += `<div class="mb-3">
+                <strong class="d-block mb-2"><i class="bi bi-file-text me-2"></i>Detailed Reason:</strong>
+                <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} mb-0">
+                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;">${data.reason}</pre>
+                </div>
+            </div>`;
+        }
+        
+        if (data.report_id) {
+            content += `<div class="mb-3">
+                <strong class="d-block mb-1"><i class="bi bi-flag me-2"></i>Related Report:</strong>
+                <p class="mb-0 ps-4">Report ID: #${data.report_id}</p>
+            </div>`;
+        }
+        
+        content += `<div class="mb-0">
+            <strong class="d-block mb-1"><i class="bi bi-clock me-2"></i>Date:</strong>
+            <p class="mb-0 ps-4">${new Date(notification.created_at).toLocaleString()}</p>
+        </div>`;
+        
+        content += '</div>';
+        
+        modalBody.innerHTML = content;
+        
+        // Show action button
+        actionBtn.style.display = 'inline-block';
+        actionBtn.href = '{{ route("seller.dashboard") }}';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
+        modal.show();
+        
+        // Mark as read
+        markAsRead(notificationId, event);
+    }
+    
     function deleteNotification(notificationId, event) {
         event.preventDefault();
         event.stopPropagation();
