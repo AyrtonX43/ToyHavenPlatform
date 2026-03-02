@@ -81,15 +81,9 @@ class SellerSuspendedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => 'Business Account Suspended',
-            'message' => $this->businessName 
-                ? 'Your business account "' . $this->businessName . '" has been suspended.' 
-                : 'Your business account has been suspended.',
             'reason' => $this->reason,
             'report_id' => $this->reportId,
             'business_name' => $this->businessName,
-            'type' => 'seller_suspended',
-            'action_url' => url('/contact'),
         ];
     }
 }

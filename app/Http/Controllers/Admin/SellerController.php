@@ -200,7 +200,7 @@ class SellerController extends Controller
             $seller->user->notify(new SellerRejectedNotification($rejectionReason, $seller->business_name));
         }
         
-        return back()->with('success', 'Seller rejected and notified via email.');
+        return back()->with('success', 'Seller rejected successfully. The seller has been notified via email and in-app notification.');
     }
 
     public function suspend(Request $request, $id)
@@ -265,7 +265,7 @@ class SellerController extends Controller
             ));
         }
         
-        return back()->with('success', 'Seller suspended and notified via email.');
+        return back()->with('success', 'Seller suspended successfully. The seller has been notified via email and in-app notification.');
     }
 
     public function activate($id)
