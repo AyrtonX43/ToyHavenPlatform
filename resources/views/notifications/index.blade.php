@@ -461,12 +461,12 @@
                 @endphp
                 
                 <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}" 
-                     data-notification-type="{{ $type }}"
-                     data-notification-message="{{ $data['message'] ?? 'New notification' }}"
-                     data-notification-business="{{ $data['business_name'] ?? '' }}"
-                     data-notification-reason="{{ $data['reason'] ?? '' }}"
-                     data-notification-report="{{ $data['report_id'] ?? '' }}"
-                     data-notification-date="{{ $notification->created_at }}">
+                     data-notification-type="{{ e($type) }}"
+                     data-notification-message="{{ e($data['message'] ?? 'New notification') }}"
+                     data-notification-business="{{ e($data['business_name'] ?? '') }}"
+                     data-notification-reason="{{ e($data['reason'] ?? '') }}"
+                     data-notification-report="{{ e($data['report_id'] ?? '') }}"
+                     data-notification-date="{{ $notification->created_at->toIso8601String() }}">
                     <span class="notification-dot"></span>
                     @if(in_array($type, ['seller_rejected', 'seller_suspended']))
                         <a href="javascript:void(0)" class="notification-item-link" onclick="showNotificationDetail('{{ $notification->id }}', event)">
@@ -551,87 +551,117 @@
         event.preventDefault();
         event.stopPropagation();
         
+        console.log('Opening notification:', notificationId);
+        
         // Find notification element
         const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
         if (!notificationElement) {
-            console.error('Notification element not found');
+            console.error('Notification element not found for ID:', notificationId);
+            alert('Unable to load notification details. Please refresh the page and try again.');
             return;
         }
         
+        console.log('Notification element found:', notificationElement);
+        
         // Get data from attributes
-        const type = notificationElement.dataset.notificationType;
-        const message = notificationElement.dataset.notificationMessage;
-        const businessName = notificationElement.dataset.notificationBusiness;
-        const reason = notificationElement.dataset.notificationReason;
-        const reportId = notificationElement.dataset.notificationReport;
-        const date = notificationElement.dataset.notificationDate;
+        const type = notificationElement.dataset.notificationType || '';
+        const message = notificationElement.dataset.notificationMessage || 'No message';
+        const businessName = notificationElement.dataset.notificationBusiness || '';
+        const reason = notificationElement.dataset.notificationReason || '';
+        const reportId = notificationElement.dataset.notificationReport || '';
+        const date = notificationElement.dataset.notificationDate || new Date().toISOString();
         
-        // Update modal header based on type
-        const modalHeader = document.getElementById('modalHeader');
-        const modalTitle = document.getElementById('notificationDetailModalLabel');
-        const modalBody = document.getElementById('modalBody');
-        const actionBtn = document.getElementById('modalActionBtn');
+        console.log('Notification data:', { type, message, businessName, reason, reportId, date });
         
-        // Set header color
-        modalHeader.className = 'modal-header';
-        if (type === 'seller_rejected') {
-            modalHeader.classList.add('bg-danger', 'text-white');
-            modalTitle.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Seller Application Rejected';
-        } else if (type === 'seller_suspended') {
-            modalHeader.classList.add('bg-warning', 'text-dark');
-            modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Seller Account Suspended';
-        }
-        
-        // Build modal content
-        let content = '<div class="p-3">';
-        
-        if (businessName) {
+        try {
+            // Update modal header based on type
+            const modalHeader = document.getElementById('modalHeader');
+            const modalTitle = document.getElementById('notificationDetailModalLabel');
+            const modalBody = document.getElementById('modalBody');
+            const actionBtn = document.getElementById('modalActionBtn');
+            
+            if (!modalHeader || !modalTitle || !modalBody || !actionBtn) {
+                console.error('Modal elements not found');
+                alert('Modal elements not found. Please refresh the page.');
+                return;
+            }
+            
+            // Set header color
+            modalHeader.className = 'modal-header';
+            if (type === 'seller_rejected') {
+                modalHeader.classList.add('bg-danger', 'text-white');
+                modalTitle.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Seller Application Rejected';
+            } else if (type === 'seller_suspended') {
+                modalHeader.classList.add('bg-warning', 'text-dark');
+                modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Seller Account Suspended';
+            }
+            
+            // Build modal content
+            let content = '<div class="p-3">';
+            
+            if (businessName) {
+                content += `<div class="mb-3">
+                    <strong class="d-block mb-1"><i class="bi bi-shop me-2"></i>Business Name:</strong>
+                    <p class="mb-0 ps-4">${escapeHtml(businessName)}</p>
+                </div>`;
+            }
+            
             content += `<div class="mb-3">
-                <strong class="d-block mb-1"><i class="bi bi-shop me-2"></i>Business Name:</strong>
-                <p class="mb-0 ps-4">${businessName}</p>
+                <strong class="d-block mb-1"><i class="bi bi-info-circle me-2"></i>Message:</strong>
+                <p class="mb-0 ps-4">${escapeHtml(message)}</p>
             </div>`;
-        }
-        
-        content += `<div class="mb-3">
-            <strong class="d-block mb-1"><i class="bi bi-info-circle me-2"></i>Message:</strong>
-            <p class="mb-0 ps-4">${message || 'No message'}</p>
-        </div>`;
-        
-        if (reason) {
-            content += `<div class="mb-3">
-                <strong class="d-block mb-2"><i class="bi bi-file-text me-2"></i>Detailed Reason:</strong>
-                <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} mb-0">
-                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;">${reason}</pre>
-                </div>
+            
+            if (reason) {
+                content += `<div class="mb-3">
+                    <strong class="d-block mb-2"><i class="bi bi-file-text me-2"></i>Detailed Reason:</strong>
+                    <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} mb-0">
+                        <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;">${escapeHtml(reason)}</pre>
+                    </div>
+                </div>`;
+            }
+            
+            if (reportId) {
+                content += `<div class="mb-3">
+                    <strong class="d-block mb-1"><i class="bi bi-flag me-2"></i>Related Report:</strong>
+                    <p class="mb-0 ps-4">Report ID: #${escapeHtml(reportId)}</p>
+                </div>`;
+            }
+            
+            content += `<div class="mb-0">
+                <strong class="d-block mb-1"><i class="bi bi-clock me-2"></i>Date:</strong>
+                <p class="mb-0 ps-4">${new Date(date).toLocaleString()}</p>
             </div>`;
+            
+            content += '</div>';
+            
+            modalBody.innerHTML = content;
+            
+            // Show action button
+            actionBtn.style.display = 'inline-block';
+            actionBtn.href = '{{ route("seller.dashboard") }}';
+            
+            // Show modal
+            console.log('Showing modal...');
+            const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
+            modal.show();
+            
+            // Mark as read
+            markAsRead(notificationId, event);
+        } catch (error) {
+            console.error('Error showing notification detail:', error);
+            alert('An error occurred while loading the notification. Error: ' + error.message);
         }
-        
-        if (reportId) {
-            content += `<div class="mb-3">
-                <strong class="d-block mb-1"><i class="bi bi-flag me-2"></i>Related Report:</strong>
-                <p class="mb-0 ps-4">Report ID: #${reportId}</p>
-            </div>`;
-        }
-        
-        content += `<div class="mb-0">
-            <strong class="d-block mb-1"><i class="bi bi-clock me-2"></i>Date:</strong>
-            <p class="mb-0 ps-4">${new Date(date).toLocaleString()}</p>
-        </div>`;
-        
-        content += '</div>';
-        
-        modalBody.innerHTML = content;
-        
-        // Show action button
-        actionBtn.style.display = 'inline-block';
-        actionBtn.href = '{{ route("seller.dashboard") }}';
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
-        modal.show();
-        
-        // Mark as read
-        markAsRead(notificationId, event);
+    }
+    
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
     }
     
     function deleteNotification(notificationId, event) {
