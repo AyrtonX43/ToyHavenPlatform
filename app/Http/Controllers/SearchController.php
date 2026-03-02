@@ -77,14 +77,14 @@ class SearchController extends Controller
         // Trade Listings
         $trades = TradeListing::with(['product.images', 'userProduct.images'])
             ->where('status', 'active')
-            ->where(function($query) use ($q) {
-                $query->where('title', 'like', "%{$q}%")
+            ->where(function($tradeQuery) use ($q) {
+                $tradeQuery->where('title', 'like', "%{$q}%")
                   ->orWhere('description', 'like', "%{$q}%")
-                  ->orWhereHas('product', function($subQuery) use ($q) {
-                      $subQuery->where('name', 'like', "%{$q}%");
+                  ->orWhereHas('product', function($productQuery) use ($q) {
+                      $productQuery->where('name', 'like', "%{$q}%");
                   })
-                  ->orWhereHas('userProduct', function($subQuery) use ($q) {
-                      $subQuery->where('name', 'like', "%{$q}%");
+                  ->orWhereHas('userProduct', function($userProductQuery) use ($q) {
+                      $userProductQuery->where('name', 'like', "%{$q}%");
                   });
             })
             ->orderBy('created_at', 'desc')
@@ -104,14 +104,14 @@ class SearchController extends Controller
         // Auction Listings
         $auctions = Auction::with(['product.images', 'userProduct.images'])
             ->whereIn('status', ['pending', 'active', 'live'])
-            ->where(function($query) use ($q) {
-                $query->where('title', 'like', "%{$q}%")
+            ->where(function($auctionQuery) use ($q) {
+                $auctionQuery->where('title', 'like', "%{$q}%")
                   ->orWhere('description', 'like', "%{$q}%")
-                  ->orWhereHas('product', function($subQuery) use ($q) {
-                      $subQuery->where('name', 'like', "%{$q}%");
+                  ->orWhereHas('product', function($productQuery) use ($q) {
+                      $productQuery->where('name', 'like', "%{$q}%");
                   })
-                  ->orWhereHas('userProduct', function($subQuery) use ($q) {
-                      $subQuery->where('name', 'like', "%{$q}%");
+                  ->orWhereHas('userProduct', function($userProductQuery) use ($q) {
+                      $userProductQuery->where('name', 'like', "%{$q}%");
                   });
             })
             ->orderBy('created_at', 'desc')
@@ -160,12 +160,12 @@ class SearchController extends Controller
         if ($type === 'all' || $type === 'toyshop') {
             $toyshopQuery = Product::with(['seller', 'category', 'images'])
                 ->where('status', 'active')
-                ->whereHas('seller', function($q) {
-                    $q->where('is_active', true)
+                ->whereHas('seller', function($sellerQuery) {
+                    $sellerQuery->where('is_active', true)
                       ->where('verification_status', 'approved');
                 })
-                ->where(function($q) use ($query) {
-                    $q->where('name', 'like', '%' . $query . '%')
+                ->where(function($productQuery) use ($query) {
+                    $productQuery->where('name', 'like', '%' . $query . '%')
                       ->orWhere('description', 'like', '%' . $query . '%')
                       ->orWhere('brand', 'like', '%' . $query . '%');
                 })
@@ -180,8 +180,8 @@ class SearchController extends Controller
         if ($type === 'all' || $type === 'businesses') {
             $businessQuery = Seller::where('is_active', true)
                 ->where('verification_status', 'approved')
-                ->where(function ($q) use ($query) {
-                    $q->where('business_name', 'like', '%' . $query . '%')
+                ->where(function ($businessQuery) use ($query) {
+                    $businessQuery->where('business_name', 'like', '%' . $query . '%')
                         ->orWhere('description', 'like', '%' . $query . '%');
                 })
                 ->orderBy('business_name')
@@ -194,14 +194,14 @@ class SearchController extends Controller
         if ($type === 'all' || $type === 'trade') {
             $tradeQuery = TradeListing::with(['user', 'seller', 'product.images', 'product.category', 'userProduct.images', 'userProduct.category'])
                 ->where('status', 'active')
-                ->where(function($q) use ($query) {
-                    $q->where('title', 'like', "%{$query}%")
+                ->where(function($tradeQuery) use ($query) {
+                    $tradeQuery->where('title', 'like', "%{$query}%")
                       ->orWhere('description', 'like', "%{$query}%")
-                      ->orWhereHas('product', function($q) use ($query) {
-                          $q->where('name', 'like', "%{$query}%");
+                      ->orWhereHas('product', function($productQuery) use ($query) {
+                          $productQuery->where('name', 'like', "%{$query}%");
                       })
-                      ->orWhereHas('userProduct', function($q) use ($query) {
-                          $q->where('name', 'like', "%{$query}%");
+                      ->orWhereHas('userProduct', function($userProductQuery) use ($query) {
+                          $userProductQuery->where('name', 'like', "%{$query}%");
                       });
                 })
                 ->orderBy('created_at', 'desc')
@@ -215,19 +215,19 @@ class SearchController extends Controller
         if ($type === 'all' || $type === 'auction') {
             $auctionQuery = Auction::with(['product.images', 'userProduct.images', 'category', 'seller', 'user'])
                 ->whereIn('status', ['pending', 'active', 'live'])
-                ->where(function($q) use ($query) {
-                    $q->where('title', 'like', "%{$query}%")
+                ->where(function($auctionQuery) use ($query) {
+                    $auctionQuery->where('title', 'like', "%{$query}%")
                       ->orWhere('description', 'like', "%{$query}%")
-                      ->orWhereHas('product', function($q) use ($query) {
-                          $q->where('name', 'like', "%{$query}%")
+                      ->orWhereHas('product', function($productQuery) use ($query) {
+                          $productQuery->where('name', 'like', "%{$query}%")
                             ->orWhere('brand', 'like', "%{$query}%");
                       })
-                      ->orWhereHas('userProduct', function($q) use ($query) {
-                          $q->where('name', 'like', "%{$query}%")
+                      ->orWhereHas('userProduct', function($userProductQuery) use ($query) {
+                          $userProductQuery->where('name', 'like', "%{$query}%")
                             ->orWhere('brand', 'like', "%{$query}%");
                       })
-                      ->orWhereHas('seller', function($q) use ($query) {
-                          $q->where('business_name', 'like', "%{$query}%");
+                      ->orWhereHas('seller', function($sellerQuery) use ($query) {
+                          $sellerQuery->where('business_name', 'like', "%{$query}%");
                       });
                 })
                 ->orderBy('created_at', 'desc')
