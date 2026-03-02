@@ -29,6 +29,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 3rem;
+        align-items: start;
         background: white;
         padding: 2rem;
         border-radius: 12px;
@@ -298,16 +299,21 @@
     /* Product Info */
     .product-info {
         position: sticky;
-        top: 20px;
+        top: 100px;
         height: fit-content;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
     }
     
     .product-title {
-        font-size: 1.75rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: #111827;
-        margin-bottom: 1rem;
-        line-height: 1.3;
+        margin-bottom: 0.75rem;
+        line-height: 1.35;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
     
     .product-rating-stars {
@@ -324,10 +330,10 @@
     }
     
     .product-price {
-        font-size: 2rem;
+        font-size: 1.75rem;
         font-weight: 700;
         color: #111827;
-        margin: 1.5rem 0;
+        margin: 0.5rem 0 1rem;
     }
     
     .stock-status {
@@ -350,16 +356,22 @@
     
     .action-buttons {
         display: flex;
-        gap: 1rem;
-        margin: 2rem 0;
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+        align-items: stretch;
+    }
+    
+    .action-buttons form.flex-grow-1 {
+        flex: 1;
+        min-width: 0;
     }
     
     .btn-add-cart {
-        flex: 1;
+        width: 100%;
         background: #3b82f6;
         color: white;
         border: none;
-        padding: 1rem;
+        padding: 0.875rem 1.25rem;
         border-radius: 8px;
         font-size: 1rem;
         font-weight: 600;
@@ -374,12 +386,13 @@
     }
     
     .btn-wishlist {
-        padding: 1rem;
+        padding: 0.875rem 1rem;
         background: white;
         border: 2px solid #e5e7eb;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s;
+        flex-shrink: 0;
     }
     
     .btn-wishlist:hover {
@@ -389,18 +402,60 @@
     }
     
     /* Responsive */
+    @media (max-width: 992px) {
+        .product-grid {
+            gap: 2rem;
+        }
+    }
+    
     @media (max-width: 768px) {
+        .product-page {
+            padding: 1rem 0;
+        }
+        
+        .product-container {
+            padding: 0 0.75rem;
+        }
+        
+        .breadcrumb {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.25rem;
+        }
+        .breadcrumb-item.active {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+        
         .product-grid {
             grid-template-columns: 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
+            padding: 1.25rem;
         }
         
         .main-image-wrapper {
-            height: 400px;
+            height: 320px;
+            min-height: 280px;
         }
         
         .product-info {
             position: static;
+        }
+        
+        .product-title {
+            font-size: 1.25rem;
+        }
+        
+        .product-price {
+            font-size: 1.5rem;
+        }
+        
+        .product-reviews-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
         }
         
         .fullscreen-nav {
@@ -543,8 +598,8 @@
 
                 <!-- Seller Info -->
                 @if($product->seller)
-                <div class="card mt-3 mb-3">
-                    <div class="card-body">
+                <div class="card mt-3 mb-0 border-0 bg-light">
+                    <div class="card-body py-3">
                         <small class="text-muted">Sold by:</small>
                         <a href="{{ route('toyshop.business.show', $product->seller->business_slug) }}" class="text-decoration-none">
                             <strong>{{ $product->seller->business_name }}</strong>
@@ -600,8 +655,8 @@
                 @endif
 
                 <!-- Product Details -->
-                <div class="card mt-4">
-                    <div class="card-body">
+                <div class="card mt-3 border-0 bg-light">
+                    <div class="card-body py-3">
                         <h5 class="card-title mb-3">Product Details</h5>
                         <table class="table table-sm">
                             <tbody>
@@ -638,8 +693,8 @@
 
                 <!-- Description -->
                 @if($product->description)
-                <div class="card mt-3">
-                    <div class="card-body">
+                <div class="card mt-3 border-0 bg-light">
+                    <div class="card-body py-3">
                         <h5 class="card-title mb-3">Description</h5>
                         <p class="mb-0">{{ $product->description }}</p>
                     </div>
@@ -652,14 +707,14 @@
                 $approvedReviews = $product->reviews->where('status', 'approved')->sortByDesc('created_at');
             @endphp
             <div class="product-reviews-section">
-                <h5 class="mb-4">
+                <h5 class="mb-3 fw-bold">
                     <i class="bi bi-chat-square-text me-2"></i>Customer Reviews
                     @if($reviewsCount > 0)
                         <span class="text-muted fw-normal fs-6">({{ $reviewsCount }} {{ Str::plural('review', $reviewsCount) }})</span>
                     @endif
                 </h5>
                 @if($approvedReviews->count() > 0)
-                    <div class="review-summary mb-4">
+                    <div class="review-summary mb-3 p-3 rounded bg-light">
                         <div class="d-flex align-items-center gap-3 flex-wrap">
                             <div class="product-rating-stars text-warning" style="font-size: 1.5rem;">
                                 @for($i = 1; $i <= 5; $i++)
@@ -678,8 +733,8 @@
                     </div>
                     <div class="review-comments-list">
                         @foreach($approvedReviews as $review)
-                            <div class="card mb-3">
-                                <div class="card-body">
+                            <div class="card mb-2 border-0 bg-light">
+                                <div class="card-body py-3">
                                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                                         <div class="d-flex align-items-center gap-2">
                                             <strong>{{ $review->user->name ?? 'Anonymous' }}</strong>
@@ -713,7 +768,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="alert alert-light border">
+                    <div class="alert alert-light border rounded-3">
                         <p class="mb-0 text-muted">
                             <i class="bi bi-info-circle me-2"></i>No reviews yet. Be the first to review this product!
                         </p>
