@@ -420,20 +420,20 @@ class AmazonSearchService
     }
 
     /**
-     * Convert Amazon (or similar) image URL to 4K HDR size for zoom/display.
-     * Replaces common size params (e.g. _SL500_, _AC_SX200_) with _AC_SL3000_ for 4K quality.
+     * Convert Amazon image URL to high resolution (1080P-4K HDR range)
+     * Uses 2500px for optimal quality and reliability
      */
     public function imageUrlToHd(string $url): string
     {
         if ($url === '') {
             return $url;
         }
-        // Amazon: Use 3000px for 4K HDR quality
-        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_SL\d+_/', '_SL3000_', $url);
-        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL3000_', $url);
+        // Use 2500px for optimal 1080P-4K HDR quality balance
+        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_SL\d+_/', '_SL2500_', $url);
+        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL2500_', $url);
         // Remove any remaining size constraints
         $url = preg_replace('/\._[A-Z]{2}\d+_\./', '.', $url);
         return $url;

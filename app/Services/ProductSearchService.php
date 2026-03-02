@@ -1015,6 +1015,10 @@ class ProductSearchService
      * Convert Amazon-style image URL to 4K HDR size (3000px) for zoom/display and seller import.
      * Non-Amazon URLs are returned unchanged.
      */
+    /**
+     * Convert Amazon image URL to high resolution (1080P-4K HDR range)
+     * Returns multiple resolution URLs for responsive loading
+     */
     private function imageUrlToHd($url)
     {
         if ($url === null || $url === '') {
@@ -1024,12 +1028,13 @@ class ProductSearchService
         if (strpos($url, 'media-amazon.com') === false && strpos($url, 'images-amazon.com') === false) {
             return $url;
         }
-        // Use 3000px for 4K HDR quality; normalize all size params to _AC_SL3000_
-        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_SL\d+_/', '_SL3000_', $url);
-        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL3000_', $url);
+        // Use 2500px for optimal 1080P-4K HDR quality balance
+        // This provides excellent quality while being more reliable than 3000px
+        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_SL\d+_/', '_SL2500_', $url);
+        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL2500_', $url);
         // Remove any remaining size constraints
         $url = preg_replace('/\._[A-Z]{2}\d+_\./', '.', $url);
         return $url;

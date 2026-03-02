@@ -21,7 +21,7 @@ class Upgrade4kImages extends Command
      *
      * @var string
      */
-    protected $description = 'Upgrade existing Amazon product images from HD (1500px) to 4K HDR (3000px)';
+    protected $description = 'Upgrade existing Amazon product images to 1080P-4K HDR range (2500px)';
 
     /**
      * Execute the console command.
@@ -35,7 +35,7 @@ class Upgrade4kImages extends Command
             $this->newLine();
         }
 
-        $this->info('🚀 Starting 4K HDR Image Upgrade...');
+        $this->info('🚀 Starting 1080P-4K HDR Image Upgrade...');
         $this->newLine();
 
         // Update products table - amazon_reference_image field
@@ -115,15 +115,15 @@ class Upgrade4kImages extends Command
             $this->info('Run without --dry-run to apply changes: php artisan images:upgrade-4k');
         } else {
             $this->newLine();
-            $this->info('🎉 4K HDR upgrade complete!');
-            $this->info('All Amazon images are now fetched at 3000px (4K HDR) resolution.');
+            $this->info('🎉 1080P-4K HDR upgrade complete!');
+            $this->info('All Amazon images are now fetched at 2500px (1080P-4K HDR range) resolution.');
         }
 
         return Command::SUCCESS;
     }
 
     /**
-     * Upgrade image URL from HD (1500px) to 4K HDR (3000px)
+     * Upgrade image URL to 1080P-4K HDR range (2500px)
      */
     private function upgradeImageUrl(string $url): string
     {
@@ -136,12 +136,12 @@ class Upgrade4kImages extends Command
             return $url;
         }
 
-        // Upgrade to 3000px for 4K HDR quality
-        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_SL\d+_/', '_SL3000_', $url);
-        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL3000_', $url);
-        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL3000_', $url);
+        // Upgrade to 2500px for optimal 1080P-4K HDR quality balance
+        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_SL\d+_/', '_SL2500_', $url);
+        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL2500_', $url);
+        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL2500_', $url);
         
         // Remove any remaining size constraints
         $url = preg_replace('/\._[A-Z]{2}\d+_\./', '.', $url);

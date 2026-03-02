@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-    /* Modern Product Page Styles */
+    /* Product Page - 1080P-4K HDR Quality */
     .product-page {
         background: #f8f9fa;
         min-height: 100vh;
@@ -35,10 +35,9 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     
-    /* Image Gallery Section */
+    /* Image Gallery */
     .image-gallery {
         position: relative;
-        overflow: visible;
     }
     
     .main-image-container {
@@ -46,8 +45,9 @@
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
-        overflow: visible;
+        overflow: hidden;
         margin-bottom: 1rem;
+        cursor: zoom-in;
     }
     
     .main-image-wrapper {
@@ -58,49 +58,54 @@
         align-items: center;
         justify-content: center;
         background: white;
-        overflow: hidden;
     }
     
     .main-image {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
-        cursor: crosshair;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
+        transition: transform 0.3s ease;
     }
     
-    /* 4K Badge */
+    .main-image-container:hover .main-image {
+        transform: scale(1.05);
+    }
+    
+    /* Quality Badge */
     .quality-badge {
         position: absolute;
         top: 12px;
         left: 12px;
-        background: #10b981;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
-        padding: 6px 12px;
-        border-radius: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
         font-size: 0.875rem;
-        font-weight: 600;
+        font-weight: 700;
         z-index: 10;
         display: flex;
         align-items: center;
         gap: 6px;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
     
     /* Zoom Hint */
     .zoom-hint {
         position: absolute;
-        top: 12px;
+        bottom: 12px;
         right: 12px;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.75);
         color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
         font-size: 0.875rem;
         z-index: 10;
+        backdrop-filter: blur(10px);
     }
     
-    /* Thumbnail Gallery */
+    /* Thumbnails */
     .thumbnail-gallery {
         display: flex;
         gap: 0.75rem;
@@ -121,59 +126,155 @@
     
     .thumbnail:hover {
         border-color: #3b82f6;
+        transform: translateY(-2px);
     }
     
     .thumbnail.active {
         border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
     
-    /* Amazon-Style Zoom Window */
-    .zoom-window {
-        position: absolute;
-        top: 0;
-        left: calc(100% + 20px);
-        width: 500px;
-        height: 600px;
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        overflow: hidden;
+    /* NEW FULLSCREEN VIEWER WITH ARROW KEY NAVIGATION */
+    .fullscreen-viewer {
         display: none;
-        z-index: 1000;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    }
-    
-    .zoom-window.active {
-        display: block !important;
-    }
-    
-    .zoom-window-image {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
-        width: auto !important;
-        height: auto !important;
-        max-width: none !important;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.98);
+        z-index: 999999;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .fullscreen-viewer.active {
+        display: flex !important;
+    }
+    
+    .fullscreen-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .fullscreen-image-container {
+        position: relative;
+        max-width: 95vw;
+        max-height: 95vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .fullscreen-image {
+        max-width: 100%;
+        max-height: 95vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
+        cursor: zoom-in;
     }
     
-    /* Zoom Indicator */
-    .zoom-indicator {
+    .fullscreen-image.zoomed {
+        cursor: move;
+        max-width: none;
+        max-height: none;
+        width: 250%;
+        height: auto;
+    }
+    
+    /* Fullscreen Controls */
+    .fullscreen-close {
         position: absolute;
-        border: 2px solid #f59e0b;
-        background: rgba(255, 255, 255, 0.3);
-        pointer-events: none;
-        display: none;
-        z-index: 15;
+        top: 20px;
+        right: 20px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        z-index: 10;
+        backdrop-filter: blur(10px);
     }
     
-    .zoom-indicator.active {
-        display: block !important;
+    .fullscreen-close:hover {
+        background: rgba(255,255,255,0.3);
+        transform: rotate(90deg);
     }
     
-    /* Product Info Section */
+    .fullscreen-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+    }
+    
+    .fullscreen-nav:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .fullscreen-nav.prev {
+        left: 20px;
+    }
+    
+    .fullscreen-nav.next {
+        right: 20px;
+    }
+    
+    .fullscreen-counter {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.75);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .fullscreen-zoom-hint {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.75);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .fullscreen-zoom-hint.show {
+        opacity: 1;
+    }
+    
+    /* Product Info */
     .product-info {
         position: sticky;
         top: 20px;
@@ -199,13 +300,18 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 12px;
+        padding: 8px 14px;
         background: #d1fae5;
         color: #065f46;
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 0.875rem;
         font-weight: 600;
         margin-bottom: 1.5rem;
+    }
+    
+    .out-of-stock {
+        background: #fee2e2;
+        color: #991b1b;
     }
     
     .action-buttons {
@@ -229,6 +335,8 @@
     
     .btn-add-cart:hover {
         background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     
     .btn-wishlist {
@@ -243,70 +351,10 @@
     .btn-wishlist:hover {
         border-color: #ef4444;
         color: #ef4444;
-    }
-    
-    /* Fullscreen Viewer */
-    .fullscreen-viewer {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.98);
-        z-index: 999999;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .fullscreen-viewer.active {
-        display: flex !important;
-    }
-    
-    .fullscreen-image {
-        width: auto !important;
-        height: auto !important;
-        min-width: 85vw;
-        min-height: 85vh;
-        max-width: 98vw;
-        max-height: 98vh;
-        object-fit: contain;
-        image-rendering: high-quality;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-        display: block;
-    }
-    
-    .fullscreen-close {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        font-size: 1.5rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    
-    .fullscreen-close:hover {
-        background: rgba(255,255,255,0.3);
+        transform: translateY(-2px);
     }
     
     /* Responsive */
-    @media (max-width: 1400px) {
-        .zoom-window {
-            display: none !important;
-        }
-        
-        .main-image {
-            cursor: zoom-in !important;
-        }
-    }
-    
     @media (max-width: 768px) {
         .product-grid {
             grid-template-columns: 1fr;
@@ -319,6 +367,12 @@
         
         .product-info {
             position: static;
+        }
+        
+        .fullscreen-nav {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
         }
     }
 </style>
@@ -343,41 +397,30 @@
         <div class="product-grid">
             <!-- Image Gallery -->
             <div class="image-gallery">
-                <div class="main-image-container">
-                    @php
-                        $hasImages = $product->images && $product->images->count() > 0;
-                        $firstImageUrl = $hasImages ? ($imageDisplayUrls[0] ?? asset('storage/' . $product->images->first()->image_path)) : asset('images/no-image.png');
-                        $is4K = str_contains($firstImageUrl, '_SL3000_') || str_contains($firstImageUrl, '_SL2000_');
-                    @endphp
-                    
-                    @if($is4K)
+                @php
+                    $hasImages = $product->images && $product->images->count() > 0;
+                    $firstImageUrl = $hasImages ? ($imageDisplayUrls[0] ?? asset('storage/' . $product->images->first()->image_path)) : asset('images/no-image.png');
+                    $is4K = str_contains($firstImageUrl, '_SL2500_') || str_contains($firstImageUrl, '_SL2000_') || str_contains($firstImageUrl, '_SL3000_');
+                @endphp
+
+                <!-- Main Image -->
+                <div class="main-image-container" onclick="openFullscreen(0)">
                     <div class="quality-badge">
-                        <i class="bi bi-badge-4k"></i>
-                        <span>4K HDR Quality</span>
+                        <i class="bi bi-badge-hd-fill"></i>
+                        <span>{{ $is4K ? '1080P-4K HDR' : 'HD' }}</span>
                     </div>
-                    @endif
-                    
                     <div class="zoom-hint">
-                        <i class="bi bi-search"></i> Hover to zoom · Click for fullscreen
+                        <i class="bi bi-arrows-fullscreen me-1"></i>
+                        Click for fullscreen
                     </div>
-                    
-                    <div class="main-image-wrapper" id="mainImageWrapper">
-                        <img id="mainImage" 
-                             src="{{ $firstImageUrl }}" 
+                    <div class="main-image-wrapper">
+                        <img id="mainImage"
+                             src="{{ $firstImageUrl }}"
                              alt="{{ $product->name }}"
                              class="main-image">
-                        <div id="zoomIndicator" class="zoom-indicator"></div>
-                    </div>
-                    
-                    <!-- Zoom Window -->
-                    <div id="zoomWindow" class="zoom-window">
-                        <img id="zoomWindowImage" 
-                             src="{{ $firstImageUrl }}" 
-                             alt="{{ $product->name }}"
-                             class="zoom-window-image">
                     </div>
                 </div>
-                
+
                 <!-- Thumbnails -->
                 @if($hasImages && $product->images->count() > 1)
                 <div class="thumbnail-gallery">
@@ -385,11 +428,10 @@
                         @php
                             $thumbUrl = $imageDisplayUrls[$index] ?? asset('storage/' . $image->image_path);
                         @endphp
-                        <img src="{{ asset('storage/' . $image->image_path) }}" 
+                        <img src="{{ $thumbUrl }}"
                              alt="{{ $product->name }}"
                              class="thumbnail {{ $index === 0 ? 'active' : '' }}"
-                             data-full="{{ $thumbUrl }}"
-                             onclick="changeImage('{{ $thumbUrl }}', this)">
+                             onclick="changeImage('{{ $thumbUrl }}', {{ $index }}, this)">
                     @endforeach
                 </div>
                 @endif
@@ -398,13 +440,13 @@
             <!-- Product Info -->
             <div class="product-info">
                 <h1 class="product-title">{{ $product->name }}</h1>
-                
+
                 <!-- Rating -->
                 <div class="mb-3">
                     @if(isset($product->reviews_count) && $product->reviews_count > 0)
                         <div class="d-flex align-items-center gap-2">
                             <div class="text-warning">
-                                @for($i = 1; $i <= 5; $i++)
+                                @for($i = 0; $i < 5; $i++)
                                     <i class="bi bi-star-fill"></i>
                                 @endfor
                             </div>
@@ -414,10 +456,10 @@
                         <span class="text-muted">No reviews yet</span>
                     @endif
                 </div>
-                
+
                 <!-- Price -->
                 <div class="product-price">₱{{ number_format($product->price, 2) }}</div>
-                
+
                 <!-- Stock Status -->
                 @if($product->stock_quantity > 0)
                     <div class="stock-status">
@@ -425,25 +467,25 @@
                         <span>In Stock ({{ $product->stock_quantity }} available)</span>
                     </div>
                 @else
-                    <div class="stock-status" style="background: #fee2e2; color: #991b1b;">
+                    <div class="stock-status out-of-stock">
                         <i class="bi bi-x-circle-fill"></i>
                         <span>Out of Stock</span>
                     </div>
                 @endif
-                
+
                 <!-- Seller Info -->
                 @if($product->seller)
                 <div class="card mt-3 mb-3">
                     <div class="card-body">
-                        <h6 class="mb-2">Sold By</h6>
+                        <small class="text-muted">Sold by:</small>
                         <a href="{{ route('toyshop.business.show', $product->seller->business_slug) }}" class="text-decoration-none">
                             <strong>{{ $product->seller->business_name }}</strong>
                         </a>
                     </div>
                 </div>
                 @endif
-                
-                <!-- Quantity Selector -->
+
+                <!-- Quantity & Actions -->
                 @if($product->stock_quantity > 0)
                 <div class="mb-3">
                     <label class="form-label fw-bold">Quantity</label>
@@ -453,45 +495,47 @@
                         <button type="button" class="btn btn-outline-secondary" onclick="incrementQty()">+</button>
                     </div>
                 </div>
-                
-                <!-- Action Buttons -->
+
                 <div class="action-buttons">
                     @auth
-                    <form action="{{ route('cart.add') }}" method="POST" class="flex-fill">
-                        @csrf
-                        <input type="hidden" name="product_id" value="{{ $product->id }}">
-                        <input type="hidden" name="quantity" id="cart_quantity" value="1">
-                        <button type="submit" class="btn-add-cart w-100">
-                            <i class="bi bi-cart-plus me-2"></i>Add to Cart
-                        </button>
-                    </form>
-                    
-                    <form action="{{ isset($inWishlist) && $inWishlist ? route('wishlist.remove', $wishlistItem->id) : route('wishlist.add') }}" method="POST">
-                        @csrf
-                        @if(isset($inWishlist) && $inWishlist)
-                            @method('DELETE')
-                        @else
+                        <form action="{{ route('cart.add') }}" method="POST" class="flex-grow-1">
+                            @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                        @endif
-                        <button type="submit" class="btn-wishlist">
-                            <i class="bi bi-heart{{ isset($inWishlist) && $inWishlist ? '-fill text-danger' : '' }}"></i>
-                        </button>
-                    </form>
+                            <input type="hidden" name="quantity" id="cart_quantity" value="1">
+                            <button type="submit" class="btn-add-cart w-100">
+                                <i class="bi bi-cart-plus me-2"></i>
+                                Add to Cart
+                            </button>
+                        </form>
+
+                        <form action="{{ isset($inWishlist) && $inWishlist ? route('wishlist.remove', $product->id) : route('wishlist.add') }}" method="POST">
+                            @csrf
+                            @if(isset($inWishlist) && $inWishlist)
+                                @method('DELETE')
+                            @else
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            @endif
+                            <button type="submit" class="btn-wishlist">
+                                <i class="bi {{ isset($inWishlist) && $inWishlist ? 'bi-heart-fill text-danger' : 'bi-heart' }}"></i>
+                            </button>
+                        </form>
                     @else
-                    <a href="{{ route('login') }}" class="btn-add-cart w-100 text-center text-decoration-none">
-                        <i class="bi bi-cart-plus me-2"></i>Login to Purchase
-                    </a>
+                        <button onclick="alert('Please login to add items to cart')" class="btn-add-cart w-100">
+                            <i class="bi bi-cart-plus me-2"></i>
+                            Add to Cart
+                        </button>
+                        <button onclick="alert('Please login to add to wishlist')" class="btn-wishlist">
+                            <i class="bi bi-heart"></i>
+                        </button>
                     @endauth
                 </div>
                 @endif
-                
+
                 <!-- Product Details -->
                 <div class="card mt-4">
-                    <div class="card-header">
-                        <h6 class="mb-0">Product Details</h6>
-                    </div>
                     <div class="card-body">
-                        <table class="table table-sm mb-0">
+                        <h5 class="card-title mb-3">Product Details</h5>
+                        <table class="table table-sm">
                             <tbody>
                                 @if($product->brand)
                                 <tr>
@@ -499,20 +543,22 @@
                                     <td>{{ $product->brand }}</td>
                                 </tr>
                                 @endif
+                                @if($product->sku)
                                 <tr>
                                     <td class="fw-bold">SKU</td>
                                     <td>{{ $product->sku }}</td>
                                 </tr>
+                                @endif
                                 <tr>
                                     <td class="fw-bold">Condition</td>
-                                    <td><span class="badge bg-primary">{{ ucfirst($product->condition ?? 'new') }}</span></td>
+                                    <td><span class="badge bg-primary">{{ ucfirst($product->condition) }}</span></td>
                                 </tr>
-                                @if($product->categories->count() > 0)
+                                @if($product->categories && $product->categories->count() > 0)
                                 <tr>
                                     <td class="fw-bold">Categories</td>
                                     <td>
                                         @foreach($product->categories as $category)
-                                            <span class="badge bg-secondary">{{ $category->name }}</span>
+                                            <span class="badge bg-info me-1">{{ $category->name }}</span>
                                         @endforeach
                                     </td>
                                 </tr>
@@ -521,33 +567,58 @@
                         </table>
                     </div>
                 </div>
-                
+
                 <!-- Description -->
+                @if($product->description)
                 <div class="card mt-3">
-                    <div class="card-header">
-                        <h6 class="mb-0">Description</h6>
-                    </div>
                     <div class="card-body">
+                        <h5 class="card-title mb-3">Description</h5>
                         <p class="mb-0">{{ $product->description }}</p>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-<!-- Fullscreen Viewer -->
-<div id="fullscreenViewer" class="fullscreen-viewer" onclick="closeFullscreen()">
+<!-- NEW FULLSCREEN VIEWER WITH ARROW KEY NAVIGATION & ZOOM -->
+<div id="fullscreenViewer" class="fullscreen-viewer">
     <button class="fullscreen-close" onclick="closeFullscreen()">
         <i class="bi bi-x"></i>
     </button>
-    <img id="fullscreenImage" src="" alt="{{ $product->name }}" class="fullscreen-image">
+    
+    @if($hasImages && $product->images->count() > 1)
+    <button class="fullscreen-nav prev" onclick="previousImage()">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="fullscreen-nav next" onclick="nextImage()">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    <div class="fullscreen-counter">
+        <span id="currentImageIndex">1</span> / <span id="totalImages">{{ $product->images->count() }}</span>
+    </div>
+    @endif
+    
+    <div class="fullscreen-zoom-hint" id="zoomHint">
+        Click to zoom • Drag to pan • Click again to zoom out
+    </div>
+    
+    <div class="fullscreen-content" id="fullscreenContent">
+        <div class="fullscreen-image-container" id="fullscreenImageContainer">
+            <img id="fullscreenImage" 
+                 src="" 
+                 alt="{{ $product->name }}" 
+                 class="fullscreen-image"
+                 onclick="toggleZoom(event)">
+        </div>
+    </div>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    // Product images array (4K URLs)
+    // Product images array (1080P-4K HDR URLs)
     const productImages = [
         @if($hasImages)
             @foreach($product->images as $index => $image)
@@ -559,24 +630,29 @@
     ];
     
     let currentImageIndex = 0;
+    let isZoomed = false;
+    let isDragging = false;
+    let startX, startY, scrollLeft, scrollTop;
     
     // Quantity controls
     function incrementQty() {
         const input = document.getElementById('quantity');
+        const cartQty = document.getElementById('cart_quantity');
         const max = parseInt(input.max);
         const current = parseInt(input.value);
         if (current < max) {
             input.value = current + 1;
-            document.getElementById('cart_quantity').value = current + 1;
+            if (cartQty) cartQty.value = current + 1;
         }
     }
     
     function decrementQty() {
         const input = document.getElementById('quantity');
+        const cartQty = document.getElementById('cart_quantity');
         const current = parseInt(input.value);
         if (current > 1) {
             input.value = current - 1;
-            document.getElementById('cart_quantity').value = current - 1;
+            if (cartQty) cartQty.value = current - 1;
         }
     }
     
@@ -589,15 +665,10 @@
         });
     }
     
-    // Change image
-    function changeImage(src, element) {
+    // Change image (thumbnail click)
+    function changeImage(src, index, element) {
         const mainImage = document.getElementById('mainImage');
-        const zoomWindowImage = document.getElementById('zoomWindowImage');
-        
         mainImage.src = src;
-        if (zoomWindowImage) {
-            zoomWindowImage.src = src;
-        }
         
         // Update active thumbnail
         document.querySelectorAll('.thumbnail').forEach(thumb => {
@@ -605,189 +676,153 @@
         });
         element.classList.add('active');
         
-        // Update current index
-        const thumbnails = Array.from(document.querySelectorAll('.thumbnail'));
-        currentImageIndex = thumbnails.indexOf(element);
-        
-        // Reinitialize zoom for new image
-        initHoverZoom();
+        currentImageIndex = index;
     }
     
-    // Amazon-style hover zoom
-    function initHoverZoom() {
-        const wrapper = document.getElementById('mainImageWrapper');
-        const mainImage = document.getElementById('mainImage');
-        const zoomWindow = document.getElementById('zoomWindow');
-        const zoomWindowImage = document.getElementById('zoomWindowImage');
-        const zoomIndicator = document.getElementById('zoomIndicator');
-        
-        console.log('Initializing hover zoom...', {
-            wrapper: !!wrapper,
-            mainImage: !!mainImage,
-            zoomWindow: !!zoomWindow,
-            zoomWindowImage: !!zoomWindowImage,
-            zoomIndicator: !!zoomIndicator
-        });
-        
-        if (!wrapper || !mainImage || !zoomWindow || !zoomWindowImage || !zoomIndicator) {
-            console.error('Missing zoom elements');
-            return;
-        }
-        
-        const zoomLevel = 2.5;
-        const indicatorSize = 150;
-        let imageNaturalDimensions = { width: 0, height: 0 };
-        
-        // Preload image dimensions
-        const preloadImg = new Image();
-        preloadImg.onload = function() {
-            imageNaturalDimensions.width = this.naturalWidth;
-            imageNaturalDimensions.height = this.naturalHeight;
-            console.log('Image dimensions loaded:', imageNaturalDimensions);
-        };
-        preloadImg.src = mainImage.src;
-        
-        wrapper.addEventListener('mouseenter', function() {
-            console.log('Mouse entered wrapper');
-            zoomWindow.classList.add('active');
-            if (zoomIndicator) zoomIndicator.classList.add('active');
-            
-            // Update zoom window image and reload dimensions
-            zoomWindowImage.src = mainImage.src;
-            
-            // Reload image dimensions
-            const reloadImg = new Image();
-            reloadImg.onload = function() {
-                imageNaturalDimensions.width = this.naturalWidth;
-                imageNaturalDimensions.height = this.naturalHeight;
-                console.log('Zoom image dimensions reloaded:', imageNaturalDimensions);
-            };
-            reloadImg.src = mainImage.src;
-        });
-        
-        wrapper.addEventListener('mouseleave', function() {
-            console.log('Mouse left wrapper');
-            zoomWindow.classList.remove('active');
-            if (zoomIndicator) zoomIndicator.classList.remove('active');
-        });
-        
-        wrapper.addEventListener('mousemove', function(e) {
-            if (!zoomWindow.classList.contains('active')) return;
-            
-            // Get the actual image position and size
-            const imageRect = mainImage.getBoundingClientRect();
-            const wrapperRect = wrapper.getBoundingClientRect();
-            
-            // Calculate mouse position relative to the ACTUAL IMAGE, not the wrapper
-            const x = e.clientX - imageRect.left;
-            const y = e.clientY - imageRect.top;
-            
-            // Check if mouse is actually over the image
-            if (x < 0 || x > imageRect.width || y < 0 || y > imageRect.height) {
-                return;
-            }
-            
-            const xPercent = x / imageRect.width;
-            const yPercent = y / imageRect.height;
-            
-            // Position indicator relative to wrapper (for visual consistency)
-            if (zoomIndicator) {
-                const indicatorX = Math.max(0, Math.min(wrapperRect.width - indicatorSize, e.clientX - wrapperRect.left - indicatorSize / 2));
-                const indicatorY = Math.max(0, Math.min(wrapperRect.height - indicatorSize, e.clientY - wrapperRect.top - indicatorSize / 2));
-                
-                zoomIndicator.style.left = indicatorX + 'px';
-                zoomIndicator.style.top = indicatorY + 'px';
-                zoomIndicator.style.width = indicatorSize + 'px';
-                zoomIndicator.style.height = indicatorSize + 'px';
-            }
-            
-            // Position zoomed image based on ACTUAL image coordinates
-            if (imageNaturalDimensions.width > 0) {
-                const scaledWidth = imageNaturalDimensions.width * zoomLevel;
-                const scaledHeight = imageNaturalDimensions.height * zoomLevel;
-                
-                zoomWindowImage.style.width = scaledWidth + 'px';
-                zoomWindowImage.style.height = scaledHeight + 'px';
-                
-                // Calculate movement based on the percentage of the ACTUAL image
-                const moveX = -xPercent * (scaledWidth - zoomWindow.offsetWidth);
-                const moveY = -yPercent * (scaledHeight - zoomWindow.offsetHeight);
-                
-                zoomWindowImage.style.left = moveX + 'px';
-                zoomWindowImage.style.top = moveY + 'px';
-            }
-        });
-        
-        // Click to open fullscreen
-        wrapper.addEventListener('click', function() {
-            console.log('Opening fullscreen');
-            openFullscreen();
-        });
-    }
-    
-    // Fullscreen viewer
-    function openFullscreen() {
+    // NEW FULLSCREEN VIEWER FUNCTIONS
+    function openFullscreen(index = 0) {
+        currentImageIndex = index;
         const viewer = document.getElementById('fullscreenViewer');
         const fullscreenImage = document.getElementById('fullscreenImage');
+        const zoomHint = document.getElementById('zoomHint');
         
-        const imageUrl = productImages[currentImageIndex];
-        console.log('Opening fullscreen with image:', imageUrl);
-        
-        // Force browser to load at full resolution by setting explicit dimensions
-        fullscreenImage.style.width = 'auto';
-        fullscreenImage.style.height = 'auto';
-        fullscreenImage.style.maxWidth = '98vw';
-        fullscreenImage.style.maxHeight = '98vh';
-        
-        // Load the image
-        fullscreenImage.src = imageUrl;
-        
-        // Force image to load at full resolution
-        fullscreenImage.onload = function() {
-            console.log('Fullscreen image loaded:', {
-                naturalWidth: this.naturalWidth,
-                naturalHeight: this.naturalHeight,
-                displayWidth: this.width,
-                displayHeight: this.height,
-                url: imageUrl
-            });
-            
-            // Ensure it's displayed at maximum size while maintaining aspect ratio
-            const aspectRatio = this.naturalWidth / this.naturalHeight;
-            const viewportWidth = window.innerWidth * 0.98;
-            const viewportHeight = window.innerHeight * 0.98;
-            
-            if (aspectRatio > viewportWidth / viewportHeight) {
-                // Width-constrained
-                this.style.width = viewportWidth + 'px';
-                this.style.height = 'auto';
-            } else {
-                // Height-constrained
-                this.style.height = viewportHeight + 'px';
-                this.style.width = 'auto';
-            }
-        };
-        
+        fullscreenImage.src = productImages[currentImageIndex];
         viewer.classList.add('active');
         document.body.style.overflow = 'hidden';
+        
+        updateImageCounter();
+        
+        // Show zoom hint briefly
+        zoomHint.classList.add('show');
+        setTimeout(() => {
+            zoomHint.classList.remove('show');
+        }, 3000);
+        
+        // Reset zoom state
+        isZoomed = false;
+        fullscreenImage.classList.remove('zoomed');
     }
     
     function closeFullscreen() {
         const viewer = document.getElementById('fullscreenViewer');
         viewer.classList.remove('active');
         document.body.style.overflow = '';
+        isZoomed = false;
     }
     
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        initHoverZoom();
+    function nextImage() {
+        if (currentImageIndex < productImages.length - 1) {
+            currentImageIndex++;
+        } else {
+            currentImageIndex = 0; // Loop back to first
+        }
+        updateFullscreenImage();
+    }
+    
+    function previousImage() {
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+        } else {
+            currentImageIndex = productImages.length - 1; // Loop to last
+        }
+        updateFullscreenImage();
+    }
+    
+    function updateFullscreenImage() {
+        const fullscreenImage = document.getElementById('fullscreenImage');
+        fullscreenImage.src = productImages[currentImageIndex];
+        updateImageCounter();
+        
+        // Reset zoom when changing images
+        isZoomed = false;
+        fullscreenImage.classList.remove('zoomed');
+        fullscreenImage.style.transform = '';
+    }
+    
+    function updateImageCounter() {
+        const counter = document.getElementById('currentImageIndex');
+        if (counter) {
+            counter.textContent = currentImageIndex + 1;
+        }
+    }
+    
+    // NEW ACCURATE ZOOM FUNCTION
+    function toggleZoom(event) {
+        const fullscreenImage = document.getElementById('fullscreenImage');
+        const container = document.getElementById('fullscreenImageContainer');
+        
+        if (!isZoomed) {
+            // Zoom in
+            fullscreenImage.classList.add('zoomed');
+            fullscreenImage.style.cursor = 'move';
+            isZoomed = true;
+            
+            // Calculate zoom position based on click
+            const rect = fullscreenImage.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const xPercent = (x / rect.width) * 100;
+            const yPercent = (y / rect.height) * 100;
+            
+            fullscreenImage.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+        } else {
+            // Zoom out
+            fullscreenImage.classList.remove('zoomed');
+            fullscreenImage.style.cursor = 'zoom-in';
+            fullscreenImage.style.transform = '';
+            isZoomed = false;
+        }
+    }
+    
+    // Drag to pan when zoomed
+    const fullscreenImage = document.getElementById('fullscreenImage');
+    const fullscreenContent = document.getElementById('fullscreenContent');
+    
+    fullscreenImage.addEventListener('mousedown', function(e) {
+        if (!isZoomed) return;
+        isDragging = true;
+        startX = e.pageX - fullscreenContent.offsetLeft;
+        startY = e.pageY - fullscreenContent.offsetTop;
+        scrollLeft = fullscreenContent.scrollLeft;
+        scrollTop = fullscreenContent.scrollTop;
+        e.preventDefault();
     });
     
-    // ESC key to close fullscreen
+    fullscreenContent.addEventListener('mousemove', function(e) {
+        if (!isDragging || !isZoomed) return;
+        e.preventDefault();
+        const x = e.pageX - fullscreenContent.offsetLeft;
+        const y = e.pageY - fullscreenContent.offsetTop;
+        const walkX = (x - startX) * 2;
+        const walkY = (y - startY) * 2;
+        fullscreenContent.scrollLeft = scrollLeft - walkX;
+        fullscreenContent.scrollTop = scrollTop - walkY;
+    });
+    
+    fullscreenContent.addEventListener('mouseup', function() {
+        isDragging = false;
+    });
+    
+    fullscreenContent.addEventListener('mouseleave', function() {
+        isDragging = false;
+    });
+    
+    // ARROW KEY NAVIGATION
     document.addEventListener('keydown', function(e) {
+        const viewer = document.getElementById('fullscreenViewer');
+        if (!viewer.classList.contains('active')) return;
+        
         if (e.key === 'Escape') {
             closeFullscreen();
+        } else if (e.key === 'ArrowRight') {
+            nextImage();
+        } else if (e.key === 'ArrowLeft') {
+            previousImage();
         }
     });
+    
+    console.log('✅ Product view loaded with 1080P-4K HDR support');
+    console.log('📸 Total images:', productImages.length);
+    console.log('🎯 Image URLs:', productImages);
 </script>
 @endpush

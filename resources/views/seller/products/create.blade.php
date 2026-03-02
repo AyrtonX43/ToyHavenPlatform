@@ -383,13 +383,13 @@
                             <label class="form-label">Upload Images <span id="imagesRequired" class="text-danger">*</span></label>
                             <input type="file" id="product_images" name="images[]" class="form-control @error('images') is-invalid @enderror" multiple accept="image/*">
                             <div class="alert alert-info mt-2 mb-2">
-                                <h6 class="mb-2"><i class="bi bi-badge-4k me-2"></i>4K HDR Image Quality Requirements</h6>
+                                <h6 class="mb-2"><i class="bi bi-badge-hd me-2"></i>1080P-4K HDR Image Quality Requirements</h6>
                                 <ul class="mb-0 small">
-                                    <li><strong>Minimum resolution:</strong> 2000x2000 pixels (recommended: 3000x3000px for 4K quality)</li>
+                                    <li><strong>Minimum resolution:</strong> 1920x1920 pixels (recommended: 2500x2500px for optimal quality)</li>
                                     <li><strong>Format:</strong> JPG, PNG, or WebP</li>
                                     <li><strong>File size:</strong> Up to 10MB per image for best quality</li>
-                                    <li><strong>Why 4K quality?</strong> Customers can zoom in 2.5x to see product details in crystal-clear quality without any blur or pixelation</li>
-                                    <li><strong>Amazon images:</strong> Automatically imported at 4K HDR resolution (3000px)</li>
+                                    <li><strong>Why high quality?</strong> Customers can zoom in to see product details in crystal-clear quality without any blur or pixelation</li>
+                                    <li><strong>Amazon images:</strong> Automatically imported at 1080P-4K HDR resolution (2500px)</li>
                                 </ul>
                             </div>
                             <small class="text-muted">You can upload up to 10 images. First image will be the primary image. Images imported from Amazon reference will be added automatically at highest resolution.</small>
@@ -1295,9 +1295,9 @@ function importImageFromUrl(imageUrl) {
         urlArray.push(imageUrl);
         document.getElementById('imported_image_urls').value = urlArray.join(',');
         
-        // Check if it's an Amazon 4K HDR image
+        // Check if it's an Amazon 1080P-4K HDR image
         const isAmazonHD = imageUrl.includes('media-amazon.com') || imageUrl.includes('images-amazon.com');
-        const is4K = imageUrl.includes('_SL3000_') || imageUrl.includes('_AC_SL3000_');
+        const is4K = imageUrl.includes('_SL2500_') || imageUrl.includes('_AC_SL2500_') || imageUrl.includes('_SL3000_') || imageUrl.includes('_AC_SL3000_');
         const isHighRes = imageUrl.includes('_SL2000_') || imageUrl.includes('_AC_SL2000_');
         
         // Show preview
@@ -1307,8 +1307,8 @@ function importImageFromUrl(imageUrl) {
         imageDiv.style.cssText = 'width: 120px;';
         
         const hdBadge = is4K ? `
-            <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="4K HDR image (3000px) - Perfect for zoom">
-                <i class="bi bi-badge-4k me-1"></i>4K
+            <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="1080P-4K HDR image (2500px) - Perfect for zoom">
+                <i class="bi bi-badge-hd me-1"></i>HDR
             </span>
         ` : (isAmazonHD || isHighRes) ? `
             <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="High-resolution image (2000px+) - Perfect for zoom">
@@ -1562,7 +1562,7 @@ function previewUploadedImages(files) {
                 if (is4K) {
                     badge.classList.add('bg-success');
                     badge.innerHTML = '<i class="bi bi-badge-4k me-1"></i>4K';
-                    badge.title = `${width}x${height}px - 4K HDR quality, perfect for zoom`;
+                    badge.title = `${width}x${height}px - 1080P-4K HDR quality, perfect for zoom`;
                 } else if (isHighRes) {
                     badge.classList.add('bg-success');
                     badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>HD';
