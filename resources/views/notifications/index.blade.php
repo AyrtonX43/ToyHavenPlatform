@@ -460,7 +460,13 @@
                     }
                 @endphp
                 
-                <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}">
+                <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}" 
+                     data-notification-type="{{ $type }}"
+                     data-notification-message="{{ $data['message'] ?? 'New notification' }}"
+                     data-notification-business="{{ $data['business_name'] ?? '' }}"
+                     data-notification-reason="{{ $data['reason'] ?? '' }}"
+                     data-notification-report="{{ $data['report_id'] ?? '' }}"
+                     data-notification-date="{{ $notification->created_at }}">
                     <span class="notification-dot"></span>
                     @if(in_array($type, ['seller_rejected', 'seller_suspended']))
                         <a href="javascript:void(0)" class="notification-item-link" onclick="showNotificationDetail('{{ $notification->id }}', event)">
@@ -541,18 +547,24 @@
 
 @push('scripts')
 <script>
-    const notificationsData = @json($notifications->items());
-    
     function showNotificationDetail(notificationId, event) {
         event.preventDefault();
         event.stopPropagation();
         
-        // Find notification data
-        const notification = notificationsData.find(n => n.id === notificationId);
-        if (!notification) return;
+        // Find notification element
+        const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+        if (!notificationElement) {
+            console.error('Notification element not found');
+            return;
+        }
         
-        const data = notification.data;
-        const type = data.type || notification.type;
+        // Get data from attributes
+        const type = notificationElement.dataset.notificationType;
+        const message = notificationElement.dataset.notificationMessage;
+        const businessName = notificationElement.dataset.notificationBusiness;
+        const reason = notificationElement.dataset.notificationReason;
+        const reportId = notificationElement.dataset.notificationReport;
+        const date = notificationElement.dataset.notificationDate;
         
         // Update modal header based on type
         const modalHeader = document.getElementById('modalHeader');
@@ -573,37 +585,37 @@
         // Build modal content
         let content = '<div class="p-3">';
         
-        if (data.business_name) {
+        if (businessName) {
             content += `<div class="mb-3">
                 <strong class="d-block mb-1"><i class="bi bi-shop me-2"></i>Business Name:</strong>
-                <p class="mb-0 ps-4">${data.business_name}</p>
+                <p class="mb-0 ps-4">${businessName}</p>
             </div>`;
         }
         
         content += `<div class="mb-3">
             <strong class="d-block mb-1"><i class="bi bi-info-circle me-2"></i>Message:</strong>
-            <p class="mb-0 ps-4">${data.message || 'No message'}</p>
+            <p class="mb-0 ps-4">${message || 'No message'}</p>
         </div>`;
         
-        if (data.reason) {
+        if (reason) {
             content += `<div class="mb-3">
                 <strong class="d-block mb-2"><i class="bi bi-file-text me-2"></i>Detailed Reason:</strong>
                 <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} mb-0">
-                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;">${data.reason}</pre>
+                    <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;">${reason}</pre>
                 </div>
             </div>`;
         }
         
-        if (data.report_id) {
+        if (reportId) {
             content += `<div class="mb-3">
                 <strong class="d-block mb-1"><i class="bi bi-flag me-2"></i>Related Report:</strong>
-                <p class="mb-0 ps-4">Report ID: #${data.report_id}</p>
+                <p class="mb-0 ps-4">Report ID: #${reportId}</p>
             </div>`;
         }
         
         content += `<div class="mb-0">
             <strong class="d-block mb-1"><i class="bi bi-clock me-2"></i>Date:</strong>
-            <p class="mb-0 ps-4">${new Date(notification.created_at).toLocaleString()}</p>
+            <p class="mb-0 ps-4">${new Date(date).toLocaleString()}</p>
         </div>`;
         
         content += '</div>';
