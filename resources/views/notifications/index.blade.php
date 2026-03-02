@@ -153,6 +153,8 @@
         font-size: 0.8125rem;
         color: #64748b;
         margin-bottom: 0.3rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
     
     .notification-time {
@@ -462,31 +464,65 @@
                 
                 <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}">
                     <span class="notification-dot"></span>
-                    <a href="{{ $url }}" class="notification-item-link" onclick="markAsRead('{{ $notification->id }}', event)">
-                        <div class="notification-icon bg-{{ $color }} text-white">
-                            <i class="bi {{ $icon }}"></i>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-title">{{ $data['message'] ?? 'New notification' }}</div>
-                            @if(isset($data['listing_title']))
-                                <div class="notification-message">{{ $data['listing_title'] }}</div>
-                            @endif
-                            @if(isset($data['business_name']))
-                                <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
-                            @endif
-                            @if(isset($data['reason']))
-                                <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
-                            @endif
-                            <div class="notification-time">
-                                <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
+                    @if(in_array($type, ['seller_rejected', 'seller_suspended']))
+                        <div class="notification-item-link" style="cursor: default;" onclick="markAsRead('{{ $notification->id }}', event)">
+                            <div class="notification-icon bg-{{ $color }} text-white">
+                                <i class="bi {{ $icon }}"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">{{ $data['message'] ?? 'New notification' }}</div>
+                                @if(isset($data['business_name']))
+                                    <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
+                                @endif
+                                @if(isset($data['reason']))
+                                    <div class="notification-message" style="white-space: pre-wrap; max-height: none; overflow: visible;">
+                                        <strong>Reason:</strong><br>{{ $data['reason'] }}
+                                    </div>
+                                @endif
+                                <div class="notification-time">
+                                    <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
+                                </div>
+                                @if($type === 'seller_rejected')
+                                    <div class="mt-2">
+                                        <a href="{{ route('seller.register') }}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>Reapply
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="notification-actions">
+                                @if($isUnread)
+                                    <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
+                                @endif
                             </div>
                         </div>
-                        <div class="notification-actions">
-                            @if($isUnread)
-                                <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
-                            @endif
-                        </div>
-                    </a>
+                    @else
+                        <a href="{{ $url }}" class="notification-item-link" onclick="markAsRead('{{ $notification->id }}', event)">
+                            <div class="notification-icon bg-{{ $color }} text-white">
+                                <i class="bi {{ $icon }}"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">{{ $data['message'] ?? 'New notification' }}</div>
+                                @if(isset($data['listing_title']))
+                                    <div class="notification-message">{{ $data['listing_title'] }}</div>
+                                @endif
+                                @if(isset($data['business_name']))
+                                    <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
+                                @endif
+                                @if(isset($data['reason']))
+                                    <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
+                                @endif
+                                <div class="notification-time">
+                                    <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
+                                </div>
+                            </div>
+                            <div class="notification-actions">
+                                @if($isUnread)
+                                    <span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span>
+                                @endif
+                            </div>
+                        </a>
+                    @endif
                     <button type="button" class="notification-delete-btn" onclick="deleteNotification('{{ $notification->id }}', event)" title="Delete notification" aria-label="Delete notification">
                         <i class="bi bi-trash"></i>
                     </button>
