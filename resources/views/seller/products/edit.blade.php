@@ -392,13 +392,13 @@
                             <label class="form-label">Upload Additional Images</label>
                             <input type="file" id="product_images" name="images[]" class="form-control @error('images') is-invalid @enderror" multiple accept="image/*">
                             <div class="alert alert-info mt-2 mb-2">
-                                <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>High-Quality Image Requirements</h6>
+                                <h6 class="mb-2"><i class="bi bi-badge-4k me-2"></i>4K HDR Image Quality Requirements</h6>
                                 <ul class="mb-0 small">
-                                    <li><strong>Minimum resolution:</strong> 1500x1500 pixels (recommended: 2000x2000px or higher)</li>
+                                    <li><strong>Minimum resolution:</strong> 2000x2000 pixels (recommended: 3000x3000px for 4K quality)</li>
                                     <li><strong>Format:</strong> JPG, PNG, or WebP</li>
                                     <li><strong>File size:</strong> Up to 10MB per image for best quality</li>
-                                    <li><strong>Why high resolution?</strong> Customers can zoom in to see product details clearly without blur or pixelation</li>
-                                    <li><strong>Amazon images:</strong> Automatically imported at highest resolution (1500px+)</li>
+                                    <li><strong>Why 4K quality?</strong> Customers can zoom in 2.5x to see product details in crystal-clear quality without any blur or pixelation</li>
+                                    <li><strong>Amazon images:</strong> Automatically imported at 4K HDR resolution (3000px)</li>
                                 </ul>
                             </div>
                             <small class="text-muted">You can upload additional images (up to 10 total). Existing images will be kept. Images imported from Amazon reference will be added automatically at highest resolution.</small>
@@ -1317,9 +1317,10 @@ function importImageFromUrl(imageUrl) {
         urlArray.push(imageUrl);
         document.getElementById('imported_image_urls').value = urlArray.join(',');
         
-        // Check if it's an Amazon HD image (contains _SL1500_ or similar high-res indicators)
+        // Check if it's an Amazon 4K HDR image
         const isAmazonHD = imageUrl.includes('media-amazon.com') || imageUrl.includes('images-amazon.com');
-        const isHighRes = imageUrl.includes('_SL1500_') || imageUrl.includes('_AC_SL1500_') || imageUrl.includes('_SL2000_');
+        const is4K = imageUrl.includes('_SL3000_') || imageUrl.includes('_AC_SL3000_');
+        const isHighRes = imageUrl.includes('_SL2000_') || imageUrl.includes('_AC_SL2000_');
         
         // Show preview
         const previewContainer = document.getElementById('importedImagesContainer');
@@ -1327,8 +1328,12 @@ function importImageFromUrl(imageUrl) {
         imageDiv.className = 'position-relative';
         imageDiv.style.cssText = 'width: 120px;';
         
-        const hdBadge = (isAmazonHD || isHighRes) ? `
-            <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="High-resolution image (1500px+) - Perfect for zoom">
+        const hdBadge = is4K ? `
+            <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="4K HDR image (3000px) - Perfect for zoom">
+                <i class="bi bi-badge-4k me-1"></i>4K
+            </span>
+        ` : (isAmazonHD || isHighRes) ? `
+            <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="High-resolution image (2000px+) - Perfect for zoom">
                 <i class="bi bi-check-circle me-1"></i>HD
             </span>
         ` : '';
@@ -1339,7 +1344,7 @@ function importImageFromUrl(imageUrl) {
             <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeImportedImage('${imageUrl}')" style="padding: 2px 6px;">
                 <i class="bi bi-x"></i>
             </button>
-            <small class="d-block text-center mt-1 text-success" style="font-size: 0.7rem;">Amazon HD</small>
+            <small class="d-block text-center mt-1 text-success" style="font-size: 0.7rem;">${is4K ? 'Amazon 4K' : 'Amazon HD'}</small>
         `;
         previewContainer.appendChild(imageDiv);
         
@@ -1562,8 +1567,9 @@ function previewUploadedImages(files) {
             img.onload = function() {
                 const width = this.width;
                 const height = this.height;
-                const isHighRes = width >= 1500 && height >= 1500;
-                const isGoodRes = width >= 1000 && height >= 1000;
+                const is4K = width >= 3000 && height >= 3000;
+                const isHighRes = width >= 2000 && height >= 2000;
+                const isGoodRes = width >= 1500 && height >= 1500;
                 
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'position-relative';
@@ -1582,14 +1588,18 @@ function previewUploadedImages(files) {
                 badge.className = 'position-absolute top-0 start-0 badge m-1';
                 badge.style.fontSize = '0.65rem';
                 
-                if (isHighRes) {
+                if (is4K) {
+                    badge.classList.add('bg-success');
+                    badge.innerHTML = '<i class="bi bi-badge-4k me-1"></i>4K';
+                    badge.title = `${width}x${height}px - 4K HDR quality, perfect for zoom`;
+                } else if (isHighRes) {
                     badge.classList.add('bg-success');
                     badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>HD';
-                    badge.title = `${width}x${height}px - Excellent quality for zoom`;
+                    badge.title = `${width}x${height}px - High quality for zoom`;
                 } else if (isGoodRes) {
                     badge.classList.add('bg-warning');
                     badge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>OK';
-                    badge.title = `${width}x${height}px - Acceptable but may blur when zoomed`;
+                    badge.title = `${width}x${height}px - Acceptable but may blur when zoomed 2.5x`;
                 } else {
                     badge.classList.add('bg-danger');
                     badge.innerHTML = '<i class="bi bi-x-circle me-1"></i>Low';

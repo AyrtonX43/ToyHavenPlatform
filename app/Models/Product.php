@@ -164,8 +164,8 @@ class Product extends Model
     }
 
     /**
-     * HD version of Amazon reference image URL (for zoom/display).
-     * Converts common Amazon size params to _AC_SL1500_ / _SL1500_.
+     * 4K HDR version of Amazon reference image URL (for zoom/display).
+     * Converts common Amazon size params to _AC_SL3000_ for 4K quality.
      */
     public function getAmazonReferenceImageHdAttribute(): ?string
     {
@@ -177,9 +177,14 @@ class Product extends Model
         if (strpos($url, 'media-amazon.com') === false && strpos($url, 'images-amazon.com') === false) {
             return $url;
         }
-        $url = preg_replace('/_S[LX]\d+_/', '_AC_SL1500_', $url);
-        $url = preg_replace('/_SL\d+_/', '_SL1500_', $url);
-        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL1500_', $url);
+        // Use 3000px for 4K HDR quality
+        $url = preg_replace('/_S[LXY]\d+_/', '_AC_SL3000_', $url);
+        $url = preg_replace('/_SL\d+_/', '_SL3000_', $url);
+        $url = preg_replace('/_AC_SL\d+_/', '_AC_SL3000_', $url);
+        $url = preg_replace('/_AC_SX\d+_/', '_AC_SL3000_', $url);
+        $url = preg_replace('/_AC_SY\d+_/', '_AC_SL3000_', $url);
+        // Remove any remaining size constraints
+        $url = preg_replace('/\._[A-Z]{2}\d+_\./', '.', $url);
         return $url;
     }
 }
