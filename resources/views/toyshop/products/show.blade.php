@@ -66,11 +66,8 @@
         object-fit: contain;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
-        transition: transform 0.3s ease;
-    }
-    
-    .main-image-container:hover .main-image {
-        transform: scale(1.05);
+        transition: transform 0.15s ease-out;
+        transform-origin: center center;
     }
     
     /* Quality Badge */
@@ -404,14 +401,14 @@
                 @endphp
 
                 <!-- Main Image -->
-                <div class="main-image-container" onclick="openFullscreen(0)">
+                <div class="main-image-container" id="mainImageContainer" onclick="openFullscreen(currentImageIndex)">
                     <div class="quality-badge">
                         <i class="bi bi-badge-hd-fill"></i>
                         <span>{{ $is4K ? '1080P-4K HDR' : 'HD' }}</span>
                     </div>
                     <div class="zoom-hint">
-                        <i class="bi bi-arrows-fullscreen me-1"></i>
-                        Click for fullscreen
+                        <i class="bi bi-zoom-in me-1"></i>
+                        Hover to zoom • Click for fullscreen
                     </div>
                     <div class="main-image-wrapper">
                         <img id="mainImage"
@@ -633,6 +630,8 @@
     let isZoomed = false;
     let isDragging = false;
     let startX, startY, scrollLeft, scrollTop;
+    let slideshowTimer = null;
+    const SLIDESHOW_INTERVAL = 10000; // 10 seconds
     
     // Quantity controls
     function incrementQty() {
@@ -665,18 +664,53 @@
         });
     }
     
-    // Change image (thumbnail click)
+    // Change image (thumbnail click or slideshow)
     function changeImage(src, index, element) {
         const mainImage = document.getElementById('mainImage');
-        mainImage.src = src;
-        
-        // Update active thumbnail
-        document.querySelectorAll('.thumbnail').forEach(thumb => {
-            thumb.classList.remove('active');
-        });
-        element.classList.add('active');
+        if (mainImage) mainImage.src = src;
         
         currentImageIndex = index;
+        
+        // Update active thumbnail if element provided
+        if (element) {
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            element.classList.add('active');
+        } else {
+            document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
+        }
+        
+        resetSlideshowTimer();
+    }
+    
+    // Advance to next image (for slideshow)
+    function advanceSlide() {
+        if (productImages.length <= 1) return;
+        const nextIndex = (currentImageIndex + 1) % productImages.length;
+        changeImage(productImages[nextIndex], nextIndex, null);
+    }
+    
+    function startSlideshowTimer() {
+        stopSlideshowTimer();
+        if (productImages.length <= 1) return;
+        slideshowTimer = setInterval(advanceSlide, SLIDESHOW_INTERVAL);
+    }
+    
+    function stopSlideshowTimer() {
+        if (slideshowTimer) {
+            clearInterval(slideshowTimer);
+            slideshowTimer = null;
+        }
+    }
+    
+    function resetSlideshowTimer() {
+        stopSlideshowTimer();
+        if (productImages.length > 1) {
+            slideshowTimer = setInterval(advanceSlide, SLIDESHOW_INTERVAL);
+        }
     }
     
     // NEW FULLSCREEN VIEWER FUNCTIONS
@@ -686,6 +720,7 @@
         const fullscreenImage = document.getElementById('fullscreenImage');
         const zoomHint = document.getElementById('zoomHint');
         
+        stopSlideshowTimer();
         fullscreenImage.src = productImages[currentImageIndex];
         viewer.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -708,6 +743,7 @@
         viewer.classList.remove('active');
         document.body.style.overflow = '';
         isZoomed = false;
+        startSlideshowTimer();
     }
     
     function nextImage() {
@@ -820,6 +856,32 @@
             previousImage();
         }
     });
+    
+    // HOVER-TO-ZOOM (inline, no fullscreen)
+    const mainImageContainer = document.getElementById('mainImageContainer');
+    const mainImageEl = document.getElementById('mainImage');
+    if (mainImageContainer && mainImageEl) {
+        mainImageContainer.addEventListener('mousemove', function(e) {
+            const rect = mainImageContainer.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            mainImageEl.style.transformOrigin = x + '% ' + y + '%';
+            mainImageEl.style.transform = 'scale(2.2)';
+        });
+        mainImageContainer.addEventListener('mouseleave', function() {
+            mainImageEl.style.transform = 'scale(1)';
+            mainImageEl.style.transformOrigin = 'center center';
+        });
+    }
+    
+    // Slideshow: 10 seconds when not hovering
+    if (mainImageContainer) {
+        mainImageContainer.addEventListener('mouseenter', stopSlideshowTimer);
+        mainImageContainer.addEventListener('mouseleave', startSlideshowTimer);
+    }
+    
+    // Start slideshow on page load (if multiple images)
+    startSlideshowTimer();
     
     console.log('✅ Product view loaded with 1080P-4K HDR support');
     console.log('📸 Total images:', productImages.length);
