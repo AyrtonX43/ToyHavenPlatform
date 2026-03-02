@@ -70,24 +70,6 @@
         transform-origin: center center;
     }
     
-    /* Quality Badge */
-    .quality-badge {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        padding: 8px 14px;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        font-weight: 700;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    }
-    
     /* Zoom Hint */
     .zoom-hint {
         position: absolute;
@@ -328,6 +310,11 @@
         line-height: 1.3;
     }
     
+    .product-rating-stars {
+        font-size: 1.125rem;
+        letter-spacing: 1px;
+    }
+    
     .product-price {
         font-size: 2rem;
         font-weight: 700;
@@ -458,15 +445,10 @@
                 @php
                     $hasImages = $product->images && $product->images->count() > 0;
                     $firstImageUrl = $hasImages ? ($imageDisplayUrls[0] ?? asset('storage/' . $product->images->first()->image_path)) : asset('images/no-image.png');
-                    $is4K = str_contains($firstImageUrl, '_SL2500_') || str_contains($firstImageUrl, '_SL2000_') || str_contains($firstImageUrl, '_SL3000_');
                 @endphp
 
                 <!-- Main Image -->
                 <div class="main-image-container" id="mainImageContainer" onclick="openFullscreen(currentImageIndex)">
-                    <div class="quality-badge">
-                        <i class="bi bi-badge-hd-fill"></i>
-                        <span>{{ $is4K ? '1080P-4K HDR' : 'HD' }}</span>
-                    </div>
                     <div class="zoom-hint">
                         <i class="bi bi-zoom-in me-1"></i>
                         Hover to zoom • Click for fullscreen
@@ -499,19 +481,39 @@
             <div class="product-info">
                 <h1 class="product-title">{{ $product->name }}</h1>
 
-                <!-- Rating -->
+                <!-- Rating / Reviews -->
+                @php
+                    $avgRating = (float) ($product->rating ?? 0);
+                    $reviewsCount = (int) ($product->reviews_count ?? 0);
+                    $fullStars = (int) floor($avgRating);
+                    $hasHalfStar = ($avgRating - $fullStars) >= 0.5;
+                @endphp
                 <div class="mb-3">
-                    @if(isset($product->reviews_count) && $product->reviews_count > 0)
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="text-warning">
-                                @for($i = 0; $i < 5; $i++)
-                                    <i class="bi bi-star-fill"></i>
+                    @if($reviewsCount > 0)
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="product-rating-stars text-warning">
+                                @for($i = 1; $i <= 5; $i++)
+                                    @if($i <= $fullStars)
+                                        <i class="bi bi-star-fill"></i>
+                                    @elseif($i == $fullStars + 1 && $hasHalfStar)
+                                        <i class="bi bi-star-half"></i>
+                                    @else
+                                        <i class="bi bi-star"></i>
+                                    @endif
                                 @endfor
                             </div>
-                            <span class="text-muted">({{ $product->reviews_count }} reviews)</span>
+                            <span class="product-rating-value fw-semibold">{{ number_format($avgRating, 1) }}</span>
+                            <span class="text-muted">({{ $reviewsCount }} {{ Str::plural('review', $reviewsCount) }})</span>
                         </div>
                     @else
-                        <span class="text-muted">No reviews yet</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="product-rating-stars text-muted">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="bi bi-star"></i>
+                                @endfor
+                            </div>
+                            <span class="text-muted">No reviews yet</span>
+                        </div>
                     @endif
                 </div>
 
