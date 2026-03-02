@@ -207,15 +207,25 @@ class ProductController extends Controller
             $inWishlist = $wishlistItem !== null;
         }
 
-        // Build HD display URLs for gallery/fullscreen: use HD when available (amazon_reference_image_hd for first image, or per-image hd_url)
+        // Build HD display URLs for gallery/fullscreen: ALWAYS prioritize HD URLs
         $imageDisplayUrls = [];
         $amazonHdUrl = $product->amazon_reference_image_hd;
+        
         foreach ($product->images as $index => $image) {
-            $url = $image->hd_url ?? null;
-            if ($url === null && $index === 0 && $amazonHdUrl) {
+            // Priority: 1. hd_url, 2. amazon_reference_image_hd (first image), 3. local file
+            $url = $image->hd_url;
+            
+            // If no hd_url and this is the first image, try amazon HD
+            if (empty($url) && $index === 0 && !empty($amazonHdUrl)) {
                 $url = $amazonHdUrl;
             }
-            $imageDisplayUrls[] = $url ?? asset('storage/' . $image->image_path);
+            
+            // Fallback to local file only if no HD URL available
+            if (empty($url)) {
+                $url = asset('storage/' . $image->image_path);
+            }
+            
+            $imageDisplayUrls[] = $url;
         }
 
         return view('toyshop.products.show', compact('product', 'relatedProducts', 'recommendedByPreferences', 'inWishlist', 'wishlistItem', 'imageDisplayUrls'));
