@@ -383,9 +383,9 @@
                         </div>
                         <!-- Imported Images Preview -->
                         <div id="importedImagesPreview" class="mb-3" style="display: none;">
-                            <label class="form-label">Imported Images Preview</label>
-                            <div id="importedImagesContainer" class="d-flex flex-wrap gap-2 mb-2"></div>
-                            <small class="text-muted">These images will be downloaded and added to your product</small>
+                            <label class="form-label">Imported Images Preview (HD/HDR Quality)</label>
+                            <div id="importedImagesContainer" class="d-flex flex-wrap gap-3 mb-2" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;"></div>
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>These HD/HDR images will be downloaded at full resolution and added to your product. Click any image to view in full quality.</small>
                         </div>
                         
                         <div class="mb-3">
@@ -850,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const product = data.product;
                 const pricePhp = product.price_php || product.price || '';
                 const priceDisplay = pricePhp ? `₱${parseFloat(pricePhp).toFixed(2)}` : 'Price not available';
-                const productImage = product.image ? `<img src="${product.image}" alt="${product.title || 'Product'}" class="img-thumbnail mb-2" style="max-width: 200px; max-height: 200px; object-fit: contain;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'200\\'%3E%3Crect width=\\'200\\' height=\\'200\\' fill=\\'%23f8f9fa\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' text-anchor=\\'middle\\' dy=\\'.3em\\' fill=\\'%236c757d\\'%3ENo Image%3C/text%3E%3C/svg%3E';">` : '';
+                const productImage = product.image ? `<img src="${product.image}" alt="${product.title || 'Product'}" class="img-thumbnail mb-2" style="max-width: 220px; max-height: 220px; width: 220px; height: 220px; object-fit: contain; cursor: pointer; background: #f8f9fa;" onclick="openImageViewer('${product.image}')" title="Click to view HD/HDR quality" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'220\\' height=\\'220\\'%3E%3Crect width=\\'220\\' height=\\'220\\' fill=\\'%23f8f9fa\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' text-anchor=\\'middle\\' dy=\\'.3em\\' fill=\\'%236c757d\\'%3ENo Image%3C/text%3E%3C/svg%3E';">` : '';
                 
                 // Prepare product data with price_php and variations (so "Use as Reference" has variants)
                 const productData = {
@@ -924,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data.results.forEach((product, index) => {
                     const pricePhp = product.price_php || product.price || '';
                     const priceDisplay = pricePhp ? `₱${parseFloat(pricePhp).toFixed(2)}` : 'Price not available';
-                    const productImage = product.image ? `<img src="${product.image}" alt="${product.title || 'Product'}" class="img-thumbnail" style="max-width: 120px; max-height: 120px; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'bg-light d-flex align-items-center justify-content-center\\' style=\\'width: 120px; height: 120px;\\'><i class=\\'bi bi-image text-muted\\'></i></div>';">` : '<div class="bg-light d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;"><i class="bi bi-image text-muted"></i></div>';
+                    const productImage = product.image ? `<img src="${product.image}" alt="${product.title || 'Product'}" class="img-thumbnail" style="max-width: 180px; max-height: 180px; width: 180px; height: 180px; object-fit: contain; cursor: pointer; background: #f8f9fa;" onclick="openImageViewer('${product.image}')" title="Click to view HD/HDR quality" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'bg-light d-flex align-items-center justify-content-center\\' style=\\'width: 180px; height: 180px;\\'><i class=\\'bi bi-image text-muted\\'></i></div>';">` : '<div class="bg-light d-flex align-items-center justify-content-center" style="width: 180px; height: 180px;"><i class="bi bi-image text-muted"></i></div>';
                     
                     // Prepare product data for setAmazonReference
                     const productData = {
@@ -1326,7 +1326,7 @@ function importImageFromUrl(imageUrl) {
         const previewContainer = document.getElementById('importedImagesContainer');
         const imageDiv = document.createElement('div');
         imageDiv.className = 'position-relative';
-        imageDiv.style.cssText = 'width: 120px;';
+        imageDiv.style.cssText = 'width: 100%; max-width: 280px; margin-bottom: 1rem;';
         
         const hdBadge = is4K ? `
             <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="1080P-4K HDR image (2500px) - Perfect for zoom">
@@ -1339,12 +1339,12 @@ function importImageFromUrl(imageUrl) {
         ` : '';
         
         imageDiv.innerHTML = `
-            <img src="${imageUrl}" alt="Imported" class="img-thumbnail" style="width: 120px; height: 120px; object-fit: cover; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')" title="Click to view full size">
+            <img src="${imageUrl}" alt="Imported" class="img-thumbnail" style="width: 100%; max-width: 280px; height: auto; min-height: 280px; object-fit: contain; cursor: pointer; background: #f8f9fa;" onclick="openImageViewer('${imageUrl}')" title="Click to view full HD/HDR quality" loading="lazy">
             ${hdBadge}
             <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeImportedImage('${imageUrl}')" style="padding: 2px 6px;">
                 <i class="bi bi-x"></i>
             </button>
-            <small class="d-block text-center mt-1 text-success" style="font-size: 0.7rem;">${is4K ? 'Amazon 4K' : 'Amazon HD'}</small>
+            <small class="d-block text-center mt-1 text-success" style="font-size: 0.7rem;">${is4K ? 'Amazon 4K HDR' : 'Amazon HD'}</small>
         `;
         previewContainer.appendChild(imageDiv);
         
@@ -1870,6 +1870,72 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('amazonReferenceDisplay').style.display = 'block';
     }
 });
+
+// HD/HDR Image Viewer Modal
+function openImageViewer(imageUrl) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('hdImageViewerModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'hdImageViewerModal';
+        modal.className = 'modal fade';
+        modal.setAttribute('tabindex', '-1');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.innerHTML = `
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content" style="background: rgba(0,0,0,0.95);">
+                    <div class="modal-header border-0" style="position: absolute; top: 0; right: 0; z-index: 1050;">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body d-flex align-items-center justify-content-center p-0" style="overflow: auto;">
+                        <div style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                            <img id="hdViewerImage" src="" alt="HD/HDR Preview" style="max-width: 95%; max-height: 95vh; width: auto; height: auto; object-fit: contain; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; cursor: zoom-in;" onclick="toggleImageZoom(this)">
+                            <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 12px 24px; border-radius: 8px; backdrop-filter: blur(10px);">
+                                <i class="bi bi-badge-hd me-2"></i><span id="hdViewerQuality">HD/HDR Quality</span> | <i class="bi bi-zoom-in ms-2 me-1"></i>Click to zoom
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Set image and quality badge
+    const img = document.getElementById('hdViewerImage');
+    const qualityText = document.getElementById('hdViewerQuality');
+    img.src = imageUrl;
+    img.classList.remove('zoomed');
+    img.style.cursor = 'zoom-in';
+    
+    // Determine quality
+    const is4K = imageUrl.includes('_SL2500_') || imageUrl.includes('_AC_SL2500_') || imageUrl.includes('_SL3000_') || imageUrl.includes('_AC_SL3000_');
+    const isHD = imageUrl.includes('_SL2000_') || imageUrl.includes('_AC_SL2000_');
+    qualityText.textContent = is4K ? '4K HDR Quality (2500px+)' : isHD ? 'Full HD Quality (2000px+)' : 'HD Quality';
+    
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+// Toggle zoom on image click
+function toggleImageZoom(img) {
+    if (img.classList.contains('zoomed')) {
+        img.classList.remove('zoomed');
+        img.style.maxWidth = '95%';
+        img.style.maxHeight = '95vh';
+        img.style.width = 'auto';
+        img.style.height = 'auto';
+        img.style.cursor = 'zoom-in';
+    } else {
+        img.classList.add('zoomed');
+        img.style.maxWidth = 'none';
+        img.style.maxHeight = 'none';
+        img.style.width = '200%';
+        img.style.height = 'auto';
+        img.style.cursor = 'zoom-out';
+    }
+}
 </script>
 @endpush
 @endsection
