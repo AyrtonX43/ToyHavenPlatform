@@ -178,7 +178,7 @@ class ProductController extends Controller
             }
         }
         
-        // Download and save imported images from URLs
+        // Process imported images from URLs (Amazon HD images)
         if ($request->filled('imported_image_urls')) {
             $imageUrls = array_filter(explode(',', $request->imported_image_urls));
             
@@ -193,36 +193,74 @@ class ProductController extends Controller
                 if (empty($imageUrl)) continue;
                 
                 try {
-                    // Download image from URL (disable SSL verification for compatibility)
-                    $response = Http::timeout(30)->withOptions(['verify' => false])->get($imageUrl);
+                    // For Amazon images, keep the original HD URL and download a thumbnail for fallback
+                    $isAmazonImage = (strpos($imageUrl, 'media-amazon.com') !== false || strpos($imageUrl, 'images-amazon.com') !== false);
                     
-                    if ($response->successful()) {
-                        // Get file extension from URL or content type
-                        $extension = $this->getImageExtension($imageUrl, $response->header('Content-Type'));
-                        $filename = 'imported_' . time() . '_' . $imageIndex . '.' . $extension;
-                        $path = 'products/' . $product->id . '/' . $filename;
+                    if ($isAmazonImage) {
+                        // Create a thumbnail version for fallback (300px)
+                        $thumbnailUrl = preg_replace('/_AC_SL1500_|_SL1500_|_AC_SL\d+_|_SL\d+_/', '_AC_SL300_', $imageUrl);
                         
-                        // Save the image
-                        Storage::disk('public')->put($path, $response->body());
+                        // Download only the thumbnail for storage (small file)
+                        $response = Http::timeout(30)->withOptions(['verify' => false])->get($thumbnailUrl);
                         
-                        ProductImage::create([
-                            'product_id' => $product->id,
-                            'image_path' => $path,
-                            'hd_url' => $imageUrl,
-                            'is_primary' => ($imageIndex === 0 && !$product->images()->exists()),
-                            'display_order' => $imageIndex++,
-                        ]);
-                        
-                        Log::info('Image imported successfully', [
-                            'product_id' => $product->id,
-                            'url' => $imageUrl,
-                            'path' => $path,
-                        ]);
+                        if ($response->successful()) {
+                            $extension = $this->getImageExtension($thumbnailUrl, $response->header('Content-Type'));
+                            $filename = 'imported_thumb_' . time() . '_' . $imageIndex . '.' . $extension;
+                            $path = 'products/' . $product->id . '/' . $filename;
+                            
+                            // Save the thumbnail
+                            Storage::disk('public')->put($path, $response->body());
+                            
+                            // Store with HD URL for display
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_path' => $path, // Thumbnail for fallback
+                                'hd_url' => $imageUrl, // Original HD URL for display
+                                'is_primary' => ($imageIndex === 0 && !$product->images()->exists()),
+                                'display_order' => $imageIndex++,
+                            ]);
+                            
+                            Log::info('Amazon HD image imported', [
+                                'product_id' => $product->id,
+                                'hd_url' => $imageUrl,
+                                'thumbnail_path' => $path,
+                            ]);
+                        } else {
+                            Log::warning('Failed to download thumbnail: ' . $thumbnailUrl, [
+                                'status' => $response->status(),
+                                'product_id' => $product->id,
+                            ]);
+                        }
                     } else {
-                        Log::warning('Failed to download image from URL: ' . $imageUrl, [
-                            'status' => $response->status(),
-                            'product_id' => $product->id,
-                        ]);
+                        // For non-Amazon images, download the full image
+                        $response = Http::timeout(30)->withOptions(['verify' => false])->get($imageUrl);
+                        
+                        if ($response->successful()) {
+                            $extension = $this->getImageExtension($imageUrl, $response->header('Content-Type'));
+                            $filename = 'imported_' . time() . '_' . $imageIndex . '.' . $extension;
+                            $path = 'products/' . $product->id . '/' . $filename;
+                            
+                            Storage::disk('public')->put($path, $response->body());
+                            
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_path' => $path,
+                                'hd_url' => $imageUrl,
+                                'is_primary' => ($imageIndex === 0 && !$product->images()->exists()),
+                                'display_order' => $imageIndex++,
+                            ]);
+                            
+                            Log::info('Image imported successfully', [
+                                'product_id' => $product->id,
+                                'url' => $imageUrl,
+                                'path' => $path,
+                            ]);
+                        } else {
+                            Log::warning('Failed to download image: ' . $imageUrl, [
+                                'status' => $response->status(),
+                                'product_id' => $product->id,
+                            ]);
+                        }
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to import image from URL: ' . $imageUrl, [
@@ -526,7 +564,7 @@ class ProductController extends Controller
             }
         }
         
-        // Download and save imported images from URLs
+        // Process imported images from URLs (Amazon HD images)
         if ($request->filled('imported_image_urls')) {
             $imageUrls = array_filter(explode(',', $request->imported_image_urls));
             
@@ -535,22 +573,50 @@ class ProductController extends Controller
                 if (empty($imageUrl)) continue;
                 
                 try {
-                    $response = Http::timeout(30)->withOptions(['verify' => false])->get($imageUrl);
+                    // For Amazon images, keep the original HD URL and download a thumbnail for fallback
+                    $isAmazonImage = (strpos($imageUrl, 'media-amazon.com') !== false || strpos($imageUrl, 'images-amazon.com') !== false);
                     
-                    if ($response->successful()) {
-                        $extension = $this->getImageExtension($imageUrl, $response->header('Content-Type'));
-                        $filename = 'imported_' . time() . '_' . $imageIndex . '.' . $extension;
-                        $path = 'products/' . $product->id . '/' . $filename;
+                    if ($isAmazonImage) {
+                        // Create a thumbnail version for fallback (300px)
+                        $thumbnailUrl = preg_replace('/_AC_SL1500_|_SL1500_|_AC_SL\d+_|_SL\d+_/', '_AC_SL300_', $imageUrl);
                         
-                        Storage::disk('public')->put($path, $response->body());
+                        // Download only the thumbnail for storage (small file)
+                        $response = Http::timeout(30)->withOptions(['verify' => false])->get($thumbnailUrl);
                         
-                        ProductImage::create([
-                            'product_id' => $product->id,
-                            'image_path' => $path,
-                            'hd_url' => $imageUrl,
-                            'is_primary' => $imageIndex === 0 && $product->images->count() === 0,
-                            'display_order' => $imageIndex++,
-                        ]);
+                        if ($response->successful()) {
+                            $extension = $this->getImageExtension($thumbnailUrl, $response->header('Content-Type'));
+                            $filename = 'imported_thumb_' . time() . '_' . $imageIndex . '.' . $extension;
+                            $path = 'products/' . $product->id . '/' . $filename;
+                            
+                            Storage::disk('public')->put($path, $response->body());
+                            
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_path' => $path, // Thumbnail for fallback
+                                'hd_url' => $imageUrl, // Original HD URL for display
+                                'is_primary' => $imageIndex === 0 && $product->images->count() === 0,
+                                'display_order' => $imageIndex++,
+                            ]);
+                        }
+                    } else {
+                        // For non-Amazon images, download the full image
+                        $response = Http::timeout(30)->withOptions(['verify' => false])->get($imageUrl);
+                        
+                        if ($response->successful()) {
+                            $extension = $this->getImageExtension($imageUrl, $response->header('Content-Type'));
+                            $filename = 'imported_' . time() . '_' . $imageIndex . '.' . $extension;
+                            $path = 'products/' . $product->id . '/' . $filename;
+                            
+                            Storage::disk('public')->put($path, $response->body());
+                            
+                            ProductImage::create([
+                                'product_id' => $product->id,
+                                'image_path' => $path,
+                                'hd_url' => $imageUrl,
+                                'is_primary' => $imageIndex === 0 && $product->images->count() === 0,
+                                'display_order' => $imageIndex++,
+                            ]);
+                        }
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to import image from URL: ' . $imageUrl, [
