@@ -222,14 +222,6 @@
                         <span class="badge bg-primary px-3 py-2">
                             <i class="bi bi-files me-1"></i>{{ $seller->documents->count() }} Document(s)
                         </span>
-                        @if($seller->documents->where('status', 'pending')->count() > 0)
-                            <form action="{{ route('admin.sellers.documents.approve-all', $seller->id) }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve all pending documents?')">
-                                    <i class="bi bi-check-all me-1"></i> Approve All Documents
-                                </button>
-                            </form>
-                        @endif
                     </div>
                 </div>
             </div>
