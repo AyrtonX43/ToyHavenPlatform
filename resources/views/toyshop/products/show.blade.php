@@ -4,17 +4,19 @@
 
 @push('styles')
 <style>
-    /* Product Page - 1080P-4K HDR Quality */
+    /* Product Page - Maximized width layout */
     .product-page {
         background: #f8f9fa;
         min-height: 100vh;
         padding: 2rem 0;
+        width: 100%;
     }
     
     .product-container {
-        max-width: 1400px;
+        width: 100%;
+        max-width: 100%;
         margin: 0 auto;
-        padding: 0 1rem;
+        padding: 0 2rem;
     }
     
     /* Breadcrumb */
@@ -24,16 +26,17 @@
         margin-bottom: 1.5rem;
     }
     
-    /* Product Grid */
+    /* Product Grid - maximized width, image gets more space */
     .product-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1.1fr 0.9fr;
         gap: 3rem;
-        align-items: start;
         background: white;
-        padding: 2rem;
+        padding: 2.5rem;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        width: 100%;
+        max-width: 100%;
     }
     
     /* Image Gallery */
@@ -299,21 +302,16 @@
     /* Product Info */
     .product-info {
         position: sticky;
-        top: 100px;
+        top: 20px;
         height: fit-content;
-        display: flex;
-        flex-direction: column;
-        gap: 0;
     }
     
     .product-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         font-weight: 700;
         color: #111827;
-        margin-bottom: 0.75rem;
-        line-height: 1.35;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
+        margin-bottom: 1rem;
+        line-height: 1.3;
     }
     
     .product-rating-stars {
@@ -330,10 +328,10 @@
     }
     
     .product-price {
-        font-size: 1.75rem;
+        font-size: 2rem;
         font-weight: 700;
         color: #111827;
-        margin: 0.5rem 0 1rem;
+        margin: 1.5rem 0;
     }
     
     .stock-status {
@@ -356,22 +354,16 @@
     
     .action-buttons {
         display: flex;
-        gap: 0.75rem;
-        margin: 1.5rem 0;
-        align-items: stretch;
-    }
-    
-    .action-buttons form.flex-grow-1 {
-        flex: 1;
-        min-width: 0;
+        gap: 1rem;
+        margin: 2rem 0;
     }
     
     .btn-add-cart {
-        width: 100%;
+        flex: 1;
         background: #3b82f6;
         color: white;
         border: none;
-        padding: 0.875rem 1.25rem;
+        padding: 1rem;
         border-radius: 8px;
         font-size: 1rem;
         font-weight: 600;
@@ -386,13 +378,12 @@
     }
     
     .btn-wishlist {
-        padding: 0.875rem 1rem;
+        padding: 1rem;
         background: white;
         border: 2px solid #e5e7eb;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s;
-        flex-shrink: 0;
     }
     
     .btn-wishlist:hover {
@@ -404,58 +395,27 @@
     /* Responsive */
     @media (max-width: 992px) {
         .product-grid {
-            gap: 2rem;
+            grid-template-columns: 1fr;
         }
     }
     
     @media (max-width: 768px) {
-        .product-page {
-            padding: 1rem 0;
-        }
-        
         .product-container {
-            padding: 0 0.75rem;
-        }
-        
-        .breadcrumb {
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 0.25rem;
-        }
-        .breadcrumb-item.active {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 180px;
+            padding: 0 1rem;
         }
         
         .product-grid {
             grid-template-columns: 1fr;
-            gap: 1.5rem;
-            padding: 1.25rem;
+            gap: 2rem;
+            padding: 1.5rem;
         }
         
         .main-image-wrapper {
-            height: 320px;
-            min-height: 280px;
+            height: 400px;
         }
         
         .product-info {
             position: static;
-        }
-        
-        .product-title {
-            font-size: 1.25rem;
-        }
-        
-        .product-price {
-            font-size: 1.5rem;
-        }
-        
-        .product-reviews-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
         }
         
         .fullscreen-nav {
@@ -481,6 +441,11 @@
         .fullscreen-thumbnails {
             padding: 12px 16px 20px;
             gap: 8px;
+        }
+        
+        .product-reviews-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
         }
     }
 </style>
@@ -598,8 +563,8 @@
 
                 <!-- Seller Info -->
                 @if($product->seller)
-                <div class="card mt-3 mb-0 border-0 bg-light">
-                    <div class="card-body py-3">
+                <div class="card mt-3 mb-3">
+                    <div class="card-body">
                         <small class="text-muted">Sold by:</small>
                         <a href="{{ route('toyshop.business.show', $product->seller->business_slug) }}" class="text-decoration-none">
                             <strong>{{ $product->seller->business_name }}</strong>
@@ -655,8 +620,8 @@
                 @endif
 
                 <!-- Product Details -->
-                <div class="card mt-3 border-0 bg-light">
-                    <div class="card-body py-3">
+                <div class="card mt-4">
+                    <div class="card-body">
                         <h5 class="card-title mb-3">Product Details</h5>
                         <table class="table table-sm">
                             <tbody>
@@ -693,8 +658,8 @@
 
                 <!-- Description -->
                 @if($product->description)
-                <div class="card mt-3 border-0 bg-light">
-                    <div class="card-body py-3">
+                <div class="card mt-3">
+                    <div class="card-body">
                         <h5 class="card-title mb-3">Description</h5>
                         <p class="mb-0">{{ $product->description }}</p>
                     </div>
@@ -707,14 +672,14 @@
                 $approvedReviews = $product->reviews->where('status', 'approved')->sortByDesc('created_at');
             @endphp
             <div class="product-reviews-section">
-                <h5 class="mb-3 fw-bold">
+                <h5 class="mb-4">
                     <i class="bi bi-chat-square-text me-2"></i>Customer Reviews
                     @if($reviewsCount > 0)
                         <span class="text-muted fw-normal fs-6">({{ $reviewsCount }} {{ Str::plural('review', $reviewsCount) }})</span>
                     @endif
                 </h5>
                 @if($approvedReviews->count() > 0)
-                    <div class="review-summary mb-3 p-3 rounded bg-light">
+                    <div class="review-summary mb-4">
                         <div class="d-flex align-items-center gap-3 flex-wrap">
                             <div class="product-rating-stars text-warning" style="font-size: 1.5rem;">
                                 @for($i = 1; $i <= 5; $i++)
@@ -733,8 +698,8 @@
                     </div>
                     <div class="review-comments-list">
                         @foreach($approvedReviews as $review)
-                            <div class="card mb-2 border-0 bg-light">
-                                <div class="card-body py-3">
+                            <div class="card mb-3">
+                                <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                                         <div class="d-flex align-items-center gap-2">
                                             <strong>{{ $review->user->name ?? 'Anonymous' }}</strong>
@@ -768,7 +733,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="alert alert-light border rounded-3">
+                    <div class="alert alert-light border">
                         <p class="mb-0 text-muted">
                             <i class="bi bi-info-circle me-2"></i>No reviews yet. Be the first to review this product!
                         </p>
