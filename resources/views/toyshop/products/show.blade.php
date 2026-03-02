@@ -444,7 +444,8 @@
                 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <form action="{{ route('toyshop.cart.add') }}" method="POST" class="flex-fill">
+                    @auth
+                    <form action="{{ route('cart.add') }}" method="POST" class="flex-fill">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="quantity" id="cart_quantity" value="1">
@@ -453,8 +454,7 @@
                         </button>
                     </form>
                     
-                    @auth
-                    <form action="{{ isset($inWishlist) && $inWishlist ? route('toyshop.wishlist.remove', $wishlistItem->id) : route('toyshop.wishlist.add') }}" method="POST">
+                    <form action="{{ isset($inWishlist) && $inWishlist ? route('wishlist.remove', $wishlistItem->id) : route('wishlist.add') }}" method="POST">
                         @csrf
                         @if(isset($inWishlist) && $inWishlist)
                             @method('DELETE')
@@ -465,6 +465,10 @@
                             <i class="bi bi-heart{{ isset($inWishlist) && $inWishlist ? '-fill text-danger' : '' }}"></i>
                         </button>
                     </form>
+                    @else
+                    <a href="{{ route('login') }}" class="btn-add-cart w-100 text-center text-decoration-none">
+                        <i class="bi bi-cart-plus me-2"></i>Login to Purchase
+                    </a>
                     @endauth
                 </div>
                 @endif
