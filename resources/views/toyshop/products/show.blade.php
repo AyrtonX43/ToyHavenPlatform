@@ -141,6 +141,7 @@
         height: 100vh;
         background: rgba(0, 0, 0, 0.98);
         z-index: 999999;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
     }
@@ -151,17 +152,21 @@
     
     .fullscreen-content {
         position: relative;
+        flex: 1;
         width: 100%;
-        height: 100%;
+        min-height: 0;
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 70px 80px 0;
     }
     
     .fullscreen-image-container {
         position: relative;
-        max-width: 95vw;
-        max-height: 95vh;
+        width: 100%;
+        height: 100%;
+        max-width: 2500px;
+        max-height: calc(100vh - 200px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -169,10 +174,11 @@
     
     .fullscreen-image {
         max-width: 100%;
-        max-height: 95vh;
+        max-height: 100%;
         width: auto;
         height: auto;
         object-fit: contain;
+        object-position: center;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         cursor: zoom-in;
@@ -241,7 +247,7 @@
     
     .fullscreen-counter {
         position: absolute;
-        bottom: 20px;
+        top: 20px;
         left: 50%;
         transform: translateX(-50%);
         background: rgba(0,0,0,0.75);
@@ -250,6 +256,42 @@
         border-radius: 20px;
         font-size: 0.875rem;
         backdrop-filter: blur(10px);
+        z-index: 10;
+    }
+    
+    /* Fullscreen thumbnail preview strip */
+    .fullscreen-thumbnails {
+        display: flex;
+        gap: 12px;
+        padding: 16px 20px 24px;
+        justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        background: rgba(0,0,0,0.5);
+        overflow-x: auto;
+        max-width: 100vw;
+    }
+    
+    .fullscreen-thumb {
+        width: 72px;
+        height: 72px;
+        min-width: 72px;
+        object-fit: cover;
+        border: 3px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s;
+    }
+    
+    .fullscreen-thumb:hover {
+        opacity: 0.9;
+    }
+    
+    .fullscreen-thumb.active {
+        border-color: #3b82f6;
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
     }
     
     .fullscreen-zoom-hint {
@@ -370,6 +412,25 @@
             width: 40px;
             height: 40px;
             font-size: 1.2rem;
+        }
+        
+        .fullscreen-content {
+            padding: 60px 16px 0;
+        }
+        
+        .fullscreen-image-container {
+            max-height: calc(100vh - 180px);
+        }
+        
+        .fullscreen-thumb {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+        }
+        
+        .fullscreen-thumbnails {
+            padding: 12px 16px 20px;
+            gap: 8px;
         }
     }
 </style>
@@ -610,6 +671,21 @@
                  onclick="toggleZoom(event)">
         </div>
     </div>
+    
+    @if($hasImages)
+    <div class="fullscreen-thumbnails" id="fullscreenThumbnails">
+        @foreach($product->images as $index => $image)
+            @php
+                $thumbUrl = $imageDisplayUrls[$index] ?? asset('storage/' . $image->image_path);
+            @endphp
+            <img src="{{ $thumbUrl }}"
+                 alt="{{ $product->name }}"
+                 class="fullscreen-thumb {{ $index === 0 ? 'active' : '' }}"
+                 data-index="{{ $index }}"
+                 onclick="selectFullscreenImage({{ $index }})">
+        @endforeach
+    </div>
+    @endif
 </div>
 @endsection
 
@@ -726,6 +802,7 @@
         document.body.style.overflow = 'hidden';
         
         updateImageCounter();
+        updateFullscreenThumbnails();
         
         // Show zoom hint briefly
         zoomHint.classList.add('show');
@@ -768,11 +845,23 @@
         const fullscreenImage = document.getElementById('fullscreenImage');
         fullscreenImage.src = productImages[currentImageIndex];
         updateImageCounter();
+        updateFullscreenThumbnails();
         
         // Reset zoom when changing images
         isZoomed = false;
         fullscreenImage.classList.remove('zoomed');
         fullscreenImage.style.transform = '';
+    }
+    
+    function selectFullscreenImage(index) {
+        currentImageIndex = index;
+        updateFullscreenImage();
+    }
+    
+    function updateFullscreenThumbnails() {
+        document.querySelectorAll('.fullscreen-thumb').forEach((thumb, i) => {
+            thumb.classList.toggle('active', i === currentImageIndex);
+        });
     }
     
     function updateImageCounter() {
