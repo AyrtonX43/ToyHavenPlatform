@@ -14,7 +14,11 @@ class RegistrationController extends Controller
 {
     public function show(Request $request)
     {
-        if (Auth::user()->seller) {
+        $user = Auth::user();
+        $existingSeller = $user->seller;
+        
+        // Allow rejected sellers to re-register, but block approved/pending sellers
+        if ($existingSeller && $existingSeller->verification_status !== 'rejected') {
             return redirect()->route('seller.dashboard')
                 ->with('info', 'You are already registered as a seller.');
         }
@@ -23,8 +27,6 @@ class RegistrationController extends Controller
         $type = $request->query('type');
         
         if ($type && in_array($type, ['basic', 'verified'])) {
-            $user = Auth::user();
-            
             // Get default address or fallback to user's address fields
             $defaultAddress = $user->defaultAddress;
             
@@ -45,11 +47,36 @@ class RegistrationController extends Controller
                 'postal_code' => $defaultAddress ? $defaultAddress->postal_code : ($user->postal_code ?? ''),
             ];
             
+            // If re-registering after rejection, show previous data
+            if ($existingSeller && $existingSeller->verification_status === 'rejected') {
+                $prefilledData = array_merge($prefilledData, [
+                    'business_name' => $existingSeller->business_name ?? '',
+                    'description' => $existingSeller->description ?? '',
+                    'phone' => strpos($existingSeller->phone ?? '', '+63') === 0 ? substr($existingSeller->phone, 3) : ($existingSeller->phone ?? $phoneDisplay),
+                    'email' => $existingSeller->email ?? $prefilledData['email'],
+                    'address' => $existingSeller->address ?? $prefilledData['address'],
+                    'region' => $existingSeller->region ?? $prefilledData['region'],
+                    'city' => $existingSeller->city ?? $prefilledData['city'],
+                    'barangay' => $existingSeller->barangay ?? $prefilledData['barangay'],
+                    'province' => $existingSeller->province ?? $prefilledData['province'],
+                    'postal_code' => $existingSeller->postal_code ?? $prefilledData['postal_code'],
+                    'facebook_url' => $existingSeller->facebook_url ?? '',
+                    'instagram_url' => $existingSeller->instagram_url ?? '',
+                    'tiktok_url' => $existingSeller->tiktok_url ?? '',
+                    'website_url' => $existingSeller->website_url ?? '',
+                ]);
+            }
+            
             $categories = Category::where('is_active', true)->orderBy('display_order')->orderBy('name')->get();
-            return view('seller.registration.form', compact('type', 'prefilledData', 'categories'));
+            $rejectionReason = $existingSeller && $existingSeller->verification_status === 'rejected' ? $existingSeller->rejection_reason : null;
+            
+            return view('seller.registration.form', compact('type', 'prefilledData', 'categories', 'rejectionReason'));
         }
 
-        return view('seller.registration.index');
+        // Show rejection reason on the index page if applicable
+        $rejectionReason = $existingSeller && $existingSeller->verification_status === 'rejected' ? $existingSeller->rejection_reason : null;
+        
+        return view('seller.registration.index', compact('rejectionReason'));
     }
 
     public function store(Request $request)
@@ -103,6 +130,20 @@ class RegistrationController extends Controller
         $categoryIds = array_filter($categoryIds, function($id) {
             return $id > 0;
         });
+        
+        // Check if user has a rejected seller account - delete it to allow re-registration
+        $existingSeller = Auth::user()->seller;
+        if ($existingSeller && $existingSeller->verification_status === 'rejected') {
+            // Delete old documents
+            foreach ($existingSeller->documents as $document) {
+                if (Storage::disk('public')->exists($document->document_path)) {
+                    Storage::disk('public')->delete($document->document_path);
+                }
+                $document->delete();
+            }
+            // Delete old seller record
+            $existingSeller->delete();
+        }
         
         // Create seller with normalized text
         $seller = Seller::create([

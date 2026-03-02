@@ -163,7 +163,7 @@ class SellerController extends Controller
 
     public function reject(Request $request, $id)
     {
-        $seller = Seller::with(['user', 'documents', 'products'])->findOrFail($id);
+        $seller = Seller::with('user')->findOrFail($id);
         
         $request->validate([
             'rejection_type' => 'required|string',
@@ -184,33 +184,28 @@ class SellerController extends Controller
             $rejectionReason = 'Reason: ' . ($rejectionTypes[$request->rejection_type] ?? $request->rejection_type) . "\n\n" . $request->reason;
         }
         
-        // Store business name before deletion
-        $businessName = $seller->business_name;
-        $user = $seller->user;
+        $seller->update([
+            'verification_status' => 'rejected',
+            'rejection_reason' => $rejectionReason
+        ]);
         
-        // Send notification to seller BEFORE deleting the seller record
-        if ($user) {
-            $user->notify(new SellerRejectedNotification($rejectionReason, $businessName));
-        }
+        // Sync: Reject all pending documents when seller is rejected
+        $seller->documents()->where('status', 'pending')->update([
+            'status' => 'rejected',
+            'rejection_reason' => 'Seller application rejected: ' . $rejectionReason
+        ]);
         
-        // Delete all seller-related data
-        // 1. Delete all documents
-        $seller->documents()->delete();
-        
-        // 2. Delete all products (or set them to inactive)
-        $seller->products()->delete();
-        
-        // 3. Delete the seller record
-        $seller->delete();
-        
-        // 4. Convert user back to regular customer role
-        if ($user) {
-            $user->update([
+        // Revert user back to customer role - they need to register as seller again
+        if ($seller->user) {
+            $seller->user->update([
                 'role' => 'customer'
             ]);
+            
+            // Send notification to seller
+            $seller->user->notify(new SellerRejectedNotification($rejectionReason, $seller->business_name));
         }
         
-        return back()->with('success', 'Seller rejected successfully. The seller account has been removed and the user has been converted back to a regular customer. They can register as a seller again. The seller has been notified via email and in-app notification.');
+        return back()->with('success', 'Seller rejected successfully. The user has been reverted to customer role and will need to register as seller again. They have been notified via email and in-app notification.');
     }
 
     public function suspend(Request $request, $id)

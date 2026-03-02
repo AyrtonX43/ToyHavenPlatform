@@ -35,6 +35,12 @@ class CheckSellerApproved
                 ->with('info', 'Please complete your seller registration first.');
         }
 
+        // Check if seller is rejected - redirect to registration
+        if ($user->seller->verification_status === 'rejected') {
+            return redirect()->route('seller.register')
+                ->with('error', 'Your previous business application was rejected. Please review the rejection reason in your notifications and submit a new application with the required corrections.');
+        }
+
         // Check if seller is approved
         if ($user->seller->verification_status !== 'approved') {
             // Allow access to dashboard to show pending message
