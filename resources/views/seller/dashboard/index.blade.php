@@ -371,8 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Revenue (₱)',
                     data: {!! json_encode(array_column($revenueData, 'revenue')) !!},
-                    borderColor: '#0891b2',
-                    backgroundColor: 'rgba(8, 145, 178, 0.15)',
+                    borderColor: '#1a1a1a',
+                    backgroundColor: 'rgba(26, 26, 26, 0.08)',
                     tension: 0.4,
                     fill: true
                 }]
@@ -398,8 +398,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     label: 'Orders',
                     data: {!! json_encode(array_column($ordersData, 'count')) !!},
-                    backgroundColor: 'rgba(14, 165, 233, 0.6)',
-                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(26, 26, 26, 0.15)',
+                    borderColor: '#1a1a1a',
                     borderWidth: 1
                 }]
             },

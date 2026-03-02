@@ -12,21 +12,21 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <!-- Bootstrap Icons -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Google Fonts - Toys and Joy style -->
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
         <!-- Custom CSS -->
         <link href="{{ asset('css/toyshop-animations.css') }}" rel="stylesheet">
         @stack('styles')
         <style>
             body {
-                font-family: 'Quicksand', -apple-system, sans-serif;
+                font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
             }
             .auth-container {
                 min-height: 100vh;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 40%, #fef3c7 100%);
+                background: #fafafa;
                 position: relative;
             }
             .auth-card {
@@ -46,7 +46,7 @@
                 left: 0;
                 width: 100%;
                 height: 5px;
-                background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);
+                background: #1a1a1a;
             }
             .auth-card .form-control {
                 font-size: 1rem;
@@ -56,8 +56,8 @@
                 border: 2px solid #e2e8f0;
             }
             .auth-card .form-control:focus {
-                border-color: #0891b2;
-                box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.2);
+                border-color: #1a1a1a;
+                box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.1);
             }
             .auth-card .form-label {
                 font-size: 1rem;
@@ -73,25 +73,24 @@
                 font-weight: 700;
             }
             .auth-card .btn-primary {
-                background: linear-gradient(135deg, #0891b2, #06b6d4);
+                background: #1a1a1a;
                 border: none;
                 color: #fff;
             }
             .auth-card .btn-primary:hover {
-                background: linear-gradient(135deg, #0e7490, #0891b2);
+                background: #333;
                 color: #fff;
-                box-shadow: 0 6px 20px rgba(8, 145, 178, 0.35);
             }
             .auth-card .btn-primary:focus,
             .auth-card .btn-primary:focus-visible,
             .auth-card .btn-primary.focus {
-                background: linear-gradient(135deg, #0e7490, #0891b2);
+                background: #333;
                 border: none;
                 color: #fff;
-                box-shadow: 0 0 0 0.25rem rgba(8, 145, 178, 0.35);
+                box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.2);
             }
             .auth-card .btn-primary:active {
-                background: linear-gradient(135deg, #0891b2, #06b6d4);
+                background: #1a1a1a;
                 color: #fff;
             }
             .auth-card .btn-outline-primary {

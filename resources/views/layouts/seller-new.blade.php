@@ -11,8 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Google Fonts - Quicksand -->
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/seller.css'])
     @stack('styles')
 </head>
@@ -71,7 +71,7 @@
             @endif
 
             <hr class="text-white-50 my-3 mx-4">
-            <a href="{{ route('home') }}" class="sidebar-link" style="background: rgba(14, 165, 233, 0.1); border-left-color: var(--primary-sky-light);">
+            <a href="{{ route('home') }}" class="sidebar-link" style="background: rgba(255,255,255,0.05);">
                 <i class="bi bi-house-door"></i> Back to Website
             </a>
         </nav>

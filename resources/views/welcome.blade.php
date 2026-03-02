@@ -4,22 +4,13 @@
 
 @push('styles')
 <style>
-    /* Toys and Joy style - clean, modern toy store (Template Monster 471052 inspired) */
+    /* Professional, clean design */
     .hero-section {
-        background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 40%, #fef3c7 100%);
-        color: #1e293b;
-        padding: 4rem 0 5rem;
+        background: #fafafa;
+        color: #1a1a1a;
+        padding: 3.5rem 0 4rem;
         position: relative;
-        overflow: hidden;
-    }
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: -50%; right: -20%;
-        width: 60%;
-        height: 200%;
-        background: radial-gradient(ellipse, rgba(8,145,178,0.12) 0%, transparent 70%);
-        pointer-events: none;
+        border-bottom: 1px solid #eee;
     }
     .hero-content { position: relative; z-index: 2; }
     .hero-badge, .hero-title, .hero-subtitle, .hero-cta {
@@ -31,84 +22,82 @@
     .hero-cta { animation-delay: 0.5s; }
     .hero-badge {
         display: inline-block;
-        background: linear-gradient(135deg, #0891b2, #06b6d4);
+        background: #1a1a1a;
         color: #fff;
-        font-weight: 700;
-        font-size: 0.875rem;
-        padding: 0.35rem 1rem;
-        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.9rem;
+        border-radius: 6px;
         margin-bottom: 1rem;
         letter-spacing: 0.02em;
     }
     .hero-title {
-        font-size: clamp(2.25rem, 5vw, 3.5rem);
-        font-weight: 700;
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 600;
         margin-bottom: 0.75rem;
-        line-height: 1.15;
-        color: #1e293b;
-        letter-spacing: -0.03em;
+        line-height: 1.2;
+        color: #1a1a1a;
+        letter-spacing: -0.025em;
     }
     .hero-subtitle {
-        font-size: 1.25rem;
-        margin-bottom: 2rem;
-        color: #64748b;
-        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1.75rem;
+        color: #666;
+        font-weight: 500;
         max-width: 520px;
         margin-left: auto;
         margin-right: auto;
         line-height: 1.6;
     }
     .hero-cta .btn {
-        border-radius: 50px;
-        padding: 1rem 2.25rem;
-        font-weight: 700;
-        font-size: 1.0625rem;
-        background: linear-gradient(135deg, #f97316, #fb923c);
+        border-radius: 8px;
+        padding: 0.85rem 1.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        background: #1a1a1a;
         border: none;
         color: #fff;
-        box-shadow: 0 4px 20px rgba(249,115,22,0.35);
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: background 0.2s, opacity 0.2s;
     }
     .hero-cta .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 28px rgba(249,115,22,0.45);
+        background: #333;
         color: #fff;
     }
 
     .section-label {
-        font-size: 0.8125rem;
-        font-weight: 700;
+        font-size: 0.75rem;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
-        color: #0891b2;
+        letter-spacing: 0.1em;
+        color: #666;
         margin-bottom: 0.5rem;
     }
     .section-heading {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
         margin-bottom: 0.5rem;
     }
     .section-subheading {
-        color: #64748b;
-        font-size: 1rem;
-        margin-bottom: 2rem;
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
         font-weight: 500;
     }
 
     .category-block {
         background: #fff;
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 3rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border-radius: 10px;
+        padding: 1.75rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid #eee;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .category-block h3 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 1.25rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -116,33 +105,32 @@
         gap: 0.75rem;
     }
     .category-block h3 a {
-        font-size: 0.9375rem;
-        font-weight: 700;
-        color: #0891b2;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1a1a1a;
         text-decoration: none;
     }
-    .category-block h3 a:hover { color: #0e7490; }
+    .category-block h3 a:hover { color: #333; }
 
     .toy-card {
         background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
+        border: 1px solid #eee;
+        border-radius: 10px;
         overflow: hidden;
         height: 100%;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
         text-decoration: none;
         color: inherit;
         display: block;
     }
     .toy-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.08);
-        border-color: #22d3ee;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        border-color: #ddd;
         color: inherit;
     }
     .toy-card-img-wrap {
         aspect-ratio: 1;
-        background: linear-gradient(145deg, #ecfeff, #f0fdfa);
+        background: #f8f8f8;
         overflow: hidden;
     }
     .toy-card-img-wrap img {
@@ -154,30 +142,30 @@
         padding: 1.25rem;
     }
     .toy-card-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1a1a1a;
         margin-bottom: 0.35rem;
         line-height: 1.3;
     }
     .toy-card-price {
-        font-size: 1.125rem;
-        font-weight: 700;
-        color: #0891b2;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1a1a1a;
     }
 
     .about-section {
-        background: linear-gradient(180deg, #fff 0%, #f8fafc 50%, #ecfeff 100%);
-        padding: 4rem 0;
-        border-radius: 24px;
-        margin: 3rem 0;
-        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: 3rem 0;
+        border-radius: 10px;
+        margin: 2.5rem 0;
+        border: 1px solid #eee;
     }
     .about-section h2 {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.75rem;
     }
     .about-section p {
         color: #64748b;
@@ -188,44 +176,42 @@
     }
 
     .cta-block {
-        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%);
+        background: #1a1a1a;
         color: #fff;
-        padding: 3rem 2rem;
-        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        border-radius: 10px;
         text-align: center;
-        margin: 3rem 0;
-        box-shadow: 0 8px 32px rgba(8,145,178,0.35);
+        margin: 2.5rem 0;
     }
     .cta-block h2 {
-        font-size: 1.5rem;
-        font-weight: 700;
+        font-size: 1.35rem;
+        font-weight: 600;
         margin-bottom: 0.5rem;
     }
     .cta-block p {
-        opacity: 0.95;
-        margin-bottom: 1.5rem;
+        opacity: 0.9;
+        margin-bottom: 1.25rem;
         font-weight: 500;
     }
     .cta-block .btn {
         background: #fff;
-        color: #0891b2;
-        font-weight: 700;
-        border-radius: 50px;
-        padding: 0.85rem 2rem;
+        color: #1a1a1a;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 0.75rem 1.75rem;
         border: none;
     }
     .cta-block .btn:hover {
-        background: #ecfeff;
-        color: #0e7490;
+        background: #f5f5f5;
+        color: #1a1a1a;
     }
 
     .newsletter-section {
-        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+        background: #1a1a1a;
         color: #fff;
-        padding: 3.5rem 2rem;
-        border-radius: 20px;
-        margin: 3rem 0;
-        border-top: 3px solid #0891b2;
+        padding: 2.5rem 2rem;
+        border-radius: 10px;
+        margin: 2.5rem 0;
     }
     .newsletter-section h3 {
         font-size: 1.5rem;
@@ -248,12 +234,12 @@
         color: rgba(255,255,255,0.6);
     }
     .newsletter-section .btn {
-        border-radius: 50px;
-        padding: 0.9rem 1.75rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #f97316, #fb923c);
+        border-radius: 8px;
+        padding: 0.8rem 1.5rem;
+        font-weight: 600;
+        background: #fff;
         border: none;
-        color: #fff;
+        color: #1a1a1a;
     }
     .newsletter-section .btn:hover { color: #fff; }
 
@@ -268,24 +254,23 @@
         display: block;
     }
     .how-it-row .card:hover {
-        transform: translateY(-6px);
-        border-color: #22d3ee;
-        box-shadow: 0 12px 32px rgba(8,145,178,0.2);
+        border-color: #ddd;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
     .how-it-row a.card .btn {
         pointer-events: none;
     }
     .how-it-row .card .icon-wrap {
-        width: 64px;
-        height: 64px;
-        border-radius: 16px;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.75rem;
-        margin-bottom: 1.25rem;
-        background: linear-gradient(135deg, #ecfeff, #f0fdfa);
-        color: #0891b2;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        background: #f5f5f5;
+        color: #1a1a1a;
     }
     .how-it-row .card h3 {
         font-size: 1.2rem;
@@ -299,9 +284,9 @@
         margin-bottom: 1rem;
     }
     .how-it-row .card .btn-primary {
-        border-radius: 50px;
-        font-weight: 700;
-        background: linear-gradient(135deg, #0891b2, #06b6d4);
+        border-radius: 8px;
+        font-weight: 600;
+        background: #1a1a1a;
         border: none;
         color: #fff;
     }

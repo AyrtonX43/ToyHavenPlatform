@@ -4,83 +4,82 @@
 
 @push('styles')
 <style>
-    .business-page { background: linear-gradient(180deg, #f1f5f9 0%, #ffffff 120px); min-height: 100vh; padding: 0 0 3rem; }
+    .business-page { background: #fafafa; min-height: 100vh; padding: 0 0 3rem; }
     .business-hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+        background: #1a1a1a;
         color: #fff;
-        padding: 2.5rem 0 3rem;
-        margin-bottom: -2rem;
+        padding: 2rem 0 2.5rem;
+        margin-bottom: -1.5rem;
         position: relative;
     }
-    .business-hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(to top, rgba(255,255,255,0.03), transparent); pointer-events: none; }
     .business-logo-wrap {
-        width: 120px; height: 120px;
-        border-radius: 20px;
+        width: 100px; height: 100px;
+        border-radius: 12px;
         overflow: hidden;
-        border: 4px solid rgba(255,255,255,0.2);
-        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.06);
         flex-shrink: 0;
     }
     .business-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .business-logo-wrap .placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; opacity: 0.6; }
-    .business-name { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
-    .business-meta { font-size: 0.9rem; opacity: 0.85; }
+    .business-logo-wrap .placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; opacity: 0.5; }
+    .business-name { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .business-meta { font-size: 0.875rem; opacity: 0.8; }
     .business-meta i { opacity: 0.7; margin-right: 0.35rem; }
-    .rating-stars { color: #fbbf24; font-size: 1rem; }
-    .rating-badge { background: rgba(251, 191, 36, 0.2); color: #fbbf24; padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
-    .about-us-text { text-align: justify; line-height: 1.8; color: #475569; font-size: 0.95rem; }
-    .section-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
-    .section-card .card-body { padding: 1.5rem 1.75rem; }
-    .section-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .rating-stars { color: #fbbf24; font-size: 0.95rem; }
+    .rating-badge { background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+    .about-us-text { text-align: justify; line-height: 1.75; color: #555; font-size: 0.95rem; }
+    .section-card { background: #fff; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+    .section-card .card-body { padding: 1.5rem 1.5rem; }
+    .section-title { font-size: 0.9rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
     .social-icon-btn {
-        width: 44px; height: 44px;
-        border-radius: 12px;
+        width: 40px; height: 40px;
+        border-radius: 8px;
         display: inline-flex; align-items: center; justify-content: center;
-        font-size: 1.2rem;
-        transition: transform 0.2s, box-shadow 0.2s;
+        font-size: 1.1rem;
+        transition: opacity 0.2s;
     }
-    .social-icon-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .social-icon-btn:hover { opacity: 0.9; }
     .social-icon-btn.facebook { background: #1877f2; color: #fff; }
     .social-icon-btn.instagram { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; }
     .social-icon-btn.tiktok { background: #000; color: #fff; }
-    .social-icon-btn.other { background: #64748b; color: #fff; }
+    .social-icon-btn.other { background: #666; color: #fff; }
     .social-icon-btn.twitter { background: #1da1f2; color: #fff; }
     .social-icon-btn.youtube { background: #ff0000; color: #fff; }
     .stat-box {
         background: #fff;
-        border-radius: 14px;
-        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        border: 1px solid #eee;
         padding: 1.25rem 1rem;
         text-align: center;
         transition: all 0.2s;
     }
-    .stat-box:hover { border-color: #0ea5e9; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1); }
-    .stat-box .value { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; color: #0f172a; }
-    .stat-box .label { font-size: 0.8rem; color: #64748b; font-weight: 500; margin-top: 0.25rem; }
+    .stat-box:hover { border-color: #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-box .value { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; color: #1a1a1a; }
+    .stat-box .label { font-size: 0.8rem; color: #666; font-weight: 500; margin-top: 0.25rem; }
     .product-grid-card {
         background: #fff;
-        border-radius: 16px;
-        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        border: 1px solid #eee;
         overflow: hidden;
-        transition: all 0.25s ease;
+        transition: all 0.2s ease;
         cursor: pointer;
     }
-    .product-grid-card:hover { border-color: #0ea5e9; box-shadow: 0 8px 24px rgba(14, 165, 233, 0.12); transform: translateY(-2px); }
-    .product-grid-card .img-wrap { height: 200px; overflow: hidden; background: #f8fafc; }
-    .product-grid-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-    .product-grid-card:hover .img-wrap img { transform: scale(1.04); }
+    .product-grid-card:hover { border-color: #ddd; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .product-grid-card .img-wrap { height: 200px; overflow: hidden; background: #f8f8f8; }
+    .product-grid-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.25s; }
+    .product-grid-card:hover .img-wrap img { transform: scale(1.03); }
     .product-grid-card .card-body { padding: 1.25rem; }
-    .product-grid-card .card-title { font-size: 0.95rem; font-weight: 600; color: #0f172a; line-height: 1.4; }
-    .product-grid-card .price { font-size: 1.1rem; font-weight: 700; color: #0ea5e9; }
+    .product-grid-card .card-title { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; line-height: 1.4; }
+    .product-grid-card .price { font-size: 1rem; font-weight: 600; color: #1a1a1a; }
     .review-item {
-        background: #f8fafc;
-        border-radius: 12px;
+        background: #fafafa;
+        border-radius: 8px;
         padding: 1rem 1.25rem;
-        border: none;
+        border: 1px solid #eee;
         margin-bottom: 0.75rem;
     }
-    .products-heading { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; }
-    .reviews-heading { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+    .products-heading { font-size: 1.15rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1rem; }
+    .reviews-heading { font-size: 1rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; }
 </style>
 @endpush
 
@@ -197,7 +196,7 @@
     <div class="row mb-4 g-3">
         <div class="col-6 col-lg-3">
             <div class="stat-box">
-                <div class="value text-primary">{{ $stats['total_products'] }}</div>
+                <div class="value">{{ $stats['total_products'] }}</div>
                 <div class="label">Products</div>
             </div>
         </div>
