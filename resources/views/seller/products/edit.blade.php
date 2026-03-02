@@ -300,7 +300,8 @@
                                                 </small>
                                             </div>
                                             <div class="mt-2">
-                                                <img id="amazonRefProductImg" src="" alt="Reference product" class="img-fluid rounded" style="min-width: 320px; min-height: 180px; max-width: 100%; width: auto; height: auto; object-fit: contain; display: none;" onerror="this.style.display='none'">
+                                                <small class="text-muted d-block mb-1">Reference Image (1080P-4K HDR · 2500×2500px):</small>
+                                                <img id="amazonRefProductImg" src="" alt="Reference product" class="img-fluid rounded" style="width: 2500px; height: 2500px; max-width: 100%; height: auto; object-fit: contain; display: none; cursor: pointer;" onerror="this.style.display='none'" title="1080P-4K HDR (2500×2500px) - Click to view full size">
                                             </div>
                                         </div>
                                         <div class="col-md-4 text-end">
@@ -1150,20 +1151,6 @@ function highlightSelectedProduct(asin) {
     }
 }
 
-// Upgrade Amazon image URL to 1080P-4K HDR (2500px) so stored/displayed size is never below 1080P
-function upgradeAmazonImageUrlToHd(url) {
-    if (!url || typeof url !== 'string') return url || '';
-    if (url.indexOf('media-amazon.com') === -1 && url.indexOf('images-amazon.com') === -1) return url;
-    let u = url
-        .replace(/_S[LXY]\d+_/g, '_AC_SL2500_')
-        .replace(/_SL\d+_/g, '_SL2500_')
-        .replace(/_AC_SL\d+_/g, '_AC_SL2500_')
-        .replace(/_AC_SX\d+_/g, '_AC_SL2500_')
-        .replace(/_AC_SY\d+_/g, '_AC_SL2500_')
-        .replace(/\._[A-Z]{2}\d+_\./g, '.');
-    return u;
-}
-
 // Function to set Amazon reference and auto-fill form fields
 function setAmazonReference(product) {
     if (!product) return;
@@ -1262,30 +1249,35 @@ function setAmazonReference(product) {
         calculatePriceBreakdown(priceFloat); // Show breakdown based on base price from Amazon
     }
     
-    // Set the hidden input values: use 1080P-4K HDR image URL (never below 1080P)
-    const rawImageUrl = (product.images && product.images[0]) ? product.images[0] : (product.image || '');
-    const hdImageUrl = upgradeAmazonImageUrlToHd(rawImageUrl);
+    // Set the hidden input values (use first image from images array = HD/HDR quality from API)
     document.getElementById('amazon_reference_price_hidden').value = priceFloat.toFixed(2);
-    document.getElementById('amazon_reference_image_hidden').value = hdImageUrl || rawImageUrl;
+    document.getElementById('amazon_reference_image_hidden').value = (product.images && product.images[0]) ? product.images[0] : (product.image || '');
     document.getElementById('amazon_reference_url_hidden').value = product.url || '';
-
-    // Display the reference and show reference image at 1080P/4K-compatible size
+    
+    // Display the reference
     document.getElementById('amazonRefProductTitle').textContent = product.title || 'Product';
     document.getElementById('amazonRefPrice').textContent = priceDisplay;
     document.getElementById('amazonReferenceDisplay').style.display = 'block';
+    // Show reference image at 2500×2500px (1080P-4K HDR)
     const refImg = document.getElementById('amazonRefProductImg');
-    if (refImg) {
-        refImg.src = hdImageUrl || rawImageUrl;
-        refImg.style.display = (hdImageUrl || rawImageUrl) ? '' : 'none';
+    const refImageUrl = (product.images && product.images[0]) ? product.images[0] : (product.image || '');
+    if (refImg && refImageUrl) {
+        refImg.src = refImageUrl;
+        refImg.style.display = '';
+        refImg.onclick = function() { window.open(refImageUrl, '_blank'); };
     }
-
-    // Automatically import ALL images from the reference (use HD URLs for 1080P-4K)
+    
+    // Automatically import ALL images from the reference
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        // Import all images automatically
         product.images.forEach(imageUrl => {
-            if (imageUrl) importImageFromUrl(upgradeAmazonImageUrlToHd(imageUrl) || imageUrl);
+            if (imageUrl) {
+                importImageFromUrl(imageUrl);
+            }
         });
     } else if (product.image) {
-        importImageFromUrl(upgradeAmazonImageUrlToHd(product.image) || product.image);
+        // Fallback to single image if images array is not available
+        importImageFromUrl(product.image);
     }
     
     // Automatically import ALL videos from the reference
@@ -1834,8 +1826,6 @@ function clearAmazonReference() {
     document.getElementById('amazon_reference_image_hidden').value = '';
     document.getElementById('amazon_reference_url_hidden').value = '';
     document.getElementById('amazonReferenceDisplay').style.display = 'none';
-    const refImg = document.getElementById('amazonRefProductImg');
-    if (refImg) { refImg.src = ''; refImg.style.display = 'none'; }
     document.getElementById('amazon_url_input').value = '';
     document.getElementById('amazon_name_input').value = '';
     document.getElementById('urlSearchResult').innerHTML = '';
@@ -1886,15 +1876,19 @@ function clearAmazonReference() {
 document.addEventListener('DOMContentLoaded', function() {
     const hasRefPrice = document.getElementById('amazon_reference_price_hidden').value;
     const hasRefUrl = document.getElementById('amazon_reference_url_hidden').value;
-    if (hasRefPrice || hasRefUrl) {
+    const hasRefImage = document.getElementById('amazon_reference_image_hidden').value;
+    const refImgHd = document.getElementById('amazonReferenceDisplay')?.dataset?.refImageHd || hasRefImage;
+    if (hasRefPrice || hasRefUrl || hasRefImage) {
         document.getElementById('amazonRefProductTitle').textContent = 'Amazon reference (saved)';
         document.getElementById('amazonRefPrice').textContent = hasRefPrice ? '₱' + parseFloat(hasRefPrice).toFixed(2) : '—';
         document.getElementById('amazonReferenceDisplay').style.display = 'block';
-        const displayEl = document.getElementById('amazonReferenceDisplay');
+        // Show reference image at 2500×2500px (1080P-4K HDR)
         const refImg = document.getElementById('amazonRefProductImg');
-        if (refImg && displayEl && displayEl.dataset.refImageHd) {
-            refImg.src = displayEl.dataset.refImageHd;
-            refImg.style.display = 'block';
+        const imgUrl = refImgHd || hasRefImage;
+        if (refImg && imgUrl) {
+            refImg.src = imgUrl;
+            refImg.style.display = '';
+            refImg.onclick = function() { window.open(imgUrl, '_blank'); };
         }
     }
 });

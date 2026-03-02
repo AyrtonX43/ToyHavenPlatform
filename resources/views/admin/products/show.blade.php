@@ -80,10 +80,10 @@
                             </div>
                         @endif
                         @if($product->amazon_reference_image)
-                            <div class="col-12 col-md-6 col-lg-5 mb-3">
-                                <small class="text-muted">Reference Image (1080P–4K HDR):</small><br>
-                                <a href="{{ $product->amazon_reference_image_hd ?? $product->amazon_reference_image }}" target="_blank" rel="noopener noreferrer" class="d-inline-block mt-1">
-                                    <img src="{{ $product->amazon_reference_image_hd ?? $product->amazon_reference_image }}" alt="Amazon reference" class="img-thumbnail" style="min-width: 320px; min-height: 180px; max-width: 100%; width: auto; height: auto; object-fit: contain;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'180\'%3E%3Crect fill=\'%23f8f9fa\' width=\'320\' height=\'180\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%236c757d\'%3ENo preview%3C/text%3E%3C/svg%3E';">
+                            <div class="col-12 mt-2">
+                                <small class="text-muted">Reference Image (1080P-4K HDR · 2500×2500px):</small><br>
+                                <a href="{{ $product->amazon_reference_image }}" target="_blank" rel="noopener noreferrer" class="d-inline-block mt-1">
+                                    <img src="{{ $product->amazon_reference_image }}" alt="Amazon reference" class="img-thumbnail" style="width: 2500px; height: 2500px; max-width: 100%; height: auto; object-fit: contain;" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'2500\' height=\'2500\'%3E%3Crect fill=\'%23f8f9fa\' width=\'2500\' height=\'2500\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%236c757d\' font-size=\'24\'%3ENo preview%3C/text%3E%3C/svg%3E';">
                                 </a>
                             </div>
                         @endif
