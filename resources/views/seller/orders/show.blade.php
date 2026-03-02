@@ -5,7 +5,6 @@
 @section('page-title', 'Order Details')
 
 @section('content')
-<!-- Breadcrumb -->
 <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ route('seller.dashboard') }}">Dashboard</a></li>
@@ -14,16 +13,16 @@
     </ol>
 </nav>
 
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">Order #{{ $order->order_number }}</h4>
-        <p class="text-muted mb-0">Order placed on {{ $order->created_at->format('F d, Y \a\t h:i A') }}</p>
-    </div>
-    <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Back to Orders
-    </a>
-</div>
+<x-seller.page-header
+    title="Order #{{ $order->order_number }}"
+    subtitle="Order placed on {{ $order->created_at->format('F d, Y \a\t h:i A') }}"
+>
+    <x-slot:actions>
+        <a href="{{ route('seller.orders.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Orders
+        </a>
+    </x-slot:actions>
+</x-seller.page-header>
 
 <div class="row">
     <div class="col-lg-8">

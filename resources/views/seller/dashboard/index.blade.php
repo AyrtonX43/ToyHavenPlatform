@@ -9,12 +9,9 @@
 @endpush
 
 @section('content')
-<!-- Status Alert -->
+{{-- Status Alerts --}}
 @if(session('pending_approval') || $seller->verification_status === 'pending')
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        <h5 class="alert-heading">
-            <i class="bi bi-hourglass-split me-2"></i>Registration Pending Admin Approval
-        </h5>
+    <x-seller.alert-banner type="warning" heading="Registration Pending Admin Approval">
         <p class="mb-2">
             <strong>Your business account registration has been submitted successfully!</strong>
         </p>
@@ -33,29 +30,21 @@
             <i class="bi bi-info-circle me-1"></i>
             Our admin team will review your registration and notify you once your account is approved. Thank you for your patience!
         </p>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    </x-seller.alert-banner>
 @elseif($seller->verification_status === 'rejected')
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <h5 class="alert-heading">
-            <i class="bi bi-x-circle me-2"></i>Account Verification Rejected
-        </h5>
+    <x-seller.alert-banner type="danger" heading="Account Verification Rejected">
         <p class="mb-0">{{ $seller->rejection_reason ?? 'Your account verification was rejected. Please contact support for more information.' }}</p>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    </x-seller.alert-banner>
 @endif
 
-<!-- Upgrade to Trusted Shop Alert -->
+{{-- Upgrade to Trusted Shop Alert --}}
 @if($seller->verification_status === 'approved' && !$seller->is_verified_shop)
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
+    <x-seller.alert-banner type="info" heading="Upgrade to Trusted Shop">
         <div class="d-flex align-items-center">
             <div class="flex-shrink-0">
                 <i class="bi bi-shield-check" style="font-size: 2rem;"></i>
             </div>
             <div class="flex-grow-1 ms-3">
-                <h5 class="alert-heading mb-2">
-                    <i class="bi bi-star-fill me-2"></i>Upgrade to Trusted Shop
-                </h5>
                 <p class="mb-2">
                     Unlock premium features and gain customer trust by upgrading to a verified trusted shop. Get priority listing, trusted badge, and enhanced credibility.
                 </p>
@@ -64,95 +53,241 @@
                 </a>
             </div>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    </x-seller.alert-banner>
 @endif
 
-<!-- Quick Actions -->
-@if($seller->verification_status === 'approved')
+{{-- Hero Stats Row --}}
 <div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.products.create') }}" class="quick-action-card card border">
-                            <i class="bi bi-plus-circle-fill"></i>
-                            <h6>Add New Product</h6>
-                            <small class="text-muted">Create a new listing</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.products.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-box-seam"></i>
-                            <h6>Manage Products</h6>
-                            <small class="text-muted">View all products</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.orders.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-cart-check"></i>
-                            <h6>View Orders</h6>
-                            <small class="text-muted">Manage orders</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.business-page.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-gear"></i>
-                            <h6>Business Settings</h6>
-                            <small class="text-muted">Configure your store</small>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6">
-                        <a href="{{ route('seller.pos.index') }}" class="quick-action-card card border">
-                            <i class="bi bi-cash-register"></i>
-                            <h6>Point of Sale</h6>
-                            <small class="text-muted">Process walk-in orders</small>
-                        </a>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <x-seller.stat-card
+            icon="bi-box-seam"
+            :label="__('Total Products')"
+            :value="$stats['total_products']"
+            variant="primary"
+            :animate="true"
+        />
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <x-seller.stat-card
+            icon="bi-check-circle"
+            :label="__('Active Products')"
+            :value="$stats['active_products']"
+            variant="success"
+            :animate="true"
+        />
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <x-seller.stat-card
+            icon="bi-cart-check"
+            :label="__('Total Orders')"
+            :value="$stats['total_orders']"
+            variant="info"
+            :animate="true"
+        />
+    </div>
+    <div class="col-lg-3 col-md-6 mb-4">
+        <x-seller.stat-card
+            icon="bi-currency-exchange"
+            :label="__('Total Sales')"
+            :value="$stats['total_sales']"
+            variant="warning"
+            :animate="true"
+            :currency="true"
+        />
+    </div>
+</div>
+
+{{-- Two-column: Recent Orders (left) | Sidebar (right) --}}
+<div class="row">
+    {{-- Recent Orders - Left 2/3 --}}
+    <div class="col-lg-8 mb-4">
+        <x-seller.data-table title="Recent Orders">
+            <x-slot:actions>
+                @if($seller->verification_status === 'approved')
+                    <a href="{{ route('seller.orders.index') }}" class="btn btn-sm btn-outline-primary">
+                        View All <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                @endif
+            </x-slot:actions>
+            @if($recentOrders->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentOrders as $order)
+                                <tr>
+                                    <td><strong>#{{ $order->order_number }}</strong></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-circle me-2 text-muted"></i>
+                                            {{ $order->user?->name ?? 'Walk-in Customer' }}
+                                        </div>
+                                    </td>
+                                    <td><strong class="text-success">₱{{ number_format($order->total, 2) }}</strong></td>
+                                    <td>
+                                        <x-seller.status-badge :status="$order->status" />
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ $order->created_at->format('M d, Y') }}<br>
+                                            {{ $order->created_at->format('h:i A') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @if($seller->verification_status === 'approved')
+                                            <a href="{{ route('seller.orders.show', $order->id) }}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                        @else
+                                            <span class="text-muted small">Pending Approval</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <x-seller.empty-state
+                    icon="bi-cart-x"
+                    message="No orders yet"
+                    :action="$seller->verification_status === 'approved' ? route('seller.products.create') : null"
+                    :actionLabel="$seller->verification_status === 'approved' ? 'Add Your First Product' : null"
+                />
+            @endif
+        </x-seller.data-table>
+    </div>
+
+    {{-- Sidebar: Quick Actions, Low Stock, Pending Products - Right 1/3 --}}
+    <div class="col-lg-4 mb-4">
+        @if($seller->verification_status === 'approved')
+            {{-- Quick Actions - Condensed --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <x-seller.quick-action
+                                href="{{ route('seller.products.create') }}"
+                                icon="bi-plus-circle-fill"
+                                title="Add Product"
+                                description="New listing"
+                            />
+                        </div>
+                        <div class="col-6">
+                            <x-seller.quick-action
+                                href="{{ route('seller.products.index') }}"
+                                icon="bi-box-seam"
+                                title="Products"
+                                description="Manage all"
+                            />
+                        </div>
+                        <div class="col-6">
+                            <x-seller.quick-action
+                                href="{{ route('seller.orders.index') }}"
+                                icon="bi-cart-check"
+                                title="Orders"
+                                description="View orders"
+                            />
+                        </div>
+                        <div class="col-6">
+                            <x-seller.quick-action
+                                href="{{ route('seller.business-page.index') }}"
+                                icon="bi-gear"
+                                title="Settings"
+                                description="Store config"
+                            />
+                        </div>
+                        <div class="col-6">
+                            <x-seller.quick-action
+                                href="{{ route('seller.pos.index') }}"
+                                icon="bi-cash-register"
+                                title="Point of Sale"
+                                description="Walk-in orders"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
+        @endif
+
+        {{-- Low Stock --}}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Low Stock</h5>
+                @if($lowStockProducts->count() > 0)
+                    <span class="badge bg-warning">{{ $lowStockProducts->count() }}</span>
+                @endif
+            </div>
+            <div class="card-body">
+                @if($lowStockProducts->count() > 0)
+                    <div class="list-group list-group-flush">
+                        @foreach($lowStockProducts as $product)
+                            <div class="list-group-item px-0 border-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ Str::limit($product->name, 30) }}</h6>
+                                        <small class="text-danger">
+                                            <i class="bi bi-box me-1"></i>Only {{ $product->stock_quantity }} left
+                                        </small>
+                                    </div>
+                                    @if($seller->verification_status === 'approved')
+                                        <a href="{{ route('seller.products.edit', $product->id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if($seller->verification_status === 'approved')
+                        <a href="{{ route('seller.products.index') }}?stock=low_stock" class="btn btn-sm btn-outline-warning w-100 mt-3">
+                            View All Low Stock <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    @endif
+                @else
+                    <div class="text-center py-3">
+                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">All products have sufficient stock</p>
+                    </div>
+                @endif
+            </div>
         </div>
+
+        {{-- Pending Products --}}
+        @if($stats['pending_products'] > 0)
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2 text-info"></i>Pending Approval</h5>
+                    <span class="badge bg-info">{{ $stats['pending_products'] }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        You have {{ $stats['pending_products'] }} product(s) waiting for admin approval.
+                    </p>
+                    @if($seller->verification_status === 'approved')
+                        <a href="{{ route('seller.products.index') }}?status=pending" class="btn btn-sm btn-outline-info w-100">
+                            View Pending Products <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    @endif
+                </div>
+            </div>
+        @endif
     </div>
 </div>
-@endif
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card bg-primary">
-            <i class="bi bi-box-seam stat-icon"></i>
-            <div class="stat-label">Total Products</div>
-            <div class="stat-value counter-number" data-count="{{ $stats['total_products'] }}">{{ $stats['total_products'] }}</div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card bg-success">
-            <i class="bi bi-check-circle stat-icon"></i>
-            <div class="stat-label">Active Products</div>
-            <div class="stat-value counter-number" data-count="{{ $stats['active_products'] }}">{{ $stats['active_products'] }}</div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card bg-info">
-            <i class="bi bi-cart-check stat-icon"></i>
-            <div class="stat-label">Total Orders</div>
-            <div class="stat-value counter-number" data-count="{{ $stats['total_orders'] }}">{{ $stats['total_orders'] }}</div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="stat-card bg-warning">
-            <i class="bi bi-currency-exchange stat-icon"></i>
-            <div class="stat-label">Total Sales</div>
-            <div class="stat-value counter-currency" data-count="{{ $stats['total_sales'] }}">₱{{ number_format($stats['total_sales'], 2) }}</div>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Section -->
+{{-- Charts --}}
 @if($seller->verification_status === 'approved')
 <div class="row mb-4">
     <div class="col-lg-6 mb-4">
@@ -180,7 +315,7 @@
 </div>
 @endif
 
-<!-- Secondary Stats Row -->
+{{-- Secondary Stats (Pending, Completed, Today) - compact row --}}
 <div class="row mb-4">
     <div class="col-lg-4 col-md-6 mb-4">
         <div class="card h-100 border-start border-warning border-4">
@@ -223,193 +358,6 @@
         </div>
     </div>
 </div>
-
-<div class="row">
-    <!-- Recent Orders -->
-    <div class="col-lg-8 mb-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-cart-check me-2"></i>Recent Orders</h5>
-                @if($seller->verification_status === 'approved')
-                    <a href="{{ route('seller.orders.index') }}" class="btn btn-sm btn-outline-primary">
-                        View All <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                @endif
-            </div>
-            <div class="card-body">
-                @if($recentOrders->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Order #</th>
-                                    <th>Customer</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentOrders as $order)
-                                    <tr>
-                                        <td>
-                                            <strong>#{{ $order->order_number }}</strong>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="bi bi-person-circle me-2 text-muted"></i>
-                                                {{ $order->user?->name ?? 'Walk-in Customer' }}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <strong class="text-success">₱{{ number_format($order->total, 2) }}</strong>
-                                        </td>
-                                        <td>
-                                            @php
-                                                $statusColors = [
-                                                    'pending' => 'warning',
-                                                    'processing' => 'info',
-                                                    'shipped' => 'primary',
-                                                    'delivered' => 'success',
-                                                    'cancelled' => 'danger'
-                                                ];
-                                                $color = $statusColors[$order->status] ?? 'secondary';
-                                            @endphp
-                                            <span class="badge bg-{{ $color }}">
-                                                {{ ucfirst($order->status) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <small class="text-muted">
-                                                {{ $order->created_at->format('M d, Y') }}<br>
-                                                {{ $order->created_at->format('h:i A') }}
-                                            </small>
-                                        </td>
-                                        <td>
-                                            @if($seller->verification_status === 'approved')
-                                                <a href="{{ route('seller.orders.show', $order->id) }}" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-eye me-1"></i>View
-                                                </a>
-                                            @else
-                                                <span class="text-muted small">Pending Approval</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="text-center py-5">
-                        <i class="bi bi-cart-x text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-3">No orders yet</p>
-                        @if($seller->verification_status === 'approved')
-                            <a href="{{ route('seller.products.create') }}" class="btn btn-primary mt-2">
-                                <i class="bi bi-plus-circle me-1"></i>Add Your First Product
-                            </a>
-                        @endif
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <!-- Low Stock Products & Pending Products -->
-    <div class="col-lg-4 mb-4">
-        <!-- Low Stock Products -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Low Stock</h5>
-                @if($lowStockProducts->count() > 0)
-                    <span class="badge bg-warning">{{ $lowStockProducts->count() }}</span>
-                @endif
-            </div>
-            <div class="card-body">
-                @if($lowStockProducts->count() > 0)
-                    <div class="list-group list-group-flush">
-                        @foreach($lowStockProducts as $product)
-                            <div class="list-group-item px-0 border-0 border-bottom">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">{{ Str::limit($product->name, 30) }}</h6>
-                                        <small class="text-danger">
-                                            <i class="bi bi-box me-1"></i>Only {{ $product->stock_quantity }} left
-                                        </small>
-                                    </div>
-                                    @if($seller->verification_status === 'approved')
-                                        <a href="{{ route('seller.products.edit', $product->id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    @if($seller->verification_status === 'approved')
-                        <div class="mt-3">
-                            <a href="{{ route('seller.products.index') }}?filter=low_stock" class="btn btn-sm btn-outline-warning w-100">
-                                View All Low Stock <i class="bi bi-arrow-right ms-1"></i>
-                            </a>
-                        </div>
-                    @endif
-                @else
-                    <div class="text-center py-3">
-                        <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                        <p class="text-muted mt-2 mb-0">All products have sufficient stock</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Pending Products -->
-        @if($stats['pending_products'] > 0)
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-clock-history me-2 text-info"></i>Pending Approval</h5>
-                <span class="badge bg-info">{{ $stats['pending_products'] }}</span>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small mb-3">
-                    You have {{ $stats['pending_products'] }} product(s) waiting for admin approval.
-                </p>
-                @if($seller->verification_status === 'approved')
-                    <a href="{{ route('seller.products.index') }}?status=pending" class="btn btn-sm btn-outline-info w-100">
-                        View Pending Products <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                @endif
-            </div>
-        </div>
-        @endif
-    </div>
-</div>
-
-<!-- Sales Summary -->
-@if($seller->verification_status === 'approved')
-<div class="row mt-4">
-    <div class="col-md-4 mb-4">
-        <div class="stat-card bg-primary">
-            <i class="bi bi-calendar-day stat-icon"></i>
-            <div class="stat-label">Today's Sales</div>
-            <div class="stat-value">₱{{ number_format($stats['today_sales'], 2) }}</div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="stat-card bg-success">
-            <i class="bi bi-calendar-month stat-icon"></i>
-            <div class="stat-label">This Month</div>
-            <div class="stat-value">₱{{ number_format($stats['month_sales'], 2) }}</div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-4">
-        <div class="stat-card bg-info">
-            <i class="bi bi-graph-up-arrow stat-icon"></i>
-            <div class="stat-label">All Time Sales</div>
-            <div class="stat-value">₱{{ number_format($stats['total_sales'], 2) }}</div>
-        </div>
-    </div>
-</div>
-@endif
 
 @if($seller->verification_status === 'approved' && isset($revenueData) && isset($ordersData))
 @push('scripts')

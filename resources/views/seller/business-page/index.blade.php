@@ -5,27 +5,23 @@
 @section('page-title', 'Business Page Settings')
 
 @section('content')
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">Business Page Settings</h4>
-        <p class="text-muted mb-0">Customize your business page appearance and information</p>
-    </div>
-    <div>
+<x-seller.page-header
+    title="Business Page Settings"
+    subtitle="Customize your business page appearance and information"
+>
+    <x-slot:actions>
         <a href="{{ route('seller.business-page.preview') }}" class="btn btn-outline-primary" target="_blank">
             <i class="bi bi-eye me-1"></i> Preview Page
         </a>
         <a href="{{ route('seller.dashboard') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
         </a>
-    </div>
-</div>
+    </x-slot:actions>
+</x-seller.page-header>
 
 @if(isset($pendingRevisions) && $pendingRevisions->isNotEmpty())
-    <div class="alert alert-info alert-dismissible fade show mb-4">
-        <i class="bi bi-info-circle me-2"></i>
-        <strong>Pending approval:</strong> You have {{ $pendingRevisions->count() }} business page change(s) waiting for admin approval.
-        Your public page will update after they are approved.
+    <x-seller.alert-banner type="info" heading="Pending approval">
+        <p class="mb-2">You have {{ $pendingRevisions->count() }} business page change(s) waiting for admin approval. Your public page will update after they are approved.</p>
         <ul class="mb-0 mt-2">
             @foreach($pendingRevisions as $rev)
                 <li>
@@ -37,8 +33,7 @@
                 </li>
             @endforeach
         </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+    </x-seller.alert-banner>
 @endif
 
 <!-- Tabs Navigation -->

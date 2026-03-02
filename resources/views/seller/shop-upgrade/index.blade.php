@@ -5,18 +5,18 @@
 @section('page-title', 'Upgrade to Trusted Shop')
 
 @section('content')
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">Upgrade to Trusted Shop</h4>
-        <p class="text-muted mb-0">Get verified as a trusted shop and unlock premium features</p>
-    </div>
-    @if($seller->is_verified_shop)
-        <span class="badge bg-success fs-6 px-3 py-2">
-            <i class="bi bi-shield-check me-1"></i>Verified Trusted Shop
-        </span>
-    @endif
-</div>
+<x-seller.page-header
+    title="Upgrade to Trusted Shop"
+    subtitle="Get verified as a trusted shop and unlock premium features"
+>
+    <x-slot:actions>
+        @if($seller->is_verified_shop)
+            <span class="badge bg-success fs-6 px-3 py-2">
+                <i class="bi bi-shield-check me-1"></i>Verified Trusted Shop
+            </span>
+        @endif
+    </x-slot:actions>
+</x-seller.page-header>
 
 @if($seller->is_verified_shop)
     <!-- Already Verified -->

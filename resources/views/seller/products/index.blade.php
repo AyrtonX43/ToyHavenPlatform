@@ -5,16 +5,16 @@
 @section('page-title', 'Product Management')
 
 @section('content')
-<!-- Header Actions -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">My Products</h4>
-        <p class="text-muted mb-0">Manage your product listings</p>
-    </div>
-    <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle me-1"></i> Add New Product
-    </a>
-</div>
+<x-seller.page-header
+    title="My Products"
+    subtitle="Manage your product listings"
+>
+    <x-slot:actions>
+        <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Add New Product
+        </a>
+    </x-slot:actions>
+</x-seller.page-header>
 
 <!-- Filters -->
 <div class="card mb-4">
@@ -66,18 +66,11 @@
 </div>
 
 @if($products->count() > 0)
-    <!-- Products Table -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="bi bi-box-seam me-2"></i>Products ({{ $products->total() }})
-            </h5>
-            <div class="text-muted small">
-                Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} products
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
+    <x-seller.data-table
+        title="Products ({{ $products->total() }})"
+        :subtitle="'Showing ' . $products->firstItem() . ' to ' . $products->lastItem() . ' of ' . $products->total() . ' products'"
+    >
+        <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
@@ -167,15 +160,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @php
-                                        $statusConfig = [
-                                            'active' => ['bg-success', 'Active'],
-                                            'pending' => ['bg-warning', 'Pending'],
-                                            'inactive' => ['bg-secondary', 'Inactive']
-                                        ];
-                                        $config = $statusConfig[$product->status] ?? ['bg-secondary', ucfirst($product->status)];
-                                    @endphp
-                                    <span class="badge {{ $config[0] }}">{{ $config[1] }}</span>
+                                    <x-seller.status-badge :status="$product->status" />
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
@@ -205,34 +190,21 @@
                         @endforeach
                     </tbody>
                 </table>
-            </div>
         </div>
         @if($products->hasPages())
-            <div class="card-footer">
+            <x-slot:footer>
                 <div class="d-flex justify-content-center">
                     {{ $products->links() }}
                 </div>
-            </div>
+            </x-slot:footer>
         @endif
-    </div>
+    </x-seller.data-table>
 @else
-    <!-- Empty State -->
-    <div class="card">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-box-seam text-muted" style="font-size: 4rem;"></i>
-            <h4 class="mt-3 mb-2">No products found</h4>
-            <p class="text-muted mb-4">
-                @if(request()->hasAny(['search', 'status', 'stock', 'category_id']))
-                    Try adjusting your filters or
-                @else
-                    Get started by
-                @endif
-                adding your first product!
-            </p>
-            <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Add Your First Product
-            </a>
-        </div>
-    </div>
+    <x-seller.empty-state
+        icon="bi-box-seam"
+        message="No products found. Try adjusting your filters or add your first product!"
+        :action="route('seller.products.create')"
+        actionLabel="Add Your First Product"
+    />
 @endif
 @endsection

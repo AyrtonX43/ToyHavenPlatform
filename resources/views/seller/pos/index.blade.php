@@ -9,35 +9,42 @@
 @endpush
 
 @section('content')
-<!-- POS Stats Cards -->
 <div class="row mb-4">
     <div class="col-md-3 col-6 mb-3">
-        <div class="stat-card bg-primary">
-            <i class="bi bi-currency-dollar stat-icon"></i>
-            <div class="stat-label">Today's POS Sales</div>
-            <div class="stat-value">₱{{ number_format($stats['today_pos_sales'], 2) }}</div>
-        </div>
+        <x-seller.stat-card
+            icon="bi-currency-dollar"
+            label="Today's POS Sales"
+            :value="$stats['today_pos_sales']"
+            variant="primary"
+            :currency="true"
+        />
     </div>
     <div class="col-md-3 col-6 mb-3">
-        <div class="stat-card bg-success">
-            <i class="bi bi-cart-check stat-icon"></i>
-            <div class="stat-label">Today's Transactions</div>
-            <div class="stat-value counter-number" data-count="{{ $stats['today_pos_orders'] }}">{{ $stats['today_pos_orders'] }}</div>
-        </div>
+        <x-seller.stat-card
+            icon="bi-cart-check"
+            label="Today's Transactions"
+            :value="$stats['today_pos_orders']"
+            variant="success"
+            :animate="true"
+        />
     </div>
     <div class="col-md-3 col-6 mb-3">
-        <div class="stat-card bg-info">
-            <i class="bi bi-graph-up stat-icon"></i>
-            <div class="stat-label">This Week's Sales</div>
-            <div class="stat-value">₱{{ number_format($stats['week_pos_sales'], 2) }}</div>
-        </div>
+        <x-seller.stat-card
+            icon="bi-graph-up"
+            label="This Week's Sales"
+            :value="$stats['week_pos_sales']"
+            variant="info"
+            :currency="true"
+        />
     </div>
     <div class="col-md-3 col-6 mb-3">
-        <div class="stat-card bg-warning">
-            <i class="bi bi-receipt stat-icon"></i>
-            <div class="stat-label">Week Transactions</div>
-            <div class="stat-value counter-number" data-count="{{ $stats['week_pos_orders'] }}">{{ $stats['week_pos_orders'] }}</div>
-        </div>
+        <x-seller.stat-card
+            icon="bi-receipt"
+            label="Week Transactions"
+            :value="$stats['week_pos_orders']"
+            variant="warning"
+            :animate="true"
+        />
     </div>
 </div>
 

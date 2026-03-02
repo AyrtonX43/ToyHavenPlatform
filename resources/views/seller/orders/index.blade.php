@@ -5,18 +5,18 @@
 @section('page-title', 'Order Management')
 
 @section('content')
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">Orders</h4>
-        <p class="text-muted mb-0">Manage and track customer orders</p>
-    </div>
-    @if($orders->count() > 0)
-        <button type="button" class="btn btn-outline-primary" id="bulkUpdateBtn" style="display: none;">
-            <i class="bi bi-check2-square me-1"></i> Bulk Update Selected
-        </button>
-    @endif
-</div>
+<x-seller.page-header
+    title="Orders"
+    subtitle="Manage and track customer orders"
+>
+    <x-slot:actions>
+        @if($orders->count() > 0)
+            <button type="button" class="btn btn-outline-primary" id="bulkUpdateBtn" style="display: none;">
+                <i class="bi bi-check2-square me-1"></i> Bulk Update Selected
+            </button>
+        @endif
+    </x-slot:actions>
+</x-seller.page-header>
 
 @if($orders->count() > 0)
     <!-- Bulk Update Modal -->
@@ -61,17 +61,10 @@
         </div>
     </div>
 
-    <!-- Orders Table -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="bi bi-cart-check me-2"></i>Orders ({{ $orders->total() }})
-            </h5>
-            <div class="text-muted small">
-                Showing {{ $orders->firstItem() }} to {{ $orders->lastItem() }} of {{ $orders->total() }} orders
-            </div>
-        </div>
-        <div class="card-body p-0">
+    <x-seller.data-table
+        title="Orders ({{ $orders->total() }})"
+        :subtitle="'Showing ' . $orders->firstItem() . ' to ' . $orders->lastItem() . ' of ' . $orders->total() . ' orders'"
+    >
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
@@ -154,27 +147,21 @@
                     </tbody>
                 </table>
             </div>
-        </div>
         @if($orders->hasPages())
-            <div class="card-footer">
+            <x-slot:footer>
                 <div class="d-flex justify-content-center">
                     {{ $orders->links() }}
                 </div>
-            </div>
+            </x-slot:footer>
         @endif
-    </div>
+    </x-seller.data-table>
 @else
-    <!-- Empty State -->
-    <div class="card">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-cart-x text-muted" style="font-size: 4rem;"></i>
-            <h4 class="mt-3 mb-2">No orders yet</h4>
-            <p class="text-muted mb-4">Orders from customers will appear here once they make purchases.</p>
-            <a href="{{ route('seller.products.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Add Products to Get Started
-            </a>
-        </div>
-    </div>
+    <x-seller.empty-state
+        icon="bi-cart-x"
+        message="No orders yet. Orders from customers will appear here once they make purchases."
+        :action="route('seller.products.create')"
+        actionLabel="Add Products to Get Started"
+    />
 @endif
 
 @push('scripts')
@@ -183,7 +170,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAll = document.getElementById('selectAll');
     const checkboxes = document.querySelectorAll('.order-checkbox');
     const bulkUpdateBtn = document.getElementById('bulkUpdateBtn');
-    const bulkUpdateModal = new bootstrap.Modal(document.getElementById('bulkUpdateModal'));
+    const bulkUpdateModalEl = document.getElementById('bulkUpdateModal');
+    const bulkUpdateModal = bulkUpdateModalEl ? new bootstrap.Modal(bulkUpdateModalEl) : null;
     const selectedCount = document.getElementById('selectedCount');
     
     if (selectAll) {
@@ -215,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    if (bulkUpdateBtn) {
+    if (bulkUpdateBtn && bulkUpdateModal) {
         bulkUpdateBtn.addEventListener('click', function() {
             const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
             selectedCount.textContent = selected.length;
