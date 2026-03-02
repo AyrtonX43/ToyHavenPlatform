@@ -7,22 +7,22 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ProductRejectedNotification extends Notification
+class ProductApprovedNotification extends Notification
 {
     use Queueable;
 
     protected $productName;
-    protected $rejectionReason;
     protected $productSku;
+    protected $productId;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($productName, $rejectionReason, $productSku = null)
+    public function __construct($productName, $productSku = null, $productId = null)
     {
         $this->productName = $productName;
-        $this->rejectionReason = $rejectionReason;
         $this->productSku = $productSku;
+        $this->productId = $productId;
     }
 
     /**
@@ -41,26 +41,22 @@ class ProductRejectedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('Product Rejected - ToyHaven Platform')
+            ->subject('Product Approved - ToyHaven Platform')
             ->greeting('Hello ' . $notifiable->name . ',');
 
-        $message->line('We regret to inform you that your product **' . $this->productName . '**' . 
+        $message->line('Great news! Your product **' . $this->productName . '**' . 
             ($this->productSku ? ' (SKU: ' . $this->productSku . ')' : '') . 
-            ' has been rejected on the ToyHaven Platform.');
+            ' has been approved and is now live on the ToyHaven Platform.');
 
-        if ($this->rejectionReason) {
-            $message->line('**Reason for rejection:**')
-                    ->line($this->rejectionReason);
-        }
-
-        $message->line('You may:')
-            ->line('• Review the rejection reason and address any issues')
-            ->line('• Edit and resubmit your product for review')
-            ->line('• Contact our support team if you have questions')
+        $message->line('Your product is now visible to customers and available for purchase.')
+            ->line('**What happens next?**')
+            ->line('• Customers can now view and purchase your product')
+            ->line('• You will receive notifications when orders are placed')
+            ->line('• Keep your inventory updated to avoid overselling')
+            ->line('• Monitor your product performance in your dashboard')
             ->line('')
-            ->line('If you believe this decision was made in error, please contact our support team for assistance.')
-            ->action('View Your Products', url('/seller/products'))
-            ->line('Thank you for using ToyHaven Platform.');
+            ->action('View Your Product', url('/seller/products'))
+            ->line('Thank you for being a valued seller on ToyHaven Platform!');
 
         return $message;
     }
@@ -73,12 +69,12 @@ class ProductRejectedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'product_rejected',
+            'type' => 'product_approved',
             'product_name' => $this->productName,
-            'rejection_reason' => $this->rejectionReason,
             'product_sku' => $this->productSku,
-            'title' => 'Product Rejected',
-            'message' => 'Your product "' . $this->productName . '" has been rejected. Reason: ' . $this->rejectionReason,
+            'product_id' => $this->productId,
+            'title' => 'Product Approved',
+            'message' => 'Your product "' . $this->productName . '" has been approved and is now live.',
             'action_url' => url('/seller/products'),
             'action_text' => 'View Products',
         ];

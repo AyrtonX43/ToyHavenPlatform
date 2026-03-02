@@ -48,7 +48,7 @@ class StoreProductRequest extends FormRequest
             'final_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
             'images' => 'nullable|array|max:10',
-            'images.*' => 'image|mimes:jpeg,jpg,png|max:2048',
+            'images.*' => 'image|mimes:jpeg,jpg,png,webp|max:10240', // Increased to 10MB for high-res images
             'imported_image_urls' => 'nullable|string',
             'imported_video_urls' => 'nullable|string',
             'images_to_delete' => 'nullable|array',

@@ -234,7 +234,7 @@ class ProductController extends Controller
 
     public function approve($id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('seller.user')->findOrFail($id);
 
         if ($product->status === 'active') {
             return back()->with('error', 'This product is already approved and cannot be approved again.');
@@ -247,7 +247,18 @@ class ProductController extends Controller
         }
         $product->update($data);
 
-        return back()->with('success', $wasPending ? 'Product approved!' : 'Product reactivated.');
+        // Send notification to seller
+        if ($product->seller && $product->seller->user) {
+            $product->seller->user->notify(
+                new \App\Notifications\ProductApprovedNotification(
+                    $product->name,
+                    $product->sku,
+                    $product->id
+                )
+            );
+        }
+
+        return back()->with('success', $wasPending ? 'Product approved and seller has been notified!' : 'Product reactivated.');
     }
 
     public function reject(Request $request, $id)
@@ -318,9 +329,24 @@ class ProductController extends Controller
                 $data['condition'] = 'new';
             }
             Product::whereIn('id', $pending)->update($data);
+            
+            // Send notifications to sellers
+            $products = Product::with('seller.user')->whereIn('id', $pending)->get();
+            foreach ($products as $product) {
+                if ($product->seller && $product->seller->user) {
+                    $product->seller->user->notify(
+                        new \App\Notifications\ProductApprovedNotification(
+                            $product->name,
+                            $product->sku,
+                            $product->id
+                        )
+                    );
+                }
+            }
+            
             $count = count($pending);
             $skipped = count($ids) - $count;
-            $msg = 'Bulk action completed! ' . $count . ' product(s) approved.';
+            $msg = 'Bulk action completed! ' . $count . ' product(s) approved and sellers notified.';
             if ($skipped > 0) {
                 $msg .= ' ' . $skipped . ' product(s) skipped (already reviewed).';
             }

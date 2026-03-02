@@ -673,6 +673,21 @@
                             <i class="bi bi-zoom-in"></i>
                             <span>Hover to zoom · Click for fullscreen</span>
                         </div>
+                        @php
+                            // Check if first image is HD (from Amazon or high-res)
+                            $isFirstImageHD = isset($imageDisplayUrls[0]) && 
+                                (str_contains($imageDisplayUrls[0], 'media-amazon.com') || 
+                                 str_contains($imageDisplayUrls[0], 'images-amazon.com') ||
+                                 str_contains($imageDisplayUrls[0], '_SL1500_') ||
+                                 str_contains($imageDisplayUrls[0], '_SL2000_'));
+                        @endphp
+                        @if($isFirstImageHD)
+                        <div style="position: absolute; top: 12px; left: 12px; z-index: 10;">
+                            <span class="badge bg-success" style="font-size: 0.75rem; padding: 6px 10px;">
+                                <i class="bi bi-check-circle me-1"></i>High Resolution
+                            </span>
+                        </div>
+                        @endif
                         <div id="mainImageWrap" class="main-image-wrap">
                             <img id="mainImage" src="{{ $firstImageUrl }}" 
                                  class="main-image" 

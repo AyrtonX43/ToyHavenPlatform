@@ -391,13 +391,29 @@
                         <div class="mb-3">
                             <label class="form-label">Upload Additional Images</label>
                             <input type="file" id="product_images" name="images[]" class="form-control @error('images') is-invalid @enderror" multiple accept="image/*">
-                            <small class="text-muted">You can upload additional images (up to 10 total). Existing images will be kept. Images imported from Amazon reference will be added automatically.</small>
+                            <div class="alert alert-info mt-2 mb-2">
+                                <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>High-Quality Image Requirements</h6>
+                                <ul class="mb-0 small">
+                                    <li><strong>Minimum resolution:</strong> 1500x1500 pixels (recommended: 2000x2000px or higher)</li>
+                                    <li><strong>Format:</strong> JPG, PNG, or WebP</li>
+                                    <li><strong>File size:</strong> Up to 10MB per image for best quality</li>
+                                    <li><strong>Why high resolution?</strong> Customers can zoom in to see product details clearly without blur or pixelation</li>
+                                    <li><strong>Amazon images:</strong> Automatically imported at highest resolution (1500px+)</li>
+                                </ul>
+                            </div>
+                            <small class="text-muted">You can upload additional images (up to 10 total). Existing images will be kept. Images imported from Amazon reference will be added automatically at highest resolution.</small>
                             @error('images')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             @error('images.*')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
+                            
+                            <!-- Image Preview Container -->
+                            <div id="uploadedImagesPreview" class="mt-3" style="display: none;">
+                                <label class="form-label">Preview (New Uploads)</label>
+                                <div id="uploadedImagesContainer" class="d-flex flex-wrap gap-2"></div>
+                            </div>
                         </div>
                         
                         <!-- Existing Images (removable when pending or approved) -->
@@ -1301,16 +1317,29 @@ function importImageFromUrl(imageUrl) {
         urlArray.push(imageUrl);
         document.getElementById('imported_image_urls').value = urlArray.join(',');
         
+        // Check if it's an Amazon HD image (contains _SL1500_ or similar high-res indicators)
+        const isAmazonHD = imageUrl.includes('media-amazon.com') || imageUrl.includes('images-amazon.com');
+        const isHighRes = imageUrl.includes('_SL1500_') || imageUrl.includes('_AC_SL1500_') || imageUrl.includes('_SL2000_');
+        
         // Show preview
         const previewContainer = document.getElementById('importedImagesContainer');
         const imageDiv = document.createElement('div');
         imageDiv.className = 'position-relative';
-        imageDiv.style.cssText = 'width: 120px; height: 120px;';
+        imageDiv.style.cssText = 'width: 120px;';
+        
+        const hdBadge = (isAmazonHD || isHighRes) ? `
+            <span class="position-absolute top-0 start-0 badge bg-success m-1" style="font-size: 0.65rem;" title="High-resolution image (1500px+) - Perfect for zoom">
+                <i class="bi bi-check-circle me-1"></i>HD
+            </span>
+        ` : '';
+        
         imageDiv.innerHTML = `
-            <img src="${imageUrl}" alt="Imported" class="img-thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+            <img src="${imageUrl}" alt="Imported" class="img-thumbnail" style="width: 120px; height: 120px; object-fit: cover; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')" title="Click to view full size">
+            ${hdBadge}
             <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeImportedImage('${imageUrl}')" style="padding: 2px 6px;">
                 <i class="bi bi-x"></i>
             </button>
+            <small class="d-block text-center mt-1 text-success" style="font-size: 0.7rem;">Amazon HD</small>
         `;
         previewContainer.appendChild(imageDiv);
         
@@ -1493,7 +1522,10 @@ function updateImagesRequiredIndicator() {
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('product_images');
     if (fileInput) {
-        fileInput.addEventListener('change', updateImagesRequiredIndicator);
+        fileInput.addEventListener('change', function() {
+            updateImagesRequiredIndicator();
+            previewUploadedImages(this.files);
+        });
     }
     updateImagesRequiredIndicator();
     
@@ -1504,6 +1536,89 @@ document.addEventListener('DOMContentLoaded', function() {
             handleVideoFileUpload(e.target.files[0]);
         });
     }
+});
+
+// Function to preview uploaded images and check resolution
+function previewUploadedImages(files) {
+    const container = document.getElementById('uploadedImagesContainer');
+    const previewSection = document.getElementById('uploadedImagesPreview');
+    
+    if (!files || files.length === 0) {
+        previewSection.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+    
+    previewSection.style.display = 'block';
+    container.innerHTML = '';
+    
+    Array.from(files).forEach((file, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            
+            img.onload = function() {
+                const width = this.width;
+                const height = this.height;
+                const isHighRes = width >= 1500 && height >= 1500;
+                const isGoodRes = width >= 1000 && height >= 1000;
+                
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'position-relative';
+                previewDiv.style.cssText = 'width: 120px;';
+                
+                const imgElement = document.createElement('img');
+                imgElement.src = e.target.result;
+                imgElement.className = 'img-thumbnail';
+                imgElement.style.cssText = 'width: 120px; height: 120px; object-fit: cover; cursor: pointer;';
+                imgElement.title = 'Click to view full size';
+                imgElement.onclick = function() {
+                    window.open(e.target.result, '_blank');
+                };
+                
+                const badge = document.createElement('span');
+                badge.className = 'position-absolute top-0 start-0 badge m-1';
+                badge.style.fontSize = '0.65rem';
+                
+                if (isHighRes) {
+                    badge.classList.add('bg-success');
+                    badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>HD';
+                    badge.title = `${width}x${height}px - Excellent quality for zoom`;
+                } else if (isGoodRes) {
+                    badge.classList.add('bg-warning');
+                    badge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>OK';
+                    badge.title = `${width}x${height}px - Acceptable but may blur when zoomed`;
+                } else {
+                    badge.classList.add('bg-danger');
+                    badge.innerHTML = '<i class="bi bi-x-circle me-1"></i>Low';
+                    badge.title = `${width}x${height}px - Too low resolution, will be pixelated`;
+                }
+                
+                const infoText = document.createElement('small');
+                infoText.className = 'd-block text-center mt-1';
+                infoText.style.fontSize = '0.7rem';
+                infoText.textContent = `${width}x${height}px`;
+                
+                if (!isGoodRes) {
+                    infoText.classList.add('text-danger', 'fw-bold');
+                } else if (!isHighRes) {
+                    infoText.classList.add('text-warning');
+                } else {
+                    infoText.classList.add('text-success');
+                }
+                
+                previewDiv.appendChild(imgElement);
+                previewDiv.appendChild(badge);
+                previewDiv.appendChild(infoText);
+                container.appendChild(previewDiv);
+            };
+        };
+        
+        reader.readAsDataURL(file);
+    });
+}
     
     // Function to update category selection count
     function updateCategorySelectionCount() {
