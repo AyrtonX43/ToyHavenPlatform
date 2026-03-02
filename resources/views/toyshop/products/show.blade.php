@@ -48,38 +48,22 @@
     .main-image.main-image-slide.visible { opacity: 1; transform: translateX(0); }
     .main-image.main-image-slide-prev { opacity: 0; transform: translateX(-24%); }
     .main-image:hover { opacity: 0.98; }
-    /* High-quality hover zoom - Amazon style */
-    .product-zoom-overlay {
+    /* High-quality zoom lens - simple magnifying glass effect */
+    .product-zoom-lens {
         position: absolute;
-        border: 1px solid rgba(0,0,0,0.5);
-        background: rgba(255,255,255,0.5);
+        width: 250px;
+        height: 250px;
+        border: 2px solid rgba(0,0,0,0.3);
+        background-color: rgba(255,255,255,0.1);
         pointer-events: none;
         z-index: 20;
         display: none;
-        cursor: crosshair;
-    }
-    .product-zoom-overlay.active { display: block; }
-    
-    /* High-quality zoom result panel */
-    .product-zoom-result {
-        position: absolute;
-        top: 0;
-        left: calc(100% + 20px);
-        width: 100%;
-        height: 100%;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 8px;
         overflow: hidden;
-        display: none;
-        z-index: 30;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        cursor: none;
     }
-    .product-zoom-result.active { display: block; }
-    .product-zoom-result img {
+    .product-zoom-lens.active { display: block; }
+    .product-zoom-lens img {
         position: absolute;
-        max-width: none !important;
-        max-height: none !important;
         pointer-events: none;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
@@ -389,7 +373,7 @@
         align-items: center !important;
         justify-content: center !important;
         cursor: default;
-        padding: 60px 10px 80px 10px;
+        padding: 70px 10px 90px 10px;
         box-sizing: border-box !important;
         margin: 0 !important;
     }
@@ -546,10 +530,7 @@
         .image-zoom-hint {
             display: none;
         }
-        .product-zoom-overlay {
-            display: none !important;
-        }
-        .product-zoom-result {
+        .product-zoom-lens {
             display: none !important;
         }
         .fullscreen-image-container {
@@ -718,10 +699,10 @@
                             <img id="mainImage" src="{{ $firstImageUrl }}" 
                                  class="main-image" 
                                  alt="{{ $product->name }}"
-                                 loading="eager">
-                            <div id="productZoomOverlay" class="product-zoom-overlay" aria-hidden="true"></div>
-                            <div id="productZoomResult" class="product-zoom-result" aria-hidden="true">
-                                <img id="zoomResultImage" src="{{ $firstImageUrl }}" alt="{{ $product->name }}">
+                                 loading="eager"
+                                 crossorigin="anonymous">
+                            <div id="productZoomLens" class="product-zoom-lens" aria-hidden="true">
+                                <img id="zoomLensImage" src="{{ $firstImageUrl }}" alt="{{ $product->name }}" crossorigin="anonymous">
                             </div>
                         </div>
                     </div>
@@ -1208,56 +1189,35 @@
     function initHoverZoom() {
         var wrap = document.getElementById('mainImageWrap');
         var mainImg = document.getElementById('mainImage');
-        var overlay = document.getElementById('productZoomOverlay');
-        var zoomResult = document.getElementById('productZoomResult');
-        var zoomResultImg = document.getElementById('zoomResultImage');
+        var lens = document.getElementById('productZoomLens');
+        var lensImg = document.getElementById('zoomLensImage');
         
-        if (!wrap || !mainImg || !overlay || !zoomResult || !zoomResultImg) {
-            console.warn('Zoom elements not found');
-            return;
-        }
+        if (!wrap || !mainImg || !lens || !lensImg) return;
         
-        // Overlay size (selection box)
-        var overlayWidth = 180;
-        var overlayHeight = 180;
-        
-        // Zoom factor - 2.5x for high detail
-        var zoomFactor = 2.5;
-        
-        // Track if zoom is initialized
-        var zoomInitialized = false;
+        var lensSize = 250;
+        var zoomLevel = 2.5; // 2.5x magnification for crystal clear detail
         
         wrap.addEventListener('mouseenter', function(e) {
             if (showingVideo || productImages.length === 0) return;
             
-            // ALWAYS use HD URL from productImages array
+            // Always use HD URL from productImages array
             var hdImageUrl = productImages[currentImageIndex];
             
-            if (!hdImageUrl) {
-                console.warn('No HD image URL available');
-                return;
+            // Update both images to HD URL
+            if (mainImg.src !== hdImageUrl) {
+                mainImg.src = hdImageUrl;
+            }
+            if (lensImg.src !== hdImageUrl) {
+                lensImg.src = hdImageUrl;
             }
             
-            // Set HD image source
-            zoomResultImg.src = hdImageUrl;
-            
-            // Show zoom elements
-            overlay.classList.add('active');
-            zoomResult.classList.add('active');
-            zoomInitialized = true;
-            
-            // Pause slideshow
+            lens.classList.add('active');
             stopGallerySlideshow();
-            
-            console.log('Zoom activated with HD URL:', hdImageUrl);
         });
         
         wrap.addEventListener('mouseleave', function() {
-            overlay.classList.remove('active');
-            zoomResult.classList.remove('active');
-            zoomInitialized = false;
+            lens.classList.remove('active');
             
-            // Resume slideshow
             if (productImages.length > 1 && !showingVideo) {
                 var viewer = document.getElementById('fullscreenViewer');
                 if (!viewer || !viewer.classList.contains('active')) startGallerySlideshow();
@@ -1265,54 +1225,44 @@
         });
         
         wrap.addEventListener('mousemove', function(e) {
-            if (!overlay.classList.contains('active') || !zoomInitialized) return;
-            
-            // Wait for HD image to load
-            if (zoomResultImg.naturalWidth === 0 || zoomResultImg.naturalHeight === 0) {
-                return;
-            }
+            if (!lens.classList.contains('active')) return;
             
             var rect = wrap.getBoundingClientRect();
             var x = e.clientX - rect.left;
             var y = e.clientY - rect.top;
             
-            // Keep overlay within bounds
-            var overlayX = Math.max(0, Math.min(rect.width - overlayWidth, x - overlayWidth / 2));
-            var overlayY = Math.max(0, Math.min(rect.height - overlayHeight, y - overlayHeight / 2));
+            // Position lens (keep within bounds)
+            var lensX = Math.max(0, Math.min(rect.width - lensSize, x - lensSize / 2));
+            var lensY = Math.max(0, Math.min(rect.height - lensSize, y - lensSize / 2));
             
-            // Position overlay box
-            overlay.style.width = overlayWidth + 'px';
-            overlay.style.height = overlayHeight + 'px';
-            overlay.style.left = overlayX + 'px';
-            overlay.style.top = overlayY + 'px';
+            lens.style.left = lensX + 'px';
+            lens.style.top = lensY + 'px';
             
-            // Calculate percentage position
-            var percentX = (overlayX + overlayWidth / 2) / rect.width;
-            var percentY = (overlayY + overlayHeight / 2) / rect.height;
-            
-            // Use NATURAL dimensions of HD image (not displayed size)
-            var naturalWidth = zoomResultImg.naturalWidth;
-            var naturalHeight = zoomResultImg.naturalHeight;
-            
-            // Calculate zoomed dimensions
-            var zoomResultRect = zoomResult.getBoundingClientRect();
-            var zoomedWidth = naturalWidth * zoomFactor;
-            var zoomedHeight = naturalHeight * zoomFactor;
-            
-            // Set zoomed image size (actual HD pixels)
-            zoomResultImg.style.width = zoomedWidth + 'px';
-            zoomResultImg.style.height = zoomedHeight + 'px';
-            
-            // Calculate position to show correct area
-            var offsetX = percentX * zoomedWidth - zoomResultRect.width / 2;
-            var offsetY = percentY * zoomedHeight - zoomResultRect.height / 2;
-            
-            // Apply position
-            zoomResultImg.style.left = -offsetX + 'px';
-            zoomResultImg.style.top = -offsetY + 'px';
+            // Calculate zoom image position
+            if (lensImg.naturalWidth > 0 && mainImg.naturalWidth > 0) {
+                // Calculate the ratio between displayed and natural size
+                var scaleX = mainImg.naturalWidth / rect.width;
+                var scaleY = mainImg.naturalHeight / rect.height;
+                
+                // Calculate the position in the natural image
+                var imgX = (lensX + lensSize / 2) * scaleX;
+                var imgY = (lensY + lensSize / 2) * scaleY;
+                
+                // Set lens image size (zoomed)
+                var zoomedWidth = lensImg.naturalWidth * zoomLevel;
+                var zoomedHeight = lensImg.naturalHeight * zoomLevel;
+                
+                lensImg.style.width = zoomedWidth + 'px';
+                lensImg.style.height = zoomedHeight + 'px';
+                
+                // Position to show the correct part
+                var offsetX = (imgX * zoomLevel) - (lensSize / 2);
+                var offsetY = (imgY * zoomLevel) - (lensSize / 2);
+                
+                lensImg.style.left = -offsetX + 'px';
+                lensImg.style.top = -offsetY + 'px';
+            }
         });
-        
-        console.log('Hover zoom initialized');
     }
     
     if (document.readyState === 'loading') {
@@ -1382,16 +1332,22 @@
         if (mainVideoContainer) mainVideoContainer.style.display = 'none';
         if (mainImageContainer) mainImageContainer.style.display = '';
         const mainImage = document.getElementById('mainImage');
-        const zoomResultImg = document.getElementById('zoomResultImage');
-        if (mainImage && src) {
+        const lensImg = document.getElementById('zoomLensImage');
+        
+        // Always use HD URL from productImages array
+        const hdUrl = productImages[index] || src;
+        
+        if (mainImage) {
             mainImage.classList.remove('main-image-slide');
             mainImage.classList.add('visible');
-            mainImage.src = src;
-            // Update zoom image to HD version
-            if (zoomResultImg && productImages[index]) {
-                zoomResultImg.src = productImages[index];
-            }
+            mainImage.src = hdUrl;
         }
+        
+        // Update zoom lens image to HD version
+        if (lensImg) {
+            lensImg.src = hdUrl;
+        }
+        
         document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('active'));
         if (element) element.classList.add('active');
         currentImageIndex = index;
