@@ -461,12 +461,12 @@
                 @endphp
                 
                 <div class="notification-item {{ $isUnread ? 'unread' : '' }}" data-notification-id="{{ $notification->id }}" 
-                     data-notification-type="{{ e($type) }}"
-                     data-notification-message="{{ e($data['message'] ?? 'New notification') }}"
-                     data-notification-business="{{ e($data['business_name'] ?? '') }}"
-                     data-notification-reason="{{ e($data['reason'] ?? '') }}"
-                     data-notification-report="{{ e($data['report_id'] ?? '') }}"
-                     data-notification-date="{{ $notification->created_at->toIso8601String() }}">
+                     data-notification-type="{{ $type }}"
+                     data-notification-message="{{ $data['message'] ?? 'New notification' }}"
+                     data-notification-business="{{ $data['business_name'] ?? '' }}"
+                     data-notification-reason="{{ $data['reason'] ?? '' }}"
+                     data-notification-report="{{ $data['report_id'] ?? '' }}"
+                     data-notification-date="{{ $notification->created_at }}">
                     <span class="notification-dot"></span>
                     @if(in_array($type, ['seller_rejected', 'seller_suspended']))
                         <a href="javascript:void(0)" class="notification-item-link" onclick="showNotificationDetail('{{ $notification->id }}', event)">
@@ -481,16 +481,17 @@
                             @if(isset($data['listing_title']))
                                 <div class="notification-message">{{ $data['listing_title'] }}</div>
                             @endif
-                            @if(isset($data['business_name']))
+                            @if(isset($data['business_name']) && in_array($type, ['seller_rejected', 'seller_suspended']))
                                 <div class="notification-message"><strong>Business:</strong> {{ $data['business_name'] }}</div>
                             @endif
-                            @if(isset($data['reason']) && !in_array($type, ['seller_rejected', 'seller_suspended']))
-                                <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
-                            @elseif(isset($data['reason']))
-                                <div class="notification-message text-muted" style="max-height: 3em; overflow: hidden; text-overflow: ellipsis;">
-                                    {{ Str::limit($data['reason'], 100) }}
+                            @if(isset($data['reason']) && in_array($type, ['seller_rejected', 'seller_suspended']))
+                                <div class="mt-2 mb-2">
+                                    <span class="badge bg-{{ $type === 'seller_rejected' ? 'danger' : 'warning' }} text-white px-3 py-2">
+                                        <i class="bi bi-info-circle me-1"></i>Click to view rejection details
+                                    </span>
                                 </div>
-                                <small class="text-primary"><i class="bi bi-eye me-1"></i>Click to view full details</small>
+                            @elseif(isset($data['reason']))
+                                <div class="notification-message" style="white-space: pre-wrap;">{{ $data['reason'] }}</div>
                             @endif
                             <div class="notification-time">
                                 <i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}
@@ -524,19 +525,21 @@
 
 <!-- Notification Detail Modal -->
 <div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" id="modalHeader">
-                <h5 class="modal-title" id="notificationDetailModalLabel">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" id="modalHeader" style="border-bottom: 2px solid #e2e8f0;">
+                <h5 class="modal-title fw-bold" id="notificationDetailModalLabel">
                     <i class="bi bi-bell-fill me-2"></i>Notification Details
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="modalBody">
+            <div class="modal-body p-0" id="modalBody" style="max-height: 70vh; overflow-y: auto;">
                 <!-- Content will be injected here -->
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer" style="border-top: 2px solid #e2e8f0;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Close
+                </button>
                 <a href="#" id="modalActionBtn" class="btn btn-primary" style="display: none;">
                     <i class="bi bi-arrow-right-circle me-1"></i>Go to Dashboard
                 </a>
@@ -551,117 +554,133 @@
         event.preventDefault();
         event.stopPropagation();
         
-        console.log('Opening notification:', notificationId);
-        
         // Find notification element
         const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
         if (!notificationElement) {
-            console.error('Notification element not found for ID:', notificationId);
-            alert('Unable to load notification details. Please refresh the page and try again.');
+            console.error('Notification element not found');
             return;
         }
         
-        console.log('Notification element found:', notificationElement);
-        
         // Get data from attributes
-        const type = notificationElement.dataset.notificationType || '';
-        const message = notificationElement.dataset.notificationMessage || 'No message';
-        const businessName = notificationElement.dataset.notificationBusiness || '';
-        const reason = notificationElement.dataset.notificationReason || '';
-        const reportId = notificationElement.dataset.notificationReport || '';
-        const date = notificationElement.dataset.notificationDate || new Date().toISOString();
+        const type = notificationElement.dataset.notificationType;
+        const message = notificationElement.dataset.notificationMessage;
+        const businessName = notificationElement.dataset.notificationBusiness;
+        const reason = notificationElement.dataset.notificationReason;
+        const reportId = notificationElement.dataset.notificationReport;
+        const date = notificationElement.dataset.notificationDate;
         
-        console.log('Notification data:', { type, message, businessName, reason, reportId, date });
+        // Update modal header based on type
+        const modalHeader = document.getElementById('modalHeader');
+        const modalTitle = document.getElementById('notificationDetailModalLabel');
+        const modalBody = document.getElementById('modalBody');
+        const actionBtn = document.getElementById('modalActionBtn');
         
-        try {
-            // Update modal header based on type
-            const modalHeader = document.getElementById('modalHeader');
-            const modalTitle = document.getElementById('notificationDetailModalLabel');
-            const modalBody = document.getElementById('modalBody');
-            const actionBtn = document.getElementById('modalActionBtn');
-            
-            if (!modalHeader || !modalTitle || !modalBody || !actionBtn) {
-                console.error('Modal elements not found');
-                alert('Modal elements not found. Please refresh the page.');
-                return;
-            }
-            
-            // Set header color
-            modalHeader.className = 'modal-header';
-            if (type === 'seller_rejected') {
-                modalHeader.classList.add('bg-danger', 'text-white');
-                modalTitle.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Seller Application Rejected';
-            } else if (type === 'seller_suspended') {
-                modalHeader.classList.add('bg-warning', 'text-dark');
-                modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Seller Account Suspended';
-            }
-            
-            // Build modal content
-            let content = '<div class="p-3">';
-            
-            if (businessName) {
-                content += `<div class="mb-3">
-                    <strong class="d-block mb-1"><i class="bi bi-shop me-2"></i>Business Name:</strong>
-                    <p class="mb-0 ps-4">${escapeHtml(businessName)}</p>
-                </div>`;
-            }
-            
-            content += `<div class="mb-3">
-                <strong class="d-block mb-1"><i class="bi bi-info-circle me-2"></i>Message:</strong>
-                <p class="mb-0 ps-4">${escapeHtml(message)}</p>
-            </div>`;
-            
-            if (reason) {
-                content += `<div class="mb-3">
-                    <strong class="d-block mb-2"><i class="bi bi-file-text me-2"></i>Detailed Reason:</strong>
-                    <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} mb-0">
-                        <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem;">${escapeHtml(reason)}</pre>
+        // Set header color and update close button
+        modalHeader.className = 'modal-header';
+        modalHeader.style.borderBottom = '2px solid #e2e8f0';
+        const closeBtn = modalHeader.querySelector('.btn-close');
+        
+        if (type === 'seller_rejected') {
+            modalHeader.classList.add('bg-danger', 'text-white');
+            modalTitle.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Seller Application Rejected';
+            if (closeBtn) closeBtn.classList.add('btn-close-white');
+        } else if (type === 'seller_suspended') {
+            modalHeader.classList.add('bg-warning', 'text-dark');
+            modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Seller Account Suspended';
+            if (closeBtn) closeBtn.classList.remove('btn-close-white');
+        }
+        
+        // Build modal content with better styling
+        let content = '<div class="p-4">';
+        
+        // Business Name Section
+        if (businessName) {
+            content += `
+                <div class="mb-4 pb-3" style="border-bottom: 1px solid #e2e8f0;">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                            <i class="bi bi-shop"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Business Name</small>
+                            <strong style="font-size: 1.1rem;">${businessName}</strong>
+                        </div>
                     </div>
                 </div>`;
-            }
-            
-            if (reportId) {
-                content += `<div class="mb-3">
-                    <strong class="d-block mb-1"><i class="bi bi-flag me-2"></i>Related Report:</strong>
-                    <p class="mb-0 ps-4">Report ID: #${escapeHtml(reportId)}</p>
-                </div>`;
-            }
-            
-            content += `<div class="mb-0">
-                <strong class="d-block mb-1"><i class="bi bi-clock me-2"></i>Date:</strong>
-                <p class="mb-0 ps-4">${new Date(date).toLocaleString()}</p>
-            </div>`;
-            
-            content += '</div>';
-            
-            modalBody.innerHTML = content;
-            
-            // Show action button
-            actionBtn.style.display = 'inline-block';
-            actionBtn.href = '{{ route("seller.dashboard") }}';
-            
-            // Show modal
-            console.log('Showing modal...');
-            const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
-            modal.show();
-            
-            // Mark as read
-            markAsRead(notificationId, event);
-        } catch (error) {
-            console.error('Error showing notification detail:', error);
-            alert('An error occurred while loading the notification. Error: ' + error.message);
         }
-    }
-    
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+        
+        // Message Section
+        content += `
+            <div class="mb-4">
+                <div class="alert alert-${type === 'seller_rejected' ? 'danger' : 'warning'} border-${type === 'seller_rejected' ? 'danger' : 'warning'}" style="border-left-width: 4px;">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-info-circle-fill me-2 mt-1" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <strong class="d-block mb-1">Status Message</strong>
+                            <p class="mb-0">${message || 'No message'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        
+        // Reason Section
+        if (reason) {
+            content += `
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-file-text-fill me-2 text-${type === 'seller_rejected' ? 'danger' : 'warning'}"></i>
+                        Detailed Reason
+                    </h6>
+                    <div class="bg-light p-3 rounded" style="border-left: 4px solid ${type === 'seller_rejected' ? '#dc3545' : '#ffc107'};">
+                        <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit; font-size: 0.95rem; line-height: 1.6;">${reason}</pre>
+                    </div>
+                </div>`;
+        }
+        
+        // Report ID Section
+        if (reportId) {
+            content += `
+                <div class="mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-flag-fill me-2 text-danger"></i>
+                        <div>
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Related Report</small>
+                            <strong>Report ID: #${reportId}</strong>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // Date Section
+        content += `
+            <div class="pt-3" style="border-top: 1px solid #e2e8f0;">
+                <div class="d-flex align-items-center text-muted">
+                    <i class="bi bi-clock me-2"></i>
+                    <small>${new Date(date).toLocaleString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    })}</small>
+                </div>
+            </div>`;
+        
+        content += '</div>';
+        
+        modalBody.innerHTML = content;
+        
+        // Show action button
+        actionBtn.style.display = 'inline-block';
+        actionBtn.href = '{{ route("seller.dashboard") }}';
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('notificationDetailModal'));
+        modal.show();
+        
+        // Mark as read
+        markAsRead(notificationId, event);
     }
     
     function deleteNotification(notificationId, event) {
