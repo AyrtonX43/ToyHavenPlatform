@@ -52,27 +52,31 @@
         position: absolute;
         top: 0;
         left: calc(100% + 20px);
-        width: 500px;
+        width: 550px;
         height: 680px;
         background: #fff;
-        border: 1px solid #ddd;
+        border: 2px solid #ddd;
         border-radius: 8px;
         overflow: hidden;
         display: none;
         z-index: 1000;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     }
     .zoom-window.active { display: block; }
     .zoom-window-image {
         position: absolute;
         top: 0;
         left: 0;
-        width: auto;
-        height: auto;
-        max-width: none;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        max-height: none !important;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         pointer-events: none;
+        transform-origin: top left;
+        will-change: transform;
+        transition: none;
     }
     
     /* Hover indicator overlay */
@@ -390,25 +394,29 @@
         align-items: center !important;
         justify-content: center !important;
         cursor: default;
-        padding: 60px 20px 120px 20px;
+        padding: 80px 40px;
         box-sizing: border-box !important;
         margin: 0 !important;
+        overflow: hidden;
     }
     
     .fullscreen-image {
-        max-width: calc(100vw - 40px) !important;
-        max-height: calc(100vh - 180px) !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
         width: auto !important;
         height: auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
         object-fit: contain !important;
-        border-radius: 8px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-        transition: opacity 0.4s ease, transform 0.2s ease-out;
-        animation: fadeInImage 0.4s ease;
+        border-radius: 0;
+        box-shadow: none;
+        transition: transform 0.2s ease-out;
         display: block !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         transform-origin: center center;
         cursor: grab;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
     }
     .fullscreen-image.zooming { cursor: grab; }
     .fullscreen-image.zooming:active { cursor: grabbing; }
@@ -1218,13 +1226,39 @@
         
         // Zoom settings
         var zoomLevel = 2.5; // 2.5x zoom for 4K images
-        var indicatorSize = 150; // Size of hover indicator box
+        var indicatorSize = 180; // Size of hover indicator box
+        var imageLoaded = false;
+        var natWidth = 0;
+        var natHeight = 0;
+        
+        // Preload image dimensions
+        function loadImageDimensions() {
+            var img = new Image();
+            img.onload = function() {
+                natWidth = this.naturalWidth;
+                natHeight = this.naturalHeight;
+                imageLoaded = true;
+                
+                // Set zoom window image size immediately
+                var scaledWidth = natWidth * zoomLevel;
+                var scaledHeight = natHeight * zoomLevel;
+                zoomWindowImage.style.width = scaledWidth + 'px';
+                zoomWindowImage.style.height = scaledHeight + 'px';
+            };
+            img.src = mainImg.currentSrc || mainImg.src;
+        }
         
         wrap.addEventListener('mouseenter', function(e) {
             if (showingVideo || productImages.length === 0) return;
             
             // Load high-res image in zoom window
-            zoomWindowImage.src = mainImg.currentSrc || mainImg.src;
+            var currentSrc = mainImg.currentSrc || mainImg.src;
+            if (zoomWindowImage.src !== currentSrc) {
+                zoomWindowImage.src = currentSrc;
+                imageLoaded = false;
+                loadImageDimensions();
+            }
+            
             zoomWindow.classList.add('active');
             zoomIndicator.classList.add('active');
             
@@ -1244,15 +1278,19 @@
         });
         
         wrap.addEventListener('mousemove', function(e) {
-            if (!zoomWindow.classList.contains('active')) return;
+            if (!zoomWindow.classList.contains('active') || !imageLoaded) return;
             
             var rect = wrap.getBoundingClientRect();
             var x = e.clientX - rect.left;
             var y = e.clientY - rect.top;
             
             // Calculate percentage position
-            var xPercent = (x / rect.width) * 100;
-            var yPercent = (y / rect.height) * 100;
+            var xPercent = (x / rect.width);
+            var yPercent = (y / rect.height);
+            
+            // Clamp percentages
+            xPercent = Math.max(0, Math.min(1, xPercent));
+            yPercent = Math.max(0, Math.min(1, yPercent));
             
             // Position indicator box
             var indicatorX = Math.max(0, Math.min(rect.width - indicatorSize, x - indicatorSize / 2));
@@ -1263,30 +1301,26 @@
             zoomIndicator.style.width = indicatorSize + 'px';
             zoomIndicator.style.height = indicatorSize + 'px';
             
-            // Calculate zoom window image position (inverse movement for natural feel)
-            // Get natural dimensions of the image
-            var img = new Image();
-            img.src = mainImg.currentSrc || mainImg.src;
+            // Calculate zoom window image position
+            var scaledWidth = natWidth * zoomLevel;
+            var scaledHeight = natHeight * zoomLevel;
             
-            img.onload = function() {
-                var natWidth = this.naturalWidth;
-                var natHeight = this.naturalHeight;
-                
-                // Scale image to zoom level
-                var scaledWidth = natWidth * zoomLevel;
-                var scaledHeight = natHeight * zoomLevel;
-                
-                // Set zoom window image size
-                zoomWindowImage.style.width = scaledWidth + 'px';
-                zoomWindowImage.style.height = scaledHeight + 'px';
-                
-                // Calculate position (move opposite to cursor for natural zoom effect)
-                var moveX = -(xPercent / 100) * (scaledWidth - zoomWindow.offsetWidth);
-                var moveY = -(yPercent / 100) * (scaledHeight - zoomWindow.offsetHeight);
-                
-                zoomWindowImage.style.left = moveX + 'px';
-                zoomWindowImage.style.top = moveY + 'px';
-            };
+            // Calculate position (move opposite to cursor for natural zoom effect)
+            var moveX = -xPercent * (scaledWidth - zoomWindow.offsetWidth);
+            var moveY = -yPercent * (scaledHeight - zoomWindow.offsetHeight);
+            
+            // Clamp movement to prevent white space
+            moveX = Math.max(Math.min(0, moveX), zoomWindow.offsetWidth - scaledWidth);
+            moveY = Math.max(Math.min(0, moveY), zoomWindow.offsetHeight - scaledHeight);
+            
+            zoomWindowImage.style.transform = 'translate(' + moveX + 'px, ' + moveY + 'px)';
+        });
+        
+        // Update zoom when main image changes
+        mainImg.addEventListener('load', function() {
+            if (zoomWindow.classList.contains('active')) {
+                loadImageDimensions();
+            }
         });
     }
     
