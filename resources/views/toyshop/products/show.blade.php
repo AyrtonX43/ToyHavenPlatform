@@ -48,12 +48,11 @@
     /* Amazon-style zoom overlay box */
     .product-zoom-overlay {
         position: absolute;
-        border: 2px solid rgba(0,0,0,0.3);
-        background: rgba(255,255,255,0.3);
+        border: 1px solid rgba(0,0,0,0.4);
+        background: rgba(255,255,255,0.4);
         pointer-events: none;
         z-index: 20;
         display: none;
-        box-shadow: 0 0 0 9999px rgba(255,255,255,0.5);
     }
     .product-zoom-overlay.active { display: block; }
     /* Amazon-style zoom result panel */
@@ -383,19 +382,19 @@
         align-items: center !important;
         justify-content: center !important;
         cursor: default;
-        padding: 60px 20px 120px 20px;
+        padding: 80px 20px 100px 20px;
         box-sizing: border-box !important;
         margin: 0 !important;
     }
     
     .fullscreen-image {
-        max-width: calc(100vw - 40px) !important;
-        max-height: calc(100vh - 180px) !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
         width: auto !important;
         height: auto !important;
         object-fit: contain !important;
-        border-radius: 8px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        border-radius: 0;
+        box-shadow: none;
         transition: opacity 0.4s ease, transform 0.2s ease-out;
         animation: fadeInImage 0.4s ease;
         display: block !important;
@@ -1206,18 +1205,22 @@
         if (!wrap || !mainImg || !overlay || !zoomResult || !zoomResultImg) return;
         
         // Overlay size (the selection box on main image)
-        var overlayWidth = 200;
-        var overlayHeight = 200;
+        var overlayWidth = 150;
+        var overlayHeight = 150;
         
-        // Zoom factor (how much to magnify)
-        var zoomFactor = 2.5;
+        // Zoom factor (how much to magnify) - increased for better detail
+        var zoomFactor = 2.0;
         
         wrap.addEventListener('mouseenter', function(e) {
             if (showingVideo || productImages.length === 0) return;
             
-            // Use the HD image URL for zoom
-            var hdImageUrl = mainImg.currentSrc || mainImg.src;
-            zoomResultImg.src = hdImageUrl;
+            // Use the HD image URL from productImages array (not the displayed thumbnail)
+            var hdImageUrl = productImages[currentImageIndex] || mainImg.src;
+            
+            // Force reload to ensure HD image is used
+            if (zoomResultImg.src !== hdImageUrl) {
+                zoomResultImg.src = hdImageUrl;
+            }
             
             overlay.classList.add('active');
             zoomResult.classList.add('active');
@@ -1258,9 +1261,12 @@
             var percentX = (overlayX + overlayWidth / 2) / rect.width;
             var percentY = (overlayY + overlayHeight / 2) / rect.height;
             
-            // Get natural dimensions of the image
-            var naturalWidth = mainImg.naturalWidth;
-            var naturalHeight = mainImg.naturalHeight;
+            // Wait for image to load before calculating dimensions
+            if (zoomResultImg.naturalWidth === 0) return;
+            
+            // Get natural dimensions of the HD image
+            var naturalWidth = zoomResultImg.naturalWidth;
+            var naturalHeight = zoomResultImg.naturalHeight;
             
             // Calculate zoom result dimensions
             var zoomResultRect = zoomResult.getBoundingClientRect();
@@ -1348,10 +1354,15 @@
         if (mainVideoContainer) mainVideoContainer.style.display = 'none';
         if (mainImageContainer) mainImageContainer.style.display = '';
         const mainImage = document.getElementById('mainImage');
+        const zoomResultImg = document.getElementById('zoomResultImage');
         if (mainImage && src) {
             mainImage.classList.remove('main-image-slide');
             mainImage.classList.add('visible');
             mainImage.src = src;
+            // Update zoom image to HD version
+            if (zoomResultImg && productImages[index]) {
+                zoomResultImg.src = productImages[index];
+            }
         }
         document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('active'));
         if (element) element.classList.add('active');
