@@ -147,7 +147,7 @@ class SellerController extends Controller
         try {
             if ($seller->user) {
                 $shopType = $isVerifiedShop ? 'Verified Trusted Toyshop' : 'Local Business Toyshop';
-                $seller->user->notify(new SellerApprovedNotification($seller->business_name, $shopType));
+                $seller->user->notify(new SellerApprovedNotification($shopType, $seller->business_name));
             }
         } catch (\Exception $e) {
             \Log::error('Failed to send seller approval notification: ' . $e->getMessage());
