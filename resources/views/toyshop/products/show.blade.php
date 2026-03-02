@@ -66,8 +66,11 @@
         max-height: 100%;
         object-fit: contain;
         cursor: crosshair;
+        image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
     }
     
     /* 4K Badge */
@@ -155,8 +158,11 @@
         width: auto !important;
         height: auto !important;
         max-width: none !important;
+        image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
     }
     
     /* Zoom Indicator */
@@ -264,13 +270,10 @@
     }
     
     .fullscreen-image {
-        min-width: 90vw;
-        min-height: 90vh;
-        max-width: 100vw;
-        max-height: 100vh;
-        width: auto;
-        height: auto;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
+        image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         display: block;
@@ -588,29 +591,8 @@
         });
     }
     
-    // Global zoom state
-    let imageNaturalDimensions = { width: 0, height: 0 };
-    
-    // Preload image dimensions - wait for image to fully load
-    function loadImageDimensions(src) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = function() {
-                imageNaturalDimensions.width = this.naturalWidth;
-                imageNaturalDimensions.height = this.naturalHeight;
-                console.log('Image dimensions loaded:', imageNaturalDimensions, 'from:', src);
-                resolve();
-            };
-            img.onerror = function() {
-                console.error('Failed to load image:', src);
-                resolve(); // Resolve anyway to not block
-            };
-            img.src = src;
-        });
-    }
-    
     // Change image
-    async function changeImage(src, element) {
+    function changeImage(src, element) {
         const mainImage = document.getElementById('mainImage');
         const zoomWindowImage = document.getElementById('zoomWindowImage');
         
@@ -629,12 +611,14 @@
         const thumbnails = Array.from(document.querySelectorAll('.thumbnail'));
         currentImageIndex = thumbnails.indexOf(element);
         
-        // Reload image dimensions for new image
-        console.log('Changing image to:', src);
-        await loadImageDimensions(src);
+        // Reset zoom initialization flag and reinitialize
+        zoomInitialized = false;
+        initHoverZoom();
     }
     
     // Amazon-style hover zoom
+    let zoomInitialized = false;
+    
     function initHoverZoom() {
         const wrapper = document.getElementById('mainImageWrapper');
         const mainImage = document.getElementById('mainImage');
@@ -655,53 +639,82 @@
             return;
         }
         
+        // Remove old listeners if reinitializing
+        if (zoomInitialized) {
+            const newWrapper = wrapper.cloneNode(true);
+            wrapper.parentNode.replaceChild(newWrapper, wrapper);
+            return initHoverZoom(); // Reinitialize with clean element
+        }
+        zoomInitialized = true;
+        
         const zoomLevel = 2.5;
         const indicatorSize = 150;
+        let imageNaturalDimensions = { width: 0, height: 0 };
+        let isZoomActive = false;
         
-        // Load initial image dimensions
-        loadImageDimensions(mainImage.src);
+        // Preload image dimensions
+        function loadImageDimensions() {
+            const preloadImg = new Image();
+            preloadImg.onload = function() {
+                imageNaturalDimensions.width = this.naturalWidth;
+                imageNaturalDimensions.height = this.naturalHeight;
+                console.log('Image dimensions loaded:', imageNaturalDimensions, 'from:', mainImage.src);
+            };
+            preloadImg.src = mainImage.src;
+        }
+        loadImageDimensions();
         
-        wrapper.addEventListener('mouseenter', async function() {
+        wrapper.addEventListener('mouseenter', function() {
             console.log('Mouse entered wrapper');
-            
-            // Update zoom window image first
-            zoomWindowImage.src = mainImage.src;
-            
-            // Wait for image dimensions to load before showing zoom
-            if (imageNaturalDimensions.width === 0) {
-                await loadImageDimensions(mainImage.src);
-            }
-            
+            isZoomActive = true;
             zoomWindow.classList.add('active');
             if (zoomIndicator) zoomIndicator.classList.add('active');
+            
+            // Update zoom window image
+            zoomWindowImage.src = mainImage.src;
+            loadImageDimensions();
         });
         
         wrapper.addEventListener('mouseleave', function() {
             console.log('Mouse left wrapper');
+            isZoomActive = false;
             zoomWindow.classList.remove('active');
             if (zoomIndicator) zoomIndicator.classList.remove('active');
         });
         
         wrapper.addEventListener('mousemove', function(e) {
-            if (!zoomWindow.classList.contains('active')) return;
+            if (!isZoomActive || imageNaturalDimensions.width === 0) return;
             
-            // Get the actual image position and size
+            // Get the actual displayed image dimensions and position
             const imageRect = mainImage.getBoundingClientRect();
             const wrapperRect = wrapper.getBoundingClientRect();
             
-            // Calculate mouse position relative to the ACTUAL IMAGE, not the wrapper
-            const x = e.clientX - imageRect.left;
-            const y = e.clientY - imageRect.top;
+            // Mouse position relative to the actual displayed image
+            const mouseX = e.clientX - imageRect.left;
+            const mouseY = e.clientY - imageRect.top;
             
-            // Check if mouse is actually over the image
-            if (x < 0 || x > imageRect.width || y < 0 || y > imageRect.height) {
+            // Check if mouse is over the image
+            if (mouseX < 0 || mouseX > imageRect.width || mouseY < 0 || mouseY > imageRect.height) {
+                if (zoomIndicator) zoomIndicator.style.display = 'none';
                 return;
             }
             
-            const xPercent = x / imageRect.width;
-            const yPercent = y / imageRect.height;
+            if (zoomIndicator) zoomIndicator.style.display = 'block';
             
-            // Position indicator relative to wrapper (for visual consistency)
+            // Calculate percentage position on the displayed image
+            const xPercent = mouseX / imageRect.width;
+            const yPercent = mouseY / imageRect.height;
+            
+            console.log('Zoom position:', {
+                mouseX: mouseX.toFixed(0),
+                mouseY: mouseY.toFixed(0),
+                xPercent: (xPercent * 100).toFixed(1) + '%',
+                yPercent: (yPercent * 100).toFixed(1) + '%',
+                imageWidth: imageRect.width.toFixed(0),
+                imageHeight: imageRect.height.toFixed(0)
+            });
+            
+            // Position indicator (relative to wrapper for visual consistency)
             if (zoomIndicator) {
                 const indicatorX = Math.max(0, Math.min(wrapperRect.width - indicatorSize, e.clientX - wrapperRect.left - indicatorSize / 2));
                 const indicatorY = Math.max(0, Math.min(wrapperRect.height - indicatorSize, e.clientY - wrapperRect.top - indicatorSize / 2));
@@ -712,21 +725,24 @@
                 zoomIndicator.style.height = indicatorSize + 'px';
             }
             
-            // Position zoomed image based on ACTUAL image coordinates
-            if (imageNaturalDimensions.width > 0) {
-                const scaledWidth = imageNaturalDimensions.width * zoomLevel;
-                const scaledHeight = imageNaturalDimensions.height * zoomLevel;
-                
-                zoomWindowImage.style.width = scaledWidth + 'px';
-                zoomWindowImage.style.height = scaledHeight + 'px';
-                
-                // Calculate movement based on the percentage of the ACTUAL image
-                const moveX = -xPercent * (scaledWidth - zoomWindow.offsetWidth);
-                const moveY = -yPercent * (scaledHeight - zoomWindow.offsetHeight);
-                
-                zoomWindowImage.style.left = moveX + 'px';
-                zoomWindowImage.style.top = moveY + 'px';
-            }
+            // Scale the zoom window image to show zoomed portion
+            const scaledWidth = imageNaturalDimensions.width * zoomLevel;
+            const scaledHeight = imageNaturalDimensions.height * zoomLevel;
+            
+            zoomWindowImage.style.width = scaledWidth + 'px';
+            zoomWindowImage.style.height = scaledHeight + 'px';
+            
+            // Calculate the position to show in zoom window
+            // This positions the zoomed image so the hovered point is centered in the zoom window
+            const moveX = -xPercent * scaledWidth + (zoomWindow.offsetWidth / 2);
+            const moveY = -yPercent * scaledHeight + (zoomWindow.offsetHeight / 2);
+            
+            // Clamp to prevent showing beyond image bounds
+            const clampedX = Math.min(0, Math.max(moveX, zoomWindow.offsetWidth - scaledWidth));
+            const clampedY = Math.min(0, Math.max(moveY, zoomWindow.offsetHeight - scaledHeight));
+            
+            zoomWindowImage.style.left = clampedX + 'px';
+            zoomWindowImage.style.top = clampedY + 'px';
         });
         
         // Click to open fullscreen
