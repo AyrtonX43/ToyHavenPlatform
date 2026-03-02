@@ -264,11 +264,13 @@
     }
     
     .fullscreen-image {
-        width: auto !important;
-        height: auto !important;
-        max-width: 100vw !important;
-        max-height: 100vh !important;
-        object-fit: contain !important;
+        min-width: 90vw;
+        min-height: 90vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         display: block;
@@ -592,7 +594,9 @@
         const zoomWindowImage = document.getElementById('zoomWindowImage');
         
         mainImage.src = src;
-        zoomWindowImage.src = src;
+        if (zoomWindowImage) {
+            zoomWindowImage.src = src;
+        }
         
         // Update active thumbnail
         document.querySelectorAll('.thumbnail').forEach(thumb => {
@@ -603,6 +607,9 @@
         // Update current index
         const thumbnails = Array.from(document.querySelectorAll('.thumbnail'));
         currentImageIndex = thumbnails.indexOf(element);
+        
+        // Reinitialize zoom for new image
+        initHoverZoom();
     }
     
     // Amazon-style hover zoom
@@ -644,8 +651,17 @@
             zoomWindow.classList.add('active');
             if (zoomIndicator) zoomIndicator.classList.add('active');
             
-            // Update zoom window image
+            // Update zoom window image and reload dimensions
             zoomWindowImage.src = mainImage.src;
+            
+            // Reload image dimensions
+            const reloadImg = new Image();
+            reloadImg.onload = function() {
+                imageNaturalDimensions.width = this.naturalWidth;
+                imageNaturalDimensions.height = this.naturalHeight;
+                console.log('Zoom image dimensions reloaded:', imageNaturalDimensions);
+            };
+            reloadImg.src = mainImage.src;
         });
         
         wrapper.addEventListener('mouseleave', function() {
@@ -657,17 +673,26 @@
         wrapper.addEventListener('mousemove', function(e) {
             if (!zoomWindow.classList.contains('active')) return;
             
-            const rect = wrapper.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            // Get the actual image position and size
+            const imageRect = mainImage.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
             
-            const xPercent = x / rect.width;
-            const yPercent = y / rect.height;
+            // Calculate mouse position relative to the ACTUAL IMAGE, not the wrapper
+            const x = e.clientX - imageRect.left;
+            const y = e.clientY - imageRect.top;
             
-            // Position indicator
+            // Check if mouse is actually over the image
+            if (x < 0 || x > imageRect.width || y < 0 || y > imageRect.height) {
+                return;
+            }
+            
+            const xPercent = x / imageRect.width;
+            const yPercent = y / imageRect.height;
+            
+            // Position indicator relative to wrapper (for visual consistency)
             if (zoomIndicator) {
-                const indicatorX = Math.max(0, Math.min(rect.width - indicatorSize, x - indicatorSize / 2));
-                const indicatorY = Math.max(0, Math.min(rect.height - indicatorSize, y - indicatorSize / 2));
+                const indicatorX = Math.max(0, Math.min(wrapperRect.width - indicatorSize, e.clientX - wrapperRect.left - indicatorSize / 2));
+                const indicatorY = Math.max(0, Math.min(wrapperRect.height - indicatorSize, e.clientY - wrapperRect.top - indicatorSize / 2));
                 
                 zoomIndicator.style.left = indicatorX + 'px';
                 zoomIndicator.style.top = indicatorY + 'px';
@@ -675,7 +700,7 @@
                 zoomIndicator.style.height = indicatorSize + 'px';
             }
             
-            // Position zoomed image
+            // Position zoomed image based on ACTUAL image coordinates
             if (imageNaturalDimensions.width > 0) {
                 const scaledWidth = imageNaturalDimensions.width * zoomLevel;
                 const scaledHeight = imageNaturalDimensions.height * zoomLevel;
@@ -683,6 +708,7 @@
                 zoomWindowImage.style.width = scaledWidth + 'px';
                 zoomWindowImage.style.height = scaledHeight + 'px';
                 
+                // Calculate movement based on the percentage of the ACTUAL image
                 const moveX = -xPercent * (scaledWidth - zoomWindow.offsetWidth);
                 const moveY = -yPercent * (scaledHeight - zoomWindow.offsetHeight);
                 
