@@ -333,7 +333,8 @@
             <div class="image-gallery">
                 <div class="main-image-container">
                     @php
-                        $firstImageUrl = $imageDisplayUrls[0] ?? asset('storage/' . $product->images->first()->image_path);
+                        $hasImages = $product->images && $product->images->count() > 0;
+                        $firstImageUrl = $hasImages ? ($imageDisplayUrls[0] ?? asset('storage/' . $product->images->first()->image_path)) : asset('images/no-image.png');
                         $is4K = str_contains($firstImageUrl, '_SL3000_') || str_contains($firstImageUrl, '_SL2000_');
                     @endphp
                     
@@ -366,7 +367,7 @@
                 </div>
                 
                 <!-- Thumbnails -->
-                @if($product->images->count() > 1)
+                @if($hasImages && $product->images->count() > 1)
                 <div class="thumbnail-gallery">
                     @foreach($product->images as $index => $image)
                         @php
@@ -388,7 +389,7 @@
                 
                 <!-- Rating -->
                 <div class="mb-3">
-                    @if($product->reviews_count > 0)
+                    @if(isset($product->reviews_count) && $product->reviews_count > 0)
                         <div class="d-flex align-items-center gap-2">
                             <div class="text-warning">
                                 @for($i = 1; $i <= 5; $i++)
@@ -419,6 +420,7 @@
                 @endif
                 
                 <!-- Seller Info -->
+                @if($product->seller)
                 <div class="card mt-3 mb-3">
                     <div class="card-body">
                         <h6 class="mb-2">Sold By</h6>
@@ -427,6 +429,7 @@
                         </a>
                     </div>
                 </div>
+                @endif
                 
                 <!-- Quantity Selector -->
                 @if($product->stock_quantity > 0)
@@ -450,17 +453,19 @@
                         </button>
                     </form>
                     
-                    <form action="{{ $inWishlist ? route('toyshop.wishlist.remove', $wishlistItem->id) : route('toyshop.wishlist.add') }}" method="POST">
+                    @auth
+                    <form action="{{ isset($inWishlist) && $inWishlist ? route('toyshop.wishlist.remove', $wishlistItem->id) : route('toyshop.wishlist.add') }}" method="POST">
                         @csrf
-                        @if($inWishlist)
+                        @if(isset($inWishlist) && $inWishlist)
                             @method('DELETE')
                         @else
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                         @endif
                         <button type="submit" class="btn-wishlist">
-                            <i class="bi bi-heart{{ $inWishlist ? '-fill text-danger' : '' }}"></i>
+                            <i class="bi bi-heart{{ isset($inWishlist) && $inWishlist ? '-fill text-danger' : '' }}"></i>
                         </button>
                     </form>
+                    @endauth
                 </div>
                 @endif
                 
@@ -528,9 +533,13 @@
 <script>
     // Product images array (4K URLs)
     const productImages = [
-        @foreach($product->images as $index => $image)
-            '{{ $imageDisplayUrls[$index] ?? asset('storage/' . $image->image_path) }}'{{ $loop->last ? '' : ',' }}
-        @endforeach
+        @if($hasImages)
+            @foreach($product->images as $index => $image)
+                '{{ $imageDisplayUrls[$index] ?? asset('storage/' . $image->image_path) }}'{{ $loop->last ? '' : ',' }}
+            @endforeach
+        @else
+            '{{ asset('images/no-image.png') }}'
+        @endif
     ];
     
     let currentImageIndex = 0;
