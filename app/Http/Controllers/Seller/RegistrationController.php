@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Seller;
+use App\Notifications\SellerApplicationSubmittedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -207,9 +208,18 @@ class RegistrationController extends Controller
         // Update user role
         Auth::user()->update(['role' => 'seller']);
 
+        // Send notification to user about application submission
+        $shopType = $isVerified ? 'Verified Trusted Toyshop' : 'Local Business Toyshop';
+        try {
+            Auth::user()->notify(new SellerApplicationSubmittedNotification($shopType, $seller->business_name));
+        } catch (\Exception $e) {
+            \Log::error('Failed to send seller application submitted notification: ' . $e->getMessage());
+            // Continue even if notification fails
+        }
+
         $message = $isVerified 
-            ? 'Verified Trusted Toyshop registration submitted successfully! Your account will be reviewed by our admin team.'
-            : 'Local Business Toyshop registration submitted successfully! Your account will be reviewed by our admin team.';
+            ? 'Verified Trusted Toyshop registration submitted successfully! Your account will be reviewed by our admin team. You will receive an email and notification once reviewed.'
+            : 'Local Business Toyshop registration submitted successfully! Your account will be reviewed by our admin team. You will receive an email and notification once reviewed.';
 
         return redirect()->route('seller.dashboard')
             ->with('success', $message);
