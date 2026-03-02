@@ -588,8 +588,29 @@
         });
     }
     
+    // Global zoom state
+    let imageNaturalDimensions = { width: 0, height: 0 };
+    
+    // Preload image dimensions - wait for image to fully load
+    function loadImageDimensions(src) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                imageNaturalDimensions.width = this.naturalWidth;
+                imageNaturalDimensions.height = this.naturalHeight;
+                console.log('Image dimensions loaded:', imageNaturalDimensions, 'from:', src);
+                resolve();
+            };
+            img.onerror = function() {
+                console.error('Failed to load image:', src);
+                resolve(); // Resolve anyway to not block
+            };
+            img.src = src;
+        });
+    }
+    
     // Change image
-    function changeImage(src, element) {
+    async function changeImage(src, element) {
         const mainImage = document.getElementById('mainImage');
         const zoomWindowImage = document.getElementById('zoomWindowImage');
         
@@ -608,8 +629,9 @@
         const thumbnails = Array.from(document.querySelectorAll('.thumbnail'));
         currentImageIndex = thumbnails.indexOf(element);
         
-        // Reinitialize zoom for new image
-        initHoverZoom();
+        // Reload image dimensions for new image
+        console.log('Changing image to:', src);
+        await loadImageDimensions(src);
     }
     
     // Amazon-style hover zoom
@@ -635,33 +657,23 @@
         
         const zoomLevel = 2.5;
         const indicatorSize = 150;
-        let imageNaturalDimensions = { width: 0, height: 0 };
         
-        // Preload image dimensions
-        const preloadImg = new Image();
-        preloadImg.onload = function() {
-            imageNaturalDimensions.width = this.naturalWidth;
-            imageNaturalDimensions.height = this.naturalHeight;
-            console.log('Image dimensions loaded:', imageNaturalDimensions);
-        };
-        preloadImg.src = mainImage.src;
+        // Load initial image dimensions
+        loadImageDimensions(mainImage.src);
         
-        wrapper.addEventListener('mouseenter', function() {
+        wrapper.addEventListener('mouseenter', async function() {
             console.log('Mouse entered wrapper');
-            zoomWindow.classList.add('active');
-            if (zoomIndicator) zoomIndicator.classList.add('active');
             
-            // Update zoom window image and reload dimensions
+            // Update zoom window image first
             zoomWindowImage.src = mainImage.src;
             
-            // Reload image dimensions
-            const reloadImg = new Image();
-            reloadImg.onload = function() {
-                imageNaturalDimensions.width = this.naturalWidth;
-                imageNaturalDimensions.height = this.naturalHeight;
-                console.log('Zoom image dimensions reloaded:', imageNaturalDimensions);
-            };
-            reloadImg.src = mainImage.src;
+            // Wait for image dimensions to load before showing zoom
+            if (imageNaturalDimensions.width === 0) {
+                await loadImageDimensions(mainImage.src);
+            }
+            
+            zoomWindow.classList.add('active');
+            if (zoomIndicator) zoomIndicator.classList.add('active');
         });
         
         wrapper.addEventListener('mouseleave', function() {
