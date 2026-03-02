@@ -382,23 +382,23 @@
         align-items: center !important;
         justify-content: center !important;
         cursor: default;
-        padding: 80px 20px 100px 20px;
+        padding: 70px 10px 90px 10px;
         box-sizing: border-box !important;
         margin: 0 !important;
     }
     
     .fullscreen-image {
-        max-width: 100% !important;
-        max-height: 100% !important;
-        width: auto !important;
-        height: auto !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
         object-fit: contain !important;
         border-radius: 0;
         box-shadow: none;
         transition: opacity 0.4s ease, transform 0.2s ease-out;
         animation: fadeInImage 0.4s ease;
         display: block !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         transform-origin: center center;
         cursor: grab;
     }
@@ -1431,8 +1431,8 @@
         const viewer = document.getElementById('fullscreenViewer');
         if (!viewer || !viewer.classList.contains('active')) return;
         e.preventDefault();
-        if (e.deltaY < 0) fsScale = Math.min(fsScale + 0.15, 4);
-        else fsScale = Math.max(fsScale - 0.15, 0.5);
+        if (e.deltaY < 0) fsScale = Math.min(fsScale + 0.2, 5);
+        else fsScale = Math.max(fsScale - 0.2, 0.3);
         applyFullscreenTransform();
     }
     
@@ -1551,17 +1551,32 @@
     }
     
     function zoomIn() {
-        fsScale = Math.min(fsScale + 0.5, 4);
+        fsScale = Math.min(fsScale + 0.3, 5);
         applyFullscreenTransform();
     }
     
     function zoomOut() {
-        fsScale = Math.max(fsScale - 0.5, 0.5);
+        fsScale = Math.max(fsScale - 0.3, 0.3);
         applyFullscreenTransform();
     }
     
     function resetZoom() {
-        fsScale = 1;
+        const img = document.getElementById('fullscreenImage');
+        if (img && img.naturalWidth > 0) {
+            // Calculate scale to fit image to screen while filling most of it
+            const container = document.getElementById('fullscreenImageContainer');
+            if (container) {
+                const containerRect = container.getBoundingClientRect();
+                const scaleX = containerRect.width / img.naturalWidth;
+                const scaleY = containerRect.height / img.naturalHeight;
+                // Use the smaller scale to ensure image fits, but minimum 1
+                fsScale = Math.max(Math.min(scaleX, scaleY) * 0.95, 1);
+            } else {
+                fsScale = 1;
+            }
+        } else {
+            fsScale = 1;
+        }
         fsTranslateX = 0;
         fsTranslateY = 0;
         applyFullscreenTransform();
