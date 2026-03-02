@@ -19,10 +19,15 @@
                             {{ $seller->business_name }}
                         </h3>
                         <p class="text-muted mb-0">
-                            <i class="bi bi-person-circle me-1"></i>
-                            <strong>Owner:</strong> {{ $seller->user->name }} 
-                            <span class="text-muted">|</span>
-                            <i class="bi bi-envelope me-1"></i>{{ $seller->user->email }}
+                            @if($seller->user)
+                                <i class="bi bi-person-circle me-1"></i>
+                                <strong>Owner:</strong> {{ $seller->user->name }} 
+                                <span class="text-muted">|</span>
+                                <i class="bi bi-envelope me-1"></i>{{ $seller->user->email }}
+                            @else
+                                <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                                <strong>Owner:</strong> <span class="text-danger">User account not found</span>
+                            @endif
                         </p>
                     </div>
                     <div class="text-end">
@@ -397,11 +402,21 @@
                         </tbody>
                     </table>
                 </div>
-                @if($seller->is_verified_shop && $seller->documents->count() < 4)
+                @php
+                    $requiredDocs = $seller->is_verified_shop ? 6 : 3;
+                    $uploadedDocs = $seller->documents->count();
+                @endphp
+                @if($seller->is_verified_shop && $uploadedDocs < $requiredDocs)
                     <div class="alert alert-warning mt-3">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Warning:</strong> This seller registered as Full Trusted Verification Shop but is missing some required documents.
-                        Expected: Business Registration (BIR 2303 + DTI/SEC), Brand Rights, Primary ID, Bank Document.
+                        <strong>Warning:</strong> This seller registered as Verified Trusted Toyshop but is missing some required documents ({{ $uploadedDocs }}/{{ $requiredDocs }}).
+                        <br><strong>Expected:</strong> Primary ID, Facial Verification, Bank Statement, Business Permit, BIR Certificate, Product Sample.
+                    </div>
+                @elseif(!$seller->is_verified_shop && $uploadedDocs < $requiredDocs)
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This seller registered as Local Business Toyshop but is missing some required documents ({{ $uploadedDocs }}/{{ $requiredDocs }}).
+                        <br><strong>Expected:</strong> Primary ID, Facial Verification, Bank Statement.
                     </div>
                 @endif
             </div>
