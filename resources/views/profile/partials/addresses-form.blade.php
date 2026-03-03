@@ -115,27 +115,40 @@
                             <label class="form-label">Label (Optional)</label>
                             <input type="text" name="label" class="form-control" placeholder="e.g., Home, Office">
                         </div>
+                        {{-- Address fields match business registration format for consistency with checkout --}}
                         <div class="mb-3">
-                            <label class="form-label">Street Address <span class="text-danger">*</span></label>
-                            <textarea name="address" class="form-control" rows="2" required placeholder="Enter your street address"></textarea>
+                            <label for="address" class="form-label fw-semibold">Full Address <span class="text-danger">*</span></label>
+                            <textarea name="address" id="address" class="form-control @error('address') is-invalid @enderror" rows="2" required placeholder="Enter full address">{{ old('address') }}</textarea>
+                            @error('address')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">City <span class="text-danger">*</span></label>
-                                <input type="text" name="city" class="form-control" required>
+                                <label for="city" class="form-label fw-semibold">City <span class="text-danger">*</span></label>
+                                <input type="text" name="city" id="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city') }}" required placeholder="City">
+                                @error('city')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">Province <span class="text-danger">*</span></label>
-                                <input type="text" name="province" class="form-control" required>
+                                <label for="province" class="form-label fw-semibold">Province <span class="text-danger">*</span></label>
+                                <input type="text" name="province" id="province" class="form-control @error('province') is-invalid @enderror" value="{{ old('province') }}" required placeholder="Province">
+                                @error('province')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                                <input type="text" name="postal_code" class="form-control" required>
+                                <label for="postal_code" class="form-label fw-semibold">Postal Code <span class="text-danger">*</span></label>
+                                <input type="text" name="postal_code" id="postal_code" class="form-control @error('postal_code') is-invalid @enderror" value="{{ old('postal_code') }}" required placeholder="Postal Code">
+                                @error('postal_code')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Notes (Optional)</label>
-                            <textarea name="notes" class="form-control" rows="2" placeholder="Additional details or delivery instructions"></textarea>
+                            <label for="notes" class="form-label fw-semibold">Notes (Optional)</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="2" placeholder="Additional details or delivery instructions">{{ old('notes') }}</textarea>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_default" value="1" id="defaultAdd">
@@ -157,8 +170,11 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle add modal reopening on validation errors
-    @if($errors->any() && request()->routeIs('profile.addresses.store'))
+    // Reopen add modal on validation errors (e.g. from address store redirect)
+    @php
+        $addressErrors = $errors->hasAny(['address', 'city', 'province', 'postal_code', 'type']) || ($errors->any() && old('address') !== null);
+    @endphp
+    @if($addressErrors)
         var addModalElement = document.getElementById('addAddressModal');
         if (addModalElement) {
             var addModal = new bootstrap.Modal(addModalElement);

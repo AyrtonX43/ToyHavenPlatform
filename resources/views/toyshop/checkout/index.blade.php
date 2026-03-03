@@ -248,6 +248,10 @@
                     @endphp
 
                     @if($userAddresses->count() > 0)
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-link-45deg me-2"></i>
+                            Your saved addresses from profile are synced below. Select one or add new.
+                        </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Select Saved Address <span class="text-danger">*</span></label>
                             <select id="savedAddressSelect" class="form-select" onchange="loadSavedAddress()">
@@ -286,43 +290,44 @@
                             $prefillProvince = old('shipping_province') ?? ($defaultAddr?->province ?? '');
                             $prefillPostal = old('shipping_postal_code') ?? ($defaultAddr?->postal_code ?? '');
                         @endphp
-                        
+
+                        {{-- Address fields match business registration format for consistency --}}
                         <div class="mb-3">
-                            <label class="form-label">Full Address <span class="text-danger">*</span></label>
-                            <textarea name="shipping_address" id="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="3" required placeholder="Enter your complete delivery address">{{ $prefillAddress }}</textarea>
+                            <label for="shipping_address" class="form-label fw-semibold">Full Address <span class="text-danger">*</span></label>
+                            <textarea name="shipping_address" id="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="2" required placeholder="Enter full address">{{ $prefillAddress }}</textarea>
                             @error('shipping_address')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">City <span class="text-danger">*</span></label>
+                            <div class="col-md-4 mb-3">
+                                <label for="shipping_city" class="form-label fw-semibold">City <span class="text-danger">*</span></label>
                                 <input type="text" name="shipping_city" id="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
                                 @error('shipping_city')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Province <span class="text-danger">*</span></label>
+                            <div class="col-md-4 mb-3">
+                                <label for="shipping_province" class="form-label fw-semibold">Province <span class="text-danger">*</span></label>
                                 <input type="text" name="shipping_province" id="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
                                 @error('shipping_province')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="shipping_postal_code" class="form-label fw-semibold">Postal Code <span class="text-danger">*</span></label>
+                                <input type="text" name="shipping_postal_code" id="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
+                                @error('shipping_postal_code')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Postal Code <span class="text-danger">*</span></label>
-                                <input type="text" name="shipping_postal_code" id="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
-                                @error('shipping_postal_code')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                <label for="shipping_phone_display" class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
-                                    <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
+                                    <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9XXXX XXX XXX" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
                                 </div>
                                 <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
                                 @error('shipping_phone')
@@ -330,10 +335,10 @@
                                 @enderror
                                 <small class="text-muted">Philippines +63, 10 digits.</small>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Delivery Notes (Optional)</label>
-                            <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
+                            <div class="col-md-6 mb-3">
+                                <label for="shipping_notes" class="form-label fw-semibold">Delivery Notes (Optional)</label>
+                                <textarea name="shipping_notes" id="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions">{{ old('shipping_notes') }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
