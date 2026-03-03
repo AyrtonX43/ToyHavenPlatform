@@ -21,8 +21,8 @@ class ModeratorMiddleware
 
         $user = auth()->user();
 
-        if (!$user->canModerate()) {
-            abort(403, 'Unauthorized. Moderator or Admin access required.');
+        if (!$user->isModerator()) {
+            abort(403, 'Unauthorized. Moderator access required. Admins use Trade Management in the admin panel.');
         }
 
         return $next($request);

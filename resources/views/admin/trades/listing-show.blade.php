@@ -38,6 +38,72 @@
 }
 .info-label { color: #6c757d; font-size: 0.8125rem; font-weight: 600; }
 .info-value { color: #212529; }
+.listing-fullscreen-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+.listing-fullscreen-overlay.show { display: flex; }
+.listing-fullscreen-overlay img {
+    max-width: 85vw;
+    max-height: 85vh;
+    object-fit: contain;
+    pointer-events: none;
+}
+.listing-fs-close {
+    position: fixed;
+    top: 1rem;
+    right: 1.5rem;
+    z-index: 100001;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.listing-fs-close:hover { background: rgba(255,255,255,0.35); }
+.listing-fs-nav {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100001;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.listing-fs-nav:hover { background: rgba(255,255,255,0.35); }
+.listing-fs-prev { left: 1.5rem; }
+.listing-fs-next { right: 1.5rem; }
+.listing-fs-counter {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100001;
+    color: rgba(255,255,255,0.9);
+    font-size: 0.9375rem;
+}
 </style>
 @endpush
 
@@ -269,16 +335,13 @@
 </div>
 @endif
 
-<!-- Full Image Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content bg-transparent border-0">
-            <div class="modal-body p-0 text-center">
-                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
-                <img src="" alt="Full size" id="imageModalImg" class="img-fluid" style="max-height: 90vh; object-fit: contain;">
-            </div>
-        </div>
-    </div>
+<!-- Fullscreen Image Viewer with Left/Right/Exit -->
+<div id="listingImageFullscreen" class="listing-fullscreen-overlay" aria-hidden="true">
+    <button type="button" class="listing-fs-close" title="Exit"><i class="bi bi-x-lg"></i></button>
+    <button type="button" class="listing-fs-nav listing-fs-prev" title="Previous"><i class="bi bi-chevron-left"></i></button>
+    <button type="button" class="listing-fs-nav listing-fs-next" title="Next"><i class="bi bi-chevron-right"></i></button>
+    <img id="listingFsImg" src="" alt="Full size">
+    <div class="listing-fs-counter" id="listingFsCounter"></div>
 </div>
 
 @if($listing->status === 'pending_approval')
@@ -317,6 +380,15 @@
     var mainImg = document.getElementById('mainImage');
     var thumbRow = document.getElementById('thumbRow');
     var btnViewFull = document.getElementById('btnViewFullImage');
+    var fsOverlay = document.getElementById('listingImageFullscreen');
+    var fsImg = document.getElementById('listingFsImg');
+    var fsCounter = document.getElementById('listingFsCounter');
+    @php
+        $imgUrls = collect($allImages ?? [])->map(fn($img) => asset('storage/' . ($img->image_path ?? '')))->filter()->values()->all();
+        if (empty($imgUrls) && !empty($fallbackSrc ?? null)) $imgUrls = [$fallbackSrc];
+    @endphp
+    var imageUrls = @json($imgUrls);
+    var currentFsIndex = 0;
 
     function setMainImage(src, el) {
         if (mainImg && src) {
@@ -329,19 +401,63 @@
         if (el) el.classList.add('active');
     }
 
-    function openImageModal(src) {
-        var s = src || (mainImg && (mainImg.getAttribute('data-full-src') || mainImg.src));
-        var img = document.getElementById('imageModalImg');
-        if (img && s) img.src = s;
-        var m = document.getElementById('imageModal');
-        if (m) new bootstrap.Modal(m).show();
+    function openFullscreen(idx) {
+        if (!imageUrls.length) return;
+        currentFsIndex = (idx !== undefined && idx >= 0 && idx < imageUrls.length) ? idx : 0;
+        if (fsImg) fsImg.src = imageUrls[currentFsIndex];
+        if (fsCounter) fsCounter.textContent = (currentFsIndex + 1) + ' / ' + imageUrls.length;
+        if (fsOverlay) {
+            fsOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
     }
+
+    function closeFullscreen() {
+        if (fsOverlay) {
+            fsOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function prevImage() {
+        currentFsIndex = (currentFsIndex - 1 + imageUrls.length) % imageUrls.length;
+        if (fsImg) fsImg.src = imageUrls[currentFsIndex];
+        if (fsCounter) fsCounter.textContent = (currentFsIndex + 1) + ' / ' + imageUrls.length;
+    }
+
+    function nextImage() {
+        currentFsIndex = (currentFsIndex + 1) % imageUrls.length;
+        if (fsImg) fsImg.src = imageUrls[currentFsIndex];
+        if (fsCounter) fsCounter.textContent = (currentFsIndex + 1) + ' / ' + imageUrls.length;
+    }
+
+    if (imageUrls.length === 0 && mainImg) {
+        var mainSrc = mainImg.getAttribute('data-full-src') || mainImg.src;
+        if (mainSrc) imageUrls = [mainSrc];
+    }
+
+    var closeBtn = fsOverlay ? fsOverlay.querySelector('.listing-fs-close') : null;
+    var prevBtn = fsOverlay ? fsOverlay.querySelector('.listing-fs-prev') : null;
+    var nextBtn = fsOverlay ? fsOverlay.querySelector('.listing-fs-next') : null;
+    if (closeBtn) closeBtn.addEventListener('click', closeFullscreen);
+    if (prevBtn) prevBtn.addEventListener('click', function(e) { e.stopPropagation(); prevImage(); });
+    if (nextBtn) nextBtn.addEventListener('click', function(e) { e.stopPropagation(); nextImage(); });
+    if (fsOverlay) fsOverlay.addEventListener('click', function(e) { if (e.target === fsOverlay) closeFullscreen(); });
+    document.addEventListener('keydown', function(e) {
+        if (!fsOverlay || !fsOverlay.classList.contains('show')) return;
+        if (e.key === 'Escape') closeFullscreen();
+        else if (e.key === 'ArrowLeft') prevImage();
+        else if (e.key === 'ArrowRight') nextImage();
+    });
 
     if (thumbRow) {
         thumbRow.addEventListener('click', function(e) {
             var t = e.target.closest('.listing-thumb');
             if (t && t.dataset.src) {
                 setMainImage(t.dataset.src, t);
+                var thumbs = thumbRow.querySelectorAll('.listing-thumb');
+                var idx = Array.from(thumbs).indexOf(t);
+                if (idx >= 0) currentFsIndex = idx;
             }
         });
         thumbRow.addEventListener('keydown', function(e) {
@@ -357,12 +473,12 @@
 
     if (mainImg) {
         mainImg.addEventListener('click', function() {
-            openImageModal(mainImg.getAttribute('data-full-src') || mainImg.src);
+            openFullscreen(currentFsIndex);
         });
     }
     if (btnViewFull) {
         btnViewFull.addEventListener('click', function() {
-            openImageModal(mainImg ? (mainImg.getAttribute('data-full-src') || mainImg.src) : null);
+            openFullscreen(mainImg ? 0 : 0);
         });
     }
 

@@ -432,6 +432,16 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy'])->name('destroy');
         });
 
+        Route::prefix('moderators')->name('moderators.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'store'])->name('store');
+            Route::get('/{id}', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'update'])->name('update');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\ModeratorUserController::class, 'destroy'])->name('destroy');
+        });
+
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\CategoryController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\CategoryController::class, 'create'])->name('create');
