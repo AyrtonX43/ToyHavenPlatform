@@ -157,9 +157,9 @@
     .product-review-preview-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
     .product-review-preview-item .btn-del { position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(220,53,69,0.9); color: white; border: none; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
     .product-review-preview-item .btn-view { position: absolute; bottom: 2px; left: 2px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
-    .product-review-fullscreen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 2rem; }
+    .product-review-fullscreen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 1rem; }
     .product-review-fullscreen.active { display: flex; }
-    .product-review-fullscreen img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+    .product-review-fullscreen img { max-width: 100vw; max-height: 100vh; width: auto; height: auto; object-fit: contain; border-radius: 8px; cursor: zoom-out; }
     .product-review-fullscreen .btn-close-fs { position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
     .review-card-clickable { cursor: pointer; transition: box-shadow 0.2s, transform 0.2s; }
     .review-card-clickable:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
@@ -595,8 +595,8 @@
                         @endforeach
                     </div>
 
-                    <!-- Review detail modal -->
-                    <div class="modal fade" id="reviewDetailModal" tabindex="-1" aria-labelledby="reviewDetailModalLabel" aria-hidden="true">
+                    <!-- Review detail modal (no backdrop dim) -->
+                    <div class="modal fade" id="reviewDetailModal" tabindex="-1" aria-labelledby="reviewDetailModalLabel" aria-hidden="true" data-bs-backdrop="false">
                         <div class="modal-dialog modal-dialog-centered modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
