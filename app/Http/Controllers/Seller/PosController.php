@@ -19,6 +19,10 @@ class PosController extends Controller
 
     public function index()
     {
+        // POS disabled - no walk-in handling without login
+        return redirect()->route('seller.dashboard')
+            ->with('info', 'Point of Sale is currently disabled.');
+
         $seller = Auth::user()->seller;
 
         if (!$seller || $seller->verification_status !== 'approved') {
@@ -80,6 +84,9 @@ class PosController extends Controller
 
     public function processOrder(Request $request)
     {
+        // POS disabled
+        return response()->json(['error' => 'Point of Sale is currently disabled.'], 403);
+
         $seller = Auth::user()->seller;
 
         if (!$seller || $seller->verification_status !== 'approved') {

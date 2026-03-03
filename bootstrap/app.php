@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'seller.access' => \App\Http\Middleware\SellerAccessMiddleware::class,
+            'seller.permission' => \App\Http\Middleware\SellerPermissionMiddleware::class,
             'moderator' => \App\Http\Middleware\ModeratorMiddleware::class,
             'banned' => \App\Http\Middleware\CheckBannedUser::class,
             'redirect.admin.from.customer' => \App\Http\Middleware\RedirectAdminFromCustomerRoutes::class,

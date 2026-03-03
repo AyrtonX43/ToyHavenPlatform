@@ -25,7 +25,7 @@ class BusinessPageController extends Controller
      */
     public function index()
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('info', 'Please complete your seller registration first.');
@@ -43,7 +43,7 @@ class BusinessPageController extends Controller
      */
     public function updateSettings(Request $request)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('error', 'Please complete your seller registration first.');
@@ -111,7 +111,7 @@ class BusinessPageController extends Controller
      */
     public function updateSocialLinks(Request $request)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('error', 'Please complete your seller registration first.');
@@ -157,7 +157,7 @@ class BusinessPageController extends Controller
      */
     public function preview()
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('error', 'Please complete your seller registration first.');
@@ -174,7 +174,7 @@ class BusinessPageController extends Controller
      */
     public function updateContact(Request $request): RedirectResponse
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('error', 'Please complete your seller registration first.');
@@ -236,7 +236,7 @@ class BusinessPageController extends Controller
      */
     public function updatePaymentQr(Request $request): RedirectResponse
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('error', 'Please complete your seller registration first.');

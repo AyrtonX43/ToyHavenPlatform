@@ -30,11 +30,13 @@
             <small class="text-white-50 d-block mt-1" style="font-size: 0.78rem;">ToyHaven Platform</small>
         </div>
         <nav>
+            @php $currentSeller = Auth::user()->getSellerForDashboard(); @endphp
             <div class="sidebar-section-label">Main</div>
             <a href="{{ route('seller.dashboard') }}" class="sidebar-link {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
 
+            @if(Auth::user()->hasSellerPermission('products'))
             <div class="sidebar-section-label">Catalog</div>
             <a href="{{ route('seller.products.index') }}" class="sidebar-link {{ request()->routeIs('seller.products.index') || request()->routeIs('seller.products.show') || request()->routeIs('seller.products.edit') ? 'active' : '' }}">
                 <i class="bi bi-box-seam"></i> Products
@@ -42,28 +44,33 @@
             <a href="{{ route('seller.products.create') }}" class="sidebar-link {{ request()->routeIs('seller.products.create') ? 'active' : '' }}">
                 <i class="bi bi-plus-circle"></i> Add Product
             </a>
+            @endif
 
+            @if(Auth::user()->hasSellerPermission('orders'))
             <div class="sidebar-section-label">Sales</div>
             <a href="{{ route('seller.orders.index') }}" class="sidebar-link {{ request()->routeIs('seller.orders.*') ? 'active' : '' }}">
                 <i class="bi bi-cart-check"></i> Orders
             </a>
-            @if(Auth::user()->seller && Auth::user()->seller->verification_status === 'approved')
-                <a href="{{ route('seller.pos.index') }}" class="sidebar-link {{ request()->routeIs('seller.pos.*') ? 'active' : '' }}">
-                    <i class="bi bi-cash-register"></i> Point of Sale
-                </a>
             @endif
 
+            @if(Auth::user()->hasSellerPermission('business_page'))
             <div class="sidebar-section-label">Store</div>
             <a href="{{ route('seller.business-page.index') }}" class="sidebar-link {{ request()->routeIs('seller.business-page.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i> Business Settings
             </a>
-            @if(Auth::user()->seller && Auth::user()->seller->verification_status === 'approved')
-                <a href="{{ route('toyshop.business.show', Auth::user()->seller->business_slug) }}" target="_blank" class="sidebar-link">
+            @endif
+            @if($currentSeller && $currentSeller->verification_status === 'approved')
+                <a href="{{ route('toyshop.business.show', $currentSeller->business_slug) }}" target="_blank" class="sidebar-link">
                     <i class="bi bi-eye"></i> View Store
                 </a>
             @endif
+            @if(Auth::user()->seller)
+                <a href="{{ route('seller.moderators.index') }}" class="sidebar-link {{ request()->routeIs('seller.moderators.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> Team / Moderators
+                </a>
+            @endif
 
-            @if(Auth::user()->seller && !Auth::user()->seller->is_verified_shop)
+            @if(Auth::user()->seller && $currentSeller && !$currentSeller->is_verified_shop)
             <div class="sidebar-section-label">Account</div>
                 <a href="{{ route('seller.shop-upgrade.index') }}" class="sidebar-link {{ request()->routeIs('seller.shop-upgrade.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-check"></i> Upgrade to Trusted Shop
@@ -93,11 +100,11 @@
                                 @if(Auth::user()->seller)
                                     {{ Auth::user()->seller->business_name }}
                                 @else
-                                    Seller
+                                    Moderator · {{ Auth::user()->getSellerForDashboard()?->business_name }}
                                 @endif
                             </small>
                         </div>
-                        @if(Auth::user()->seller && Auth::user()->seller->verification_status === 'approved')
+                        @if($currentSeller && $currentSeller->verification_status === 'approved')
                             <span class="badge bg-success" style="font-size: 0.75rem;">Verified</span>
                         @elseif(Auth::user()->seller && Auth::user()->seller->verification_status === 'pending')
                             <span class="badge bg-warning" style="font-size: 0.75rem;">Pending</span>

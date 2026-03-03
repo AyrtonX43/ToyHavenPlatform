@@ -26,7 +26,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         
         $query = Product::where('seller_id', $seller->id)
             ->with(['categories', 'images']);
@@ -81,7 +81,7 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         // Get primary category (first selected category)
         // Ensure categories array exists and has at least one item
@@ -381,7 +381,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         $product = Product::where('seller_id', $seller->id)
             ->with(['categories', 'images', 'reviews.user', 'variations'])
             ->findOrFail($id);
@@ -394,7 +394,7 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         $product = Product::where('seller_id', $seller->id)
             ->with(['images', 'categories', 'variations'])
             ->findOrFail($id);
@@ -412,7 +412,7 @@ class ProductController extends Controller
      */
     public function update(StoreProductRequest $request, $id)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         $product = Product::where('seller_id', $seller->id)->findOrFail($id);
 
         // Get primary category (first selected category)
@@ -659,7 +659,7 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         $product = Product::where('seller_id', $seller->id)->findOrFail($id);
 
         // Delete images

@@ -17,7 +17,7 @@ class DashboardController extends Controller
 
     public function index()
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         if (!$seller) {
             return redirect()->route('seller.register')->with('info', 'Please complete your seller registration first.');

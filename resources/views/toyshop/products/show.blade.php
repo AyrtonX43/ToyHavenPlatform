@@ -54,6 +54,10 @@
         cursor: zoom-in;
     }
     
+    .main-image-container.no-fullscreen {
+        cursor: zoom-in;
+    }
+    
     .main-image-wrapper {
         position: relative;
         width: 100%;
@@ -117,186 +121,9 @@
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
     
-    /* NEW FULLSCREEN VIEWER WITH ARROW KEY NAVIGATION */
-    .fullscreen-viewer {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.98);
-        z-index: 999999;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .fullscreen-viewer.active {
-        display: flex !important;
-    }
-    
-    .fullscreen-content {
-        position: relative;
-        flex: 1;
-        width: 100%;
-        min-height: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 70px 80px 0;
-    }
-    
-    .fullscreen-image-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        max-width: 2500px;
-        max-height: calc(100vh - 200px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .fullscreen-image {
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        object-position: center;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-        cursor: zoom-in;
-    }
-    
-    .fullscreen-image.zoomed {
-        cursor: move;
-        max-width: none;
-        max-height: none;
-        width: 250%;
-        height: auto;
-    }
-    
-    /* Fullscreen Controls */
-    .fullscreen-close {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        font-size: 1.5rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        z-index: 10;
-        backdrop-filter: blur(10px);
-    }
-    
-    .fullscreen-close:hover {
-        background: rgba(255,255,255,0.3);
-        transform: rotate(90deg);
-    }
-    
-    .fullscreen-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        font-size: 1.5rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        z-index: 10;
-        backdrop-filter: blur(10px);
-    }
-    
-    .fullscreen-nav:hover {
-        background: rgba(255,255,255,0.3);
-        transform: translateY(-50%) scale(1.1);
-    }
-    
-    .fullscreen-nav.prev {
-        left: 20px;
-    }
-    
-    .fullscreen-nav.next {
-        right: 20px;
-    }
-    
-    .fullscreen-counter {
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.75);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        backdrop-filter: blur(10px);
-        z-index: 10;
-    }
-    
-    /* Fullscreen thumbnail preview strip */
-    .fullscreen-thumbnails {
-        display: flex;
-        gap: 12px;
-        padding: 16px 20px 24px;
-        justify-content: center;
-        align-items: center;
-        flex-shrink: 0;
-        background: rgba(0,0,0,0.5);
-        overflow-x: auto;
-        max-width: 100vw;
-    }
-    
-    .fullscreen-thumb {
-        width: 72px;
-        height: 72px;
-        min-width: 72px;
-        object-fit: cover;
-        border: 3px solid transparent;
-        border-radius: 8px;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: all 0.2s;
-    }
-    
-    .fullscreen-thumb:hover {
-        opacity: 0.9;
-    }
-    
-    .fullscreen-thumb.active {
-        border-color: #3b82f6;
-        opacity: 1;
-        box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
-    }
-    
-    .fullscreen-zoom-hint {
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.75);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        backdrop-filter: blur(10px);
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    
-    .fullscreen-zoom-hint.show {
-        opacity: 1;
+    .product-description {
+        text-align: justify;
+        line-height: 1.7;
     }
     
     /* Product Info */
@@ -414,32 +241,6 @@
         .product-info {
             position: static;
         }
-        
-        .fullscreen-nav {
-            width: 40px;
-            height: 40px;
-            font-size: 1.2rem;
-        }
-        
-        .fullscreen-content {
-            padding: 60px 16px 0;
-        }
-        
-        .fullscreen-image-container {
-            max-height: calc(100vh - 180px);
-        }
-        
-        .fullscreen-thumb {
-            width: 56px;
-            height: 56px;
-            min-width: 56px;
-        }
-        
-        .fullscreen-thumbnails {
-            padding: 12px 16px 20px;
-            gap: 8px;
-        }
-        
     }
 </style>
 @endpush
@@ -469,10 +270,10 @@
                 @endphp
 
                 <!-- Main Image -->
-                <div class="main-image-container" id="mainImageContainer" onclick="openFullscreen(currentImageIndex)">
+                <div class="main-image-container no-fullscreen" id="mainImageContainer">
                     <div class="zoom-hint">
                         <i class="bi bi-zoom-in me-1"></i>
-                        Hover to zoom • Click for fullscreen
+                        Hover to zoom
                     </div>
                     <div class="main-image-wrapper">
                         <img id="mainImage"
@@ -502,7 +303,7 @@
                 <div class="card mt-3">
                     <div class="card-body">
                         <h5 class="card-title mb-3">Description</h5>
-                        <p class="mb-0">{{ $product->description }}</p>
+                        <p class="mb-0 product-description">{{ $product->description }}</p>
                     </div>
                 </div>
                 @endif
@@ -737,53 +538,6 @@
     </div>
 </div>
 
-<!-- NEW FULLSCREEN VIEWER WITH ARROW KEY NAVIGATION & ZOOM -->
-<div id="fullscreenViewer" class="fullscreen-viewer">
-    <button class="fullscreen-close" onclick="closeFullscreen()">
-        <i class="bi bi-x"></i>
-    </button>
-    
-    @if($hasImages && $product->images->count() > 1)
-    <button class="fullscreen-nav prev" onclick="previousImage()">
-        <i class="bi bi-chevron-left"></i>
-    </button>
-    <button class="fullscreen-nav next" onclick="nextImage()">
-        <i class="bi bi-chevron-right"></i>
-    </button>
-    <div class="fullscreen-counter">
-        <span id="currentImageIndex">1</span> / <span id="totalImages">{{ $product->images->count() }}</span>
-    </div>
-    @endif
-    
-    <div class="fullscreen-zoom-hint" id="zoomHint">
-        Click to zoom • Drag to pan • Click again to zoom out
-    </div>
-    
-    <div class="fullscreen-content" id="fullscreenContent">
-        <div class="fullscreen-image-container" id="fullscreenImageContainer">
-            <img id="fullscreenImage" 
-                 src="" 
-                 alt="{{ $product->name }}" 
-                 class="fullscreen-image"
-                 onclick="toggleZoom(event)">
-        </div>
-    </div>
-    
-    @if($hasImages)
-    <div class="fullscreen-thumbnails" id="fullscreenThumbnails">
-        @foreach($product->images as $index => $image)
-            @php
-                $thumbUrl = $imageDisplayUrls[$index] ?? asset('storage/' . $image->image_path);
-            @endphp
-            <img src="{{ $thumbUrl }}"
-                 alt="{{ $product->name }}"
-                 class="fullscreen-thumb {{ $index === 0 ? 'active' : '' }}"
-                 data-index="{{ $index }}"
-                 onclick="selectFullscreenImage({{ $index }})">
-        @endforeach
-    </div>
-    @endif
-</div>
 @endsection
 
 @push('scripts')
@@ -800,9 +554,6 @@
     ];
     
     let currentImageIndex = 0;
-    let isZoomed = false;
-    let isDragging = false;
-    let startX, startY, scrollLeft, scrollTop;
     let slideshowTimer = null;
     const SLIDESHOW_INTERVAL = 10000; // 10 seconds
     
@@ -886,164 +637,7 @@
         }
     }
     
-    // NEW FULLSCREEN VIEWER FUNCTIONS
-    function openFullscreen(index = 0) {
-        currentImageIndex = index;
-        const viewer = document.getElementById('fullscreenViewer');
-        const fullscreenImage = document.getElementById('fullscreenImage');
-        const zoomHint = document.getElementById('zoomHint');
-        
-        stopSlideshowTimer();
-        fullscreenImage.src = productImages[currentImageIndex];
-        viewer.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        updateImageCounter();
-        updateFullscreenThumbnails();
-        
-        // Show zoom hint briefly
-        zoomHint.classList.add('show');
-        setTimeout(() => {
-            zoomHint.classList.remove('show');
-        }, 3000);
-        
-        // Reset zoom state
-        isZoomed = false;
-        fullscreenImage.classList.remove('zoomed');
-    }
-    
-    function closeFullscreen() {
-        const viewer = document.getElementById('fullscreenViewer');
-        viewer.classList.remove('active');
-        document.body.style.overflow = '';
-        isZoomed = false;
-        startSlideshowTimer();
-    }
-    
-    function nextImage() {
-        if (currentImageIndex < productImages.length - 1) {
-            currentImageIndex++;
-        } else {
-            currentImageIndex = 0; // Loop back to first
-        }
-        updateFullscreenImage();
-    }
-    
-    function previousImage() {
-        if (currentImageIndex > 0) {
-            currentImageIndex--;
-        } else {
-            currentImageIndex = productImages.length - 1; // Loop to last
-        }
-        updateFullscreenImage();
-    }
-    
-    function updateFullscreenImage() {
-        const fullscreenImage = document.getElementById('fullscreenImage');
-        fullscreenImage.src = productImages[currentImageIndex];
-        updateImageCounter();
-        updateFullscreenThumbnails();
-        
-        // Reset zoom when changing images
-        isZoomed = false;
-        fullscreenImage.classList.remove('zoomed');
-        fullscreenImage.style.transform = '';
-    }
-    
-    function selectFullscreenImage(index) {
-        currentImageIndex = index;
-        updateFullscreenImage();
-    }
-    
-    function updateFullscreenThumbnails() {
-        document.querySelectorAll('.fullscreen-thumb').forEach((thumb, i) => {
-            thumb.classList.toggle('active', i === currentImageIndex);
-        });
-    }
-    
-    function updateImageCounter() {
-        const counter = document.getElementById('currentImageIndex');
-        if (counter) {
-            counter.textContent = currentImageIndex + 1;
-        }
-    }
-    
-    // NEW ACCURATE ZOOM FUNCTION
-    function toggleZoom(event) {
-        const fullscreenImage = document.getElementById('fullscreenImage');
-        const container = document.getElementById('fullscreenImageContainer');
-        
-        if (!isZoomed) {
-            // Zoom in
-            fullscreenImage.classList.add('zoomed');
-            fullscreenImage.style.cursor = 'move';
-            isZoomed = true;
-            
-            // Calculate zoom position based on click
-            const rect = fullscreenImage.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            const xPercent = (x / rect.width) * 100;
-            const yPercent = (y / rect.height) * 100;
-            
-            fullscreenImage.style.transformOrigin = `${xPercent}% ${yPercent}%`;
-        } else {
-            // Zoom out
-            fullscreenImage.classList.remove('zoomed');
-            fullscreenImage.style.cursor = 'zoom-in';
-            fullscreenImage.style.transform = '';
-            isZoomed = false;
-        }
-    }
-    
-    // Drag to pan when zoomed
-    const fullscreenImage = document.getElementById('fullscreenImage');
-    const fullscreenContent = document.getElementById('fullscreenContent');
-    
-    fullscreenImage.addEventListener('mousedown', function(e) {
-        if (!isZoomed) return;
-        isDragging = true;
-        startX = e.pageX - fullscreenContent.offsetLeft;
-        startY = e.pageY - fullscreenContent.offsetTop;
-        scrollLeft = fullscreenContent.scrollLeft;
-        scrollTop = fullscreenContent.scrollTop;
-        e.preventDefault();
-    });
-    
-    fullscreenContent.addEventListener('mousemove', function(e) {
-        if (!isDragging || !isZoomed) return;
-        e.preventDefault();
-        const x = e.pageX - fullscreenContent.offsetLeft;
-        const y = e.pageY - fullscreenContent.offsetTop;
-        const walkX = (x - startX) * 2;
-        const walkY = (y - startY) * 2;
-        fullscreenContent.scrollLeft = scrollLeft - walkX;
-        fullscreenContent.scrollTop = scrollTop - walkY;
-    });
-    
-    fullscreenContent.addEventListener('mouseup', function() {
-        isDragging = false;
-    });
-    
-    fullscreenContent.addEventListener('mouseleave', function() {
-        isDragging = false;
-    });
-    
-    // ARROW KEY NAVIGATION
-    document.addEventListener('keydown', function(e) {
-        const viewer = document.getElementById('fullscreenViewer');
-        if (!viewer.classList.contains('active')) return;
-        
-        if (e.key === 'Escape') {
-            closeFullscreen();
-        } else if (e.key === 'ArrowRight') {
-            nextImage();
-        } else if (e.key === 'ArrowLeft') {
-            previousImage();
-        }
-    });
-    
-    // HOVER-TO-ZOOM (inline, no fullscreen)
+    // HOVER-TO-ZOOM (inline)
     const mainImageContainer = document.getElementById('mainImageContainer');
     const mainImageEl = document.getElementById('mainImage');
     if (mainImageContainer && mainImageEl) {

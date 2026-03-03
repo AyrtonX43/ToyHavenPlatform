@@ -209,14 +209,6 @@
                                 description="Store config"
                             />
                         </div>
-                        <div class="col-6">
-                            <x-seller.quick-action
-                                href="{{ route('seller.pos.index') }}"
-                                icon="bi-cash-register"
-                                title="Point of Sale"
-                                description="Walk-in orders"
-                            />
-                        </div>
                     </div>
                 </div>
             </div>

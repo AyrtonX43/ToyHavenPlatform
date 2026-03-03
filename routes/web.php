@@ -213,11 +213,11 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/{auction}/bids', [\App\Http\Controllers\Auction\BidController::class, 'store'])->middleware(['auth', 'membership'])->name('bids.store');
     });
 
-    // Seller Routes
-    Route::prefix('seller')->name('seller.')->middleware(['role:seller,admin', 'seller.approved'])->group(function () {
+    // Seller Routes (sellers, admins, and business moderators)
+    Route::prefix('seller')->name('seller.')->middleware(['seller.access', 'seller.approved'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->name('dashboard');
         
-        Route::prefix('products')->name('products.')->group(function () {
+        Route::prefix('products')->name('products.')->middleware('seller.permission:products')->group(function () {
             Route::get('/', [\App\Http\Controllers\Seller\ProductController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Seller\ProductController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Seller\ProductController::class, 'store'])->name('store');
@@ -227,14 +227,21 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::delete('/{id}', [\App\Http\Controllers\Seller\ProductController::class, 'destroy'])->name('destroy');
         });
 
-        Route::prefix('orders')->name('orders.')->group(function () {
+        Route::prefix('orders')->name('orders.')->middleware('seller.permission:orders')->group(function () {
             Route::get('/', [\App\Http\Controllers\Seller\OrderController::class, 'index'])->name('index');
             Route::get('/{id}', [\App\Http\Controllers\Seller\OrderController::class, 'show'])->name('show');
             Route::put('/{id}/status', [\App\Http\Controllers\Seller\OrderController::class, 'updateStatus'])->name('updateStatus');
             Route::put('/bulk-update', [\App\Http\Controllers\Seller\OrderController::class, 'bulkUpdate'])->name('bulkUpdate');
         });
 
-        Route::prefix('business-page')->name('business-page.')->group(function () {
+        Route::prefix('moderators')->name('moderators.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Seller\ModeratorController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Seller\ModeratorController::class, 'store'])->name('store');
+            Route::put('/{moderator}', [\App\Http\Controllers\Seller\ModeratorController::class, 'update'])->name('update');
+            Route::delete('/{moderator}', [\App\Http\Controllers\Seller\ModeratorController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('business-page')->name('business-page.')->middleware('seller.permission:business_page')->group(function () {
             Route::get('/', [\App\Http\Controllers\Seller\BusinessPageController::class, 'index'])->name('index');
             Route::post('/settings', [\App\Http\Controllers\Seller\BusinessPageController::class, 'updateSettings'])->name('settings.update');
             Route::post('/contact', [\App\Http\Controllers\Seller\BusinessPageController::class, 'updateContact'])->name('contact.update');
@@ -243,7 +250,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/preview', [\App\Http\Controllers\Seller\BusinessPageController::class, 'preview'])->name('preview');
         });
 
-        // POS - Only for approved sellers (handled in controller)
+        // POS - Disabled (no walk-in handling without login)
         Route::prefix('pos')->name('pos.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Seller\PosController::class, 'index'])->name('index');
             Route::post('/process', [\App\Http\Controllers\Seller\PosController::class, 'processOrder'])->name('process');

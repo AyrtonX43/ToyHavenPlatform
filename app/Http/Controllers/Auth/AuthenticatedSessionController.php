@@ -94,7 +94,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('admin.analytics.index');
         }
 
-        if ($user->isSeller()) {
+        if ($user->isSeller() || $user->canAccessSellerDashboard()) {
             return redirect()->intended(route('seller.dashboard', absolute: false));
         }
 

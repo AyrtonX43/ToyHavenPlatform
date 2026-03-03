@@ -17,7 +17,7 @@ class OrderController extends Controller
 
     public function index()
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         
         $orders = Order::with(['user', 'items.product'])
             ->where('seller_id', $seller->id)
@@ -29,7 +29,7 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         $order = Order::with(['user', 'items.product', 'tracking'])
             ->where('seller_id', $seller->id)
             ->findOrFail($id);
@@ -39,7 +39,7 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
         $order = Order::where('seller_id', $seller->id)->findOrFail($id);
 
         $request->validate([
@@ -105,7 +105,7 @@ class OrderController extends Controller
 
     public function bulkUpdate(Request $request)
     {
-        $seller = Auth::user()->seller;
+        $seller = Auth::user()->getSellerForDashboard();
 
         $request->validate([
             'order_ids' => 'required|array|min:1',

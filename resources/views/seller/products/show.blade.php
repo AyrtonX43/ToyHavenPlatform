@@ -35,7 +35,7 @@
         <!-- Product Images -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Product Images</h5>
+                <h5 class="mb-0">Product Images <small class="text-muted fw-normal">(click to view full screen)</small></h5>
             </div>
             <div class="card-body">
                 @if($product->images && $product->images->count() > 0)
@@ -44,9 +44,11 @@
                             <div class="col-md-4 col-sm-6">
                                 <div class="position-relative">
                                     <img src="{{ asset('storage/' . $image->image_path) }}" 
-                                         class="img-thumbnail w-100" 
-                                         style="height: 200px; object-fit: cover;"
-                                         alt="{{ $product->name }}">
+                                         class="img-thumbnail w-100 seller-product-img" 
+                                         style="height: 200px; object-fit: cover; cursor: pointer;"
+                                         alt="{{ $product->name }}"
+                                         data-full-url="{{ asset('storage/' . $image->image_path) }}"
+                                         onclick="openSellerImageFullscreen(this)">
                                     @if($image->is_primary)
                                         <span class="badge bg-primary position-absolute top-0 start-0 m-2">Primary</span>
                                     @endif
@@ -401,4 +403,39 @@
         </div>
     </div>
 </div>
+
+<!-- Fullscreen Image Modal -->
+<div id="sellerImageFullscreen" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center" style="background: rgba(0,0,0,0.95); z-index: 9999; cursor: pointer;" onclick="closeSellerImageFullscreen()">
+    <img id="sellerFullscreenImg" src="" alt="" style="max-width: 95%; max-height: 95%; object-fit: contain;">
+    <button type="button" class="btn btn-light position-absolute top-0 end-0 m-3 rounded-circle" style="width: 44px; height: 44px; z-index: 10;" onclick="event.stopPropagation(); closeSellerImageFullscreen();">
+        <i class="bi bi-x-lg"></i>
+    </button>
+</div>
+
+@push('scripts')
+<script>
+function openSellerImageFullscreen(imgEl) {
+    const modal = document.getElementById('sellerImageFullscreen');
+    const fullImg = document.getElementById('sellerFullscreenImg');
+    if (modal && fullImg && imgEl) {
+        fullImg.src = imgEl.dataset.fullUrl || imgEl.src;
+        fullImg.alt = imgEl.alt;
+        modal.classList.remove('d-none');
+        modal.classList.add('d-flex');
+        document.body.style.overflow = 'hidden';
+    }
+}
+function closeSellerImageFullscreen() {
+    const modal = document.getElementById('sellerImageFullscreen');
+    if (modal) {
+        modal.classList.add('d-none');
+        modal.classList.remove('d-flex');
+        document.body.style.overflow = '';
+    }
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSellerImageFullscreen();
+});
+</script>
+@endpush
 @endsection

@@ -64,6 +64,11 @@ class Seller extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function moderators()
+    {
+        return $this->hasMany(SellerModerator::class)->with('user');
+    }
+
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);

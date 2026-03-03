@@ -73,6 +73,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Seller::class);
     }
 
+    public function sellerModeratorAssignments()
+    {
+        return $this->hasMany(SellerModerator::class);
+    }
+
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);
@@ -248,6 +253,46 @@ class User extends Authenticatable implements MustVerifyEmail
     public function canModerate(): bool
     {
         return $this->isModerator() || $this->isAdmin();
+    }
+
+    /**
+     * Get the seller this user can access (own seller or moderated seller).
+     */
+    public function getSellerForDashboard(): ?Seller
+    {
+        if ($this->seller) {
+            return $this->seller;
+        }
+        $assignment = $this->sellerModeratorAssignments()->with('seller')->first();
+        return $assignment?->seller;
+    }
+
+    /**
+     * Get the moderator assignment for current seller (if user is moderator, not owner).
+     */
+    public function getModeratorAssignment(): ?SellerModerator
+    {
+        return $this->sellerModeratorAssignments()->first();
+    }
+
+    /**
+     * Check if user can access seller dashboard (owner or moderator).
+     */
+    public function canAccessSellerDashboard(): bool
+    {
+        return $this->seller !== null || $this->sellerModeratorAssignments()->exists();
+    }
+
+    /**
+     * Check if user has a specific permission for the seller they're accessing.
+     */
+    public function hasSellerPermission(string $perm): bool
+    {
+        if ($this->seller) {
+            return true; // Owner has all permissions
+        }
+        $assignment = $this->getModeratorAssignment();
+        return $assignment && $assignment->hasPermission($perm);
     }
 
     /**
