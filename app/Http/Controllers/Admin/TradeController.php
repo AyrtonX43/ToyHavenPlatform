@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Trade;
+use App\Models\TradeDispute;
 use App\Models\TradeListing;
 use App\Models\TradeOffer;
 use App\Notifications\TradeListingApprovedNotification;
@@ -53,6 +54,7 @@ class TradeController extends Controller
             'initiator',
             'participant',
             'items',
+            'dispute.reporter',
         ])->findOrFail($id);
 
         return view('admin.trades.show', compact('trade'));
@@ -77,6 +79,14 @@ class TradeController extends Controller
                 $trade->update([
                     'status' => 'completed',
                     'completed_at' => now(),
+                ]);
+
+                $trade->dispute?->update([
+                    'status' => 'resolved',
+                    'resolution_type' => 'completed',
+                    'resolution_notes' => $validated['notes'] ?? null,
+                    'resolved_at' => now(),
+                    'resolved_by' => auth()->id(),
                 ]);
 
                 // Update product statuses
@@ -105,6 +115,14 @@ class TradeController extends Controller
 
                 $trade->update(['status' => 'cancelled']);
                 $trade->tradeListing->update(['status' => 'active']);
+
+                $trade->dispute?->update([
+                    'status' => 'resolved',
+                    'resolution_type' => 'cancelled',
+                    'resolution_notes' => $validated['notes'] ?? null,
+                    'resolved_at' => now(),
+                    'resolved_by' => auth()->id(),
+                ]);
             }
 
             DB::commit();

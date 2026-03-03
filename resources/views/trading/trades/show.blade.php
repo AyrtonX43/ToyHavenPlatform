@@ -179,10 +179,7 @@
                     </a>
                 @endif
                 @if(!in_array($trade->status, ['completed', 'cancelled', 'disputed']))
-                    <form action="{{ route('trading.trades.dispute', $trade->id) }}" method="post" class="d-inline w-100">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-warning w-100 mb-2">Open dispute</button>
-                    </form>
+                    <a href="{{ route('trading.trades.dispute-form', $trade->id) }}" class="btn btn-outline-warning w-100 mb-2">Open dispute</a>
                     <form action="{{ route('trading.trades.cancel', $trade->id) }}" method="post" onsubmit="return confirm('Cancel this trade?');">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger w-100">Cancel trade</button>

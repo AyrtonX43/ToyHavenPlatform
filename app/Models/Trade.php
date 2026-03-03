@@ -91,6 +91,11 @@ class Trade extends Model
         return $this->hasOne(Conversation::class);
     }
 
+    public function dispute(): HasOne
+    {
+        return $this->hasOne(TradeDispute::class);
+    }
+
     // Helper methods
     public function canBeCompleted(): bool
     {

@@ -673,6 +673,33 @@
             <small class="text-white-50 d-block mt-1" style="font-size: 0.78rem;">ToyHaven Platform</small>
         </div>
         <nav>
+            @if(auth()->user()->canModerate())
+            {{-- Moderator Panel (for moderators and admins) --}}
+            <div class="sidebar-section-label">Moderator</div>
+            <a href="{{ route('moderator.dashboard') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.dashboard') ? 'active' : '' }}">
+                <i class="bi bi-speedometer2 menu-icon"></i> Moderator Dashboard
+            </a>
+            <a href="{{ route('moderator.trades.index') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.trades.*') ? 'active' : '' }}">
+                <i class="bi bi-arrow-left-right menu-icon"></i> Trades
+            </a>
+            <a href="{{ route('moderator.trade-listings.index') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.trade-listings.*') ? 'active' : '' }}">
+                <i class="bi bi-card-list menu-icon"></i> Trade Listings
+            </a>
+            <a href="{{ route('moderator.trade-disputes.index') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.trade-disputes.*') ? 'active' : '' }}">
+                <i class="bi bi-exclamation-triangle menu-icon"></i> Trade Disputes
+            </a>
+            <a href="{{ route('moderator.reports.index') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.reports.*') ? 'active' : '' }}">
+                <i class="bi bi-flag menu-icon"></i> Trade Reports
+            </a>
+            <hr class="text-white-50 my-2 mx-4">
+            @endif
+
+            @if(auth()->user()->isAdmin())
             {{-- Analytics Dashboard --}}
             <a href="{{ route('admin.analytics.index') }}"
                class="sidebar-link {{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
@@ -856,13 +883,13 @@
             {{-- Admin Management --}}
             <div class="sidebar-section-label">Administration</div>
 
-            <button class="sidebar-parent {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'active-section' : '' }}"
+            <button class="sidebar-parent {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.moderator-actions.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'active-section' : '' }}"
                     onclick="toggleMenu(this)"
-                    aria-expanded="{{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.moderator-actions.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'true' : 'false' }}">
                 <i class="bi bi-shield-lock menu-icon"></i> Admin Management
                 <i class="bi bi-chevron-right chevron"></i>
             </button>
-            <ul class="sidebar-children {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'open' : '' }}">
+            <ul class="sidebar-children {{ request()->routeIs('admin.categories.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.moderator-actions.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.conversation-reports.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.settings.*') ? 'open' : '' }}">
                 <li>
                     <a href="{{ route('admin.categories.index') }}"
                        class="sidebar-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
@@ -873,6 +900,12 @@
                     <a href="{{ route('admin.admins.index') }}"
                        class="sidebar-link {{ request()->routeIs('admin.admins.*') ? 'active' : '' }}">
                         <i class="bi bi-shield-check menu-icon"></i> Admin Users Management
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.moderator-actions.index') }}"
+                       class="sidebar-link {{ request()->routeIs('admin.moderator-actions.*') ? 'active' : '' }}">
+                        <i class="bi bi-journal-text menu-icon"></i> Moderator Actions Audit
                     </a>
                 </li>
                 <li>
@@ -977,6 +1010,7 @@
                     <i class="bi bi-info-circle me-1"></i> Admin accounts are restricted to the Admin Panel only.
                 </small>
             </div>
+            @endif
         </nav>
     </div>
 

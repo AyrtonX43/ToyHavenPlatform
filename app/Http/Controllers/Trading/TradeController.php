@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Trading;
 
 use App\Http\Controllers\Controller;
 use App\Models\Trade;
+use App\Models\TradeDispute;
 use App\Models\Product;
 use App\Models\UserProduct;
 use App\Services\TradeService;
@@ -211,23 +212,70 @@ class TradeController extends Controller
         }
     }
 
-    public function dispute($id)
+    public function disputeForm($id)
     {
-        $trade = Trade::where(function($q) {
-                $q->where('initiator_id', Auth::id())
-                  ->orWhere('participant_id', Auth::id());
-            })
+        $trade = Trade::where(function ($q) {
+            $q->where('initiator_id', Auth::id())
+                ->orWhere('participant_id', Auth::id());
+        })
+            ->with(['tradeListing', 'initiator', 'participant', 'items'])
+            ->findOrFail($id);
+
+        if ($trade->status === 'completed' || $trade->status === 'cancelled' || $trade->status === 'disputed') {
+            return redirect()->route('trading.trades.show', $trade->id)
+                ->with('error', 'This trade cannot be disputed.');
+        }
+
+        return view('trading.trades.dispute-form', compact('trade'));
+    }
+
+    public function dispute(Request $request, $id)
+    {
+        $trade = Trade::where(function ($q) {
+            $q->where('initiator_id', Auth::id())
+                ->orWhere('participant_id', Auth::id());
+        })
             ->findOrFail($id);
 
         if ($trade->status === 'completed' || $trade->status === 'cancelled') {
             return back()->with('error', 'Cannot dispute a completed or cancelled trade.');
         }
 
+        $validated = $request->validate([
+            'type' => 'required|in:not_received,damaged,wrong_item,other',
+            'description' => 'required|string|max:2000',
+            'evidence_images' => 'nullable|array',
+            'evidence_images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+        ]);
+
+        DB::beginTransaction();
         try {
             $this->tradeService->updateTradeStatus($trade->id, 'disputed');
-            // TODO: Create report or notification for admin
-            return back()->with('success', 'Trade dispute opened. Admin will review.');
+
+            $evidencePaths = [];
+            if ($request->hasFile('evidence_images')) {
+                foreach ($request->file('evidence_images') as $file) {
+                    if ($file->isValid()) {
+                        $evidencePaths[] = $file->store('trade-disputes/' . $trade->id, 'public');
+                    }
+                }
+            }
+
+            TradeDispute::create([
+                'trade_id' => $trade->id,
+                'reporter_id' => Auth::id(),
+                'type' => $validated['type'],
+                'description' => $validated['description'],
+                'evidence_images' => $evidencePaths,
+                'status' => 'open',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('trading.trades.show', $trade->id)
+                ->with('success', 'Trade dispute opened. A moderator will review shortly.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('error', 'Failed to open dispute: ' . $e->getMessage());
         }
     }

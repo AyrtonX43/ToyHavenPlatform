@@ -320,6 +320,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/trades/{id}/shipped', [\App\Http\Controllers\Trading\TradeController::class, 'markShipped'])->name('trades.mark-shipped');
         Route::post('/trades/{id}/received', [\App\Http\Controllers\Trading\TradeController::class, 'markReceived'])->name('trades.mark-received');
         Route::post('/trades/{id}/complete', [\App\Http\Controllers\Trading\TradeController::class, 'complete'])->name('trades.complete');
+        Route::get('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'disputeForm'])->name('trades.dispute-form');
         Route::post('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'dispute'])->name('trades.dispute');
         Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
         
@@ -415,6 +416,10 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('show');
             Route::post('/{id}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban'])->name('ban');
             Route::post('/{id}/unban', [\App\Http\Controllers\Admin\UserController::class, 'unban'])->name('unban');
+        });
+
+        Route::prefix('moderator-actions')->name('moderator-actions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ModeratorActionController::class, 'index'])->name('index');
         });
 
         Route::prefix('admins')->name('admins.')->group(function () {
@@ -583,6 +588,44 @@ Route::prefix('moderator')->middleware(['moderator'])->name('moderator.')->group
         ->name('sellers.suspend');
     Route::post('/sellers/{seller}/unsuspend', [\App\Http\Controllers\Moderator\SellerController::class, 'unsuspend'])
         ->name('sellers.unsuspend');
+
+    // Trades
+    Route::get('/trades', [\App\Http\Controllers\Moderator\TradeController::class, 'index'])
+        ->name('trades.index');
+    Route::get('/trades/{id}', [\App\Http\Controllers\Moderator\TradeController::class, 'show'])
+        ->name('trades.show');
+
+    // Trade Listings
+    Route::get('/trade-listings', [\App\Http\Controllers\Moderator\TradeListingController::class, 'index'])
+        ->name('trade-listings.index');
+    Route::get('/trade-listings/{id}', [\App\Http\Controllers\Moderator\TradeListingController::class, 'show'])
+        ->name('trade-listings.show');
+    Route::post('/trade-listings/{id}/approve', [\App\Http\Controllers\Moderator\TradeListingController::class, 'approveListing'])
+        ->name('trade-listings.approve');
+    Route::post('/trade-listings/{id}/reject', [\App\Http\Controllers\Moderator\TradeListingController::class, 'rejectListing'])
+        ->name('trade-listings.reject');
+
+    // Trade Disputes
+    Route::get('/trade-disputes', [\App\Http\Controllers\Moderator\TradeDisputeController::class, 'index'])
+        ->name('trade-disputes.index');
+    Route::get('/trade-disputes/{tradeDispute}', [\App\Http\Controllers\Moderator\TradeDisputeController::class, 'show'])
+        ->name('trade-disputes.show');
+    Route::post('/trade-disputes/{tradeDispute}/assign', [\App\Http\Controllers\Moderator\TradeDisputeController::class, 'assign'])
+        ->name('trade-disputes.assign');
+    Route::post('/trade-disputes/{tradeDispute}/resolve', [\App\Http\Controllers\Moderator\TradeDisputeController::class, 'resolve'])
+        ->name('trade-disputes.resolve');
+
+    // Trade Reports
+    Route::get('/reports', [\App\Http\Controllers\Moderator\ReportController::class, 'index'])
+        ->name('reports.index');
+    Route::get('/reports/{id}', [\App\Http\Controllers\Moderator\ReportController::class, 'show'])
+        ->name('reports.show');
+    Route::post('/reports/{id}/review', [\App\Http\Controllers\Moderator\ReportController::class, 'review'])
+        ->name('reports.review');
+    Route::post('/reports/{id}/resolve', [\App\Http\Controllers\Moderator\ReportController::class, 'resolve'])
+        ->name('reports.resolve');
+    Route::post('/reports/{id}/dismiss', [\App\Http\Controllers\Moderator\ReportController::class, 'dismiss'])
+        ->name('reports.dismiss');
 });
 
 require __DIR__.'/auth.php';
