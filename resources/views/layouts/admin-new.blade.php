@@ -912,12 +912,14 @@
                         <i class="bi bi-shield-check menu-icon"></i> Admin Users Management
                     </a>
                 </li>
+                @if(Route::has('admin.moderators.index'))
                 <li>
                     <a href="{{ route('admin.moderators.index') }}"
                        class="sidebar-link {{ request()->routeIs('admin.moderators.*') ? 'active' : '' }}">
                         <i class="bi bi-person-badge menu-icon"></i> Trade Moderators
                     </a>
                 </li>
+                @endif
                 <li>
                     <a href="{{ route('admin.moderator-actions.index') }}"
                        class="sidebar-link {{ request()->routeIs('admin.moderator-actions.*') ? 'active' : '' }}">
