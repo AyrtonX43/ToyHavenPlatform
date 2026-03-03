@@ -92,8 +92,10 @@ class ProfileController extends Controller
             'type' => 'required|in:permanent,work,other',
             'label' => 'nullable|string|max:255',
             'address' => 'required|string|max:500',
-            'city' => 'required|string|max:100',
+            'region' => 'required|string|max:100',
             'province' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'barangay' => 'required|string|max:100',
             'postal_code' => 'required|string|max:10',
             'notes' => 'nullable|string|max:1000',
             'is_default' => 'nullable',
@@ -104,8 +106,10 @@ class ProfileController extends Controller
         // Normalize Philippine text to prevent encoding issues
         $validated['label'] = normalizePhilippineText($validated['label'] ?? null);
         $validated['address'] = normalizePhilippineText($validated['address']);
+        $validated['region'] = normalizePhilippineText($validated['region'] ?? '');
         $validated['city'] = normalizePhilippineText($validated['city']);
         $validated['province'] = normalizePhilippineText($validated['province']);
+        $validated['barangay'] = normalizePhilippineText($validated['barangay']);
         
         // Handle is_default checkbox (unchecked checkboxes don't send a value)
         $isDefault = $request->has('is_default') && $request->is_default == '1';
@@ -136,8 +140,10 @@ class ProfileController extends Controller
             'type' => 'required|in:permanent,work,other',
             'label' => 'nullable|string|max:255',
             'address' => 'required|string|max:500',
-            'city' => 'required|string|max:100',
+            'region' => 'required|string|max:100',
             'province' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'barangay' => 'required|string|max:100',
             'postal_code' => 'required|string|max:10',
             'notes' => 'nullable|string|max:1000',
             'is_default' => 'nullable',
@@ -146,8 +152,10 @@ class ProfileController extends Controller
         // Normalize Philippine text to prevent encoding issues
         $validated['label'] = normalizePhilippineText($validated['label'] ?? null);
         $validated['address'] = normalizePhilippineText($validated['address']);
+        $validated['region'] = normalizePhilippineText($validated['region']);
         $validated['city'] = normalizePhilippineText($validated['city']);
         $validated['province'] = normalizePhilippineText($validated['province']);
+        $validated['barangay'] = normalizePhilippineText($validated['barangay']);
 
         // Handle is_default checkbox (unchecked checkboxes don't send a value)
         $isDefault = $request->has('is_default') && $request->is_default == '1';

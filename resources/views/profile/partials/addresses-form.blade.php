@@ -56,7 +56,7 @@
                                         </div>
                                     </div>
                                     <p class="mb-1"><strong>{{ $address->address }}</strong></p>
-                                    <p class="mb-1 text-muted small">{{ $address->city }}, {{ $address->province }} {{ $address->postal_code }}</p>
+                                    <p class="mb-1 text-muted small">{{ $address->barangay ? $address->barangay . ', ' : '' }}{{ $address->city }}, {{ $address->province }}{{ $address->region ? ' (' . $address->region . ')' : '' }} {{ $address->postal_code }}</p>
                                     @if($address->notes)
                                         <p class="mb-0 text-muted small"><i class="bi bi-info-circle me-1"></i>{{ $address->notes }}</p>
                                     @endif
@@ -113,42 +113,21 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Label (Optional)</label>
-                            <input type="text" name="label" class="form-control" placeholder="e.g., Home, Office">
+                            <input type="text" name="label" class="form-control" placeholder="e.g., Home, Office" value="{{ old('label') }}">
                         </div>
-                        {{-- Address fields match business registration format for consistency with checkout --}}
+                        @include('partials.philippine-address-fields', [
+                            'prefix' => '',
+                            'prefillAddress' => old('address'),
+                            'prefillRegion' => old('region'),
+                            'prefillProvince' => old('province'),
+                            'prefillCity' => old('city'),
+                            'prefillBarangay' => old('barangay'),
+                            'prefillPostal' => old('postal_code'),
+                            'streetLabel' => 'House/Apartment No., Building/Street, Residence',
+                        ])
                         <div class="mb-3">
-                            <label for="address" class="form-label fw-semibold">Full Address <span class="text-danger">*</span></label>
-                            <textarea name="address" id="address" class="form-control @error('address') is-invalid @enderror" rows="2" required placeholder="Enter full address">{{ old('address') }}</textarea>
-                            @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="city" class="form-label fw-semibold">City <span class="text-danger">*</span></label>
-                                <input type="text" name="city" id="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city') }}" required placeholder="City">
-                                @error('city')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="province" class="form-label fw-semibold">Province <span class="text-danger">*</span></label>
-                                <input type="text" name="province" id="province" class="form-control @error('province') is-invalid @enderror" value="{{ old('province') }}" required placeholder="Province">
-                                @error('province')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="postal_code" class="form-label fw-semibold">Postal Code <span class="text-danger">*</span></label>
-                                <input type="text" name="postal_code" id="postal_code" class="form-control @error('postal_code') is-invalid @enderror" value="{{ old('postal_code') }}" required placeholder="Postal Code">
-                                @error('postal_code')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="notes" class="form-label fw-semibold">Notes (Optional)</label>
-                            <textarea name="notes" id="notes" class="form-control" rows="2" placeholder="Additional details or delivery instructions">{{ old('notes') }}</textarea>
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Additional details or delivery instructions">{{ old('notes') }}</textarea>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_default" value="1" id="defaultAdd">
@@ -168,13 +147,17 @@
 </section>
 
 @push('scripts')
+@include('partials.philippine-address-script', [
+    'prefix' => '',
+    'prefillRegion' => old('region'),
+    'prefillProvince' => old('province'),
+    'prefillCity' => old('city'),
+    'prefillBarangay' => old('barangay'),
+])
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Reopen add modal on validation errors (e.g. from address store redirect)
-    @php
-        $addressErrors = $errors->hasAny(['address', 'city', 'province', 'postal_code', 'type']) || ($errors->any() && old('address') !== null);
-    @endphp
-    @if($addressErrors)
+    // Handle add modal reopening on validation errors
+    @if($errors->any() && (request()->routeIs('profile.addresses.store') || request()->routeIs('profile.addresses.update')))
         var addModalElement = document.getElementById('addAddressModal');
         if (addModalElement) {
             var addModal = new bootstrap.Modal(addModalElement);

@@ -248,10 +248,6 @@
                     @endphp
 
                     @if($userAddresses->count() > 0)
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-link-45deg me-2"></i>
-                            Your saved addresses from profile are synced below. Select one or add new.
-                        </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Select Saved Address <span class="text-danger">*</span></label>
                             <select id="savedAddressSelect" class="form-select" onchange="loadSavedAddress()">
@@ -259,8 +255,10 @@
                                 @foreach($userAddresses as $addr)
                                     <option value="{{ $addr->id }}" 
                                             data-address="{{ $addr->address }}"
-                                            data-city="{{ $addr->city }}"
+                                            data-region="{{ $addr->region ?? '' }}"
                                             data-province="{{ $addr->province }}"
+                                            data-city="{{ $addr->city }}"
+                                            data-barangay="{{ $addr->barangay ?? '' }}"
                                             data-postal="{{ $addr->postal_code }}"
                                             {{ $addr->is_default || ($defaultAddr && $defaultAddr->id == $addr->id) ? 'selected' : '' }}>
                                         {{ $addr->label ?? 'Address ' . $loop->iteration }} 
@@ -286,48 +284,31 @@
                     <div id="addressFormContainer" style="{{ $userAddresses->count() > 0 && $defaultAddr ? '' : '' }}">
                         @php
                             $prefillAddress = old('shipping_address') ?? ($defaultAddr?->address ?? '');
-                            $prefillCity = old('shipping_city') ?? ($defaultAddr?->city ?? '');
+                            $prefillRegion = old('shipping_region') ?? ($defaultAddr?->region ?? '');
                             $prefillProvince = old('shipping_province') ?? ($defaultAddr?->province ?? '');
+                            $prefillCity = old('shipping_city') ?? ($defaultAddr?->city ?? '');
+                            $prefillBarangay = old('shipping_barangay') ?? ($defaultAddr?->barangay ?? '');
                             $prefillPostal = old('shipping_postal_code') ?? ($defaultAddr?->postal_code ?? '');
                         @endphp
-
-                        {{-- Address fields match business registration format for consistency --}}
-                        <div class="mb-3">
-                            <label for="shipping_address" class="form-label fw-semibold">Full Address <span class="text-danger">*</span></label>
-                            <textarea name="shipping_address" id="shipping_address" class="form-control @error('shipping_address') is-invalid @enderror" rows="2" required placeholder="Enter full address">{{ $prefillAddress }}</textarea>
-                            @error('shipping_address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="shipping_city" class="form-label fw-semibold">City <span class="text-danger">*</span></label>
-                                <input type="text" name="shipping_city" id="shipping_city" class="form-control @error('shipping_city') is-invalid @enderror" value="{{ $prefillCity }}" required placeholder="City">
-                                @error('shipping_city')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="shipping_province" class="form-label fw-semibold">Province <span class="text-danger">*</span></label>
-                                <input type="text" name="shipping_province" id="shipping_province" class="form-control @error('shipping_province') is-invalid @enderror" value="{{ $prefillProvince }}" required placeholder="Province">
-                                @error('shipping_province')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="shipping_postal_code" class="form-label fw-semibold">Postal Code <span class="text-danger">*</span></label>
-                                <input type="text" name="shipping_postal_code" id="shipping_postal_code" class="form-control @error('shipping_postal_code') is-invalid @enderror" value="{{ $prefillPostal }}" required placeholder="Postal Code">
-                                @error('shipping_postal_code')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
+                        
+                        @include('partials.philippine-address-fields', [
+                            'prefix' => 'shipping_',
+                            'prefillAddress' => $prefillAddress,
+                            'prefillRegion' => $prefillRegion,
+                            'prefillProvince' => $prefillProvince,
+                            'prefillCity' => $prefillCity,
+                            'prefillBarangay' => $prefillBarangay,
+                            'prefillPostal' => $prefillPostal,
+                            'streetLabel' => 'Full Address',
+                            'streetPlaceholder' => 'Enter your complete delivery address (house no., building, street)',
+                            'cols' => ['region' => 4, 'province' => 4, 'city' => 4],
+                        ])
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="shipping_phone_display" class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                                <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-telephone-fill me-1"></i>+63</span>
-                                    <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9XXXX XXX XXX" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
+                                    <input type="tel" id="shipping_phone_display" class="form-control @error('shipping_phone') is-invalid @enderror" value="{{ $prefillPhoneDisplay }}" placeholder="9123456789" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" title="10-digit Philippine mobile number">
                                 </div>
                                 <input type="hidden" name="shipping_phone" id="shipping_phone" value="{{ $prefillPhone }}">
                                 @error('shipping_phone')
@@ -335,10 +316,10 @@
                                 @enderror
                                 <small class="text-muted">Philippines +63, 10 digits.</small>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="shipping_notes" class="form-label fw-semibold">Delivery Notes (Optional)</label>
-                                <textarea name="shipping_notes" id="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions">{{ old('shipping_notes') }}</textarea>
-                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Notes (Optional)</label>
+                            <textarea name="shipping_notes" class="form-control" rows="2" placeholder="Any special delivery instructions...">{{ old('shipping_notes') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -402,6 +383,13 @@
 </div>
 
 @push('scripts')
+@include('partials.philippine-address-script', [
+    'prefix' => 'shipping_',
+    'prefillRegion' => $prefillRegion ?? '',
+    'prefillProvince' => $prefillProvince ?? '',
+    'prefillCity' => $prefillCity ?? '',
+    'prefillBarangay' => $prefillBarangay ?? '',
+])
 <script>
 (function() {
     var display = document.getElementById('shipping_phone_display');
@@ -427,7 +415,7 @@
     }
 })();
 
-// Load saved address functionality
+// Load saved address functionality - syncs with Region/Province/City/Barangay dropdowns
 function loadSavedAddress() {
     const select = document.getElementById('savedAddressSelect');
     if (!select) return;
@@ -435,31 +423,48 @@ function loadSavedAddress() {
     const selectedOption = select.options[select.selectedIndex];
     const value = selectedOption.value;
     
+    const addrEl = document.getElementById('shipping_address');
+    const postalEl = document.getElementById('shipping_postal_code');
+    const regionEl = document.getElementById('shipping_region');
+    
     if (value === 'new') {
-        // Clear all fields for new address
-        document.getElementById('shipping_address').value = '';
-        document.getElementById('shipping_city').value = '';
-        document.getElementById('shipping_province').value = '';
-        document.getElementById('shipping_postal_code').value = '';
-        document.getElementById('shipping_address').focus();
+        addrEl.value = '';
+        if (postalEl) postalEl.value = '';
+        window.phAddressPrefill = window.phAddressPrefill || {};
+        delete window.phAddressPrefill['shipping_'];
+        if (regionEl) {
+            regionEl.value = '';
+            regionEl.dispatchEvent(new Event('change'));
+        }
+        addrEl.focus();
         return;
     }
     
-    if (value === '') {
-        // No selection
-        return;
-    }
+    if (value === '') return;
     
-    // Load selected address data
     const address = selectedOption.getAttribute('data-address');
-    const city = selectedOption.getAttribute('data-city');
-    const province = selectedOption.getAttribute('data-province');
-    const postal = selectedOption.getAttribute('data-postal');
+    const region = selectedOption.getAttribute('data-region') || '';
+    const province = selectedOption.getAttribute('data-province') || '';
+    const city = selectedOption.getAttribute('data-city') || '';
+    const barangay = selectedOption.getAttribute('data-barangay') || '';
+    const postal = selectedOption.getAttribute('data-postal') || '';
     
-    if (address) document.getElementById('shipping_address').value = address;
-    if (city) document.getElementById('shipping_city').value = city;
-    if (province) document.getElementById('shipping_province').value = province;
-    if (postal) document.getElementById('shipping_postal_code').value = postal;
+    if (addrEl) addrEl.value = address || '';
+    if (postalEl) postalEl.value = postal || '';
+    
+    window.phAddressPrefill = window.phAddressPrefill || {};
+    if (region) {
+        window.phAddressPrefill['shipping_'] = { region, province, city, barangay };
+        if (regionEl && regionEl.options.length > 1) {
+            const r = region.replace(/ñ/g,'n').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
+            if (regionEl.querySelector('option[value="' + r + '"]')) {
+                regionEl.value = r;
+                regionEl.dispatchEvent(new Event('change'));
+            }
+        }
+    } else {
+        delete window.phAddressPrefill['shipping_'];
+    }
 }
 
 // Initialize on page load
