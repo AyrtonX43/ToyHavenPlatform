@@ -150,6 +150,17 @@
     .product-reviews-section {
         padding-top: 0;
     }
+    .product-review-upload-area { border: 2px dashed #dee2e6; border-radius: 10px; padding: 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+    .product-review-upload-area:hover, .product-review-upload-area.dragover { border-color: #0ea5e9; background: #f0f9ff; }
+    .product-review-preview-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+    .product-review-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; flex-shrink: 0; }
+    .product-review-preview-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+    .product-review-preview-item .btn-del { position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(220,53,69,0.9); color: white; border: none; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+    .product-review-preview-item .btn-view { position: absolute; bottom: 2px; left: 2px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
+    .product-review-fullscreen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 2rem; }
+    .product-review-fullscreen.active { display: flex; }
+    .product-review-fullscreen img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+    .product-review-fullscreen .btn-close-fs { position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
     
     .product-price {
         font-size: 2rem;
@@ -477,7 +488,7 @@
                     <div class="card-body">
                         <h6 class="card-title mb-3"><i class="bi bi-pencil-square me-2"></i>Write a Review</h6>
                         <p class="text-muted small mb-3">You purchased this product. Share your experience!</p>
-                        <form action="{{ route('reviews.product.store', $product->id) }}" method="POST">
+                        <form id="productReviewForm" action="{{ route('reviews.product.store', $product->id) }}" method="POST">
                             @csrf
                             <input type="hidden" name="order_id" value="{{ $eligibleOrderId }}">
                             <div class="mb-3">
@@ -493,13 +504,27 @@
                                 @error('rating')<p class="text-danger small mt-1">{{ $message }}</p>@enderror
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">Product Images (Optional, 1–10)</label>
+                                <p class="small text-muted mb-2">Upload photos of the product (max 2MB each)</p>
+                                <input type="file" id="productReviewFileInput" accept="image/jpeg,image/png,image/jpg" multiple class="d-none">
+                                <div id="productReviewUploadArea" class="product-review-upload-area" onclick="document.getElementById('productReviewFileInput').click()">
+                                    <i class="bi bi-cloud-arrow-up text-muted"></i>
+                                    <span class="small text-muted ms-2">Click or drag to add photos</span>
+                                </div>
+                                <div id="productReviewPreviewGrid" class="product-review-preview-grid"></div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Your review (optional)</label>
                                 <textarea name="review_text" class="form-control" rows="3" placeholder="What did you think of this product?" maxlength="1000">{{ old('review_text') }}</textarea>
                                 <small class="text-muted">Max 1000 characters</small>
                             </div>
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Submit Review</button>
+                            <button type="submit" class="btn btn-primary" id="productReviewSubmitBtn"><i class="bi bi-send me-1"></i>Submit Review</button>
                         </form>
                     </div>
+                </div>
+                <div id="productReviewFullscreen" class="product-review-fullscreen" onclick="if(event.target===this) window.closeProductReviewFullscreen()">
+                    <button type="button" class="btn-close-fs" onclick="window.closeProductReviewFullscreen()">&times;</button>
+                    <img id="productReviewFullscreenImg" src="" alt="">
                 </div>
                 @endif
 
@@ -707,14 +732,102 @@
             });
         });
     });
-    var reviewForm = document.querySelector('form[action*="reviews/product"]');
+
+    // Product review image upload (1-10)
+    var productReviewFiles = [];
+    var PR_MAX = 10, PR_MAX_SIZE = 2 * 1024 * 1024;
+    window.closeProductReviewFullscreen = function() {
+        var fs = document.getElementById('productReviewFullscreen');
+        if (fs) { fs.classList.remove('active'); document.body.style.overflow = ''; }
+    };
+    function renderProductReviewPreviews() {
+        var grid = document.getElementById('productReviewPreviewGrid');
+        var area = document.getElementById('productReviewUploadArea');
+        if (!grid) return;
+        grid.innerHTML = '';
+        productReviewFiles.forEach(function(f, i) {
+            var reader = new FileReader();
+            reader.onload = (function(idx) {
+                return function(e) {
+                    var s = e.target.result;
+                    var div = document.createElement('div');
+                    div.className = 'product-review-preview-item';
+                    div.innerHTML = '<img src="' + s + '" alt="Preview">' +
+                        '<button type="button" class="btn-del" data-idx="' + idx + '"><i class="bi bi-trash"></i></button>' +
+                        '<button type="button" class="btn-view"><i class="bi bi-zoom-in"></i></button>';
+                    grid.appendChild(div);
+                    div.querySelector('.btn-del').onclick = function() {
+                        productReviewFiles.splice(parseInt(this.getAttribute('data-idx')), 1);
+                        renderProductReviewPreviews();
+                        if (area) area.style.display = '';
+                    };
+                    div.querySelector('.btn-view').onclick = function() {
+                        document.getElementById('productReviewFullscreenImg').src = s;
+                        document.getElementById('productReviewFullscreen').classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    };
+                    div.querySelector('img').onclick = function() {
+                        document.getElementById('productReviewFullscreenImg').src = s;
+                        document.getElementById('productReviewFullscreen').classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    };
+                };
+            })(i);
+            reader.readAsDataURL(f);
+        });
+        if (productReviewFiles.length >= PR_MAX && area) area.style.display = 'none';
+    }
+    var prInput = document.getElementById('productReviewFileInput');
+    var prArea = document.getElementById('productReviewUploadArea');
+    if (prInput && prArea) {
+        prInput.onchange = function() {
+            for (var i = 0; i < this.files.length && productReviewFiles.length < PR_MAX; i++) {
+                var f = this.files[i];
+                if (f.type.match(/^image\/(jpeg|png|jpg)$/) && f.size <= PR_MAX_SIZE) productReviewFiles.push(f);
+            }
+            renderProductReviewPreviews();
+            this.value = '';
+        };
+        prArea.ondragover = function(e) { e.preventDefault(); prArea.classList.add('dragover'); };
+        prArea.ondragleave = function() { prArea.classList.remove('dragover'); };
+        prArea.ondrop = function(e) {
+            e.preventDefault();
+            prArea.classList.remove('dragover');
+            for (var i = 0; i < e.dataTransfer.files.length && productReviewFiles.length < PR_MAX; i++) {
+                var f = e.dataTransfer.files[i];
+                if (f.type.match(/^image\/(jpeg|png|jpg)$/) && f.size <= PR_MAX_SIZE) productReviewFiles.push(f);
+            }
+            renderProductReviewPreviews();
+        };
+    }
+
+    var reviewForm = document.getElementById('productReviewForm');
     if (reviewForm) {
         reviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             var r = parseInt(document.getElementById('productReviewRating')?.value || 0);
             if (r < 1 || r > 5) {
-                e.preventDefault();
                 alert('Please select a rating (1-5 stars).');
+                return;
             }
+            var fd = new FormData(reviewForm);
+            for (var i = 0; i < productReviewFiles.length; i++) fd.append('review_images[]', productReviewFiles[i]);
+            var btn = document.getElementById('productReviewSubmitBtn');
+            btn.disabled = true;
+            fetch(reviewForm.action, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            }).then(function(res) {
+                if (res.redirected) { window.location.href = res.url; return; }
+                if (!res.ok) return res.json();
+            }).then(function(data) {
+                if (data && data.errors) {
+                    btn.disabled = false;
+                    var msg = (data.errors.rating || data.errors['review_images'] || ['Please check your input.'])[0];
+                    alert(msg);
+                }
+            }).catch(function() { btn.disabled = false; });
         });
     }
     

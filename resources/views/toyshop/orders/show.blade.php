@@ -442,13 +442,13 @@
 @if($order->isDeliveryConfirmed() && $order->canBeReviewed())
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="reviewModalLabel"><i class="bi bi-star me-2"></i>Rate Product</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('reviews.product.store', 0) }}" method="POST" id="reviewForm">
+            <form id="reviewForm">
                 @csrf
                 <input type="hidden" name="order_id" id="reviewOrderId" value="">
                 <div class="modal-body">
@@ -463,7 +463,16 @@
                             @endfor
                         </div>
                         <input type="hidden" name="rating" id="reviewRating" value="0" required>
-                        @error('rating')<p class="text-danger small mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Product Images (Optional, 1–10)</label>
+                        <p class="small text-muted mb-2">Upload photos of the product (max 2MB each)</p>
+                        <input type="file" id="reviewFileInput" accept="image/jpeg,image/png,image/jpg" multiple class="d-none">
+                        <div id="reviewUploadArea" class="review-upload-area" onclick="document.getElementById('reviewFileInput').click()">
+                            <i class="bi bi-cloud-arrow-up text-muted"></i>
+                            <span class="small text-muted ms-2">Click or drag to add photos</span>
+                        </div>
+                        <div id="reviewPreviewGrid" class="review-preview-grid"></div>
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Review (Optional)</label>
@@ -473,32 +482,133 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Submit Review</button>
+                    <button type="submit" class="btn btn-primary" id="reviewSubmitBtn"><i class="bi bi-send me-1"></i>Submit Review</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+<div id="reviewFullscreen" class="review-fullscreen" onclick="if(event.target===this) window.closeReviewFullscreen()">
+    <button type="button" class="btn-close-fs" onclick="window.closeReviewFullscreen()">&times;</button>
+    <img id="reviewFullscreenImg" src="" alt="">
+</div>
+
+@push('styles')
+<style>
+.review-upload-area { border: 2px dashed #dee2e6; border-radius: 10px; padding: 1rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.review-upload-area:hover, .review-upload-area.dragover { border-color: #0ea5e9; background: #f0f9ff; }
+.review-preview-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+.review-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6; flex-shrink: 0; }
+.review-preview-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+.review-preview-item .btn-del { position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(220,53,69,0.9); color: white; border: none; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+.review-preview-item .btn-view { position: absolute; bottom: 2px; left: 2px; width: 24px; height: 24px; padding: 0; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; cursor: pointer; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; }
+.review-fullscreen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 2rem; }
+.review-fullscreen.active { display: flex; }
+.review-fullscreen img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+.review-fullscreen .btn-close-fs { position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
+</style>
+@endpush
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
+    var reviewFiles = [];
+    var MAX_FILES = 10;
+    var MAX_SIZE = 2 * 1024 * 1024;
     var modal = document.getElementById('reviewModal');
     if (!modal) return;
+
+    function renderReviewPreviews() {
+        var grid = document.getElementById('reviewPreviewGrid');
+        var area = document.getElementById('reviewUploadArea');
+        if (!grid) return;
+        grid.innerHTML = '';
+        reviewFiles.forEach(function(f, i) {
+            var reader = new FileReader();
+            reader.onload = (function(idx, src) {
+                return function(e) {
+                    var s = e.target.result;
+                    var div = document.createElement('div');
+                    div.className = 'review-preview-item';
+                    div.innerHTML = '<img src="' + s + '" alt="Preview">' +
+                        '<button type="button" class="btn-del" data-idx="' + idx + '" aria-label="Delete"><i class="bi bi-trash"></i></button>' +
+                        '<button type="button" class="btn-view" data-src="' + s.replace(/"/g, '&quot;') + '" aria-label="View"><i class="bi bi-zoom-in"></i></button>';
+                    grid.appendChild(div);
+                    div.querySelector('.btn-del').onclick = function() {
+                        reviewFiles.splice(parseInt(this.getAttribute('data-idx')), 1);
+                        renderReviewPreviews();
+                        if (reviewFiles.length < MAX_FILES) area.style.display = '';
+                    };
+                    div.querySelector('.btn-view').onclick = function() {
+                        document.getElementById('reviewFullscreenImg').src = s;
+                        document.getElementById('reviewFullscreen').classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    };
+                    div.querySelector('img').onclick = function() {
+                        document.getElementById('reviewFullscreenImg').src = s;
+                        document.getElementById('reviewFullscreen').classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    };
+                };
+            })(i, '');
+            reader.readAsDataURL(f);
+        });
+        if (reviewFiles.length >= MAX_FILES && area) area.style.display = 'none';
+    }
+
+    window.closeReviewFullscreen = function() {
+        document.getElementById('reviewFullscreen').classList.remove('active');
+        document.body.style.overflow = '';
+    };
+
+    var reviewInput = document.getElementById('reviewFileInput');
+    var reviewArea = document.getElementById('reviewUploadArea');
+    if (reviewInput && reviewArea) {
+        reviewInput.onchange = function() {
+            var added = 0;
+            for (var i = 0; i < this.files.length && reviewFiles.length < MAX_FILES; i++) {
+                var f = this.files[i];
+                if (!f.type.match(/^image\/(jpeg|png|jpg)$/) || f.size > MAX_SIZE) continue;
+                reviewFiles.push(f);
+                added++;
+            }
+            renderReviewPreviews();
+            this.value = '';
+        };
+        reviewArea.ondragover = function(e) { e.preventDefault(); reviewArea.classList.add('dragover'); };
+        reviewArea.ondragleave = function() { reviewArea.classList.remove('dragover'); };
+        reviewArea.ondrop = function(e) {
+            e.preventDefault();
+            reviewArea.classList.remove('dragover');
+            var files = e.dataTransfer.files;
+            for (var i = 0; i < files.length && reviewFiles.length < MAX_FILES; i++) {
+                var f = files[i];
+                if (!f.type.match(/^image\/(jpeg|png|jpg)$/) || f.size > MAX_SIZE) continue;
+                reviewFiles.push(f);
+            }
+            renderReviewPreviews();
+        };
+    }
+
     modal.addEventListener('show.bs.modal', function(e) {
         var btn = e.relatedTarget;
+        if (!btn) return;
         var productId = btn.getAttribute('data-product-id');
         var productName = btn.getAttribute('data-product-name');
         var orderId = btn.getAttribute('data-order-id');
-        document.getElementById('reviewForm').action = '{{ url("reviews/product") }}/' + productId;
+        document.getElementById('reviewForm').dataset.productId = productId;
         document.getElementById('reviewOrderId').value = orderId;
         document.getElementById('reviewProductName').textContent = productName;
         document.getElementById('reviewRating').value = '0';
+        reviewFiles = [];
+        renderReviewPreviews();
+        if (reviewArea) reviewArea.style.display = '';
         document.querySelectorAll('.star-btn').forEach(function(b) {
             b.querySelector('i').className = 'bi bi-star';
             b.classList.remove('active');
         });
     });
+
     document.querySelectorAll('.star-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var r = parseInt(this.getAttribute('data-rating'));
@@ -506,18 +616,57 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.star-btn').forEach(function(b, i) {
                 var icon = b.querySelector('i');
                 icon.className = (i + 1) <= r ? 'bi bi-star-fill' : 'bi bi-star';
-                b.classList.toggle('active', (i + 1) <= r);
             });
         });
     });
+
     document.getElementById('reviewForm').addEventListener('submit', function(e) {
+        e.preventDefault();
         var r = parseInt(document.getElementById('reviewRating').value || 0);
         if (r < 1 || r > 5) {
-            e.preventDefault();
             alert('Please select a rating (1-5 stars).');
+            return;
         }
+        var productId = this.dataset.productId;
+        if (!productId) return;
+        var fd = new FormData();
+        fd.append('_token', document.querySelector('input[name="_token"]').value);
+        fd.append('order_id', document.getElementById('reviewOrderId').value);
+        fd.append('rating', r);
+        fd.append('review_text', this.querySelector('textarea[name="review_text"]').value);
+        for (var i = 0; i < reviewFiles.length; i++) fd.append('review_images[]', reviewFiles[i]);
+        var btn = document.getElementById('reviewSubmitBtn');
+        btn.disabled = true;
+        var url = '{{ url("reviews/product") }}/' + productId;
+        fetch(url, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        }).then(function(res) {
+            if (res.redirected) {
+                window.location.href = res.url;
+                return;
+            }
+            if (!res.ok) return res.json();
+        }).then(function(data) {
+            if (data && data.errors) {
+                btn.disabled = false;
+                var msg = (data.errors.rating || data.errors['review_images'] || ['Please check your input.'])[0];
+                alert(msg);
+            }
+        }).catch(function() { btn.disabled = false; });
     });
-});
+
+    var params = new URLSearchParams(window.location.search);
+    var rateProductId = params.get('rate');
+    if (rateProductId) {
+        var rateBtn = document.querySelector('button[data-bs-target="#reviewModal"][data-product-id="' + rateProductId + '"]');
+        if (rateBtn) {
+            setTimeout(function() { rateBtn.click(); }, 300);
+            history.replaceState(null, '', window.location.pathname);
+        }
+    }
+})();
 </script>
 @endpush
 @endif

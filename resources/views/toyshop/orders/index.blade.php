@@ -143,26 +143,40 @@
                             <i class="bi bi-shop me-1"></i>{{ $order->seller->business_name }}
                         </strong>
                     </div>
-                    @foreach($order->items->take(3) as $item)
-                        <div class="order-item-mini">
-                            @if($item->product && $item->product->images->first())
-                                <img src="{{ asset('storage/' . $item->product->images->first()->image_path) }}" 
-                                     class="order-item-image" 
-                                     alt="{{ $item->product_name }}">
-                            @else
-                                <div class="order-item-image bg-light d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-image text-muted"></i>
+                    @foreach($order->items->take(5) as $item)
+                        <div class="order-item-mini d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                                @if($item->product && $item->product->images->first())
+                                    <img src="{{ asset('storage/' . $item->product->images->first()->image_path) }}" 
+                                         class="order-item-image" 
+                                         alt="{{ $item->product_name }}">
+                                @else
+                                    <div class="order-item-image bg-light d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-image text-muted"></i>
+                                    </div>
+                                @endif
+                                <div class="min-w-0">
+                                    <div class="fw-semibold text-truncate">{{ $item->product_name }}</div>
+                                    <small class="text-muted">Qty: {{ $item->quantity }} × ₱{{ number_format($item->price, 2) }}</small>
                                 </div>
-                            @endif
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">{{ $item->product_name }}</div>
-                                <small class="text-muted">Qty: {{ $item->quantity }} × ₱{{ number_format($item->price, 2) }}</small>
                             </div>
+                            @if($item->product && $order->isDelivered() && $order->canBeReviewed())
+                                @php
+                                    $hasReviewedItem = \App\Models\ProductReview::where('product_id', $item->product_id)->where('user_id', auth()->id())->exists();
+                                @endphp
+                                @if(!$hasReviewedItem)
+                                    <a href="{{ route('orders.show', $order->id) }}?rate={{ $item->product_id }}" class="btn btn-outline-primary btn-sm flex-shrink-0">
+                                        <i class="bi bi-star me-1"></i>Rate
+                                    </a>
+                                @else
+                                    <span class="badge bg-success flex-shrink-0"><i class="bi bi-check me-1"></i>Reviewed</span>
+                                @endif
+                            @endif
                         </div>
                     @endforeach
-                    @if($order->items->count() > 3)
+                    @if($order->items->count() > 5)
                         <div class="text-muted text-center mt-2">
-                            <small>+{{ $order->items->count() - 3 }} more item(s)</small>
+                            <small>+{{ $order->items->count() - 5 }} more item(s)</small>
                         </div>
                     @endif
                 </div>

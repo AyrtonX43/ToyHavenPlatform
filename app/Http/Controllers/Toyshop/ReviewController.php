@@ -19,7 +19,7 @@ class ReviewController extends Controller
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'review_text' => 'nullable|string|max:1000',
-            'review_images' => 'nullable|array|max:5',
+            'review_images' => 'nullable|array|max:10',
             'review_images.*' => 'image|mimes:jpeg,jpg,png|max:2048',
             'order_id' => 'nullable|exists:orders,id',
         ]);
