@@ -47,7 +47,7 @@
 .bp-stats-row .bp-stat { font-weight: 700; color: #334155; }
 .bp-badge { display: inline-flex; padding: 0.3rem 0.75rem; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; }
 .bp-main { width: 100%; max-width: 100%; margin: 0 auto; padding: 2rem clamp(1.5rem, 4vw, 3rem) 0; }
-@media (min-width: 992px) { .bp-main { display: grid; grid-template-columns: 1fr 300px; gap: 2.5rem; align-items: start; } }
+@media (min-width: 992px) { .bp-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; align-items: start; } .bp-sidebar { width: 100%; min-width: unset; max-width: 340px; } }
 .bp-products-section { min-width: 0; width: 100%; }
 .bp-products-section h2 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1.5rem; }
 .bp-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; justify-items: center; align-items: stretch; }
@@ -65,20 +65,23 @@
 .bp-product-actions .btn { border-radius: 10px; font-weight: 600; font-size: 0.85rem; }
 .bp-empty-products { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 4rem 2rem; text-align: center; color: #94a3b8; }
 .bp-empty-products i { font-size: 3.5rem; display: block; margin-bottom: 1rem; opacity: 0.5; }
-.bp-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
-.bp-sidebar-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.bp-sidebar { display: flex; flex-direction: column; gap: 1.5rem; width: min(100%, 340px); min-width: 280px; max-width: 100%; }
+.bp-sidebar-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); width: 100%; }
 .bp-sidebar-card .bp-card-header { padding: 1rem 1.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-.bp-sidebar-card .bp-card-body { padding: 1.25rem 1.5rem; }
-.bp-about-text { font-size: 0.9rem; line-height: 1.6; color: #475569; margin: 0; text-align: justify; hyphens: auto; letter-spacing: 0.01em; }
-.bp-social-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.bp-social-btn { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #fff; text-decoration: none; transition: transform 0.2s; }
-.bp-social-btn:hover { transform: translateY(-3px); color: #fff; }
+.bp-sidebar-card .bp-card-body { padding: 1.25rem 1.5rem; width: 100%; box-sizing: border-box; }
+.bp-about { min-height: 200px; max-height: 400px; overflow-y: auto; }
+.bp-about-text { font-size: 0.9rem; line-height: 1.7; color: #475569; margin: 0; text-align: justify; hyphens: auto; }
+.bp-connect { min-height: 90px; display: flex; align-items: center; }
+.bp-social-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.bp-social-btn { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #fff; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; }
+.bp-social-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #fff; }
 .bp-social-btn.fb { background: #1877f2; }
 .bp-social-btn.ig { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743); }
 .bp-social-btn.tk { background: #000; }
 .bp-social-btn.tw { background: #1da1f2; }
 .bp-social-btn.yt { background: #ff0000; }
 .bp-social-btn.other { background: #64748b; }
+.bp-reviews { min-height: 240px; }
 .bp-review-item { padding: 1rem 0; border-bottom: 1px solid #f1f5f9; }
 .bp-review-item:last-child { border-bottom: none; }
 .bp-review-head { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
@@ -87,9 +90,8 @@
 .bp-review-stars { color: #f59e0b; font-size: 0.8rem; margin-left: auto; }
 .bp-review-text { font-size: 0.85rem; color: #64748b; line-height: 1.55; margin: 0; }
 .bp-review-date { font-size: 0.75rem; color: #94a3b8; }
-.bp-reviews-empty { text-align: center; padding: 3rem 2rem; color: #94a3b8; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.bp-reviews-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; padding: 2.5rem 1.5rem; color: #94a3b8; font-size: 0.9rem; text-align: center; }
 .bp-reviews-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; opacity: 0.5; }
-.bp-reviews-card .bp-card-body { min-height: 200px; }
 .bp-preview-info { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 1rem 1.5rem; margin: 0 1.5rem 1.5rem; font-size: 0.9rem; color: #0c4a6e; }
 .bp-preview-info strong { color: #0369a1; }
 </style>
@@ -212,7 +214,7 @@
             @if(($pageSettings && ($pageSettings->business_description ?? null)) || $seller->description)
                 <div class="bp-sidebar-card">
                     <div class="bp-card-header">About</div>
-                    <div class="bp-card-body">
+                    <div class="bp-card-body bp-about">
                         <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
                     </div>
                 </div>
@@ -221,7 +223,7 @@
             @if($socialLinks && $socialLinks->count() > 0)
                 <div class="bp-sidebar-card">
                     <div class="bp-card-header">Connect</div>
-                    <div class="bp-card-body">
+                    <div class="bp-card-body bp-connect">
                         <div class="bp-social-row">
                             @foreach($socialLinks as $link)
                                 @php
@@ -239,9 +241,9 @@
                 </div>
             @endif
 
-            <div class="bp-sidebar-card bp-reviews-card">
+            <div class="bp-sidebar-card">
                 <div class="bp-card-header">Recent Reviews</div>
-                <div class="bp-card-body">
+                <div class="bp-card-body bp-reviews">
                     @php $previewReviews = $seller->reviews()->with('user')->orderBy('created_at', 'desc')->limit(5)->get(); @endphp
                     @if($previewReviews->count() > 0)
                         @foreach($previewReviews as $review)
@@ -256,7 +258,7 @@
                                     </span>
                                 </div>
                                 @if($review->review_text)
-                                    <p class="bp-review-text">{{ Str::limit($review->review_text, 140) }}</p>
+                                    <p class="bp-review-text">{{ Str::limit($review->review_text, 160) }}</p>
                                 @endif
                                 <span class="bp-review-date">{{ $review->created_at->diffForHumans() }}</span>
                             </div>

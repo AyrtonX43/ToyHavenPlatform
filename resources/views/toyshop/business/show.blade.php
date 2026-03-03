@@ -141,9 +141,14 @@
 @media (min-width: 992px) {
     .bp-main {
         display: grid;
-        grid-template-columns: 1fr 300px;
+        grid-template-columns: 1fr 340px;
         gap: 2.5rem;
         align-items: start;
+    }
+    .bp-sidebar {
+        width: 100%;
+        min-width: unset;
+        max-width: 340px;
     }
 }
 
@@ -287,11 +292,15 @@
     font-size: 1rem;
 }
 
-/* Sidebar */
+/* Sidebar - rebuilt with proper dimensions */
 .bp-sidebar {
+    --bp-sidebar-width: min(100%, 340px);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: var(--bp-sidebar-width);
+    min-width: 280px;
+    max-width: 100%;
 }
 .bp-sidebar-card {
     background: #fff;
@@ -299,6 +308,7 @@
     border: 1px solid #e2e8f0;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    width: 100%;
 }
 .bp-sidebar-card .bp-card-header {
     padding: 1rem 1.25rem;
@@ -312,20 +322,35 @@
 }
 .bp-sidebar-card .bp-card-body {
     padding: 1.25rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* About - full width, proper height, justified */
+.bp-about {
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
 }
 .bp-about-text {
     font-size: 0.9rem;
-    line-height: 1.6;
+    line-height: 1.7;
     color: #475569;
     margin: 0;
     text-align: justify;
     hyphens: auto;
-    letter-spacing: 0.01em;
+}
+
+/* Connect - full width, proper spacing */
+.bp-connect {
+    min-height: 90px;
+    display: flex;
+    align-items: center;
 }
 .bp-social-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 .bp-social-btn {
     width: 44px;
@@ -340,8 +365,8 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .bp-social-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     color: #fff;
 }
 .bp-social-btn.fb { background: #1877f2; }
@@ -352,7 +377,10 @@
 .bp-social-btn.linkedin { background: #0a66c2; }
 .bp-social-btn.other { background: #64748b; }
 
-/* Reviews */
+/* Recent Reviews - proper dimensions */
+.bp-reviews {
+    min-height: 240px;
+}
 .bp-review-item {
     padding: 1rem 0;
     border-bottom: 1px solid #f1f5f9;
@@ -399,24 +427,21 @@
     color: #94a3b8;
 }
 .bp-reviews-empty {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    min-height: 180px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    min-height: 200px;
+    padding: 2.5rem 1.5rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    text-align: center;
 }
 .bp-reviews-empty i {
     font-size: 2.5rem;
     display: block;
     margin-bottom: 0.75rem;
     opacity: 0.5;
-}
-.bp-reviews-card .bp-card-body {
-    min-height: 200px;
 }
 
 /* Pagination */
@@ -572,7 +597,7 @@
             @if(($pageSettings && ($pageSettings->business_description ?? null)) || $seller->description)
                 <div class="bp-sidebar-card">
                     <div class="bp-card-header">About</div>
-                    <div class="bp-card-body">
+                    <div class="bp-card-body bp-about">
                         <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
                     </div>
                 </div>
@@ -581,7 +606,7 @@
             @if($allSocialLinks->count() > 0)
                 <div class="bp-sidebar-card">
                     <div class="bp-card-header">Connect</div>
-                    <div class="bp-card-body">
+                    <div class="bp-card-body bp-connect">
                         <div class="bp-social-row">
                             @foreach($allSocialLinks as $link)
                                 @php
@@ -600,9 +625,9 @@
                 </div>
             @endif
 
-            <div class="bp-sidebar-card bp-reviews-card">
+            <div class="bp-sidebar-card">
                 <div class="bp-card-header">Recent Reviews</div>
-                <div class="bp-card-body">
+                <div class="bp-card-body bp-reviews">
                     @if($recentReviews->count() > 0)
                         @foreach($recentReviews as $review)
                             <div class="bp-review-item">
@@ -616,7 +641,7 @@
                                     </span>
                                 </div>
                                 @if($review->review_text)
-                                    <p class="bp-review-text">{{ Str::limit($review->review_text, 140) }}</p>
+                                    <p class="bp-review-text">{{ Str::limit($review->review_text, 160) }}</p>
                                 @endif
                                 <span class="bp-review-date">{{ $review->created_at->diffForHumans() }}</span>
                             </div>
