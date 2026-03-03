@@ -13,14 +13,20 @@
         max-width: 100%;
     }
 
-    /* Override toyshop layout container for business page - maximize width */
+    /* Full-width layout - maximize screen usage, no narrow column */
     .business-page .business-container {
         width: 100%;
-        max-width: 1680px;
-        margin-left: auto;
-        margin-right: auto;
+        max-width: none;
         padding-left: 1.5rem;
         padding-right: 1.5rem;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    @media (min-width: 1400px) {
+        .business-page .business-container {
+            padding-left: 3rem;
+            padding-right: 3rem;
+        }
     }
     @media (max-width: 575px) {
         .business-page .business-container {
