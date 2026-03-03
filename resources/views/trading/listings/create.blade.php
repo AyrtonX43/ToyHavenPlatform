@@ -93,7 +93,23 @@
         border: 2px solid #e2e8f0;
         display: inline-block;
     }
+    .preview-thumb { cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
+    .preview-thumb:hover { border-color: #0891b2; transform: scale(1.03); }
     .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .preview-thumb.is-thumbnail { border-color: #0891b2; box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.4); }
+    .preview-thumb .thumb-badge {
+        position: absolute; bottom: 2px; left: 2px;
+        font-size: 0.6rem; padding: 2px 6px; background: #0891b2; color: #fff;
+        border-radius: 4px; font-weight: 600; white-space: nowrap;
+    }
+    .preview-thumb .btn-set-thumb {
+        position: absolute; bottom: 2px; left: 2px;
+        width: 26px; height: 26px; border-radius: 50%;
+        background: rgba(8, 145, 178, 0.9); color: #fff; border: none;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        font-size: 0.75rem; padding: 0; transition: background 0.2s;
+    }
+    .preview-thumb .btn-set-thumb:hover { background: #0e7490; }
     .preview-remove {
         position: absolute; top: 2px; right: 2px;
         width: 24px; height: 24px; border-radius: 50%;
@@ -101,6 +117,21 @@
         display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.875rem;
     }
     .preview-remove:hover { background: #dc2626; }
+    .media-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.95); z-index: 99999;
+        align-items: center; justify-content: center; cursor: zoom-out;
+    }
+    .media-overlay.active { display: flex; }
+    .media-overlay img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 8px; pointer-events: none; }
+    .media-overlay .overlay-close {
+        position: fixed; top: 1rem; right: 1.5rem; z-index: 100000;
+        background: rgba(255,255,255,0.2); border: none; color: #fff;
+        font-size: 1.75rem; width: 48px; height: 48px; border-radius: 50%;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px); transition: background 0.2s;
+    }
+    .media-overlay .overlay-close:hover { background: rgba(255,255,255,0.35); }
     .btn-create-listing { background: #0891b2; border: none; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 10px; }
     .btn-create-listing:hover { background: #0e7490; color: #fff; }
     .listing-details-section { border-left: 4px solid #0891b2; }
@@ -139,7 +170,7 @@
                         <!-- Product photos (max 10) -->
                         <div class="form-section">
                             <div class="form-section-title"><i class="bi bi-image"></i> Product Photos</div>
-                            <label class="form-label d-block mb-2">Upload up to 10 images. Use the button below or drag photos onto the dashed area.</label>
+                            <label class="form-label d-block mb-2">Upload up to 10 images. Use the button below or drag photos onto the dashed area. <strong>Click an image to view full screen</strong>. Use the star <i class="bi bi-star-fill text-warning"></i> to set which image displays as the listing thumbnail.</label>
                             <input type="file" name="images[]" id="listing_images" accept="image/jpeg,image/png,image/jpg,image/webp" multiple class="d-none">
                             <button type="button" id="btnAddPhotos" class="btn btn-outline-primary mb-3">
                                 <i class="bi bi-plus-circle me-1"></i> Select images
@@ -261,6 +292,26 @@
     var uploadZone = document.getElementById('uploadZone');
     var MAX = 10;
     var selectedFiles = [];
+    var thumbnailIndex = 0;
+
+    var overlay = document.createElement('div');
+    overlay.className = 'media-overlay';
+    overlay.innerHTML = '<button type="button" class="overlay-close" title="Close">&times;</button><div id="listingOverlayContent"></div>';
+    document.body.appendChild(overlay);
+    var overlayContent = document.getElementById('listingOverlayContent');
+    function openFullscreen(src) {
+        if (overlayContent) overlayContent.innerHTML = '<img src="' + src.replace(/"/g, '&quot;') + '" alt="Full view">';
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeFullscreen() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        if (overlayContent) overlayContent.innerHTML = '';
+    }
+    overlay.querySelector('.overlay-close').addEventListener('click', function(e) { e.stopPropagation(); closeFullscreen(); });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeFullscreen(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeFullscreen(); });
 
     function isImage(file) {
         if (!file || !file.type) return false;
@@ -277,6 +328,7 @@
 
     function renderPreview() {
         previewList.innerHTML = '';
+        if (thumbnailIndex >= selectedFiles.length && selectedFiles.length > 0) thumbnailIndex = 0;
         if (selectedFiles.length > 0 && uploadPlaceholder) {
             uploadPlaceholder.style.display = 'none';
             uploadZone.classList.add('has-image');
@@ -288,22 +340,45 @@
             var reader = new FileReader();
             reader.onload = (function(idx) {
                 return function(e) {
+                    var dataUrl = e.target.result;
                     var div = document.createElement('div');
-                    div.className = 'preview-thumb';
-                    div.innerHTML = '<img src="' + e.target.result + '" alt=""><button type="button" class="preview-remove" title="Remove"><i class="bi bi-x-lg"></i></button>';
+                    div.className = 'preview-thumb' + (idx === thumbnailIndex ? ' is-thumbnail' : '');
+                    div.innerHTML = '<img src="' + dataUrl + '" alt="">' +
+                        '<button type="button" class="preview-remove" title="Remove"><i class="bi bi-x-lg"></i></button>' +
+                        (idx === thumbnailIndex
+                            ? '<span class="thumb-badge"><i class="bi bi-star-fill me-1"></i>Thumbnail</span>'
+                            : '<button type="button" class="btn-set-thumb" title="Set as listing thumbnail"><i class="bi bi-star"></i></button>');
                     previewList.appendChild(div);
+                    var imgEl = div.querySelector('img');
+                    if (imgEl) {
+                        imgEl.addEventListener('click', function(ev) {
+                            ev.stopPropagation();
+                            openFullscreen(dataUrl);
+                        });
+                    }
                     div.querySelector('.preview-remove').addEventListener('click', function(ev) {
                         ev.preventDefault();
                         ev.stopPropagation();
                         selectedFiles.splice(idx, 1);
+                        if (thumbnailIndex >= selectedFiles.length) thumbnailIndex = Math.max(0, selectedFiles.length - 1);
+                        if (idx < thumbnailIndex) thumbnailIndex--;
                         syncFileInputToSelected();
                         renderPreview();
                     });
+                    var setThumbBtn = div.querySelector('.btn-set-thumb');
+                    if (setThumbBtn) {
+                        setThumbBtn.addEventListener('click', function(ev) {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            thumbnailIndex = idx;
+                            renderPreview();
+                        });
+                    }
                 };
             })(i);
             reader.readAsDataURL(file);
         });
-        imageCount.textContent = selectedFiles.length + ' image(s) selected (max ' + MAX + ')';
+        imageCount.textContent = selectedFiles.length + ' image(s) selected (max ' + MAX + ')' + (selectedFiles.length ? ' — thumbnail: image ' + (thumbnailIndex + 1) : '');
         syncFileInputToSelected();
     }
 
@@ -384,8 +459,17 @@
                 if (el.type === 'checkbox' || el.type === 'radio') { if (el.checked) formData.append(el.name, el.value); }
                 else formData.append(el.name, el.value);
             }
-            for (var i = 0; i < selectedFiles.length; i++) {
-                var f = selectedFiles[i];
+            var orderedFiles = [];
+            if (thumbnailIndex >= 0 && thumbnailIndex < selectedFiles.length) {
+                orderedFiles.push(selectedFiles[thumbnailIndex]);
+                for (var i = 0; i < selectedFiles.length; i++) {
+                    if (i !== thumbnailIndex) orderedFiles.push(selectedFiles[i]);
+                }
+            } else {
+                orderedFiles = selectedFiles.slice();
+            }
+            for (var i = 0; i < orderedFiles.length; i++) {
+                var f = orderedFiles[i];
                 var name = (f.name && /\.(jpe?g|png|webp)$/i.test(f.name)) ? f.name : 'image-' + (i + 1) + '.jpg';
                 formData.append('images[]', f, name);
             }
