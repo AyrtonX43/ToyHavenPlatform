@@ -695,7 +695,7 @@
                 @else
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    <strong>Add products to your listings first.</strong> To make an offer, you need to have at least one active listing in <a href="{{ route('trading.listings.my') }}">My Listings</a>. Create a listing with the product you want to offer.
+                    <strong>No products to offer yet.</strong> To make an offer, you need either: (1) an active listing in <a href="{{ route('trading.listings.my') }}">My Listings</a> (listings are auto-linked for offers), or (2) products in <a href="{{ route('trading.products.create') }}">My Products</a>. <a href="{{ route('trading.listings.create') }}">Create a listing</a> to get started.
                 </div>
                 @endif
             </div>

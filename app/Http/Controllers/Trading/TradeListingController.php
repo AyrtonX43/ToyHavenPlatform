@@ -7,6 +7,7 @@ use App\Models\TradeListing;
 use App\Models\TradeListingImage;
 use App\Models\Product;
 use App\Models\UserProduct;
+use App\Models\UserProductImage;
 use App\Models\Category;
 use App\Notifications\TradeListingSubmittedNotification;
 use App\Services\TradeMatchingService;
@@ -213,6 +214,29 @@ class TradeListingController extends Controller
                 }
             }
 
+            // Auto-create UserProduct for listings without linked product (enables Make an Offer sync)
+            if ($productId === null && $userProductId === null && $listing->images->isNotEmpty()) {
+                $up = UserProduct::create([
+                    'user_id' => Auth::id(),
+                    'category_id' => $listing->category_id,
+                    'name' => $listing->title,
+                    'description' => $listing->description ?? '',
+                    'brand' => $listing->brand,
+                    'condition' => $listing->condition,
+                    'status' => 'available',
+                ]);
+                $firstImg = $listing->images()->first();
+                if ($firstImg) {
+                    UserProductImage::create([
+                        'user_product_id' => $up->id,
+                        'image_path' => $firstImg->image_path,
+                        'is_primary' => true,
+                        'display_order' => 0,
+                    ]);
+                }
+                $listing->update(['user_product_id' => $up->id]);
+            }
+
             DB::commit();
 
             Auth::user()->notify(new TradeListingSubmittedNotification($listing));
@@ -267,10 +291,40 @@ class TradeListingController extends Controller
             $seen = [];
             $myListings = TradeListing::where('user_id', Auth::id())
                 ->whereIn('status', ['active', 'pending_approval'])
-                ->with(['product.images', 'userProduct.images'])
+                ->with(['product.images', 'userProduct.images', 'images'])
                 ->get();
             foreach ($myListings as $myListing) {
                 $item = $myListing->getItem();
+                // Backfill: create UserProduct for existing listings that have images but no linked product
+                if (!$item && $myListing->images->isNotEmpty()) {
+                    DB::beginTransaction();
+                    try {
+                        $up = UserProduct::create([
+                            'user_id' => Auth::id(),
+                            'category_id' => $myListing->category_id,
+                            'name' => $myListing->title,
+                            'description' => $myListing->description ?? '',
+                            'brand' => $myListing->brand,
+                            'condition' => $myListing->condition,
+                            'status' => 'available',
+                        ]);
+                        $firstImg = $myListing->images()->first();
+                        if ($firstImg) {
+                            UserProductImage::create([
+                                'user_product_id' => $up->id,
+                                'image_path' => $firstImg->image_path,
+                                'is_primary' => true,
+                                'display_order' => 0,
+                            ]);
+                        }
+                        $myListing->update(['user_product_id' => $up->id]);
+                        DB::commit();
+                        $item = $up;
+                        $myListing->setRelation('userProduct', $up);
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+                    }
+                }
                 if ($item) {
                     $key = $item instanceof Product ? 'p:' . $item->id : 'u:' . $item->id;
                     if (isset($seen[$key])) continue;
