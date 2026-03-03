@@ -4,6 +4,11 @@
 
 @push('styles')
 <style>
+    :root {
+        --order-sky-blue: #0ea5e9;
+        --order-sky-blue-light: #38bdf8;
+        --order-sky-blue-gradient: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    }
     .order-detail-header {
         background: white;
         border-radius: 16px;
@@ -33,7 +38,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: #ff6b6b;
+        background: var(--order-sky-blue-gradient);
         color: white;
         display: flex;
         align-items: center;
@@ -64,16 +69,21 @@
         height: 100px;
         object-fit: cover;
         border-radius: 12px;
-        border: 2px solid #e5e7eb;
+        border: 2px solid #e0f2fe;
+    }
+    
+    .order-item-detail .text-primary {
+        color: var(--order-sky-blue) !important;
     }
     
     .summary-card {
         background: white;
         border-radius: 16px;
         padding: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         position: sticky;
         top: 100px;
+        border-top: 3px solid var(--order-sky-blue);
     }
     
     .summary-row {
@@ -86,7 +96,7 @@
     .summary-total {
         font-size: 1.5rem;
         font-weight: 700;
-        color: #ff6b6b;
+        color: var(--order-sky-blue);
     }
     
     .info-row {
@@ -109,11 +119,28 @@
         color: #2d2a26;
         font-weight: 500;
     }
+    
+    .order-details-page .btn-outline-primary,
+    .order-details-page .btn-primary {
+        border-color: var(--order-sky-blue);
+        color: var(--order-sky-blue);
+    }
+    .order-details-page .btn-primary {
+        background: var(--order-sky-blue-gradient);
+        border-color: var(--order-sky-blue);
+        color: white;
+    }
+    .order-details-page .btn-outline-primary:hover,
+    .order-details-page .btn-primary:hover {
+        background: #0284c7;
+        border-color: #0284c7;
+        color: white;
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="container py-4">
+<div class="container py-4 order-details-page">
     <div class="order-detail-header reveal">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
