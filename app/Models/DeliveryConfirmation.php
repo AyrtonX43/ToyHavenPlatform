@@ -10,15 +10,26 @@ class DeliveryConfirmation extends Model
     protected $fillable = [
         'order_id',
         'proof_image_path',
+        'proof_image_paths',
         'notes',
         'auto_confirmed',
         'confirmed_at',
     ];
 
     protected $casts = [
+        'proof_image_paths' => 'array',
         'auto_confirmed' => 'boolean',
         'confirmed_at' => 'datetime',
     ];
+
+    public function getProofImagesAttribute(): array
+    {
+        $paths = $this->proof_image_paths;
+        if (is_array($paths) && count($paths) > 0) {
+            return $paths;
+        }
+        return $this->proof_image_path ? [$this->proof_image_path] : [];
+    }
 
     public function order(): BelongsTo
     {

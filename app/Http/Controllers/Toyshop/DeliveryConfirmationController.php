@@ -11,12 +11,12 @@ use Illuminate\Support\Facades\Storage;
 
 class DeliveryConfirmationController extends Controller
 {
-    public function create(Order $order)
+    public function create($orderId)
     {
-        $order->load(['items.product', 'seller']);
-        if ($order->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $order = Order::with(['items.product', 'seller'])
+            ->where('id', $orderId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
         if (!$order->isDelivered()) {
             return redirect()->route('orders.show', $order->id)
@@ -36,11 +36,11 @@ class DeliveryConfirmationController extends Controller
         return view('toyshop.orders.confirm-delivery', compact('order'));
     }
 
-    public function store(Request $request, Order $order)
+    public function store(Request $request, $orderId)
     {
-        if ($order->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $order = Order::where('id', $orderId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
         if (!$order->isDelivered()) {
             return back()->with('error', 'Order must be delivered before confirmation.');
@@ -55,18 +55,23 @@ class DeliveryConfirmationController extends Controller
         }
 
         $request->validate([
-            'proof_image' => 'required|image|mimes:jpeg,png,jpg|max:5120',
+            'proof_images' => 'required|array|min:1|max:2',
+            'proof_images.*' => 'required|image|mimes:jpeg,png,jpg|max:5120',
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $imagePath = $request->file('proof_image')->store(
-            "delivery_proofs/{$order->user_id}",
-            'public'
-        );
+        $imagePaths = [];
+        foreach ($request->file('proof_images') as $file) {
+            $imagePaths[] = $file->store(
+                "delivery_proofs/{$order->user_id}",
+                'public'
+            );
+        }
 
         DeliveryConfirmation::create([
             'order_id' => $order->id,
-            'proof_image_path' => $imagePath,
+            'proof_image_path' => $imagePaths[0],
+            'proof_image_paths' => $imagePaths,
             'notes' => $request->notes,
             'confirmed_at' => now(),
             'auto_confirmed' => false,
@@ -78,12 +83,12 @@ class DeliveryConfirmationController extends Controller
             ->with('success', 'Delivery confirmed successfully! You can now review this product.');
     }
 
-    public function show(Order $order)
+    public function show($orderId)
     {
-        $order->load(['deliveryConfirmation', 'items.product']);
-        if ($order->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $order = Order::with(['deliveryConfirmation', 'items.product'])
+            ->where('id', $orderId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
 
         if (!$order->isDeliveryConfirmed()) {
             return redirect()->route('orders.show', $order->id)
