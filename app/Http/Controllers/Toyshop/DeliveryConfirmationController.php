@@ -11,12 +11,12 @@ use Illuminate\Support\Facades\Storage;
 
 class DeliveryConfirmationController extends Controller
 {
-    public function create($orderId)
+    public function create(Order $order)
     {
-        $order = Order::with(['items.product', 'seller'])
-            ->where('id', $orderId)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        $order->load(['items.product', 'seller']);
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
 
         if (!$order->isDelivered()) {
             return redirect()->route('orders.show', $order->id)
@@ -36,11 +36,11 @@ class DeliveryConfirmationController extends Controller
         return view('toyshop.orders.confirm-delivery', compact('order'));
     }
 
-    public function store(Request $request, $orderId)
+    public function store(Request $request, Order $order)
     {
-        $order = Order::where('id', $orderId)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
 
         if (!$order->isDelivered()) {
             return back()->with('error', 'Order must be delivered before confirmation.');
@@ -78,12 +78,12 @@ class DeliveryConfirmationController extends Controller
             ->with('success', 'Delivery confirmed successfully! You can now review this product.');
     }
 
-    public function show($orderId)
+    public function show(Order $order)
     {
-        $order = Order::with(['deliveryConfirmation', 'items.product'])
-            ->where('id', $orderId)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        $order->load(['deliveryConfirmation', 'items.product']);
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
 
         if (!$order->isDeliveryConfirmed()) {
             return redirect()->route('orders.show', $order->id)
