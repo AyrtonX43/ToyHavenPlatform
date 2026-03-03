@@ -236,13 +236,42 @@
                             </div>
                             <h3 class="detail-card-title">Delivery Confirmed</h3>
                         </div>
-                        <div class="alert alert-success mb-0">
+                        <div class="alert alert-success mb-3">
                             <i class="bi bi-check-circle-fill me-2"></i>
                             You confirmed delivery on {{ $order->deliveryConfirmation->confirmed_at->format('F d, Y') }}
                             @if($order->deliveryConfirmation->auto_confirmed)
                                 <span class="badge bg-info ms-2">Auto-confirmed</span>
                             @endif
                         </div>
+
+                        @if($order->canBeReviewed())
+                        <div class="border-top pt-3">
+                            <h6 class="fw-semibold mb-2"><i class="bi bi-star me-1"></i>Rate Your Purchase</h6>
+                            <p class="text-muted small mb-3">Share your experience to help other customers.</p>
+                            @foreach($order->items as $item)
+                                @if($item->product)
+                                    @php
+                                        $hasReviewed = \App\Models\ProductReview::where('product_id', $item->product_id)->where('user_id', auth()->id())->exists();
+                                    @endphp
+                                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                                        <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                                            @if($item->product->images->first())
+                                                <img src="{{ asset('storage/' . $item->product->images->first()->image_path) }}" alt="" class="rounded" style="width: 48px; height: 48px; object-fit: cover;">
+                                            @endif
+                                            <span class="text-truncate">{{ $item->product_name }}</span>
+                                        </div>
+                                        @if($hasReviewed)
+                                            <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Reviewed</span>
+                                        @else
+                                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal" data-product-id="{{ $item->product_id }}" data-product-name="{{ $item->product_name }}" data-order-id="{{ $order->id }}">
+                                                <i class="bi bi-star me-1"></i>Rate
+                                            </button>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                 @elseif(!$order->hasActiveDispute())
                     <div class="detail-card reveal" style="animation-delay: 0.16s;">
@@ -354,4 +383,87 @@
         </div>
     </div>
 </div>
+
+@if($order->isDeliveryConfirmed() && $order->canBeReviewed())
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel"><i class="bi bi-star me-2"></i>Rate Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('reviews.product.store', 0) }}" method="POST" id="reviewForm">
+                @csrf
+                <input type="hidden" name="order_id" id="reviewOrderId" value="">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3" id="reviewProductName"></p>
+                    <div class="mb-3">
+                        <label class="form-label">Rating <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-1" id="starRating">
+                            @for($i = 1; $i <= 5; $i++)
+                                <button type="button" class="btn btn-outline-warning p-2 star-btn" data-rating="{{ $i }}" aria-label="{{ $i }} star">
+                                    <i class="bi bi-star"></i>
+                                </button>
+                            @endfor
+                        </div>
+                        <input type="hidden" name="rating" id="reviewRating" value="0" required>
+                        @error('rating')<p class="text-danger small mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Review (Optional)</label>
+                        <textarea name="review_text" class="form-control" rows="3" placeholder="Share your experience with this product..." maxlength="1000"></textarea>
+                        <small class="text-muted">Max 1000 characters</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('reviewModal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function(e) {
+        var btn = e.relatedTarget;
+        var productId = btn.getAttribute('data-product-id');
+        var productName = btn.getAttribute('data-product-name');
+        var orderId = btn.getAttribute('data-order-id');
+        document.getElementById('reviewForm').action = '{{ url("reviews/product") }}/' + productId;
+        document.getElementById('reviewOrderId').value = orderId;
+        document.getElementById('reviewProductName').textContent = productName;
+        document.getElementById('reviewRating').value = '0';
+        document.querySelectorAll('.star-btn').forEach(function(b) {
+            b.querySelector('i').className = 'bi bi-star';
+            b.classList.remove('active');
+        });
+    });
+    document.querySelectorAll('.star-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var r = parseInt(this.getAttribute('data-rating'));
+            document.getElementById('reviewRating').value = r;
+            document.querySelectorAll('.star-btn').forEach(function(b, i) {
+                var icon = b.querySelector('i');
+                icon.className = (i + 1) <= r ? 'bi bi-star-fill' : 'bi bi-star';
+                b.classList.toggle('active', (i + 1) <= r);
+            });
+        });
+    });
+    document.getElementById('reviewForm').addEventListener('submit', function(e) {
+        var r = parseInt(document.getElementById('reviewRating').value || 0);
+        if (r < 1 || r > 5) {
+            e.preventDefault();
+            alert('Please select a rating (1-5 stars).');
+        }
+    });
+});
+</script>
+@endpush
+@endif
 @endsection

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Toyshop;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\ProductReview;
 use App\Models\ProductView;
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
@@ -218,6 +220,29 @@ class ProductController extends Controller
             $imageDisplayUrls[] = $url ?? asset('storage/' . $image->image_path);
         }
 
-        return view('toyshop.products.show', compact('product', 'relatedProducts', 'recommendedByPreferences', 'inWishlist', 'wishlistItem', 'imageDisplayUrls'));
+        // Check if user can review (purchased, delivery confirmed, not yet reviewed)
+        $canUserReview = false;
+        $eligibleOrderId = null;
+        if (Auth::check()) {
+            $hasReviewed = ProductReview::where('product_id', $product->id)
+                ->where('user_id', Auth::id())
+                ->exists();
+            if (!$hasReviewed) {
+                $eligibleOrder = Order::where('user_id', Auth::id())
+                    ->where('status', 'delivered')
+                    ->where('payment_status', 'paid')
+                    ->whereHas('deliveryConfirmation')
+                    ->whereHas('items', function ($q) use ($product) {
+                        $q->where('product_id', $product->id);
+                    })
+                    ->first();
+                if ($eligibleOrder) {
+                    $canUserReview = true;
+                    $eligibleOrderId = $eligibleOrder->id;
+                }
+            }
+        }
+
+        return view('toyshop.products.show', compact('product', 'relatedProducts', 'recommendedByPreferences', 'inWishlist', 'wishlistItem', 'imageDisplayUrls', 'canUserReview', 'eligibleOrderId'));
     }
 }

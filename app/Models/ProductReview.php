@@ -14,6 +14,7 @@ class ProductReview extends Model
         'rating',
         'review_text',
         'review_images',
+        'delivery_confirmed',
         'helpful_count',
         'status',
     ];

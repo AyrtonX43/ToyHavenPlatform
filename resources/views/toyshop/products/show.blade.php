@@ -471,6 +471,38 @@
                         <span class="text-muted fw-normal fs-6">({{ $reviewsCount }} {{ Str::plural('review', $reviewsCount) }})</span>
                     @endif
                 </h5>
+
+                @if(isset($canUserReview) && $canUserReview && $eligibleOrderId)
+                <div class="card mb-4 border-primary">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3"><i class="bi bi-pencil-square me-2"></i>Write a Review</h6>
+                        <p class="text-muted small mb-3">You purchased this product. Share your experience!</p>
+                        <form action="{{ route('reviews.product.store', $product->id) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="order_id" value="{{ $eligibleOrderId }}">
+                            <div class="mb-3">
+                                <label class="form-label">Rating <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-1 product-review-stars">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <button type="button" class="btn btn-outline-warning p-2 product-star-btn" data-rating="{{ $i }}" aria-label="{{ $i }} star">
+                                            <i class="bi bi-star"></i>
+                                        </button>
+                                    @endfor
+                                </div>
+                                <input type="hidden" name="rating" id="productReviewRating" value="0" required>
+                                @error('rating')<p class="text-danger small mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your review (optional)</label>
+                                <textarea name="review_text" class="form-control" rows="3" placeholder="What did you think of this product?" maxlength="1000">{{ old('review_text') }}</textarea>
+                                <small class="text-muted">Max 1000 characters</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Submit Review</button>
+                        </form>
+                    </div>
+                </div>
+                @endif
+
                 @if($approvedReviews->count() > 0)
                     <div class="review-summary mb-4">
                         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -662,6 +694,29 @@
     
     // Start slideshow on page load (if multiple images)
     startSlideshowTimer();
+
+    // Product review star rating
+    document.querySelectorAll('.product-star-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var r = parseInt(this.getAttribute('data-rating'));
+            var hid = document.getElementById('productReviewRating');
+            if (hid) hid.value = r;
+            document.querySelectorAll('.product-star-btn').forEach(function(b, i) {
+                var icon = b.querySelector('i');
+                if (icon) icon.className = (i + 1) <= r ? 'bi bi-star-fill' : 'bi bi-star';
+            });
+        });
+    });
+    var reviewForm = document.querySelector('form[action*="reviews/product"]');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
+            var r = parseInt(document.getElementById('productReviewRating')?.value || 0);
+            if (r < 1 || r > 5) {
+                e.preventDefault();
+                alert('Please select a rating (1-5 stars).');
+            }
+        });
+    }
     
     console.log('✅ Product view loaded with 1080P-4K HDR support');
     console.log('📸 Total images:', productImages.length);
