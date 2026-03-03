@@ -12,8 +12,9 @@ class TradeMatchingService
     /**
      * Get suggested listings that might match the given listing (for "you might also match" on listing show).
      * Matches when: other listing's item matches this listing's desired_items, or vice versa.
+     * Excludes the listing owner and optionally the current viewer (so we don't show the viewer's own listings).
      */
-    public function getSuggestedListingsForListing(int $listingId, int $limit = 8): Collection
+    public function getSuggestedListingsForListing(int $listingId, int $limit = 8, ?int $excludeViewerId = null): Collection
     {
         $listing = TradeListing::with(['product.category', 'userProduct.category'])
             ->active()
@@ -25,13 +26,16 @@ class TradeMatchingService
 
         $searchTerms = $this->extractSearchTermsFromListing($listing);
         if ($searchTerms->isEmpty()) {
-            return $this->getFallbackSuggestedListings($listingId, $listing->user_id ?? 0, $limit);
+            return $this->getFallbackSuggestedListings($listingId, $listing->user_id ?? 0, $limit, $excludeViewerId);
         }
 
         $query = TradeListing::with(['user', 'product.images', 'product.category', 'userProduct.images', 'userProduct.category'])
             ->active()
             ->where('id', '!=', $listingId)
             ->where('user_id', '!=', $listing->user_id);
+        if ($excludeViewerId !== null) {
+            $query->where('user_id', '!=', $excludeViewerId);
+        }
 
         $query->where(function ($q) use ($searchTerms) {
             foreach ($searchTerms as $term) {
@@ -141,13 +145,16 @@ class TradeMatchingService
         return $terms->map(fn ($t) => trim((string) $t))->filter(fn ($t) => $t !== '')->unique();
     }
 
-    protected function getFallbackSuggestedListings(int $excludeId, int $excludeUserId, int $limit): Collection
+    protected function getFallbackSuggestedListings(int $excludeId, int $excludeUserId, int $limit, ?int $excludeViewerId = null): Collection
     {
-        return TradeListing::with(['user', 'product.images', 'userProduct.images'])
+        $query = TradeListing::with(['user', 'product.images', 'userProduct.images'])
             ->active()
             ->where('id', '!=', $excludeId)
-            ->where('user_id', '!=', $excludeUserId)
-            ->orderByDesc('offers_count')
+            ->where('user_id', '!=', $excludeUserId);
+        if ($excludeViewerId !== null) {
+            $query->where('user_id', '!=', $excludeViewerId);
+        }
+        return $query->orderByDesc('offers_count')
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get();

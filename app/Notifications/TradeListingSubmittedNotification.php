@@ -29,8 +29,8 @@ class TradeListingSubmittedNotification extends Notification implements ShouldQu
         return (new MailMessage)
             ->subject('Trade Listing Submitted for Review - ToyHaven')
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Your trade listing **"' . $this->listing->title . '"** has been submitted and will be reviewed by an admin before it goes live.')
-            ->line('You can view or edit your listing from your notifications while it is pending. Once approved, it will appear on the marketplace and other users can make offers.')
+            ->line('Your trade listing **"' . $this->listing->title . '"** has been submitted and will be viewed by an admin for approval before it goes live.')
+            ->line('An admin will review your listing shortly. You can view or edit it from your notifications while it is pending. Once approved, it will appear on the marketplace and other users can make offers.')
             ->action('Open Notifications', route('notifications.index'))
             ->line('Thank you for using ToyHaven Trading!');
     }
@@ -41,7 +41,7 @@ class TradeListingSubmittedNotification extends Notification implements ShouldQu
             'type' => 'trade_listing_submitted',
             'listing_id' => $this->listing->id,
             'listing_title' => $this->listing->title,
-            'message' => 'Your listing "' . $this->listing->title . '" has been submitted and is pending admin review.',
+            'message' => 'Your listing "' . $this->listing->title . '" has been submitted. An admin will view and review it shortly.',
         ];
     }
 }

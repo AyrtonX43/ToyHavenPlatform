@@ -254,12 +254,46 @@ class TradeListingController extends Controller
                     }
                 }
             }
+            // Fallback: if no products from listings, include UserProducts and Seller Products
+            if ($offererProducts->isEmpty()) {
+                $userProducts = UserProduct::where('user_id', Auth::id())
+                    ->where('status', 'available')
+                    ->with(['images'])
+                    ->get();
+                foreach ($userProducts as $up) {
+                    $offererProducts->push((object)[
+                        'type' => 'user_product',
+                        'product_id' => null,
+                        'user_product_id' => $up->id,
+                        'name' => $up->name,
+                        'listing_title' => 'My Personal Product',
+                    ]);
+                }
+                $offererSellerId = Auth::user()->isSeller() && Auth::user()->seller ? Auth::user()->seller->id : null;
+                if ($offererSellerId) {
+                    $sellerProducts = Product::where('seller_id', $offererSellerId)
+                        ->where('is_tradeable', true)
+                        ->where('trade_status', 'available_for_trade')
+                        ->where('status', 'active')
+                        ->with(['images'])
+                        ->get();
+                    foreach ($sellerProducts as $sp) {
+                        $offererProducts->push((object)[
+                            'type' => 'seller_product',
+                            'product_id' => $sp->id,
+                            'user_product_id' => null,
+                            'name' => $sp->name,
+                            'listing_title' => 'Business Product',
+                        ]);
+                    }
+                }
+            }
         }
 
         // Check if chat is requested
         $showChat = request()->has('chat') && Auth::check() && $listing->user_id !== Auth::id();
 
-        $suggestedListings = $matchingService->getSuggestedListingsForListing($listing->id, 6);
+        $suggestedListings = $matchingService->getSuggestedListingsForListing($listing->id, 6, Auth::check() ? Auth::id() : null);
 
         return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings', 'offererProducts'));
     }
@@ -383,6 +417,26 @@ class TradeListingController extends Controller
 
         return redirect()->route('trading.listings.show', $listing->id)
             ->with('success', 'Trade listing updated successfully!');
+    }
+
+    public function markAsSold($id)
+    {
+        $listing = TradeListing::where('user_id', Auth::id())->findOrFail($id);
+
+        if (!in_array($listing->status, ['active', 'pending_approval'])) {
+            return redirect()->route('trading.listings.show', $listing->id)
+                ->with('error', 'Cannot mark this listing as sold.');
+        }
+
+        if ($listing->status === 'pending_trade') {
+            return redirect()->route('trading.listings.show', $listing->id)
+                ->with('error', 'Cannot mark as sold while a trade is in progress.');
+        }
+
+        $listing->update(['status' => 'completed']);
+
+        return redirect()->route('trading.listings.my')
+            ->with('success', 'Listing marked as sold successfully.');
     }
 
     public function destroy($id)

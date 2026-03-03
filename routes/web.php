@@ -293,6 +293,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'store'])->name('listings.store');
         Route::get('/listings/{id}/edit', [\App\Http\Controllers\Trading\TradeListingController::class, 'edit'])->name('listings.edit');
         Route::put('/listings/{id}', [\App\Http\Controllers\Trading\TradeListingController::class, 'update'])->name('listings.update');
+        Route::post('/listings/{id}/mark-sold', [\App\Http\Controllers\Trading\TradeListingController::class, 'markAsSold'])->name('listings.mark-sold');
         Route::delete('/listings/{id}', [\App\Http\Controllers\Trading\TradeListingController::class, 'destroy'])->name('listings.destroy');
     });
 
