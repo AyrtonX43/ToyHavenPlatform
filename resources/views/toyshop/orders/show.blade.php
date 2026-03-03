@@ -136,6 +136,32 @@
         border-color: #0284c7;
         color: white;
     }
+    
+    .rate-item-row {
+        flex-wrap: nowrap;
+    }
+    .rate-item-row .flex-grow-1 {
+        min-width: 0;
+        overflow: hidden;
+    }
+    .rate-item-row .text-truncate {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    @media (max-width: 576px) {
+        .rate-item-row {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .rate-item-row .flex-grow-1 {
+            flex-basis: 100%;
+        }
+        .rate-item-row .flex-shrink-0 {
+            margin-left: auto;
+        }
+    }
 </style>
 @endpush
 
@@ -280,20 +306,22 @@
                                     @php
                                         $hasReviewed = \App\Models\ProductReview::where('product_id', $item->product_id)->where('user_id', auth()->id())->exists();
                                     @endphp
-                                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
-                                        <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                                    <div class="d-flex align-items-center justify-content-between gap-3 py-2 border-bottom rate-item-row">
+                                        <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0 overflow-hidden">
                                             @if($item->product->images->first())
-                                                <img src="{{ asset('storage/' . $item->product->images->first()->image_path) }}" alt="" class="rounded" style="width: 48px; height: 48px; object-fit: cover;">
+                                                <img src="{{ asset('storage/' . $item->product->images->first()->image_path) }}" alt="" class="rounded flex-shrink-0" style="width: 48px; height: 48px; object-fit: cover;">
                                             @endif
                                             <span class="text-truncate">{{ $item->product_name }}</span>
                                         </div>
-                                        @if($hasReviewed)
-                                            <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Reviewed</span>
-                                        @else
-                                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal" data-product-id="{{ $item->product_id }}" data-product-name="{{ $item->product_name }}" data-order-id="{{ $order->id }}">
-                                                <i class="bi bi-star me-1"></i>Rate
-                                            </button>
-                                        @endif
+                                        <div class="flex-shrink-0">
+                                            @if($hasReviewed)
+                                                <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Reviewed</span>
+                                            @else
+                                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal" data-product-id="{{ $item->product_id }}" data-product-name="{{ $item->product_name }}" data-order-id="{{ $order->id }}">
+                                                    <i class="bi bi-star me-1"></i>Rate
+                                                </button>
+                                            @endif
+                                        </div>
                                     </div>
                                 @endif
                             @endforeach
