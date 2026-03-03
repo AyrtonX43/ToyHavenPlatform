@@ -161,6 +161,9 @@
     .product-review-fullscreen.active { display: flex; }
     .product-review-fullscreen img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
     .product-review-fullscreen .btn-close-fs { position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
+    .review-card-clickable { cursor: pointer; transition: box-shadow 0.2s, transform 0.2s; }
+    .review-card-clickable:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    .review-card-clickable .review-view-hint { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
     
     .product-price {
         font-size: 2rem;
@@ -548,7 +551,17 @@
                     </div>
                     <div class="review-comments-list">
                         @foreach($approvedReviews as $review)
-                            <div class="card mb-3">
+                            @php
+                                $reviewImages = $review->review_images ? array_map(fn($p) => asset('storage/' . $p), $review->review_images) : [];
+                            @endphp
+                            <div class="card mb-3 review-card-clickable"
+                                 data-review-name="{{ e($review->user->name ?? 'Anonymous') }}"
+                                 data-review-rating="{{ $review->rating }}"
+                                 data-review-text="{{ e($review->review_text ?? '') }}"
+                                 data-review-date="{{ $review->created_at->format('M d, Y') }}"
+                                 data-review-verified="{{ $review->isVerifiedPurchase() ? '1' : '0' }}"
+                                 data-review-images="{{ json_encode($reviewImages) }}"
+                                 onclick="openReviewModal(this)">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                                         <div class="d-flex align-items-center gap-2">
@@ -567,20 +580,47 @@
                                         </div>
                                     </div>
                                     @if($review->review_text)
-                                        <p class="mb-0">{{ $review->review_text }}</p>
+                                        <p class="mb-0">{{ Str::limit($review->review_text ?? '', 120) }}</p>
                                     @endif
                                     @if($review->review_images && count($review->review_images) > 0)
                                         <div class="d-flex gap-2 mt-2 flex-wrap">
                                             @foreach($review->review_images as $imgPath)
-                                                <a href="{{ asset('storage/' . $imgPath) }}" target="_blank" class="d-inline-block">
-                                                    <img src="{{ asset('storage/' . $imgPath) }}" alt="Review image" class="rounded" style="max-width: 80px; max-height: 80px; object-fit: cover;">
-                                                </a>
+                                                <img src="{{ asset('storage/' . $imgPath) }}" alt="Review image" class="rounded" style="max-width: 80px; max-height: 80px; object-fit: cover;">
                                             @endforeach
                                         </div>
                                     @endif
+                                    <p class="review-view-hint mb-0 mt-1"><i class="bi bi-zoom-in me-1"></i>Click to view full review</p>
                                 </div>
                             </div>
                         @endforeach
+                    </div>
+
+                    <!-- Review detail modal -->
+                    <div class="modal fade" id="reviewDetailModal" tabindex="-1" aria-labelledby="reviewDetailModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="reviewDetailModalLabel">
+                                        <span id="reviewModalName"></span>
+                                        <span id="reviewModalVerified" class="badge bg-success ms-2" style="font-size: 0.7rem; display: none;">Verified Purchase</span>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="d-flex align-items-center gap-2 mb-3">
+                                        <div id="reviewModalStars" class="text-warning"></div>
+                                        <small id="reviewModalDate" class="text-muted"></small>
+                                    </div>
+                                    <p id="reviewModalText" class="mb-0"></p>
+                                    <div id="reviewModalImages" class="d-flex gap-2 mt-3 flex-wrap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fullscreen for review images (click image in modal to view full size) -->
+                    <div id="reviewImageFullscreen" class="product-review-fullscreen" onclick="if(event.target===this) closeReviewImageFullscreen()">
+                        <button type="button" class="btn-close-fs" onclick="closeReviewImageFullscreen()">&times;</button>
+                        <img id="reviewImageFullscreenImg" src="" alt="">
                     </div>
                 @else
                     <div class="alert alert-light border">
@@ -831,6 +871,56 @@
         });
     }
     
+    // Review modal: click card to view full review with images
+    window.openReviewModal = function(el) {
+        var modalEl = document.getElementById('reviewDetailModal');
+        if (!modalEl) return;
+        var name = el.getAttribute('data-review-name') || 'Anonymous';
+        var rating = parseInt(el.getAttribute('data-review-rating') || 0);
+        var text = el.getAttribute('data-review-text') || '';
+        var date = el.getAttribute('data-review-date') || '';
+        var verified = el.getAttribute('data-review-verified') === '1';
+        var images = [];
+        try { images = JSON.parse(el.getAttribute('data-review-images') || '[]'); } catch(e) {}
+        document.getElementById('reviewModalName').textContent = name;
+        document.getElementById('reviewModalVerified').style.display = verified ? 'inline' : 'none';
+        document.getElementById('reviewModalDate').textContent = date;
+        document.getElementById('reviewModalText').textContent = text || '(No comment)';
+        var starsHtml = '';
+        for (var i = 1; i <= 5; i++) {
+            starsHtml += '<i class="bi bi-star' + (i <= rating ? '-fill' : '') + '"></i>';
+        }
+        document.getElementById('reviewModalStars').innerHTML = starsHtml;
+        var imgContainer = document.getElementById('reviewModalImages');
+        imgContainer.innerHTML = '';
+        if (images.length > 0) {
+            images.forEach(function(src) {
+                var a = document.createElement('a');
+                a.href = '#';
+                a.className = 'd-inline-block';
+                a.onclick = function(e) { e.preventDefault(); openReviewImageFullscreen(src); };
+                var img = document.createElement('img');
+                img.src = src;
+                img.alt = 'Review image';
+                img.className = 'rounded';
+                img.style.cssText = 'max-width: 120px; max-height: 120px; object-fit: cover; cursor: pointer;';
+                a.appendChild(img);
+                imgContainer.appendChild(a);
+            });
+        }
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    };
+    window.openReviewImageFullscreen = function(src) {
+        var fs = document.getElementById('reviewImageFullscreen');
+        var img = document.getElementById('reviewImageFullscreenImg');
+        if (fs && img) { img.src = src; fs.classList.add('active'); document.body.style.overflow = 'hidden'; }
+    };
+    window.closeReviewImageFullscreen = function() {
+        var fs = document.getElementById('reviewImageFullscreen');
+        if (fs) { fs.classList.remove('active'); document.body.style.overflow = ''; }
+    };
+
     console.log('✅ Product view loaded with 1080P-4K HDR support');
     console.log('📸 Total images:', productImages.length);
     console.log('🎯 Image URLs:', productImages);
