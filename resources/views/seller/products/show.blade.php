@@ -303,6 +303,9 @@
                         <div class="d-flex justify-content-between mb-2">
                             <div>
                                 <strong>{{ $review->user->name ?? 'Anonymous' }}</strong>
+                                @if($review->order_id)
+                                    <span class="badge bg-success ms-1" style="font-size: 0.7rem;">Verified Purchase</span>
+                                @endif
                                 <div class="text-warning">
                                     @for($i = 1; $i <= 5; $i++)
                                         <i class="bi bi-star{{ $i <= $review->rating ? '-fill' : '' }}"></i>
@@ -311,8 +314,17 @@
                             </div>
                             <small class="text-muted">{{ $review->created_at->format('M d, Y') }}</small>
                         </div>
-                        @if($review->comment)
-                            <p class="mb-0">{{ $review->comment }}</p>
+                        @if($review->review_text)
+                            <p class="mb-2">{{ $review->review_text }}</p>
+                        @endif
+                        @if($review->review_images && count($review->review_images) > 0)
+                            <div class="d-flex gap-2 flex-wrap">
+                                @foreach($review->review_images as $imgPath)
+                                    <a href="{{ asset('storage/' . $imgPath) }}" target="_blank" class="d-inline-block" title="View full size">
+                                        <img src="{{ asset('storage/' . $imgPath) }}" alt="Review image" class="rounded seller-review-img" style="max-width: 80px; max-height: 80px; object-fit: cover; cursor: pointer;">
+                                    </a>
+                                @endforeach
+                            </div>
                         @endif
                     </div>
                 @endforeach
