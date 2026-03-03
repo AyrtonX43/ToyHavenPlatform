@@ -448,23 +448,25 @@
                             <a href="{{ route('trading.listings.edit', $listing->id) }}" class="btn btn-action btn-outline-primary">
                                 <i class="bi bi-pencil me-2"></i>Edit Listing
                             </a>
-                            @if(in_array($listing->status, ['active', 'pending_approval']))
-                            <form method="POST" action="{{ route('trading.listings.mark-sold', $listing->id) }}" class="d-inline" onsubmit="return confirm('Mark this listing as sold?');">
-                                @csrf
-                                <button type="submit" class="btn btn-action btn-outline-success">
-                                    <i class="bi bi-check-circle me-2"></i>Mark as Sold
-                                </button>
-                            </form>
-                            @endif
-                            @if($listing->status !== 'pending_trade')
-                            <form method="POST" action="{{ route('trading.listings.destroy', $listing->id) }}" class="d-inline" onsubmit="return confirm('Delete this listing? This cannot be undone.');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-action btn-outline-danger">
-                                    <i class="bi bi-trash me-2"></i>Delete Listing
-                                </button>
-                            </form>
-                            @endif
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                @if(in_array($listing->status, ['active', 'pending_approval']))
+                                <form method="POST" action="{{ route('trading.listings.mark-sold', $listing->id) }}" class="d-inline" onsubmit="return confirm('Mark this listing as sold?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-action btn-outline-success">
+                                        <i class="bi bi-check-circle me-2"></i>Mark as Sold
+                                    </button>
+                                </form>
+                                @endif
+                                @if($listing->status !== 'pending_trade')
+                                <form method="POST" action="{{ route('trading.listings.destroy', $listing->id) }}" class="d-inline" onsubmit="return confirm('Delete this listing? This cannot be undone.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-action btn-outline-danger">
+                                        <i class="bi bi-trash me-2"></i>Delete Listing
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
                         @endif
                     @else
                         <a href="{{ route('login') }}" class="btn btn-action btn-message">

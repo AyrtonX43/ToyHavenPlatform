@@ -104,7 +104,20 @@ class TradeListingController extends Controller
     public function create()
     {
         $categories = Category::orderBy('name')->get();
-        return view('trading.listings.create', compact('categories'));
+        $userProducts = UserProduct::where('user_id', Auth::id())
+            ->where('status', 'available')
+            ->with(['images', 'category'])
+            ->get();
+        $sellerProducts = collect();
+        if (Auth::user()->isSeller() && Auth::user()->seller) {
+            $sellerProducts = Product::where('seller_id', Auth::user()->seller->id)
+                ->where('is_tradeable', true)
+                ->where('trade_status', 'available_for_trade')
+                ->where('status', 'active')
+                ->with(['images', 'category'])
+                ->get();
+        }
+        return view('trading.listings.create', compact('categories', 'userProducts', 'sellerProducts'));
     }
 
     public function store(Request $request)
@@ -123,6 +136,9 @@ class TradeListingController extends Controller
             'images.*' => 'file|mimes:jpeg,png,jpg,webp|max:5120',
             'trade_type' => 'required|in:barter,barter_with_cash,cash',
             'cash_difference' => 'nullable|numeric|min:0',
+            'product_type' => 'nullable|in:user_product,seller_product',
+            'product_id' => 'nullable|integer',
+            'user_product_id' => 'nullable|integer',
         ], [
             'images.required' => 'Please upload at least one image.',
             'images.*.mimes' => 'Each image must be JPEG, PNG, or WebP.',
@@ -138,11 +154,35 @@ class TradeListingController extends Controller
 
             $cashDifference = $validated['trade_type'] === 'barter' ? null : ($validated['cash_difference'] ?? null);
 
+            $productId = null;
+            $userProductId = null;
+            if (!empty($validated['product_type'])) {
+                if ($validated['product_type'] === 'seller_product' && $sellerId && !empty($validated['product_id'])) {
+                    $p = Product::where('id', $validated['product_id'])
+                        ->where('seller_id', $sellerId)
+                        ->where('is_tradeable', true)
+                        ->where('trade_status', 'available_for_trade')
+                        ->where('status', 'active')
+                        ->first();
+                    if ($p) {
+                        $productId = $p->id;
+                    }
+                } elseif ($validated['product_type'] === 'user_product' && !empty($validated['user_product_id'])) {
+                    $up = UserProduct::where('id', $validated['user_product_id'])
+                        ->where('user_id', Auth::id())
+                        ->where('status', 'available')
+                        ->first();
+                    if ($up) {
+                        $userProductId = $up->id;
+                    }
+                }
+            }
+
             $listing = TradeListing::create([
                 'user_id' => Auth::id(),
                 'seller_id' => $sellerId,
-                'product_id' => null,
-                'user_product_id' => null,
+                'product_id' => $productId,
+                'user_product_id' => $userProductId,
                 'category_id' => $validated['category_id'],
                 'title' => $validated['title'],
                 'brand' => $validated['brand'] ?? null,

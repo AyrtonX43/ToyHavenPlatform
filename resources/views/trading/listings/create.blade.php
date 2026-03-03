@@ -222,6 +222,40 @@
                             </div>
 
                             <div class="mb-3">
+                                <label class="form-label">Link product (for Make an Offer sync)</label>
+                                <select name="product_type" id="product_type" class="form-select form-control-marketplace">
+                                    <option value="">None - custom listing only</option>
+                                    @if(isset($userProducts) && $userProducts->isNotEmpty())
+                                    <option value="user_product" {{ old('product_type') == 'user_product' ? 'selected' : '' }}>My Personal Product</option>
+                                    @endif
+                                    @if(isset($sellerProducts) && $sellerProducts->isNotEmpty())
+                                    <option value="seller_product" {{ old('product_type') == 'seller_product' ? 'selected' : '' }}>Business Product</option>
+                                    @endif
+                                </select>
+                                <div id="product_select_wrap" class="mt-2 d-none">
+                                    <select name="user_product_id" id="user_product_select" class="form-select form-control-marketplace d-none">
+                                        <option value="">Select a product</option>
+                                        @if(isset($userProducts))
+                                        @foreach($userProducts as $up)
+                                        <option value="{{ $up->id }}" {{ old('user_product_id') == $up->id ? 'selected' : '' }}>{{ $up->name }}</option>
+                                        @endforeach
+                                        @endif
+                                    </select>
+                                    <select name="product_id" id="seller_product_select" class="form-select form-control-marketplace d-none">
+                                        <option value="">Select a product</option>
+                                        @if(isset($sellerProducts))
+                                        @foreach($sellerProducts as $sp)
+                                        <option value="{{ $sp->id }}" {{ old('product_id') == $sp->id ? 'selected' : '' }}>{{ $sp->name }}</option>
+                                        @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                                <small class="text-muted d-block mt-1">Link a product so it appears when you make offers on other listings.</small>
+                                @error('product_id')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                                @error('user_product_id')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label">Category</label>
                                 <select name="category_id" class="form-select form-control-marketplace" required>
                                     <option value="">Select category</option>
@@ -425,6 +459,30 @@
     }
     if (tradeTypeSelect) tradeTypeSelect.addEventListener('change', togglePrice);
     togglePrice();
+
+    var productTypeSelect = document.getElementById('product_type');
+    var productSelectWrap = document.getElementById('product_select_wrap');
+    var userProductSelect = document.getElementById('user_product_select');
+    var sellerProductSelect = document.getElementById('seller_product_select');
+    function toggleProductSelect() {
+        if (!productTypeSelect || !productSelectWrap) return;
+        var val = productTypeSelect.value;
+        productSelectWrap.classList.toggle('d-none', !val);
+        if (userProductSelect) {
+            userProductSelect.classList.toggle('d-none', val !== 'user_product');
+            userProductSelect.removeAttribute('name');
+            if (val === 'user_product') userProductSelect.setAttribute('name', 'user_product_id');
+            if (val !== 'user_product') userProductSelect.value = '';
+        }
+        if (sellerProductSelect) {
+            sellerProductSelect.classList.toggle('d-none', val !== 'seller_product');
+            sellerProductSelect.removeAttribute('name');
+            if (val === 'seller_product') sellerProductSelect.setAttribute('name', 'product_id');
+            if (val !== 'seller_product') sellerProductSelect.value = '';
+        }
+    }
+    if (productTypeSelect) productTypeSelect.addEventListener('change', toggleProductSelect);
+    toggleProductSelect();
 
     var form = document.getElementById('createListingForm');
     if (form) {
