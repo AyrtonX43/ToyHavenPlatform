@@ -11,13 +11,13 @@
     padding-bottom: 4rem;
 }
 
-/* Hero Banner */
+/* Hero Banner - only when seller has custom banner; no blue gradient fallback */
 .bp-hero {
     position: relative;
     width: 100%;
-    height: 220px;
+    height: 180px;
     overflow: hidden;
-    background: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #06b6d4 100%);
+    background: #f1f5f9;
 }
 .bp-hero img {
     width: 100%;
@@ -27,19 +27,18 @@
 .bp-hero-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.15) 100%);
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.08) 100%);
     pointer-events: none;
 }
 
-/* Store Identity Card */
+/* Store Identity Card - full width, wide container */
 .bp-identity {
-    max-width: 1280px;
+    width: 100%;
+    max-width: min(1680px, 96vw);
     margin: 0 auto;
-    padding: 0 1.5rem;
-    margin-top: -60px;
-    position: relative;
-    z-index: 2;
+    padding: 1.5rem clamp(1rem, 3vw, 2rem) 0;
 }
+.bp-identity.has-hero { margin-top: -60px; }
 .bp-identity-card {
     background: #fff;
     border-radius: 20px;
@@ -130,22 +129,26 @@
     color: #b45309;
 }
 
-/* Main Content Grid */
+/* Main Content Grid - maximize width, wide container */
 .bp-main {
-    max-width: 1280px;
+    width: 100%;
+    max-width: min(1680px, 96vw);
     margin: 0 auto;
-    padding: 2rem 1.5rem 0;
+    padding: 2rem clamp(1rem, 3vw, 2rem) 0;
 }
 @media (min-width: 992px) {
     .bp-main {
         display: grid;
-        grid-template-columns: 1fr 360px;
-        gap: 2.5rem;
+        grid-template-columns: 1fr 300px;
+        gap: 2rem;
         align-items: start;
     }
 }
 
-/* Products Section */
+/* Products Section - wider, more columns, smaller cards */
+.bp-products-section {
+    min-width: 0;
+}
 .bp-products-section h2 {
     font-size: 1.25rem;
     font-weight: 800;
@@ -156,23 +159,32 @@
 .bp-product-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
+    gap: 1rem;
 }
-@media (min-width: 576px) {
+@media (min-width: 480px) {
+    .bp-product-grid { gap: 1.25rem; }
+}
+@media (min-width: 768px) {
     .bp-product-grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
+        gap: 1.25rem;
     }
 }
-@media (min-width: 992px) {
-    .bp-product-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-    }
-}
-@media (min-width: 1200px) {
+@media (min-width: 1024px) {
     .bp-product-grid {
         grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+}
+@media (min-width: 1280px) {
+    .bp-product-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.5rem;
+    }
+}
+@media (min-width: 1536px) {
+    .bp-product-grid {
+        grid-template-columns: repeat(6, 1fr);
     }
 }
 .bp-product-card {
@@ -306,10 +318,11 @@
 }
 .bp-about-text {
     font-size: 0.9rem;
-    line-height: 1.7;
+    line-height: 1.8;
     color: #475569;
     margin: 0;
-    text-align: justify;
+    text-align: left;
+    letter-spacing: 0.01em;
 }
 .bp-social-row {
     display: flex;
@@ -415,16 +428,16 @@
         $isNew = ($stats['total_sales'] ?? 0) == 0 && ($stats['total_reviews'] ?? 0) == 0;
     @endphp
 
-    {{-- Hero Banner --}}
-    <div class="bp-hero">
-        @if($pageSettings && $pageSettings->banner_path)
-            <img src="{{ asset('storage/' . $pageSettings->banner_path) }}" alt="">
-        @endif
+    {{-- Hero Banner - only shown when seller has custom banner (no blue block) --}}
+    @if($pageSettings && $pageSettings->banner_path)
+    <div class="bp-hero bp-hero-has-img">
+        <img src="{{ asset('storage/' . $pageSettings->banner_path) }}" alt="">
         <div class="bp-hero-overlay"></div>
     </div>
+    @endif
 
     {{-- Store Identity Card --}}
-    <div class="bp-identity">
+    <div class="bp-identity {{ ($pageSettings && $pageSettings->banner_path) ? 'has-hero' : '' }}">
         <div class="bp-identity-card">
             <div class="bp-identity-inner">
                 <div class="bp-logo">
