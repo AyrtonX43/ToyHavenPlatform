@@ -61,7 +61,7 @@ class ReviewController extends Controller
             }
         }
 
-        // Create review
+        // Create review (auto-approved so it syncs to customer page and seller product reviews)
         $review = ProductReview::create([
             'product_id' => $productId,
             'user_id' => Auth::id(),
@@ -70,13 +70,13 @@ class ReviewController extends Controller
             'review_text' => $request->review_text,
             'review_images' => $imagePaths,
             'delivery_confirmed' => $request->order_id ? true : false,
-            'status' => 'pending', // Admin approval
+            'status' => 'approved',
         ]);
 
         // Update product rating
         $this->updateProductRating($product);
 
-        return back()->with('success', 'Review submitted successfully! It will be visible after admin approval.');
+        return back()->with('success', 'Review submitted successfully!');
     }
 
     public function storeSellerReview(Request $request, $sellerId)

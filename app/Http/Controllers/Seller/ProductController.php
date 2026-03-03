@@ -7,6 +7,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -383,10 +384,16 @@ class ProductController extends Controller
     {
         $seller = Auth::user()->getSellerForDashboard();
         $product = Product::where('seller_id', $seller->id)
-            ->with(['categories', 'images', 'reviews.user', 'variations'])
+            ->with(['categories', 'images', 'variations'])
             ->findOrFail($id);
 
-        return view('seller.products.show', compact('product'));
+        // Load all reviews (approved + pending) so seller sees all customer feedback
+        $productReviews = ProductReview::where('product_id', $product->id)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('seller.products.show', compact('product', 'productReviews'));
     }
 
     /**

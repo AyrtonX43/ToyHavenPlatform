@@ -292,13 +292,13 @@
         @endif
 
         <!-- Reviews -->
-        @if($product->reviews && $product->reviews->count() > 0)
+        @if($productReviews && $productReviews->count() > 0)
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Customer Reviews ({{ $product->reviews->count() }})</h5>
+                <h5 class="mb-0">Customer Reviews ({{ $productReviews->count() }})</h5>
             </div>
             <div class="card-body">
-                @foreach($product->reviews as $review)
+                @foreach($productReviews as $review)
                     <div class="mb-3 pb-3 border-bottom">
                         <div class="d-flex justify-content-between mb-2">
                             <div>
@@ -312,7 +312,12 @@
                                     @endfor
                                 </div>
                             </div>
-                            <small class="text-muted">{{ $review->created_at->format('M d, Y') }}</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted">{{ $review->created_at->format('M d, Y') }}</small>
+                                @if($review->status === 'pending')
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">Pending</span>
+                                @endif
+                            </div>
                         </div>
                         @if($review->review_text)
                             <p class="mb-2">{{ $review->review_text }}</p>
@@ -375,13 +380,14 @@
                         <strong>{{ number_format($product->sales_count ?? 0) }}</strong>
                     </div>
                 </div>
-                @if($product->reviews && $product->reviews->count() > 0)
+                @php $approvedReviews = $productReviews->where('status', 'approved'); @endphp
+                @if($approvedReviews->count() > 0)
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">Average Rating:</span>
                         <strong>
                             @php
-                                $avgRating = $product->reviews->avg('rating');
+                                $avgRating = $approvedReviews->avg('rating');
                             @endphp
                             {{ number_format($avgRating, 1) }}/5.0
                         </strong>
