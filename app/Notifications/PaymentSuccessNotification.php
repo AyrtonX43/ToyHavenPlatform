@@ -30,9 +30,9 @@ class PaymentSuccessNotification extends Notification implements ShouldQueue
         $this->order->load(['items', 'seller']);
         
         $message = (new MailMessage)
-            ->subject('Payment Successful - Order #' . $this->order->order_number)
+            ->subject('Payment Successful - Receipt for Order #' . $this->order->order_number)
             ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('Your payment has been successfully processed.')
+            ->line('Your payment has been successfully processed. Your official receipt is attached to this email.')
             ->line('**Order Number:** ' . $this->order->order_number)
             ->line('**Total Amount:** ₱' . number_format($this->order->total, 2))
             ->line('**Payment Method:** ' . strtoupper($this->order->payment_method))
@@ -46,6 +46,7 @@ class PaymentSuccessNotification extends Notification implements ShouldQueue
         $message->line('')
             ->line('Your order is now being processed and will be shipped soon.')
             ->action('View Order Details', route('orders.show', $this->order->id))
+            ->line('Please find your official ToyHaven receipt attached to this email.')
             ->line('Thank you for shopping with ToyHaven!');
 
         if ($this->order->hasReceipt()) {

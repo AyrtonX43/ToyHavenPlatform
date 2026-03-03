@@ -60,6 +60,7 @@ class ReceiptService
     {
         $order->load(['user', 'seller', 'items.product']);
         
+        $logoPath = public_path('images/logo.png');
         $data = [
             'order' => $order,
             'receiptNumber' => $order->receipt_number,
@@ -68,6 +69,7 @@ class ReceiptService
             'companyAddress' => config('app.company_address', 'Philippines'),
             'companyPhone' => config('app.company_phone', ''),
             'companyEmail' => config('app.company_email', config('mail.from.address')),
+            'logoPath' => file_exists($logoPath) ? $logoPath : null,
         ];
 
         return Pdf::loadView('pdf.receipt', $data)

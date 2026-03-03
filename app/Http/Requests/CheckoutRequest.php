@@ -32,7 +32,7 @@ class CheckoutRequest extends FormRequest
             'shipping_barangay' => 'required|string|max:100',
             'shipping_postal_code' => 'required|string|max:10',
             'shipping_notes' => 'nullable|string|max:500',
-            'payment_method' => 'required|string|in:card,gcash,paymaya',
+            'payment_method' => 'required|string|in:card,gcash,paymaya,qrph',
         ];
     }
 

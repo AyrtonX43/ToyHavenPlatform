@@ -239,9 +239,11 @@ class CheckoutController extends Controller
                     'payment_status' => 'pending',
                     'payment_method' => $request->payment_method,
                     'shipping_address' => normalizePhilippineText($request->shipping_address),
+                    'shipping_region' => normalizePhilippineText($request->shipping_region ?? ''),
                     'shipping_phone' => $request->shipping_phone,
                     'shipping_city' => normalizePhilippineText($request->shipping_city),
                     'shipping_province' => normalizePhilippineText($request->shipping_province),
+                    'shipping_barangay' => normalizePhilippineText($request->shipping_barangay ?? ''),
                     'shipping_postal_code' => $request->shipping_postal_code,
                     'shipping_notes' => normalizePhilippineText($request->shipping_notes),
                 ]);

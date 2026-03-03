@@ -82,8 +82,14 @@
             </div>
             <div class="card-body">
                 <p><strong>Address:</strong> {{ $order->shipping_address }}</p>
-                <p><strong>City:</strong> {{ $order->shipping_city }}</p>
+                @if($order->shipping_barangay ?? null)
+                    <p><strong>Barangay:</strong> {{ $order->shipping_barangay }}</p>
+                @endif
+                <p><strong>City/Municipality:</strong> {{ $order->shipping_city }}</p>
                 <p><strong>Province:</strong> {{ $order->shipping_province }}</p>
+                @if($order->shipping_region ?? null)
+                    <p><strong>Region:</strong> {{ $order->shipping_region }}</p>
+                @endif
                 <p><strong>Postal Code:</strong> {{ $order->shipping_postal_code }}</p>
                 <p><strong>Phone:</strong> {{ $order->shipping_phone }}</p>
                 @if($order->shipping_notes)

@@ -174,14 +174,26 @@
                     <div class="info-label">Address:</div>
                     <div class="info-value">{{ $order->shipping_address }}</div>
                 </div>
+                @if($order->shipping_barangay ?? null)
                 <div class="info-row">
-                    <div class="info-label">City:</div>
+                    <div class="info-label">Barangay:</div>
+                    <div class="info-value">{{ $order->shipping_barangay }}</div>
+                </div>
+                @endif
+                <div class="info-row">
+                    <div class="info-label">City/Municipality:</div>
                     <div class="info-value">{{ $order->shipping_city }}</div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">Province:</div>
                     <div class="info-value">{{ $order->shipping_province }}</div>
                 </div>
+                @if($order->shipping_region ?? null)
+                <div class="info-row">
+                    <div class="info-label">Region:</div>
+                    <div class="info-value">{{ $order->shipping_region }}</div>
+                </div>
+                @endif
                 <div class="info-row">
                     <div class="info-label">Postal Code:</div>
                     <div class="info-value">{{ $order->shipping_postal_code }}</div>

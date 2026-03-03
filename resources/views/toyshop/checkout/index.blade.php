@@ -220,7 +220,7 @@
                         <div class="step-icon">3</div>
                         <h3 class="step-title">Payment</h3>
                     </div>
-                    <input type="hidden" name="payment_method" value="card">
+                    <input type="hidden" name="payment_method" value="qrph">
                     <div class="d-flex align-items-center gap-3 p-3 rounded" style="background: #f0fdfa;">
                         <i class="bi bi-shield-lock fs-2 text-primary"></i>
                         <div>

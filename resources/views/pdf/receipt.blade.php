@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Receipt - {{ $receiptNumber }}</title>
+    <title>ToyHaven Receipt - {{ $receiptNumber }}</title>
     <style>
         * {
             margin: 0;
@@ -21,13 +21,20 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #4F46E5;
+            border-bottom: 2px solid #0891b2;
             padding-bottom: 20px;
         }
+        .header-logo {
+            margin-bottom: 10px;
+        }
+        .header-logo img {
+            max-height: 50px;
+            max-width: 180px;
+        }
         .company-name {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
-            color: #4F46E5;
+            color: #0891b2;
             margin-bottom: 5px;
         }
         .company-info {
@@ -73,7 +80,7 @@
             margin: 20px 0;
         }
         th {
-            background-color: #4F46E5;
+            background-color: #0891b2;
             color: white;
             padding: 10px;
             text-align: left;
@@ -103,8 +110,8 @@
         .total-row.grand-total {
             font-size: 14px;
             font-weight: bold;
-            border-top: 2px solid #4F46E5;
-            border-bottom: 2px solid #4F46E5;
+            border-top: 2px solid #0891b2;
+            border-bottom: 2px solid #0891b2;
             margin-top: 10px;
             padding: 12px 0;
         }
@@ -137,6 +144,11 @@
 <body>
     <div class="container">
         <div class="header">
+            @if($logoPath ?? false)
+            <div class="header-logo">
+                <img src="{{ $logoPath }}" alt="ToyHaven Logo">
+            </div>
+            @endif
             <div class="company-name">{{ $companyName }}</div>
             <div class="company-info">
                 {{ $companyAddress }}<br>
@@ -180,7 +192,10 @@
                     <div class="info-label">Shipping Address:</div>
                     <div class="info-value">
                         {{ $order->shipping_address }}<br>
-                        {{ $order->shipping_city }}, {{ $order->shipping_province }} {{ $order->shipping_postal_code }}<br>
+                        @if($order->shipping_barangay ?? null)
+                            {{ $order->shipping_barangay }}, 
+                        @endif
+                        {{ $order->shipping_city }}, {{ $order->shipping_province }}{{ ($order->shipping_region ?? null) ? ', ' . $order->shipping_region : '' }} {{ $order->shipping_postal_code }}<br>
                         Phone: {{ $order->shipping_phone }}
                     </div>
                 </div>
@@ -197,16 +212,23 @@
         <table>
             <thead>
                 <tr>
-                    <th>Item</th>
-                    <th class="text-center">Quantity</th>
+                    <th>#</th>
+                    <th>Product Name</th>
+                    <th class="text-center">Qty</th>
                     <th class="text-right">Unit Price</th>
                     <th class="text-right">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($order->items as $item)
+                @foreach($order->items as $index => $item)
                 <tr>
-                    <td>{{ $item->product_name }}</td>
+                    <td>{{ $index + 1 }}</td>
+                    <td>
+                        <strong>{{ $item->product_name }}</strong>
+                        @if($item->product && $item->product->sku)
+                            <br><small style="color:#666;">SKU: {{ $item->product->sku }}</small>
+                        @endif
+                    </td>
                     <td class="text-center">{{ $item->quantity }}</td>
                     <td class="text-right">₱{{ number_format($item->price, 2) }}</td>
                     <td class="text-right">₱{{ number_format($item->subtotal, 2) }}</td>
