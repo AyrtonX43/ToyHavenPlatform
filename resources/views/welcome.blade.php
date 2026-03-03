@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-    /* Toys and Joy style - clean, modern toy store (Template Monster 471052 inspired) */
+    /* Toys and Joy style - clean, modern toy store */
     .hero-section {
         background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 40%, #fef3c7 100%);
         color: #1e293b;

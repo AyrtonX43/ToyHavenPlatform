@@ -4,9 +4,10 @@
 
 @push('styles')
 <style>
-    .business-page { background: #fafafa; min-height: 100vh; padding: 0 0 3rem; }
+    /* Business page - professional layout with original brand colors */
+    .business-page { background: linear-gradient(180deg, #f1f5f9 0%, #ffffff 120px); min-height: 100vh; padding: 0 0 3rem; }
     .business-hero {
-        background: #1a1a1a;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
         color: #fff;
         padding: 2rem 0 2.5rem;
         margin-bottom: -1.5rem;
@@ -14,72 +15,72 @@
     }
     .business-logo-wrap {
         width: 100px; height: 100px;
-        border-radius: 12px;
+        border-radius: 14px;
         overflow: hidden;
-        border: 2px solid rgba(255,255,255,0.15);
-        background: rgba(255,255,255,0.06);
+        border: 3px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.08);
         flex-shrink: 0;
     }
     .business-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
     .business-logo-wrap .placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; opacity: 0.5; }
-    .business-name { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
-    .business-meta { font-size: 0.875rem; opacity: 0.8; }
+    .business-name { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .business-meta { font-size: 0.875rem; opacity: 0.85; }
     .business-meta i { opacity: 0.7; margin-right: 0.35rem; }
     .rating-stars { color: #fbbf24; font-size: 0.95rem; }
-    .rating-badge { background: rgba(251, 191, 36, 0.15); color: #fbbf24; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
-    .about-us-text { text-align: justify; line-height: 1.75; color: #555; font-size: 0.95rem; }
-    .section-card { background: #fff; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+    .rating-badge { background: rgba(251, 191, 36, 0.2); color: #fbbf24; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+    .about-us-text { text-align: justify; line-height: 1.75; color: #475569; font-size: 0.95rem; }
+    .section-card { background: #fff; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; }
     .section-card .card-body { padding: 1.5rem 1.5rem; }
-    .section-title { font-size: 0.9rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .section-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
     .social-icon-btn {
-        width: 40px; height: 40px;
-        border-radius: 8px;
+        width: 42px; height: 42px;
+        border-radius: 10px;
         display: inline-flex; align-items: center; justify-content: center;
         font-size: 1.1rem;
-        transition: opacity 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
-    .social-icon-btn:hover { opacity: 0.9; }
+    .social-icon-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
     .social-icon-btn.facebook { background: #1877f2; color: #fff; }
     .social-icon-btn.instagram { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: #fff; }
     .social-icon-btn.tiktok { background: #000; color: #fff; }
-    .social-icon-btn.other { background: #666; color: #fff; }
+    .social-icon-btn.other { background: #64748b; color: #fff; }
     .social-icon-btn.twitter { background: #1da1f2; color: #fff; }
     .social-icon-btn.youtube { background: #ff0000; color: #fff; }
     .stat-box {
         background: #fff;
-        border-radius: 10px;
-        border: 1px solid #eee;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
         padding: 1.25rem 1rem;
         text-align: center;
         transition: all 0.2s;
     }
-    .stat-box:hover { border-color: #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .stat-box .value { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; color: #1a1a1a; }
-    .stat-box .label { font-size: 0.8rem; color: #666; font-weight: 500; margin-top: 0.25rem; }
+    .stat-box:hover { border-color: #0ea5e9; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1); }
+    .stat-box .value { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    .stat-box .label { font-size: 0.8rem; color: #64748b; font-weight: 500; margin-top: 0.25rem; }
     .product-grid-card {
         background: #fff;
-        border-radius: 10px;
-        border: 1px solid #eee;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
         overflow: hidden;
-        transition: all 0.2s ease;
+        transition: all 0.25s ease;
         cursor: pointer;
     }
-    .product-grid-card:hover { border-color: #ddd; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-    .product-grid-card .img-wrap { height: 200px; overflow: hidden; background: #f8f8f8; }
-    .product-grid-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.25s; }
-    .product-grid-card:hover .img-wrap img { transform: scale(1.03); }
+    .product-grid-card:hover { border-color: #0ea5e9; box-shadow: 0 8px 24px rgba(14, 165, 233, 0.12); transform: translateY(-2px); }
+    .product-grid-card .img-wrap { height: 200px; overflow: hidden; background: #f8fafc; }
+    .product-grid-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .product-grid-card:hover .img-wrap img { transform: scale(1.04); }
     .product-grid-card .card-body { padding: 1.25rem; }
-    .product-grid-card .card-title { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; line-height: 1.4; }
-    .product-grid-card .price { font-size: 1rem; font-weight: 600; color: #1a1a1a; }
+    .product-grid-card .card-title { font-size: 0.95rem; font-weight: 600; color: #0f172a; line-height: 1.4; }
+    .product-grid-card .price { font-size: 1.05rem; font-weight: 700; color: #0ea5e9; }
     .review-item {
-        background: #fafafa;
-        border-radius: 8px;
+        background: #f8fafc;
+        border-radius: 12px;
         padding: 1rem 1.25rem;
-        border: 1px solid #eee;
+        border: 1px solid #e2e8f0;
         margin-bottom: 0.75rem;
     }
-    .products-heading { font-size: 1.15rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1rem; }
-    .reviews-heading { font-size: 1rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; }
+    .products-heading { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; }
+    .reviews-heading { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; }
 </style>
 @endpush
 
@@ -196,7 +197,7 @@
     <div class="row mb-4 g-3">
         <div class="col-6 col-lg-3">
             <div class="stat-box">
-                <div class="value">{{ $stats['total_products'] }}</div>
+                <div class="value text-primary">{{ $stats['total_products'] }}</div>
                 <div class="label">Products</div>
             </div>
         </div>
