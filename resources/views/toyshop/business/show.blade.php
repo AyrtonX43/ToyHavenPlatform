@@ -33,12 +33,12 @@
     pointer-events: none;
 }
 
-/* Store Identity Card - full width, maximized */
+/* Store Identity Card - full width */
 .bp-identity {
     width: 100%;
-    max-width: 1920px;
+    max-width: none;
     margin: 0 auto;
-    padding: 1.5rem clamp(1rem, 4vw, 3rem) 0;
+    padding: 1.5rem clamp(1.5rem, 5vw, 4rem) 0;
 }
 .bp-identity.has-hero { margin-top: -60px; }
 .bp-identity-card {
@@ -131,23 +131,23 @@
     color: #b45309;
 }
 
-/* Main Content Grid - full width, maximized */
+/* Main Content Grid - full width */
 .bp-main {
     width: 100%;
-    max-width: 1920px;
+    max-width: none;
     margin: 0 auto;
-    padding: 2rem clamp(1rem, 4vw, 3rem) 0;
+    padding: 2rem clamp(1.5rem, 5vw, 4rem) 0;
 }
 @media (min-width: 992px) {
     .bp-main {
         display: grid;
-        grid-template-columns: 1fr 280px;
-        gap: 2rem;
+        grid-template-columns: 1fr 340px;
+        gap: 2.5rem;
         align-items: start;
     }
 }
 
-/* Products Section - centered layout, responsive grid */
+/* Products Section - full width, centered, larger cards */
 .bp-products-section {
     min-width: 0;
     width: 100%;
@@ -161,25 +161,24 @@
 }
 .bp-product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
     justify-items: center;
     align-items: start;
 }
-@media (min-width: 640px) {
+@media (min-width: 768px) {
     .bp-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.75rem;
     }
 }
-@media (min-width: 1024px) {
+@media (min-width: 1200px) {
     .bp-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     }
 }
 .bp-product-card {
     width: 100%;
-    max-width: 260px;
     background: #fff;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
@@ -197,7 +196,6 @@
 }
 .bp-product-img {
     aspect-ratio: 1;
-    max-height: 220px;
     background: #f8fafc;
     overflow: hidden;
     display: flex;
@@ -314,19 +312,13 @@
     padding: 1.25rem 1.5rem;
 }
 .bp-about-text {
-    font-size: 0.875rem;
-    line-height: 1.7;
+    font-size: 0.9rem;
+    line-height: 1.75;
     color: #475569;
     margin: 0;
     text-align: justify;
     letter-spacing: 0.02em;
-    max-height: 180px;
-    overflow-y: auto;
-    padding-right: 0.5rem;
 }
-.bp-about-text::-webkit-scrollbar { width: 6px; }
-.bp-about-text::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
-.bp-about-text::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 .bp-social-row {
     display: flex;
     flex-wrap: wrap;

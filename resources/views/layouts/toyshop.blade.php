@@ -468,9 +468,12 @@
             .navbar-brand img { height: 26px; }
             .search-input { font-size: 0.875rem; padding: 0.625rem 0.75rem; }
         }
+
+        /* Business page: force full width */
+        body.page-business-toyshop main { max-width: none !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
     </style>
 </head>
-<body>
+<body class="{{ request()->routeIs('toyshop.business.show') ? 'page-business-toyshop' : '' }}">
     <!-- Navigation -->
     @php
         $currentRoute = request()->route() ? request()->route()->getName() : null;
