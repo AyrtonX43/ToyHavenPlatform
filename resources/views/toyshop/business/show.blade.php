@@ -8,7 +8,7 @@
 .bp-wrapper {
     min-height: 100vh;
     width: 100%;
-    max-width: 100%;
+    max-width: 100vw;
     background: #f8fafc;
     padding-bottom: 4rem;
 }
@@ -33,12 +33,12 @@
     pointer-events: none;
 }
 
-/* Store Identity Card - full width */
+/* Store Identity Card - full width, maximized */
 .bp-identity {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 1.5rem clamp(1.5rem, 5vw, 4rem) 0;
+    padding: 1.5rem clamp(1.5rem, 4vw, 3rem) 0;
 }
 .bp-identity.has-hero { margin-top: -60px; }
 .bp-identity-card {
@@ -131,27 +131,26 @@
     color: #b45309;
 }
 
-/* Main Content Grid - constrained width for readability */
+/* Main Content Grid - full width, maximized */
 .bp-main {
     width: 100%;
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 2rem clamp(1.5rem, 5vw, 4rem) 0;
+    padding: 2rem clamp(1.5rem, 4vw, 3rem) 0;
 }
 @media (min-width: 992px) {
     .bp-main {
         display: grid;
-        grid-template-columns: 1fr 320px;
+        grid-template-columns: 1fr 300px;
         gap: 2.5rem;
         align-items: start;
     }
 }
 
-/* Products Section - constrained width, centered layout */
+/* Products Section - full width, centered, larger cards */
 .bp-products-section {
     min-width: 0;
     width: 100%;
-    max-width: 100%;
 }
 .bp-products-section h2 {
     font-size: 1.25rem;
@@ -162,27 +161,25 @@
 }
 .bp-product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1.5rem;
-    justify-content: center;
-    justify-items: stretch;
-    align-items: start;
+    justify-items: center;
+    align-items: stretch;
 }
 @media (min-width: 768px) {
     .bp-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.75rem;
     }
 }
 @media (min-width: 1200px) {
     .bp-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
     }
 }
 .bp-product-card {
     width: 100%;
-    max-width: 280px;
-    margin: 0 auto;
     background: #fff;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
@@ -205,20 +202,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto;
+    min-height: 220px;
 }
 .bp-product-img img {
     width: 100%;
     height: 100%;
-    max-width: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
-    display: block;
-    margin: 0 auto;
     transition: transform 0.35s ease;
 }
 .bp-product-card:hover .bp-product-img img {
-    transform: scale(1.08);
+    transform: scale(1.05);
 }
 .bp-product-img .bp-no-img {
     width: 100%;
@@ -319,28 +313,16 @@
 .bp-sidebar-card .bp-card-body {
     padding: 1.25rem 1.5rem;
 }
-.bp-sidebar-card.bp-about-card .bp-card-body {
-    max-height: 280px;
+.bp-about-wrapper {
+    max-height: 200px;
     overflow-y: auto;
 }
-.bp-sidebar-card.bp-about-card .bp-card-body::-webkit-scrollbar {
-    width: 6px;
-}
-.bp-sidebar-card.bp-about-card .bp-card-body::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 3px;
-}
-.bp-sidebar-card.bp-about-card .bp-card-body::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-}
 .bp-about-text {
-    font-size: 0.875rem;
-    line-height: 1.65;
+    font-size: 0.9rem;
+    line-height: 1.6;
     color: #475569;
     margin: 0;
     text-align: justify;
-    text-justify: inter-word;
     hyphens: auto;
     letter-spacing: 0.01em;
 }
@@ -584,10 +566,12 @@
             @endphp
 
             @if(($pageSettings && ($pageSettings->business_description ?? null)) || $seller->description)
-                <div class="bp-sidebar-card bp-about-card">
+                <div class="bp-sidebar-card">
                     <div class="bp-card-header">About</div>
                     <div class="bp-card-body">
-                        <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
+                        <div class="bp-about-wrapper">
+                            <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
+                        </div>
                     </div>
                 </div>
             @endif
