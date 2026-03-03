@@ -17,8 +17,15 @@ class VerifyEmailController extends Controller
     {
         $user = $request->user();
 
+        $redirectTo = match (true) {
+            $user->isAdmin() => route('admin.analytics.index'),
+            $user->isModerator() => route('moderator.dashboard'),
+            $user->isSeller() || $user->canAccessSellerDashboard() => route('seller.dashboard'),
+            default => route('dashboard', absolute: false),
+        };
+
         if ($user->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false))
+            return redirect()->intended($redirectTo)
                 ->with('info', 'Your email is already verified.');
         }
 
@@ -31,7 +38,7 @@ class VerifyEmailController extends Controller
                     'email' => $user->email,
                 ]);
 
-                return redirect()->intended(route('dashboard', absolute: false))
+                return redirect()->intended($redirectTo)
                     ->with('success', 'Your email has been verified successfully!');
             }
         } catch (\Exception $e) {
@@ -45,6 +52,6 @@ class VerifyEmailController extends Controller
                 ->with('error', 'Failed to verify email. Please try again or contact support.');
         }
 
-        return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        return redirect()->intended($redirectTo . '?verified=1');
     }
 }

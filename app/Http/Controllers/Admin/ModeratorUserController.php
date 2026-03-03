@@ -79,8 +79,9 @@ class ModeratorUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'moderator',
-            'email_verified_at' => now(),
         ]);
+        $moderator->email_verified_at = now();
+        $moderator->save();
 
         return redirect()->route('admin.moderators.index')
             ->with('success', 'Trade moderator account created successfully. They can log in at ' . url('/login') . ' with email: ' . $moderator->email);

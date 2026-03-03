@@ -53,8 +53,8 @@ class AuthenticatedSessionController extends Controller
                 ->with('error', 'Your business account has been suspended. Please contact support for more information.');
         }
 
-        // If email is not verified, send verification link now and show the notice
-        if (!$user->hasVerifiedEmail()) {
+        // Skip email verification for admin and moderator - they're created by admin with trusted credentials
+        if (!$user->isAdmin() && !$user->isModerator() && !$user->hasVerifiedEmail()) {
             $mailDriver = config('mail.default');
             $actuallySends = !in_array($mailDriver, ['log', 'array'], true);
 
