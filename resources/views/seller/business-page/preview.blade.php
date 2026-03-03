@@ -69,7 +69,6 @@
 .bp-sidebar-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .bp-sidebar-card .bp-card-header { padding: 1rem 1.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
 .bp-sidebar-card .bp-card-body { padding: 1.25rem 1.5rem; }
-.bp-about-wrapper { max-height: 200px; overflow-y: auto; }
 .bp-about-text { font-size: 0.9rem; line-height: 1.6; color: #475569; margin: 0; text-align: justify; hyphens: auto; letter-spacing: 0.01em; }
 .bp-social-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .bp-social-btn { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #fff; text-decoration: none; transition: transform 0.2s; }
@@ -88,8 +87,9 @@
 .bp-review-stars { color: #f59e0b; font-size: 0.8rem; margin-left: auto; }
 .bp-review-text { font-size: 0.85rem; color: #64748b; line-height: 1.55; margin: 0; }
 .bp-review-date { font-size: 0.75rem; color: #94a3b8; }
-.bp-reviews-empty { text-align: center; padding: 2rem; color: #94a3b8; }
+.bp-reviews-empty { text-align: center; padding: 3rem 2rem; color: #94a3b8; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .bp-reviews-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; opacity: 0.5; }
+.bp-reviews-card .bp-card-body { min-height: 200px; }
 .bp-preview-info { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 1rem 1.5rem; margin: 0 1.5rem 1.5rem; font-size: 0.9rem; color: #0c4a6e; }
 .bp-preview-info strong { color: #0369a1; }
 </style>
@@ -213,9 +213,7 @@
                 <div class="bp-sidebar-card">
                     <div class="bp-card-header">About</div>
                     <div class="bp-card-body">
-                        <div class="bp-about-wrapper">
-                            <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
-                        </div>
+                        <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
                     </div>
                 </div>
             @endif
@@ -241,7 +239,7 @@
                 </div>
             @endif
 
-            <div class="bp-sidebar-card">
+            <div class="bp-sidebar-card bp-reviews-card">
                 <div class="bp-card-header">Recent Reviews</div>
                 <div class="bp-card-body">
                     @php $previewReviews = $seller->reviews()->with('user')->orderBy('created_at', 'desc')->limit(5)->get(); @endphp

@@ -469,9 +469,8 @@
             .search-input { font-size: 0.875rem; padding: 0.625rem 0.75rem; }
         }
 
-        /* Business page: force full width, maximize viewport */
+        /* Business page: force full width for main content only */
         body.page-business-toyshop main { max-width: none !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
-        body.page-business-toyshop .container { max-width: 100% !important; }
     </style>
 </head>
 <body class="{{ request()->routeIs('toyshop.business.show') ? 'page-business-toyshop' : '' }}">

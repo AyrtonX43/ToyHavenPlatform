@@ -313,10 +313,6 @@
 .bp-sidebar-card .bp-card-body {
     padding: 1.25rem 1.5rem;
 }
-.bp-about-wrapper {
-    max-height: 200px;
-    overflow-y: auto;
-}
 .bp-about-text {
     font-size: 0.9rem;
     line-height: 1.6;
@@ -404,15 +400,23 @@
 }
 .bp-reviews-empty {
     text-align: center;
-    padding: 2rem;
+    padding: 3rem 2rem;
     color: #94a3b8;
     font-size: 0.9rem;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 .bp-reviews-empty i {
     font-size: 2.5rem;
     display: block;
     margin-bottom: 0.75rem;
     opacity: 0.5;
+}
+.bp-reviews-card .bp-card-body {
+    min-height: 200px;
 }
 
 /* Pagination */
@@ -569,9 +573,7 @@
                 <div class="bp-sidebar-card">
                     <div class="bp-card-header">About</div>
                     <div class="bp-card-body">
-                        <div class="bp-about-wrapper">
-                            <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
-                        </div>
+                        <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
                     </div>
                 </div>
             @endif
@@ -598,7 +600,7 @@
                 </div>
             @endif
 
-            <div class="bp-sidebar-card">
+            <div class="bp-sidebar-card bp-reviews-card">
                 <div class="bp-card-header">Recent Reviews</div>
                 <div class="bp-card-body">
                     @if($recentReviews->count() > 0)
