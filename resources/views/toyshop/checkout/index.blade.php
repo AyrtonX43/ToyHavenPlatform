@@ -253,24 +253,13 @@
                             <select id="savedAddressSelect" class="form-select" onchange="loadSavedAddress()">
                                 <option value="">-- Select an address --</option>
                                 @foreach($userAddresses as $addr)
-                                    @php
-                                        $ar = $addr->region ?? '';
-                                        $ap = $addr->province ?? '';
-                                        $ac = $addr->city ?? '';
-                                        $ab = $addr->barangay ?? '';
-                                        $ar = $ar ? normalizePhilippineText($ar) : '';
-                                        $ap = $ap ? normalizePhilippineText($ap) : '';
-                                        $ac = $ac ? normalizePhilippineText($ac) : '';
-                                        $ab = $ab ? normalizePhilippineText($ab) : '';
-                                        if (!$ar && $ap === 'Metro Manila') { $ar = 'National Capital Region'; }
-                                    @endphp
                                     <option value="{{ $addr->id }}" 
-                                            data-address="{{ e($addr->address) }}"
-                                            data-region="{{ e($ar) }}"
-                                            data-province="{{ e($ap) }}"
-                                            data-city="{{ e($ac) }}"
-                                            data-barangay="{{ e($ab) }}"
-                                            data-postal="{{ e($addr->postal_code ?? '') }}"
+                                            data-address="{{ $addr->address }}"
+                                            data-region="{{ $addr->region ?? '' }}"
+                                            data-province="{{ $addr->province }}"
+                                            data-city="{{ $addr->city }}"
+                                            data-barangay="{{ $addr->barangay ?? '' }}"
+                                            data-postal="{{ $addr->postal_code }}"
                                             {{ $addr->is_default || ($defaultAddr && $defaultAddr->id == $addr->id) ? 'selected' : '' }}>
                                         {{ $addr->label ?? 'Address ' . $loop->iteration }} 
                                         @if($addr->is_default) (Default) @endif
@@ -426,14 +415,7 @@
     }
 })();
 
-function phNormalizeText(text) {
-    if (!text) return '';
-    const charMap = { '\u00f1':'n','\u00d1':'N','\u00e1':'a','\u00c1':'A','\u00e9':'e','\u00c9':'E','\u00ed':'i','\u00cd':'I','\u00f3':'o','\u00d3':'O','\u00fa':'u','\u00da':'U','\u00fc':'u','\u00dc':'U' };
-    let n = String(text).trim();
-    for (const c in charMap) n = n.split(c).join(charMap[c]);
-    return n.replace(/\u00f1/g,'n').replace(/\u00d1/g,'N').replace(/\u00e1/g,'a').replace(/\u00e9/g,'e').replace(/\u00ed/g,'i').replace(/\u00f3/g,'o').replace(/\u00fa/g,'u');
-}
-
+// Load saved address functionality - syncs with Region/Province/City/Barangay dropdowns
 function loadSavedAddress() {
     const select = document.getElementById('savedAddressSelect');
     if (!select) return;
@@ -446,7 +428,7 @@ function loadSavedAddress() {
     const regionEl = document.getElementById('shipping_region');
     
     if (value === 'new') {
-        if (addrEl) addrEl.value = '';
+        addrEl.value = '';
         if (postalEl) postalEl.value = '';
         window.phAddressPrefill = window.phAddressPrefill || {};
         delete window.phAddressPrefill['shipping_'];
@@ -454,46 +436,36 @@ function loadSavedAddress() {
             regionEl.value = '';
             regionEl.dispatchEvent(new Event('change'));
         }
-        if (addrEl) addrEl.focus();
+        addrEl.focus();
         return;
     }
     
     if (value === '') return;
     
-    let region = (selectedOption.getAttribute('data-region') || '').trim();
-    let province = (selectedOption.getAttribute('data-province') || '').trim();
-    const city = (selectedOption.getAttribute('data-city') || '').trim();
-    const barangay = (selectedOption.getAttribute('data-barangay') || '').trim();
-    const address = selectedOption.getAttribute('data-address') || '';
+    const address = selectedOption.getAttribute('data-address');
+    const region = selectedOption.getAttribute('data-region') || '';
+    const province = selectedOption.getAttribute('data-province') || '';
+    const city = selectedOption.getAttribute('data-city') || '';
+    const barangay = selectedOption.getAttribute('data-barangay') || '';
     const postal = selectedOption.getAttribute('data-postal') || '';
-    
-    if (!region && province === 'Metro Manila') region = 'National Capital Region';
     
     if (addrEl) addrEl.value = address || '';
     if (postalEl) postalEl.value = postal || '';
     
     window.phAddressPrefill = window.phAddressPrefill || {};
-    if (region || province || city || barangay) {
+    if (region) {
         window.phAddressPrefill['shipping_'] = { region, province, city, barangay };
         if (regionEl && regionEl.options.length > 1) {
-            const r = phNormalizeText(region);
-            let matched = false;
-            for (let i = 0; i < regionEl.options.length; i++) {
-                const opt = regionEl.options[i];
-                if (!opt.value) continue;
-                const ov = phNormalizeText(opt.value);
-                if (ov === r || (ov && r && (ov.indexOf(r) >= 0 || r.indexOf(ov) >= 0))) {
-                    regionEl.value = opt.value;
+            var normalize = function(t) { return (t||'').replace(/ñ/g,'n').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u'); };
+            var r = normalize(region);
+            if (/^NCR$/i.test(r)) r = 'National Capital Region';
+            var opts = regionEl.querySelectorAll('option[value]');
+            for (var i = 0; i < opts.length; i++) {
+                var ov = opts[i].value;
+                if (ov && (normalize(ov) === r || ov === r || (/National Capital Region/i.test(ov) && /^NCR$/i.test(region)))) {
+                    regionEl.value = ov;
                     regionEl.dispatchEvent(new Event('change'));
-                    matched = true;
                     break;
-                }
-            }
-            if (!matched && r === 'National Capital Region') {
-                const ncrOpt = regionEl.querySelector('option[value="National Capital Region"], option[value="NCR"]');
-                if (ncrOpt) {
-                    regionEl.value = ncrOpt.value;
-                    regionEl.dispatchEvent(new Event('change'));
                 }
             }
         }
@@ -502,17 +474,13 @@ function loadSavedAddress() {
     }
 }
 
-function initSavedAddressOnLoad() {
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('savedAddressSelect');
     if (select && select.value && select.value !== '' && select.value !== 'new') {
         loadSavedAddress();
     }
-}
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSavedAddressOnLoad);
-} else {
-    initSavedAddressOnLoad();
-}
+});
 </script>
 @endpush
 @endsection

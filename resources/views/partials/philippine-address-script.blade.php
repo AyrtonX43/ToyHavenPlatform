@@ -42,22 +42,34 @@
     function normalizeText(text) {
         if (!text) return text;
         const charMap = { 'ñ':'n','Ñ':'N','á':'a','Á':'A','é':'e','É':'E','í':'i','Í':'I','ó':'o','Ó':'O','ú':'u','Ú':'U','ü':'u','Ü':'U' };
-        let n = String(text).trim();
+        let n = text;
         for (let c in charMap) n = n.split(c).join(charMap[c]);
         return n;
     }
 
-    function findOption(select, prefillValue) {
-        if (!prefillValue || !select) return null;
-        const v = normalizeText(prefillValue);
+    function resolveRegionValue(val) {
+        if (!val) return val;
+        const v = normalizeText(String(val).trim());
+        if (/^NCR$/i.test(v) || /^National Capital Region$/i.test(v)) return 'National Capital Region';
+        return v;
+    }
+
+    function findMatchingOption(select, value) {
+        if (!value || !select) return null;
+        const n = normalizeText(String(value).trim());
         const opts = select.querySelectorAll('option[value]');
         for (let i = 0; i < opts.length; i++) {
-            const ov = normalizeText(opts[i].value);
-            if (ov === v) return opts[i].value;
+            const optVal = opts[i].value;
+            if (!optVal) continue;
+            if (normalizeText(optVal) === n) return optVal;
+            if (optVal.toLowerCase() === n.toLowerCase()) return optVal;
         }
         for (let i = 0; i < opts.length; i++) {
-            const ov = normalizeText(opts[i].value);
-            if (ov && v && (ov.indexOf(v) >= 0 || v.indexOf(ov) >= 0)) return opts[i].value;
+            const optVal = opts[i].value;
+            if (!optVal) continue;
+            const optNorm = normalizeText(optVal);
+            if (optNorm.replace(/^(City|Municipality) of\s+/i, '').trim() === n) return optVal;
+            if (optNorm === n.replace(/^(City|Municipality) of\s+/i, '').trim()) return optVal;
         }
         return null;
     }
@@ -75,11 +87,8 @@
                 });
                 const pf = getPrefill();
                 if (pf.region) {
-                    let match = findOption(regionSelect, pf.region);
-                    if (!match && (normalizeText(pf.region) === 'NCR' || normalizeText(pf.region) === 'National Capital Region')) {
-                        const ncrOpt = regionSelect.querySelector('option[value="National Capital Region"], option[value="NCR"]');
-                        if (ncrOpt) match = ncrOpt.value;
-                    }
+                    const r = resolveRegionValue(pf.region);
+                    const match = findMatchingOption(regionSelect, pf.region) || findMatchingOption(regionSelect, r) || (regionSelect.querySelector('option[value="' + r + '"]') ? r : null);
                     if (match) {
                         regionSelect.value = match;
                         regionSelect.dispatchEvent(new Event('change'));
@@ -119,9 +128,9 @@
                     citySelect.disabled = false;
                     const pf = getPrefill();
                     if (pf.city) {
-                        const match = findOption(citySelect, pf.city);
-                        if (match) {
-                            citySelect.value = match;
+                        const v = findMatchingOption(citySelect, pf.city);
+                        if (v) {
+                            citySelect.value = v;
                             citySelect.dispatchEvent(new Event('change'));
                         }
                     }
@@ -143,7 +152,7 @@
                     });
                     const pf = getPrefill();
                     if (pf.province) {
-                        const v = normalizeText(pf.province);
+                        const v = findMatchingOption(provinceSelect, pf.province) || normalizeText(pf.province);
                         if (provinceSelect.querySelector('option[value="' + v + '"]')) {
                             provinceSelect.value = v;
                             provinceSelect.dispatchEvent(new Event('change'));
@@ -174,9 +183,9 @@
                 citySelect.disabled = false;
                 const pf = getPrefill();
                 if (pf.city) {
-                    const match = findOption(citySelect, pf.city);
-                    if (match) {
-                        citySelect.value = match;
+                    const v = findMatchingOption(citySelect, pf.city);
+                    if (v) {
+                        citySelect.value = v;
                         citySelect.dispatchEvent(new Event('change'));
                     }
                 }
@@ -202,8 +211,8 @@
                 barangaySelect.disabled = false;
                 const pf = getPrefill();
                 if (pf.barangay) {
-                    const match = findOption(barangaySelect, pf.barangay);
-                    if (match) barangaySelect.value = match;
+                    const v = findMatchingOption(barangaySelect, pf.barangay);
+                    if (v) barangaySelect.value = v;
                 }
                 delete window.phAddressPrefill[prefix];
             })

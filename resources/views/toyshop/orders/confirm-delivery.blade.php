@@ -1,37 +1,30 @@
 @extends('layouts.toyshop')
 
-@section('title', 'Confirm Delivery - ToyHaven')
-
 @push('styles')
 <style>
-    /* Prevent layout overflow and overlay issues on confirm delivery page */
-    .confirm-delivery-page {
-        position: relative;
-        z-index: 1;
-        isolation: isolate;
-        min-height: 60vh;
+    .confirm-delivery-actions {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        padding: 1rem 0 1.5rem;
+        margin: 0 -1.5rem -1.5rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        margin-top: 1rem;
+        z-index: 10;
     }
-    .confirm-delivery-page .container {
-        max-width: 640px;
-    }
-    .confirm-delivery-page .file-input-custom {
-        padding: 0.75rem 1rem;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 10px;
-        width: 100%;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .confirm-delivery-page .file-input-custom:focus {
-        outline: none;
-        border-color: #0ea5e9;
-        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+    @media (max-width: 575px) {
+        .confirm-delivery-actions {
+            flex-direction: column;
+        }
+        .confirm-delivery-actions .btn { width: 100%; }
     }
 </style>
 @endpush
 
 @section('content')
-<div class="confirm-delivery-page">
-<div class="container px-4 py-8">
+<div class="container mx-auto px-4 py-8 pb-5">
     <div class="max-w-2xl mx-auto">
         <div class="mb-6">
             <a href="{{ route('orders.show', $order->id) }}" class="text-blue-600 hover:text-blue-800 flex items-center">
@@ -67,8 +60,8 @@
             
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-2">Proof of Delivery Photo <span class="text-red-500">*</span></label>
-                <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg" required 
-                    class="file-input-custom" id="proofImageInput">
+                <input type="file" name="proof_image" accept="image/*" required 
+                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <p class="text-xs text-gray-500 mt-1">Upload a clear photo showing the delivered package (max 5MB)</p>
                 @error('proof_image')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -86,23 +79,22 @@
                 @enderror
             </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6" style="position:relative;z-index:1;">
+            <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
                 <p class="text-sm text-blue-800">
                     <strong>Note:</strong> By confirming delivery, you acknowledge that you have received the order in good condition. 
                     You will be able to review the product after confirmation.
                 </p>
             </div>
 
-            <div class="flex gap-3">
-                <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium transition">
-                    Confirm Delivery
+            <div class="confirm-delivery-actions d-flex flex-wrap gap-3">
+                <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium transition shadow-sm">
+                    <i class="bi bi-check2-circle me-2"></i>Confirm Delivery
                 </button>
-                <a href="{{ route('orders.show', $order->id) }}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition">
-                    Cancel
+                <a href="{{ route('orders.show', $order->id) }}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition inline-flex items-center">
+                    <i class="bi bi-x-lg me-2"></i>Cancel
                 </a>
             </div>
         </form>
     </div>
-</div>
 </div>
 @endsection
