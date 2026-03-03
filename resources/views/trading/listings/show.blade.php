@@ -29,9 +29,9 @@
         font-weight: 700;
         letter-spacing: 0.02em;
         text-transform: uppercase;
-        background: linear-gradient(135deg, #0891b2, #ff8e53);
+        background: linear-gradient(135deg, #0ea5e9, #38bdf8);
         color: white;
-        box-shadow: 0 2px 8px rgba(255,107,107,0.35);
+        box-shadow: 0 2px 8px rgba(14,165,233,0.35);
     }
     
     .main-image {
@@ -40,6 +40,15 @@
         height: clamp(420px, 55vh, 600px);
         object-fit: cover;
         background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        cursor: zoom-in;
+    }
+    .image-fullscreen-modal {
+        position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95);
+        display: flex; align-items: center; justify-content: center;
+        cursor: zoom-out;
+    }
+    .image-fullscreen-modal img {
+        max-width: 95vw; max-height: 95vh; object-fit: contain;
     }
     
     .thumbnail-images {
@@ -68,8 +77,8 @@
     }
     
     .thumbnail:hover, .thumbnail.active {
-        border-color: #0891b2;
-        box-shadow: 0 0 0 2px rgba(255,107,107,0.25);
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 2px rgba(14,165,233,0.25);
     }
     
     .product-info-card {
@@ -94,7 +103,7 @@
     .product-price-large {
         font-size: 1.875rem;
         font-weight: 800;
-        color: #0891b2;
+        color: #0ea5e9;
         margin-bottom: 1.25rem;
         letter-spacing: -0.02em;
     }
@@ -116,7 +125,7 @@
         width: 52px;
         height: 52px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #0891b2, #ff8e53);
+        background: linear-gradient(135deg, #0ea5e9, #38bdf8);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -141,13 +150,13 @@
     }
     
     .btn-message {
-        background: linear-gradient(135deg, #0891b2, #ff8e53);
+        background: linear-gradient(135deg, #0ea5e9, #38bdf8);
         border: none;
         color: white;
     }
     
     .btn-message:hover {
-        background: linear-gradient(135deg, #0e7490, #06b6d4);
+        background: linear-gradient(135deg, #0284c7, #0ea5e9);
         color: white;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(8,145,178,0.35);
@@ -284,7 +293,7 @@
     }
     
     .breadcrumb-trading .breadcrumb-item a:hover {
-        color: #0891b2;
+        color: #0ea5e9;
     }
     
     .breadcrumb-trading .breadcrumb-item.active { color: #475569; font-weight: 600; }
@@ -309,7 +318,7 @@
     .suggested-listing-card:hover {
         box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         transform: translateY(-4px);
-        border-color: #0891b2;
+        border-color: #0ea5e9;
     }
     
     .make-offer-section {
@@ -325,8 +334,8 @@
     }
     
     .form-control:focus, .form-select:focus {
-        border-color: #0891b2;
-        box-shadow: 0 0 0 3px rgba(255,107,107,0.15);
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
     }
 </style>
 @endpush
@@ -358,24 +367,24 @@
                         : ($listing->image_path ? asset('storage/' . $listing->image_path) : ($productImages->count() > 0 ? asset('storage/' . $productImages->first()->image_path) : null));
                 @endphp
                 @if($mainSrc)
-                <img src="{{ $mainSrc }}" alt="{{ $listing->title }}" class="main-image" id="mainImage">
+                <img src="{{ $mainSrc }}" alt="{{ $listing->title }}" class="main-image" id="mainImage" onclick="openImageFullscreen(this.src)" title="Click to view full screen">
                 @if($useListingImages && $listingImages->count() > 1)
                 <div class="thumbnail-images">
                     @foreach($listingImages as $image)
-                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $listing->title }}" class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeMainImage('{{ asset('storage/' . $image->image_path) }}', this)">
+                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $listing->title }}" class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeMainImage('{{ asset('storage/' . $image->image_path) }}', this)" data-fullscreen-src="{{ asset('storage/' . $image->image_path) }}">
                     @endforeach
                 </div>
                 @elseif(!$useListingImages && $listing->image_path && $productImages->count() > 0)
                 <div class="thumbnail-images">
-                    <img src="{{ asset('storage/' . $listing->image_path) }}" alt="{{ $listing->title }}" class="thumbnail active" onclick="changeMainImage('{{ asset('storage/' . $listing->image_path) }}', this)">
+                    <img src="{{ asset('storage/' . $listing->image_path) }}" alt="{{ $listing->title }}" class="thumbnail active" onclick="changeMainImage('{{ asset('storage/' . $listing->image_path) }}', this)" data-fullscreen-src="{{ asset('storage/' . $listing->image_path) }}">
                     @foreach($productImages as $image)
-                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $listing->title }}" class="thumbnail" onclick="changeMainImage('{{ asset('storage/' . $image->image_path) }}', this)">
+                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $listing->title }}" class="thumbnail" onclick="changeMainImage('{{ asset('storage/' . $image->image_path) }}', this)" data-fullscreen-src="{{ asset('storage/' . $image->image_path) }}">
                     @endforeach
                 </div>
                 @elseif(!$useListingImages && $productImages->count() > 1)
                 <div class="thumbnail-images">
                     @foreach($productImages as $image)
-                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $listing->title }}" class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeMainImage('{{ asset('storage/' . $image->image_path) }}', this)">
+                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="{{ $listing->title }}" class="thumbnail {{ $loop->first ? 'active' : '' }}" onclick="changeMainImage('{{ asset('storage/' . $image->image_path) }}', this)" data-fullscreen-src="{{ asset('storage/' . $image->image_path) }}">
                     @endforeach
                 </div>
                 @endif
@@ -398,7 +407,7 @@
                 <h1 class="product-title-large">{{ $listing->title }}</h1>
 
                 <div class="mb-3">
-                    <span class="badge rounded-pill px-3 py-2" style="font-size: 0.8rem; font-weight: 600; background: linear-gradient(135deg, #0891b2, #ff8e53); color: white;">
+                    <span class="badge rounded-pill px-3 py-2" style="font-size: 0.8rem; font-weight: 600; background: linear-gradient(135deg, #0ea5e9, #38bdf8); color: white;">
                         <i class="bi bi-arrow-left-right me-1"></i>{{ ucfirst(str_replace('_', ' ', $listing->trade_type ?? 'Trade')) }}
                     </span>
                 </div>
@@ -423,9 +432,6 @@
                     </div>
                     <div>
                         <div class="fw-bold">{{ $listing->user->name }}</div>
-                        <small class="text-muted">
-                            <i class="bi bi-geo-alt me-1"></i>{{ $listing->user->city ?? 'Philippines' }}
-                        </small>
                     </div>
                 </div>
 
@@ -466,6 +472,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Fullscreen Image Modal -->
+    <div id="imageFullscreenModal" class="image-fullscreen-modal d-none" onclick="closeImageFullscreen()">
+        <img id="fullscreenImage" src="" alt="Full size" onclick="event.stopPropagation()">
     </div>
 
     <!-- Product Details -->
@@ -628,22 +639,28 @@
                 <h4 class="mb-4" style="font-size: 1.25rem; font-weight: 700; color: #1e1b18;">
                     <i class="bi bi-hand-thumbs-up me-2 text-primary"></i>Make an Offer
                 </h4>
+                @if(isset($offererProducts) && $offererProducts->isNotEmpty())
                 <form method="POST" action="{{ route('trading.offers.store', $listing->id) }}">
                     @csrf
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Your Product</label>
-                            <select name="product_type" class="form-select form-select-lg" required>
-                                <option value="">Select Product Type</option>
-                                <option value="user_product">My Personal Product</option>
-                                @if(Auth::user()->isSeller())
-                                <option value="seller_product">Business Product</option>
-                                @endif
+                            <label class="form-label fw-semibold">Your Product (from My Listings)</label>
+                            <select name="offered_item" class="form-select form-select-lg" required>
+                                <option value="">Select a product from your listings</option>
+                                @foreach($offererProducts as $op)
+                                <option value="{{ $op->type }}:{{ $op->product_id ?? $op->user_product_id }}" data-type="{{ $op->type }}" data-product-id="{{ $op->product_id ?? '' }}" data-user-product-id="{{ $op->user_product_id ?? '' }}">
+                                    {{ $op->name }} ({{ $op->listing_title }})
+                                </option>
+                                @endforeach
                             </select>
+                            <input type="hidden" name="product_type" id="offerProductType" value="">
+                            <input type="hidden" name="product_id" id="offerProductId" value="">
+                            <input type="hidden" name="user_product_id" id="offerUserProductId" value="">
                         </div>
-                        <div class="col-12">
+                        <div class="col-12" id="cashAmountWrap">
                             <label class="form-label fw-semibold">Cash Amount (Optional)</label>
-                            <input type="number" name="cash_amount" step="0.01" min="0" class="form-control form-control-lg" placeholder="0.00">
+                            <input type="number" name="cash_amount" id="offerCashAmount" step="0.01" min="0" class="form-control form-control-lg" placeholder="0.00">
+                            <small class="text-muted d-none" id="cashDisabledHint">Not applicable for barter-only listings</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Message (Optional)</label>
@@ -656,6 +673,12 @@
                         </div>
                     </div>
                 </form>
+                @else
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Add products to your listings first.</strong> To make an offer, you need to have at least one active listing in <a href="{{ route('trading.listings.my') }}">My Listings</a>. Create a listing with the product you want to offer.
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -665,11 +688,90 @@
 </div>
 
 <script>
+var listingThumbnails = [];
+var slideshowInterval = null;
+
 function changeMainImage(src, element) {
-    document.getElementById('mainImage').src = src;
+    var main = document.getElementById('mainImage');
+    if (main) main.src = src;
     document.querySelectorAll('.thumbnail').forEach(thumb => thumb.classList.remove('active'));
-    element.classList.add('active');
+    if (element) element.classList.add('active');
 }
+
+function openImageFullscreen(src) {
+    var modal = document.getElementById('imageFullscreenModal');
+    var img = document.getElementById('fullscreenImage');
+    if (modal && img) {
+        img.src = src;
+        modal.classList.remove('d-none');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeImageFullscreen() {
+    var modal = document.getElementById('imageFullscreenModal');
+    if (modal) {
+        modal.classList.add('d-none');
+        document.body.style.overflow = '';
+    }
+}
+
+function startSlideshow() {
+    var thumbs = document.querySelectorAll('.thumbnail');
+    if (thumbs.length < 2) return;
+    clearInterval(slideshowInterval);
+    slideshowInterval = setInterval(function() {
+        var active = document.querySelector('.thumbnail.active');
+        if (!active) return;
+        var next = active.nextElementSibling;
+        if (!next || !next.classList.contains('thumbnail')) next = thumbs[0];
+        var src = next.getAttribute('data-fullscreen-src') || next.src;
+        changeMainImage(src, next);
+    }, 10000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var thumbs = document.querySelectorAll('.thumbnail');
+    thumbs.forEach(function(t) {
+        if (!t.getAttribute('data-fullscreen-src')) t.setAttribute('data-fullscreen-src', t.src);
+    });
+    startSlideshow();
+    var offerSelect = document.querySelector('select[name="offered_item"]');
+    var productTypeInput = document.getElementById('offerProductType');
+    var productIdInput = document.getElementById('offerProductId');
+    var userProductIdInput = document.getElementById('offerUserProductId');
+    var cashInput = document.getElementById('offerCashAmount');
+    var cashWrap = document.getElementById('cashAmountWrap');
+    var cashHint = document.getElementById('cashDisabledHint');
+    var isBarter = {{ ($listing->trade_type ?? '') === 'barter' ? 'true' : 'false' }};
+
+    if (offerSelect && productTypeInput) {
+        function syncOfferFields() {
+            var val = offerSelect.value;
+            if (!val) return;
+            var parts = val.split(':');
+            var type = parts[0];
+            var id = parts[1] || '';
+            productTypeInput.value = type;
+            productIdInput.value = type === 'seller_product' ? id : '';
+            userProductIdInput.value = type === 'user_product' ? id : '';
+        }
+        offerSelect.addEventListener('change', syncOfferFields);
+        var form = offerSelect.closest('form');
+        if (form) form.addEventListener('submit', syncOfferFields);
+    }
+
+    if (isBarter && cashInput && cashWrap && cashHint) {
+        cashInput.disabled = true;
+        cashInput.value = '';
+        cashInput.required = false;
+        cashHint.classList.remove('d-none');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeImageFullscreen();
+    });
+});
 </script>
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>

@@ -73,6 +73,11 @@ class TradeOfferController extends Controller
             'message' => 'nullable|string|max:1000',
         ]);
 
+        // Barter listings: cash amount must be null/0
+        if ($listing->trade_type === 'barter') {
+            $validated['cash_amount'] = null;
+        }
+
         // Validate that at least one product is provided
         if ($validated['product_type'] === 'seller_product' && !$validated['product_id']) {
             return back()->withInput()->with('error', 'Please select a product to offer.');

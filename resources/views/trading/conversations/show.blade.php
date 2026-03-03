@@ -7,7 +7,7 @@
     .chat-page { max-width: 900px; margin: 0 auto; }
     .chat-header { background: white; border-radius: 14px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
     .chat-header-left { display: flex; align-items: center; gap: 0.75rem; }
-    .chat-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .chat-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0e7490); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
     .chat-status { font-size: 0.8rem; transition: color 0.3s ease; }
     .chat-status.online { color: #22c55e; }
     .chat-status.online .status-dot { animation: onlinePulse 2s ease-in-out infinite; }
@@ -15,7 +15,7 @@
     .chat-status.offline { color: #94a3b8; }
     .chat-body { background: white; border-radius: 14px; border: 1px solid #e2e8f0; min-height: 400px; max-height: 60vh; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; scroll-behavior: smooth; }
     .msg-bubble { max-width: 75%; padding: 0.6rem 1rem; border-radius: 14px; position: relative; transition: transform 0.2s ease, opacity 0.2s ease; }
-    .msg-bubble.mine { background: #0891b2; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+    .msg-bubble.mine { background: #0ea5e9; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
     .msg-bubble.theirs { background: #f1f5f9; color: #0f172a; margin-right: auto; border-bottom-left-radius: 4px; }
     /* Message entrance animations */
     .msg-bubble.mine.msg-enter { animation: msgEnterMine 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
@@ -79,21 +79,21 @@
     .chat-footer #sendBtn.sending { pointer-events: none; opacity: 0.85; animation: sendPulse 0.6s ease infinite; }
     @keyframes sendPulse { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
     .listing-context { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
-    .listing-context-link:hover { background: #f1f5f9; border-color: #0891b2; box-shadow: 0 2px 8px rgba(8, 145, 178, 0.15); }
+    .listing-context-link:hover { background: #f1f5f9; border-color: #0ea5e9; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15); }
     .listing-context img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; }
     .chat-body-product { position: sticky; top: 0; z-index: 2; background: white; padding: 0.6rem 0.8rem; margin: -1rem -1rem 0.75rem -1rem; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
     .chat-body-product a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-radius: 10px; transition: background 0.2s, box-shadow 0.2s; }
     .chat-body-product a:hover { background: #f0f9ff; box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.3); }
     .chat-body-product img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
     .chat-body-product .product-title { font-weight: 600; font-size: 0.9rem; color: #0f172a; }
-    .chat-body-product .product-view { font-size: 0.75rem; color: #0891b2; margin-top: 0.15rem; }
+    .chat-body-product .product-view { font-size: 0.75rem; color: #0ea5e9; margin-top: 0.15rem; }
     .chat-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
     .chat-actions .btn-report { font-size: 0.85rem; color: #64748b; }
     .msg-offered-product { transition: background 0.2s, box-shadow 0.2s; }
     .msg-offered-product:hover { background: rgba(0,0,0,0.08) !important; }
     .offer-product-btn { font-size: 0.85rem; }
     .msg-unsent { background: rgba(0,0,0,0.06) !important; color: #64748b; }
-    .msg-unsent.mine { background: rgba(8, 145, 178, 0.15) !important; color: #64748b; }
+    .msg-unsent.mine { background: rgba(14, 165, 233, 0.15) !important; color: #64748b; }
     .msg-unsent-text { font-size: 0.85rem; font-style: italic; }
     .msg-unsend-btn { opacity: 0.6; text-decoration: none !important; }
     .msg-unsend-btn:hover { opacity: 1; }

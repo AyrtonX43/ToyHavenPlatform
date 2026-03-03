@@ -9,9 +9,9 @@
     .form-section { background: #f8fafc; border-radius: 12px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; }
     .form-section-title { font-size: 0.875rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
     .form-control-marketplace { border-radius: 10px; border: 1px solid #e2e8f0; padding: 0.625rem 1rem; font-size: 0.9375rem; }
-    .form-control-marketplace:focus { border-color: #0891b2; box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12); }
+    .form-control-marketplace:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12); }
     .form-section-title { display: flex; align-items: center; gap: 0.5rem; }
-    .form-section-title i { color: #0891b2; }
+    .form-section-title i { color: #0ea5e9; }
     .form-label { font-weight: 600; color: #334155; font-size: 0.9375rem; }
     .upload-zone {
         border: 2px dashed #cbd5e1;
@@ -23,9 +23,9 @@
         cursor: pointer;
         position: relative;
     }
-    .upload-zone:hover { border-color: #0891b2; background: #ecfeff; }
-    .upload-zone.dragover { border-color: #0891b2; background: #ecfdf5; }
-    .upload-zone.has-image { border-style: solid; border-color: #0891b2; background: #ecfeff; padding: 0.75rem; }
+    .upload-zone:hover { border-color: #0ea5e9; background: #ecfeff; }
+    .upload-zone.dragover { border-color: #0ea5e9; background: #ecfdf5; }
+    .upload-zone.has-image { border-style: solid; border-color: #0ea5e9; background: #ecfeff; padding: 0.75rem; }
     .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
     .upload-zone .upload-placeholder { color: #64748b; font-size: 0.9375rem; }
     .upload-zone .upload-placeholder i { font-size: 2.5rem; color: #94a3b8; display: block; margin-bottom: 0.75rem; }
@@ -34,8 +34,8 @@
     .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .preview-remove { position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; border-radius: 50%; background: rgba(15,23,42,0.8); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.875rem; }
     .preview-remove:hover { background: #dc2626; }
-    .btn-create-listing { background: #0891b2; border: none; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 10px; }
-    .listing-details-section { border-left: 4px solid #0891b2; }
+    .btn-create-listing { background: #0ea5e9; border: none; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 10px; }
+    .listing-details-section { border-left: 4px solid #0ea5e9; }
     .location-map-wrap { position: relative; }
     #listing-map { width: 100%; height: 280px; border-radius: 8px; border: 1px solid #e2e8f0; }
     .location-search-results { position: absolute; z-index: 1000; left: 0; right: 0; top: 100%; margin-top: 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-height: 220px; overflow-y: auto; }

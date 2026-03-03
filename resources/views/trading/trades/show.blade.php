@@ -7,7 +7,7 @@
     .trade-show-header { background: white; border-radius: 14px; padding: 1.5rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
     .trade-card-block { background: white; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
     .trade-progress { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
-    .trade-progress-bar { height: 100%; border-radius: 4px; background: #0891b2; }
+    .trade-progress-bar { height: 100%; border-radius: 4px; background: #0ea5e9; }
     .item-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
 </style>
 @endpush

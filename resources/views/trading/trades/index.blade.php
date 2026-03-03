@@ -64,7 +64,7 @@
     .trade-progress-bar {
         height: 100%;
         border-radius: 3px;
-        background: #0891b2;
+        background: #0ea5e9;
         transition: width 0.3s ease;
     }
     
@@ -73,7 +73,7 @@
         font-weight: 600;
         padding: 0.5rem 1.25rem;
         font-size: 0.875rem;
-        background: #0891b2;
+        background: #0ea5e9;
         border: none;
         color: white;
     }
@@ -105,7 +105,7 @@
     }
     
     .empty-trades a {
-        color: #0891b2;
+        color: #0ea5e9;
         font-weight: 600;
     }
     

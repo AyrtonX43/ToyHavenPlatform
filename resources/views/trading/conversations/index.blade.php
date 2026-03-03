@@ -9,10 +9,10 @@
     .conversations-header h1 { font-size: 1.35rem; font-weight: 700; margin: 0; color: #0f172a; }
     .conv-card { border-radius: 12px; margin-bottom: 0.5rem; transition: background 0.2s; }
     .conv-card:hover { background: #f8fafc; }
-    .conv-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
+    .conv-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0e7490); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
     .conv-preview { color: #64748b; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .conv-time { font-size: 0.8rem; color: #94a3b8; }
-    .unread-badge { background: #0891b2; color: white; font-size: 0.7rem; min-width: 1.25rem; height: 1.25rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+    .unread-badge { background: #0ea5e9; color: white; font-size: 0.7rem; min-width: 1.25rem; height: 1.25rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
     .empty-conversations { text-align: center; padding: 3rem 2rem; background: #f8fafc; border-radius: 14px; border: 1px dashed #e2e8f0; }
 </style>
 @endpush

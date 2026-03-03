@@ -94,7 +94,7 @@ class TradeListingController extends Controller
     public function myListings()
     {
         $listings = TradeListing::where('user_id', Auth::id())
-            ->with(['product.images', 'userProduct.images'])
+            ->with(['product.images', 'userProduct.images', 'images', 'category'])
             ->orderBy('created_at', 'desc')
             ->paginate(12);
 
@@ -221,12 +221,47 @@ class TradeListingController extends Controller
             $listing->user_id !== Auth::id() && 
             $listing->canAcceptOffers();
 
+        // Products from offerer's own trade listings (for Make an Offer)
+        $offererProducts = collect();
+        if ($canMakeOffer) {
+            $seen = [];
+            $myListings = TradeListing::where('user_id', Auth::id())
+                ->whereIn('status', ['active', 'pending_approval'])
+                ->with(['product.images', 'userProduct.images'])
+                ->get();
+            foreach ($myListings as $myListing) {
+                $item = $myListing->getItem();
+                if ($item) {
+                    $key = $item instanceof Product ? 'p:' . $item->id : 'u:' . $item->id;
+                    if (isset($seen[$key])) continue;
+                    $seen[$key] = true;
+                    if ($item instanceof Product) {
+                        $offererProducts->push((object)[
+                            'type' => 'seller_product',
+                            'product_id' => $item->id,
+                            'user_product_id' => null,
+                            'name' => $item->name,
+                            'listing_title' => $myListing->title,
+                        ]);
+                    } else {
+                        $offererProducts->push((object)[
+                            'type' => 'user_product',
+                            'product_id' => null,
+                            'user_product_id' => $item->id,
+                            'name' => $item->name,
+                            'listing_title' => $myListing->title,
+                        ]);
+                    }
+                }
+            }
+        }
+
         // Check if chat is requested
         $showChat = request()->has('chat') && Auth::check() && $listing->user_id !== Auth::id();
 
         $suggestedListings = $matchingService->getSuggestedListingsForListing($listing->id, 6);
 
-        return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings'));
+        return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings', 'offererProducts'));
     }
 
     public function edit($id)

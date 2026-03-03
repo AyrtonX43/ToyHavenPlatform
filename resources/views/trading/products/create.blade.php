@@ -35,7 +35,7 @@
     }
     
     .form-control:focus, .form-select:focus {
-        border-color: #0891b2;
+        border-color: #0ea5e9;
         box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
     }
     

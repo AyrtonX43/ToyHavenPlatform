@@ -47,13 +47,13 @@
     
     .filter-tab:hover {
         background: #fff5f3;
-        border-color: #0891b2;
-        color: #0891b2;
+        border-color: #0ea5e9;
+        color: #0ea5e9;
     }
     
     .filter-tab.active {
-        background: #0891b2;
-        border-color: #0891b2;
+        background: #0ea5e9;
+        border-color: #0ea5e9;
         color: white;
     }
     
@@ -99,7 +99,7 @@
         position: absolute;
         top: 0.75rem;
         right: 0.75rem;
-        background: #0891b2;
+        background: #0ea5e9;
         color: white;
         padding: 0.25rem 0.75rem;
         border-radius: 8px;
@@ -129,15 +129,10 @@
     .product-price {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #0891b2;
+        color: #0ea5e9;
         margin-bottom: 0.5rem;
     }
     
-    .product-location {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin-bottom: 0.75rem;
-    }
     
     .product-meta {
         display: flex;
@@ -158,7 +153,7 @@
     }
     
     .btn-marketplace-primary {
-        background: #0891b2;
+        background: #0ea5e9;
         border: none;
         color: white;
     }
@@ -176,8 +171,8 @@
     
     .btn-marketplace-outline:hover {
         background: #f8fafc;
-        border-color: #0891b2;
-        color: #0891b2;
+        border-color: #0ea5e9;
+        color: #0ea5e9;
     }
     
     .sidebar-filters {
@@ -218,7 +213,7 @@
     }
     
     .form-control-marketplace:focus {
-        border-color: #0891b2;
+        border-color: #0ea5e9;
         box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
     }
     
@@ -244,7 +239,7 @@
     }
     
     .create-listing-card {
-        background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
         border-radius: 14px;
         padding: 2rem;
         color: white;
@@ -297,7 +292,6 @@
         .product-card-body { padding: 0.625rem 0.75rem; }
         .product-title { font-size: 0.8125rem; -webkit-line-clamp: 1; }
         .product-price { font-size: 0.9375rem; }
-        .product-location { font-size: 0.75rem; margin-bottom: 0.5rem; }
         .product-meta { font-size: 0.6875rem; }
         .btn-marketplace { padding: 0.375rem 0.875rem; font-size: 0.8125rem; }
     }
@@ -527,9 +521,6 @@
                                 @elseif($listing->cash_difference)
                                 <div class="product-price">₱{{ number_format($listing->cash_difference, 2) }}</div>
                                 @endif
-                                <div class="product-location">
-                                    <i class="bi bi-geo-alt me-1"></i>{{ $listing->user->city ?? 'Philippines' }}
-                                </div>
                                 <div class="product-meta">
                                     <span><i class="bi bi-eye me-1"></i>{{ $listing->views_count }} views</span>
                                     <span><i class="bi bi-chat-dots me-1"></i>{{ $listing->offers_count }} offers</span>
