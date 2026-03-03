@@ -896,9 +896,10 @@
         if (images.length > 0) {
             images.forEach(function(src) {
                 var a = document.createElement('a');
-                a.href = '#';
+                a.href = src;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
                 a.className = 'd-inline-block';
-                a.onclick = function(e) { e.preventDefault(); openReviewImageFullscreen(src); };
                 var img = document.createElement('img');
                 img.src = src;
                 img.alt = 'Review image';
