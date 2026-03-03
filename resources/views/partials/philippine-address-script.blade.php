@@ -94,6 +94,7 @@
                         regionSelect.dispatchEvent(new Event('change'));
                     }
                 }
+                document.dispatchEvent(new CustomEvent('phRegionsLoaded', { detail: { prefix } }));
             })
             .catch(e => console.error('Error loading regions:', e));
     }
@@ -227,6 +228,10 @@
         });
     }
 
+                document.dispatchEvent(new CustomEvent('phRegionsLoaded', { detail: { prefix } }));
+            })
+            .catch(e => console.error('Error loading regions:', e));
+    }
     loadRegions();
 })();
 </script>

@@ -3,98 +3,90 @@
 @push('styles')
 <style>
     .confirm-delivery-actions {
-        position: sticky;
-        bottom: 0;
         background: #fff;
-        padding: 1rem 0 1.5rem;
-        margin: 0 -1.5rem -1.5rem;
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
-        border-top: 1px solid #e2e8f0;
-        margin-top: 1rem;
-        z-index: 10;
+        padding: 1.25rem 0 0;
+        margin-top: 1.5rem;
+        border-top: 2px solid #0d6efd;
     }
     @media (max-width: 575px) {
-        .confirm-delivery-actions {
-            flex-direction: column;
-        }
+        .confirm-delivery-actions .d-flex { flex-direction: column; }
         .confirm-delivery-actions .btn { width: 100%; }
     }
 </style>
 @endpush
 
 @section('content')
-<div class="container mx-auto px-4 py-8 pb-5">
-    <div class="max-w-2xl mx-auto">
-        <div class="mb-6">
-            <a href="{{ route('orders.show', $order->id) }}" class="text-blue-600 hover:text-blue-800 flex items-center">
-                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-                Back to Order
+<div class="container py-4 pb-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+        <div class="mb-4">
+            <a href="{{ route('orders.show', $order->id) }}" class="text-primary text-decoration-none d-inline-flex align-items-center">
+                <i class="bi bi-arrow-left me-1"></i>Back to Order
             </a>
         </div>
 
-        <h1 class="text-3xl font-bold mb-6">Confirm Delivery</h1>
+        <h1 class="h3 fw-bold mb-4">Confirm Delivery</h1>
         
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="font-semibold text-lg mb-2">Order #{{ $order->order_number }}</h2>
-            <p class="text-gray-600 text-sm mb-4">Please upload a photo as proof of delivery</p>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+            <h2 class="h5 fw-semibold mb-2">Order #{{ $order->order_number }}</h2>
+            <p class="text-muted small mb-4">Please upload a photo as proof of delivery</p>
             
-            <div class="border-t pt-4">
-                <h3 class="font-medium mb-2">Order Items:</h3>
+            <div class="border-top pt-3">
+                <h3 class="h6 fw-semibold mb-2">Order Items:</h3>
                 @foreach($order->items as $item)
-                <div class="flex items-center py-2">
-                    <div class="flex-1">
-                        <p class="font-medium">{{ $item->product_name }}</p>
-                        <p class="text-sm text-gray-600">Quantity: {{ $item->quantity }}</p>
+                <div class="d-flex align-items-center py-2">
+                    <div class="flex-grow-1">
+                        <p class="fw-medium mb-0">{{ $item->product_name }}</p>
+                        <p class="small text-muted mb-0">Quantity: {{ $item->quantity }}</p>
                     </div>
-                    <p class="font-semibold">₱{{ number_format($item->subtotal, 2) }}</p>
+                    <p class="fw-semibold mb-0">₱{{ number_format($item->subtotal, 2) }}</p>
                 </div>
                 @endforeach
             </div>
+            </div>
         </div>
 
-        <form action="{{ route('orders.confirm-delivery.store', $order->id) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow p-6">
+        <form action="{{ route('orders.confirm-delivery.store', $order->id) }}" method="POST" enctype="multipart/form-data" class="card shadow-sm">
+        <div class="card-body">
             @csrf
             
             <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Proof of Delivery Photo <span class="text-red-500">*</span></label>
-                <input type="file" name="proof_image" accept="image/*" required 
-                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p class="text-xs text-gray-500 mt-1">Upload a clear photo showing the delivered package (max 5MB)</p>
+                <label class="form-label fw-semibold">Proof of Delivery Photo <span class="text-danger">*</span></label>
+                <input type="file" name="proof_image" accept="image/*" required class="form-control">
+                <p class="small text-muted mt-1">Upload a clear photo showing the delivered package (max 5MB)</p>
                 @error('proof_image')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    <p class="text-danger small mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Notes (Optional)</label>
-                <textarea name="notes" rows="3" 
-                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                    placeholder="Any additional comments about the delivery..."></textarea>
-                <p class="text-xs text-gray-500 mt-1">Maximum 500 characters</p>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Notes (Optional)</label>
+                <textarea name="notes" rows="3" class="form-control" placeholder="Any additional comments about the delivery..."></textarea>
+                <p class="small text-muted mt-1">Maximum 500 characters</p>
                 @error('notes')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    <p class="text-danger small mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
-                <p class="text-sm text-blue-800">
-                    <strong>Note:</strong> By confirming delivery, you acknowledge that you have received the order in good condition. 
-                    You will be able to review the product after confirmation.
-                </p>
+            <div class="alert alert-info mb-4">
+                <strong>Note:</strong> By confirming delivery, you acknowledge that you have received the order in good condition. 
+                You will be able to review the product after confirmation.
             </div>
 
-            <div class="confirm-delivery-actions d-flex flex-wrap gap-3">
-                <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium transition shadow-sm">
-                    <i class="bi bi-check2-circle me-2"></i>Confirm Delivery
-                </button>
-                <a href="{{ route('orders.show', $order->id) }}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition inline-flex items-center">
-                    <i class="bi bi-x-lg me-2"></i>Cancel
-                </a>
+            <div class="confirm-delivery-actions">
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-success btn-lg px-4 py-3">
+                        <i class="bi bi-check2-circle me-2"></i>Confirm Delivery
+                    </button>
+                    <a href="{{ route('orders.show', $order->id) }}" class="btn btn-outline-secondary btn-lg px-4 py-3">
+                        <i class="bi bi-x-lg me-2"></i>Cancel
+                    </a>
+                </div>
             </div>
+        </div>
         </form>
+        </div>
     </div>
 </div>
 @endsection

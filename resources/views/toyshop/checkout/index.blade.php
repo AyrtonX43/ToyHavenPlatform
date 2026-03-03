@@ -443,10 +443,11 @@ function loadSavedAddress() {
     if (value === '') return;
     
     const address = selectedOption.getAttribute('data-address');
-    const region = selectedOption.getAttribute('data-region') || '';
+    let region = selectedOption.getAttribute('data-region') || '';
     const province = selectedOption.getAttribute('data-province') || '';
     const city = selectedOption.getAttribute('data-city') || '';
     const barangay = selectedOption.getAttribute('data-barangay') || '';
+    if (!region && /metro manila|ncr|national capital/i.test(province)) region = 'National Capital Region';
     const postal = selectedOption.getAttribute('data-postal') || '';
     
     if (addrEl) addrEl.value = address || '';
@@ -474,11 +475,38 @@ function loadSavedAddress() {
     }
 }
 
-// Initialize on page load
+function applySavedAddressToRegion() {
+    var regionEl = document.getElementById('shipping_region');
+    var prefill = window.phAddressPrefill && window.phAddressPrefill['shipping_'];
+    if (!regionEl || !prefill || !prefill.region || regionEl.options.length <= 1) return false;
+    var normalize = function(t) { return (t||'').replace(/ñ/g,'n').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u'); };
+    var r = normalize(prefill.region);
+    if (/^NCR$/i.test(r)) r = 'National Capital Region';
+    var opts = regionEl.querySelectorAll('option[value]');
+    for (var i = 0; i < opts.length; i++) {
+        var ov = opts[i].value;
+        if (ov && (normalize(ov) === r || ov === r || (/National Capital Region/i.test(ov) && /^NCR$/i.test(prefill.region)))) {
+            regionEl.value = ov;
+            regionEl.dispatchEvent(new Event('change'));
+            return true;
+        }
+    }
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const select = document.getElementById('savedAddressSelect');
+    var select = document.getElementById('savedAddressSelect');
     if (select && select.value && select.value !== '' && select.value !== 'new') {
         loadSavedAddress();
+    }
+});
+
+document.addEventListener('phRegionsLoaded', function(e) {
+    if (e.detail && e.detail.prefix === 'shipping_') {
+        var sel = document.getElementById('savedAddressSelect');
+        if (sel && sel.value && sel.value !== '' && sel.value !== 'new' && window.phAddressPrefill && window.phAddressPrefill['shipping_']) {
+            applySavedAddressToRegion();
+        }
     }
 });
 </script>
