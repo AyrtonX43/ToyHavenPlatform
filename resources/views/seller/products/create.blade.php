@@ -75,27 +75,11 @@
                                                         <i class="bi bi-check-circle-fill"></i>
                                                     </div>
                                                     
-                                                    <!-- Category Content (synced with algorithm/category selection: image, Flaticon icon, or display icon) -->
-                                                    <div class="category-selection-content text-center p-3">
-                                                        @if($category->image)
-                                                            <img src="{{ asset('storage/' . $category->image) }}" 
-                                                                 alt="{{ $category->name }}"
-                                                                 class="category-selection-image mb-2"
-                                                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
-                                                        @elseif($category->getAnimatedIconPngUrl())
-                                                            <img src="{{ $category->getAnimatedIconPngUrl() }}" 
-                                                                 alt="{{ $category->name }}"
-                                                                 class="category-selection-image mb-2"
-                                                                 style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px;"
-                                                                 loading="lazy">
-                                                        @else
-                                                            <div class="category-selection-icon mb-2">
-                                                                <i class="bi {{ $category->getDisplayIcon() }}" style="font-size: 2.5rem; color: #6c757d;"></i>
-                                                            </div>
-                                                        @endif
-                                                        <h6 class="category-selection-name mb-0 fw-bold">{{ $category->name }}</h6>
+                                                    <!-- Category Content (name and description only - synced with welcome/profile) -->
+                                                    <div class="category-selection-content p-3">
+                                                        <h6 class="category-selection-name mb-2 fw-bold">{{ $category->name }}</h6>
                                                         @if($category->description)
-                                                            <small class="text-muted d-block mt-1">{{ Str::limit($category->description, 50) }}</small>
+                                                            <small class="category-selection-description d-block">{{ Str::limit($category->description, 60) }}</small>
                                                         @endif
                                                     </div>
                                                 </label>
@@ -532,7 +516,7 @@
         background-color: #198754;
     }
     
-    /* Category Selection Styles */
+    /* Category Selection Styles (sky blue theme - synced with welcome/profile) */
     .category-selection-card {
         position: relative;
     }
@@ -542,26 +526,27 @@
         transition: all 0.3s ease;
         border: 2px solid #e9ecef !important;
         background: #fff;
+        border-radius: 12px;
     }
     
     .category-selection-label:hover {
-        border-color: #0d6efd !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15) !important;
+        border-color: #0ea5e9 !important;
+        transform: translateY(-6px);
+        box-shadow: 0 12px 30px rgba(14, 165, 233, 0.25) !important;
     }
     
     .category-selection-checkbox:checked + .category-selection-label {
-        border-color: #198754 !important;
-        background: linear-gradient(135deg, rgba(25, 135, 84, 0.05) 0%, rgba(40, 167, 69, 0.05) 100%);
-        box-shadow: 0 4px 15px rgba(25, 135, 84, 0.2) !important;
+        border: 3px solid #0ea5e9 !important;
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(56, 189, 248, 0.08) 100%);
+        box-shadow: 0 8px 24px rgba(14, 165, 233, 0.25) !important;
     }
     
     .category-selection-indicator {
         position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 28px;
-        height: 28px;
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
         background: white;
         border-radius: 50%;
         display: flex;
@@ -571,12 +556,12 @@
         transform: scale(0);
         transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         z-index: 10;
-        box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
     }
     
     .category-selection-indicator i {
-        color: #198754;
-        font-size: 1.2rem;
+        color: #0284c7;
+        font-size: 1.35rem;
     }
     
     .category-selection-checkbox:checked + .category-selection-label .category-selection-indicator {
@@ -585,40 +570,26 @@
     }
     
     .category-selection-checkbox:checked + .category-selection-label .category-selection-name {
-        color: #198754;
+        color: #0284c7;
     }
     
     .category-selection-content {
-        min-height: 120px;
+        min-height: 80px;
         display: flex;
         flex-direction: column;
-        align-items: center;
         justify-content: center;
     }
     
     .category-selection-name {
-        color: #212529;
+        color: #1e293b;
         transition: color 0.3s ease;
-        font-size: 0.95rem;
+        font-size: 1rem;
     }
     
-    .category-selection-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.3s ease;
-    }
-    
-    .category-selection-label:hover .category-selection-icon {
-        transform: scale(1.1);
-    }
-    
-    .category-selection-image {
-        transition: transform 0.3s ease;
-    }
-    
-    .category-selection-label:hover .category-selection-image {
-        transform: scale(1.05);
+    .category-selection-description {
+        color: #64748b;
+        font-size: 0.8125rem;
+        line-height: 1.4;
     }
     
     .cursor-pointer {
