@@ -11,8 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Google Fonts - Plus Jakarta Sans: professional, clean -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Quicksand: Toys and Joy style (clean, playful) -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{{ asset('css/toyshop-animations.css') }}" rel="stylesheet">
     @stack('styles')
@@ -59,41 +59,41 @@
         }
         
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: #fafafa;
-            color: #1a1a1a;
+            font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Minimal top bar - professional */
+        /* Sky Blue theme top bar */
         .top-bar {
-            background: #1a1a1a;
-            color: rgba(255,255,255,0.85);
-            font-size: 0.8rem;
-            padding: 0.35rem 0;
+            background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
+            color: #fff;
+            font-size: 0.8125rem;
+            padding: 0.4rem 0;
         }
-        .top-bar a { color: rgba(255,255,255,0.9); text-decoration: none; }
-        .top-bar a:hover { color: #fff; }
+        .top-bar a { color: #fff; text-decoration: none; opacity: 0.95; }
+        .top-bar a:hover { color: #fff; opacity: 1; }
         
         .navbar {
             background: #fff !important;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #eee;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             transition: box-shadow 0.2s ease;
         }
         
         .navbar.scrolled {
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
         
         .navbar-brand {
             font-weight: 700;
-            font-size: 1.35rem;
-            letter-spacing: -0.025em;
-            color: #1a1a1a !important;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            color: #0ea5e9 !important;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -105,41 +105,41 @@
         }
         
         .nav-link {
-            color: #555 !important;
-            font-weight: 500;
-            font-size: 0.9rem;
-            padding: 0.5rem 0.9rem !important;
-            border-radius: 8px;
+            color: #334155 !important;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            padding: 0.5rem 0.85rem !important;
+            border-radius: 20px;
             transition: color 0.2s, background 0.2s;
         }
         
         .nav-link:hover {
-            color: #1a1a1a !important;
-            background: #f5f5f5;
+            color: #0ea5e9 !important;
+            background: #e0f2fe;
         }
         
         .nav-link.active {
-            background: #1a1a1a;
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
             color: white !important;
         }
         
         .dropdown-menu {
-            border: 1px solid #eee;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            border-radius: 8px;
-            padding: 0.4rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 14px;
+            padding: 0.5rem;
         }
         
         .dropdown-item {
-            border-radius: 6px;
+            border-radius: 10px;
             padding: 0.5rem 1rem;
-            font-weight: 500;
-            font-size: 0.9rem;
+            font-weight: 600;
+            font-size: 0.9375rem;
             transition: background 0.15s;
         }
         
         .dropdown-item:hover {
-            background: #f8f8f8;
+            background: #ecfeff;
         }
         
         main {
@@ -147,10 +147,11 @@
         }
         
         footer {
-            background: #1a1a1a !important;
-            color: rgba(255,255,255,0.88);
-            padding: 3rem 0 1.25rem;
-            margin-top: 3rem;
+            background: linear-gradient(180deg, #0c4a6e 0%, #075985 100%) !important;
+            color: rgba(255,255,255,0.92);
+            padding: 3.5rem 0 1.5rem;
+            margin-top: 4rem;
+            border-top: 3px solid #0ea5e9;
         }
         
         footer h5, footer h6 {
@@ -165,7 +166,7 @@
         
         footer a:hover {
             opacity: 1;
-            color: #fff !important;
+            color: #22d3ee !important;
         }
         
         .alert {
@@ -190,37 +191,37 @@
 
         /* Search bar - prominent and usable */
         .search-input {
-            background: #f8f8f8;
-            border: 1px solid #e5e5e5;
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
             border-right: none;
-            padding: 0.65rem 1rem;
-            font-size: 0.95rem;
-            border-radius: 8px 0 0 8px;
+            padding: 0.75rem 1.125rem;
+            font-size: 1rem;
+            border-radius: 12px 0 0 12px;
             transition: border-color 0.2s, box-shadow 0.2s;
-            min-height: 42px;
+            min-height: 48px;
         }
         .search-input:focus {
             background: #fff;
-            border-color: #999;
-            box-shadow: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
         }
         .search-input::placeholder {
-            color: #999;
-            font-size: 0.9rem;
+            color: #94a3b8;
+            font-size: 0.9375rem;
         }
         .search-btn {
-            background: #1a1a1a;
+            background: #0ea5e9;
             color: #fff;
-            border: 1px solid #1a1a1a;
-            border-radius: 0 8px 8px 0;
-            padding: 0.65rem 1rem;
-            min-height: 42px;
-            font-size: 0.95rem;
-            transition: background 0.2s, opacity 0.2s;
+            border: 2px solid #0ea5e9;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1.25rem;
+            min-height: 48px;
+            font-size: 1.0625rem;
+            transition: background 0.2s;
         }
         .search-btn:hover, .search-btn:focus {
-            background: #333;
-            border-color: #333;
+            background: #0284c7;
+            border-color: #0284c7;
             color: #fff;
         }
 
@@ -244,7 +245,7 @@
             transition: background 0.15s !important;
         }
         .search-suggest-item:hover {
-            background: #f8f8f8 !important;
+            background: #f0fdfa !important;
         }
         .search-suggest-item img {
             width: 52px !important;
@@ -271,21 +272,21 @@
             line-height: 1.3;
         }
         .search-suggest-item .suggest-price {
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.875rem;
-            color: #1a1a1a;
+            color: #0ea5e9;
         }
         .search-suggest-item .suggest-store-icon {
             width: 40px;
             height: 40px;
-            background: #f5f5f5;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             font-size: 1.125rem;
-            color: #666;
+            color: #0ea5e9;
         }
         .search-suggest-item .suggest-store-name {
             font-weight: 600;
@@ -485,7 +486,7 @@
                     <a href="tel:+63271234567"><i class="bi bi-telephone me-1"></i>Call Us: +63 2 7123 4567</a>
                     <a href="mailto:hello@toyhaven.ph"><i class="bi bi-envelope me-1"></i>Email: hello@toyhaven.ph</a>
                 </div>
-                <span style="opacity: 0.75;">Toy & collectibles marketplace</span>
+                <span class="opacity-90">Your trusted toy & collectibles marketplace</span>
             </div>
         </div>
     </div>
@@ -804,7 +805,7 @@
                             <a class="nav-link" href="{{ route('login') }}"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn ms-2 px-3 rounded" href="{{ route('register') }}" style="font-weight: 600; background: #1a1a1a; color: white !important; font-size: 0.9rem; border: none;">Sign Up</a>
+                            <a class="nav-link btn ms-2 px-3 rounded-pill" href="{{ route('register') }}" style="font-weight: 700; background: linear-gradient(135deg, #f97316, #fb923c); color: white !important; font-size: 0.9375rem; border: none;">Sign Up</a>
                         </li>
                     @endauth
                 </ul>
