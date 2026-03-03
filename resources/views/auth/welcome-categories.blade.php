@@ -20,21 +20,21 @@
                 <!-- Welcome Header with Animation -->
                 <div class="welcome-header text-center mb-5 reveal">
                     <div class="welcome-icon animate-float mb-4">
-                        <i class="bi bi-emoji-smile-fill" style="font-size: 4rem; color: var(--bs-primary);"></i>
+                        <i class="bi bi-emoji-smile-fill welcome-icon-sky" style="font-size: 4rem;"></i>
                     </div>
                     <h1 class="display-4 fw-bold text-primary mb-3 animate-fade-in-up">
                         Welcome to ToyHaven, <span class="text-gradient">{{ Auth::user()->name }}!</span>
                     </h1>
-                    <p class="lead text-muted animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <p class="lead welcome-subtext animate-fade-in-up" style="animation-delay: 0.2s;">
                         Help us personalize your experience by selecting the toy categories you're interested in.
                         <br>We'll show you products tailored just for you!
-                        <br><small class="text-white-50 mt-2 d-block">Don't worry, this is optional - you can skip and set it up later in your Profile Settings!</small>
+                        <br><small class="welcome-optional-hint mt-2 d-block">Don't worry, this is optional - you can skip and set it up later in your Profile Settings!</small>
                     </p>
                     <div class="progress-indicator mt-4 animate-fade-in-up" style="animation-delay: 0.4s;">
                         <div class="progress-bar-custom">
                             <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                         </div>
-                        <p class="text-muted small mt-2 mb-0">
+                        <p class="welcome-progress-text small mt-2 mb-0">
                             <span id="selectedCount">0</span> of <span id="totalCategories">{{ $categories->count() }}</span> categories selected
                         </p>
                     </div>
@@ -58,10 +58,10 @@
                                     <h4 class="mb-1 fw-bold">
                                         <i class="bi bi-grid-3x3-gap me-2"></i>Select Your Favorite Toy Categories
                                     </h4>
-                                    <small class="text-white-50">This step is optional. Select categories for personalized recommendations, or skip and set it up later in Profile Settings.</small>
+                                    <small class="card-header-hint">This step is optional. Select categories for personalized recommendations, or skip and set it up later in Profile Settings.</small>
                                 </div>
                                 <div class="selection-badge">
-                                    <span class="badge bg-light text-primary px-3 py-2" id="selectionBadge">
+                                    <span class="badge selection-badge-sky px-3 py-2" id="selectionBadge">
                                         <i class="bi bi-check-circle me-1"></i>
                                         <span id="badgeCount">0</span> Selected
                                     </span>
@@ -87,37 +87,7 @@
                                                         <i class="bi bi-check-circle-fill"></i>
                                                     </div>
                                                     
-                                                    <!-- Category Icon/Image (animated icon from Flaticon when mapped) -->
-                                                    <div class="category-image-wrapper category-animated-icon-wrapper">
-                                                        @php
-                                                            $iconConfig = $category->getAnimatedIconConfig();
-                                                            $iconPngUrl = $category->getAnimatedIconPngUrl();
-                                                            $iconPageUrl = $iconConfig['url'] ?? null;
-                                                        @endphp
-                                                        @if($category->image)
-                                                            <img src="{{ asset('storage/' . $category->image) }}" 
-                                                                 alt="{{ $category->name }}"
-                                                                 class="category-image">
-                                                        @elseif($iconPngUrl)
-                                                            {{-- Flaticon animated icon: Lottie (local or CDN) + PNG fallback --}}
-                                                            <div class="category-flaticon-embed" 
-                                                                 data-icon-id="{{ $iconConfig['id'] ?? '' }}" 
-                                                                 data-pack="{{ $iconConfig['pack'] ?? '' }}" 
-                                                                 data-page-url="{{ $iconPageUrl ?? '' }}"
-                                                                 data-png-url="{{ $iconPngUrl }}"
-                                                                 data-lottie-local="{{ asset('lottie/' . ($iconConfig['id'] ?? '') . '.json') }}">
-                                                                <div class="category-lottie-container" aria-hidden="true"></div>
-                                                                <img src="{{ $iconPngUrl }}" alt="{{ $category->name }}" class="category-image category-animated-fallback" loading="lazy">
-                                                            </div>
-                                                        @else
-                                                            <div class="category-icon-placeholder">
-                                                                <i class="bi {{ $category->getDisplayIcon() }}"></i>
-                                                            </div>
-                                                        @endif
-                                                        <div class="category-overlay"></div>
-                                                    </div>
-                                                    
-                                                    <!-- Category Content -->
+                                                    <!-- Category Content (name and description only) -->
                                                     <div class="category-content">
                                                         <h5 class="category-name fw-bold mb-2">{{ $category->name }}</h5>
                                                         @if($category->description)
@@ -159,9 +129,9 @@
                                             <span>Skip This Step</span>
                                         </button>
                                     </div>
-                                    <p class="text-muted small mb-0">
+                                    <p class="welcome-footer-hint small mb-0">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        <strong>This step is optional.</strong> Select categories for personalized recommendations, or skip and set it up later in your <a href="{{ route('profile.edit') }}" class="text-decoration-underline">Profile Settings</a>.
+                                        <strong>This step is optional.</strong> Select categories for personalized recommendations, or skip and set it up later in your <a href="{{ route('profile.edit') }}" class="text-decoration-underline profile-link-sky">Profile Settings</a>.
                                     </p>
                                 </div>
                             @else
@@ -180,12 +150,12 @@
 
 @push('styles')
 <style>
-    /* Ensure body and html have no white background when on category selection page */
+    /* Sky blue and white theme - light background for text visibility */
     body:has(.category-selection-wrapper),
     html:has(.category-selection-wrapper) {
         margin: 0 !important;
         padding: 0 !important;
-        background: #0f172a !important;
+        background: linear-gradient(135deg, #e0f4ff 0%, #f0f9ff 50%, #ffffff 100%) !important;
         overflow-x: hidden;
         height: 100%;
         width: 100%;
@@ -196,21 +166,19 @@
     html.category-selection-html {
         margin: 0 !important;
         padding: 0 !important;
-        background: #0f172a !important;
+        background: linear-gradient(135deg, #e0f4ff 0%, #f0f9ff 50%, #ffffff 100%) !important;
         overflow-x: hidden;
         height: 100%;
         width: 100%;
     }
 
-    /* Category Selection Wrapper */
+    /* Category Selection Wrapper - sky blue and white theme */
     .category-selection-wrapper {
         position: relative;
         min-height: 100vh;
         width: 100%;
-        background: #0f172a;
-        background-size: 400% 400%;
+        background: linear-gradient(135deg, #e0f4ff 0%, #f0f9ff 50%, #ffffff 100%);
         background-attachment: fixed;
-        animation: gradientShift 15s ease infinite;
         padding: 2rem 0;
         margin: 0;
         overflow-x: hidden;
@@ -228,12 +196,6 @@
         display: none;
     }
 
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
     .animated-background {
         position: absolute;
         top: 0;
@@ -241,24 +203,66 @@
         width: 100%;
         height: 100%;
         min-height: 100vh;
-        background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
-        opacity: 0.3;
-        animation: float 20s ease-in-out infinite;
+        background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(14,165,233,0.15)"/></svg>');
+        opacity: 0.6;
         z-index: 0;
         pointer-events: none;
     }
 
-    /* Welcome Header */
+    /* Welcome Header - dark text on light sky blue background for visibility */
     .welcome-header {
-        color: white;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        color: #0c4a6e;
+    }
+
+    .welcome-header .text-primary,
+    .welcome-header h1 {
+        color: #0284c7 !important;
     }
 
     .text-gradient {
-        background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+    }
+
+    /* Ensure all welcome text is visible on light background */
+    .welcome-subtext {
+        color: #334155 !important;
+    }
+
+    .welcome-optional-hint {
+        color: #475569 !important;
+        font-weight: 500;
+    }
+
+    .welcome-progress-text {
+        color: #475569 !important;
+    }
+
+    .welcome-icon-sky {
+        color: #0284c7 !important;
+    }
+
+    .selection-badge-sky {
+        background: rgba(255, 255, 255, 0.95) !important;
+        color: #0284c7 !important;
+    }
+
+    .welcome-footer-hint {
+        color: #475569 !important;
+    }
+
+    .modal-header-sky {
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
+    }
+
+    .profile-link-sky {
+        color: #0284c7 !important;
+    }
+
+    .profile-link-sky:hover {
+        color: #0369a1 !important;
     }
 
     /* Progress Indicator */
@@ -270,7 +274,7 @@
     .progress-bar-custom {
         width: 100%;
         height: 8px;
-        background: rgba(255,255,255,0.3);
+        background: rgba(14, 165, 233, 0.2);
         border-radius: 10px;
         overflow: hidden;
         position: relative;
@@ -278,18 +282,23 @@
 
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+        background: linear-gradient(90deg, #0284c7 0%, #0ea5e9 100%);
         border-radius: 10px;
         transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
     }
 
-    /* Card Header Custom */
+    /* Card Header Custom - sky blue */
     .card-header-custom {
-        background: #0d9488;
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
         color: white;
         padding: 2rem;
         border: none;
+    }
+
+    .card-header-hint {
+        color: rgba(255, 255, 255, 0.95) !important;
+        opacity: 1;
     }
 
     .selection-badge {
@@ -321,102 +330,12 @@
     }
 
     .category-label:hover {
-        transform: translateY(-10px) scale(1.02);
-        box-shadow: 0 15px 40px rgba(99, 102, 241, 0.3) !important;
-    }
-
-    .category-image-wrapper {
-        position: relative;
-        height: 180px;
-        overflow: hidden;
-        background: #0d9488;
-    }
-
-    .category-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-
-    .category-icon-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 4rem;
-        color: white;
-        opacity: 0.8;
-    }
-
-    /* Flaticon animated icon wrapper */
-    .category-flaticon-embed {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #0d9488;
-    }
-
-    .category-flaticon-embed .category-lottie-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-    }
-
-    .category-flaticon-embed .category-lottie-container canvas,
-    .category-flaticon-embed .category-lottie-container svg {
-        max-width: 85%;
-        max-height: 85%;
-        object-fit: contain;
-    }
-
-    .category-flaticon-embed .category-animated-fallback {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        padding: 1rem;
-        z-index: 1;
-    }
-
-    .category-flaticon-embed.lottie-loaded .category-animated-fallback {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .category-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.1) 100%);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .category-label:hover .category-overlay {
-        opacity: 1;
-    }
-
-    .category-label:hover .category-image {
-        transform: scale(1.1);
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 12px 30px rgba(14, 165, 233, 0.25) !important;
     }
 
     .category-content {
-        padding: 1.5rem;
+        padding: 1.75rem;
         flex-grow: 1;
         display: flex;
         flex-direction: column;
@@ -424,22 +343,23 @@
     }
 
     .category-name {
-        color: #1f2937;
-        font-size: 1.25rem;
+        color: #1e293b;
+        font-size: 1.2rem;
         transition: color 0.3s ease;
     }
 
     .category-description {
         line-height: 1.5;
+        color: #64748b;
     }
 
-    /* Selection Indicator */
+    /* Selection Indicator - sky blue */
     .selection-indicator {
         position: absolute;
-        top: 15px;
-        right: 15px;
-        width: 35px;
-        height: 35px;
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
         background: white;
         border-radius: 50%;
         display: flex;
@@ -449,18 +369,18 @@
         transform: scale(0);
         transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         z-index: 10;
-        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
     }
 
     .selection-indicator i {
-        color: #10b981;
-        font-size: 1.5rem;
+        color: #0284c7;
+        font-size: 1.35rem;
     }
 
     .category-checkbox:checked + .category-label {
-        border: 3px solid #10b981 !important;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(52, 211, 153, 0.05) 100%);
-        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3) !important;
+        border: 3px solid #0ea5e9 !important;
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(56, 189, 248, 0.08) 100%);
+        box-shadow: 0 8px 24px rgba(14, 165, 233, 0.25) !important;
     }
 
     .category-checkbox:checked + .category-label .selection-indicator {
@@ -469,11 +389,7 @@
     }
 
     .category-checkbox:checked + .category-label .category-name {
-        color: #10b981;
-    }
-
-    .category-checkbox:checked + .category-label .category-image-wrapper {
-        box-shadow: inset 0 0 0 3px #10b981;
+        color: #0284c7;
     }
 
     /* Hover Effect */
@@ -491,16 +407,16 @@
         left: 100%;
     }
 
-    /* Submit Button */
+    /* Submit Button - sky blue */
     .submit-button {
         position: relative;
         overflow: hidden;
         border-radius: 50px;
         font-weight: 600;
         letter-spacing: 0.5px;
-        background: #0d9488 !important;
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
         border: none !important;
-        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
         transition: all 0.3s ease;
         min-width: 200px;
         color: white !important;
@@ -508,8 +424,8 @@
 
     .submit-button:hover:not(:disabled) {
         transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
-        background: #0d9488 !important;
+        box-shadow: 0 12px 32px rgba(14, 165, 233, 0.5);
+        background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%) !important;
         color: white !important;
     }
 
@@ -517,83 +433,82 @@
     .submit-button.btn-primary:disabled {
         opacity: 0.6;
         cursor: not-allowed;
-        background: #6b7280 !important;
-        background-color: #6b7280 !important;
+        background: #94a3b8 !important;
+        background-color: #94a3b8 !important;
         box-shadow: none !important;
         color: white !important;
-        border-color: #6b7280 !important;
+        border-color: #94a3b8 !important;
     }
 
     .submit-button:disabled:hover,
     .submit-button.btn-primary:disabled:hover {
-        background: #6b7280 !important;
-        background-color: #6b7280 !important;
+        background: #94a3b8 !important;
+        background-color: #94a3b8 !important;
         color: white !important;
         transform: none;
     }
 
     .submit-button:focus {
-        box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.5);
-        background: #0d9488 !important;
+        box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.5);
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%) !important;
         color: white !important;
     }
 
-    /* Skip Button - Bottom */
+    /* Skip Button - white with sky blue border */
     .btn-skip-bottom {
-        border: 2px solid rgba(255, 255, 255, 0.8);
-        color: #1f2937 !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(10px);
+        border: 2px solid #0ea5e9;
+        color: #0284c7 !important;
+        background: white !important;
         border-radius: 50px;
         font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
         min-width: 180px;
     }
 
     .btn-skip-bottom i,
     .btn-skip-bottom span {
-        color: #1f2937 !important;
+        color: #0284c7 !important;
     }
 
     .btn-skip-bottom:hover {
-        background: rgba(255, 255, 255, 1) !important;
-        border-color: rgba(255, 255, 255, 1);
+        background: #f0f9ff !important;
+        border-color: #0284c7;
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        color: #1f2937 !important;
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.25);
+        color: #0369a1 !important;
     }
 
     .btn-skip-bottom:hover i,
     .btn-skip-bottom:hover span {
-        color: #1f2937 !important;
+        color: #0369a1 !important;
     }
 
     .btn-skip-bottom:focus {
-        color: #1f2937 !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.5);
+        color: #0284c7 !important;
+        background: white !important;
+        box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.3);
     }
 
     .btn-skip-bottom:focus i,
     .btn-skip-bottom:focus span {
-        color: #1f2937 !important;
+        color: #0284c7 !important;
     }
 
     .btn-skip-bottom:active {
-        color: #1f2937 !important;
-        background: rgba(255, 255, 255, 1) !important;
+        color: #0369a1 !important;
+        background: #e0f2fe !important;
         transform: translateY(-1px);
     }
 
     .btn-skip-bottom:active i,
     .btn-skip-bottom:active span {
-        color: #1f2937 !important;
+        color: #0369a1 !important;
     }
 
-    /* Modal Enhancements */
+    /* Modal Enhancements - sky blue */
     .skip-confirm-btn {
-        background: #0d9488;
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
         border: none;
         font-weight: 600;
         transition: all 0.3s ease;
@@ -601,7 +516,7 @@
 
     .skip-confirm-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
     }
 
     #skipModal .modal-content {
@@ -746,7 +661,7 @@
         
         body.category-selection-body,
         html.category-selection-html {
-            background: #0f172a !important;
+            background: linear-gradient(135deg, #e0f4ff 0%, #f0f9ff 50%, #ffffff 100%) !important;
             height: 100%;
             margin: 0;
             padding: 0;
@@ -754,10 +669,6 @@
         
         .welcome-header h1 {
             font-size: 2rem;
-        }
-        
-        .category-image-wrapper {
-            height: 150px;
         }
         
         .card-header-custom {
@@ -790,41 +701,8 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Load Flaticon animated icons as Lottie: try local JSON first, then CDN; PNG is fallback
-        if (typeof lottie !== 'undefined') {
-            document.querySelectorAll('.category-flaticon-embed').forEach(function(wrapper) {
-                var iconId = wrapper.getAttribute('data-icon-id');
-                if (!iconId) return;
-                var container = wrapper.querySelector('.category-lottie-container');
-                if (!container) return;
-                var localPath = wrapper.getAttribute('data-lottie-local');
-                var cdnPath = 'https://cdn.flaticon.com/lottie/' + iconId + '/' + iconId + '.json';
-                var pathsToTry = localPath ? [localPath, cdnPath] : [cdnPath];
-
-                function tryLoad(pathIndex) {
-                    if (pathIndex >= pathsToTry.length) return;
-                    var path = pathsToTry[pathIndex];
-                    var anim = lottie.loadAnimation({
-                        container: container,
-                        renderer: 'svg',
-                        loop: true,
-                        autoplay: true,
-                        path: path
-                    });
-                    anim.addEventListener('DOMLoaded', function() {
-                        wrapper.classList.add('lottie-loaded');
-                    });
-                    anim.addEventListener('error', function() {
-                        tryLoad(pathIndex + 1);
-                    });
-                }
-                tryLoad(0);
-            });
-        }
-
         const checkboxes = document.querySelectorAll('.category-checkbox');
         const submitBtn = document.getElementById('submitBtn');
         const selectedCount = document.getElementById('selectedCount');
@@ -917,7 +795,7 @@
 <div class="modal fade" id="skipModal" tabindex="-1" aria-labelledby="skipModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-            <div class="modal-header border-0 pb-0" style="background: #0d9488; border-radius: 12px 12px 0 0;">
+            <div class="modal-header border-0 pb-0 modal-header-sky" style="border-radius: 12px 12px 0 0;">
                 <h5 class="modal-title text-white fw-bold" id="skipModalLabel">
                     <i class="bi bi-question-circle me-2"></i>Skip Category Selection?
                 </h5>
