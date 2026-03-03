@@ -4,103 +4,81 @@
 
 @push('styles')
 <style>
-    /* Business page - professional, clean storefront */
+    /* Business page - single clean header, no redundancy */
     .business-page {
-        background: #fafbfc;
+        background: #f8fafc;
         min-height: 100vh;
         padding-bottom: 3rem;
     }
 
-    /* Hero: full-width banner or clean header */
-    .business-hero-wrap {
-        position: relative;
-        margin-bottom: 0;
+    /* Banner image only (no overlay text) */
+    .business-banner {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        display: block;
+        background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
     }
-    .business-hero-bg {
-        min-height: 180px;
-        background: linear-gradient(135deg, #0c4a6e 0%, #0e7490 50%, #0891b2 100%);
-        position: relative;
+    .business-banner-wrap {
+        margin-bottom: 0;
         overflow: hidden;
     }
-    .business-hero-bg.has-banner {
-        min-height: 200px;
+    .business-banner-fallback {
+        height: 80px;
+        background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
     }
-    .business-hero-bg .banner-img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        opacity: 0.4;
-    }
-    .business-hero-bg .overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(12,74,110,0.6) 0%, rgba(12,74,110,0.85) 100%);
-    }
-    .business-hero-content {
+
+    /* Single header card - all store info once */
+    .business-header {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
+        padding: 1.5rem 1.75rem;
+        margin-top: -24px;
+        margin-bottom: 1.5rem;
         position: relative;
         z-index: 2;
-        padding: 1.5rem 0 2rem;
-        color: #fff;
     }
-    .business-profile-card {
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
-        padding: 1.5rem 1.75rem;
-        margin-top: -2.5rem;
-        position: relative;
-        z-index: 10;
-        border: 1px solid rgba(0,0,0,0.04);
+    .business-header-inner {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 1.5rem;
+        gap: 1.25rem;
     }
-    .business-logo-wrap {
-        width: 88px;
-        height: 88px;
-        border-radius: 12px;
+    .business-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 10px;
         overflow: hidden;
         flex-shrink: 0;
-        border: 2px solid #f1f5f9;
-        background: #f8fafc;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        background: #f1f5f9;
     }
-    .business-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .business-logo-wrap .placeholder {
+    .business-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .business-logo .placeholder {
         width: 100%; height: 100%;
         display: flex; align-items: center; justify-content: center;
-        font-size: 2rem; color: #94a3b8;
+        font-size: 1.5rem; color: #94a3b8;
     }
-    .business-info h1 {
-        font-size: 1.5rem;
+    .business-meta {
+        flex: 1;
+        min-width: 0;
+    }
+    .business-meta h1 {
+        font-size: 1.375rem;
         font-weight: 700;
         letter-spacing: -0.02em;
         color: #0f172a;
-        margin-bottom: 0.4rem;
+        margin: 0 0 0.5rem 0;
         line-height: 1.3;
     }
-    .business-info .meta-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.75rem 1rem;
+    .business-meta .info-line {
         font-size: 0.8125rem;
         color: #64748b;
     }
-    .business-info .meta-row i { opacity: 0.8; margin-right: 0.25rem; }
-    .rating-inline {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-    .rating-inline .stars { color: #f59e0b; font-size: 0.875rem; }
-    .rating-inline .num { font-weight: 600; color: #334155; }
+    .business-meta .info-line i { margin-right: 0.35rem; opacity: 0.8; }
     .ranking-badge {
         display: inline-flex;
-        align-items: center;
         padding: 0.2rem 0.5rem;
         border-radius: 6px;
         font-size: 0.7rem;
@@ -110,24 +88,14 @@
         background: #fef3c7;
         color: #b45309;
     }
-
-    /* Stats row - minimal, inline */
-    .stats-row {
+    .stats-inline {
         display: flex;
         flex-wrap: wrap;
-        gap: 1.5rem 2rem;
-        padding: 1rem 0;
-        border-top: 1px solid #f1f5f9;
-        border-bottom: 1px solid #f1f5f9;
-        margin: 1rem 0 1.5rem;
+        gap: 1rem 1.5rem;
+        font-size: 0.8125rem;
+        color: #64748b;
     }
-    .stat-item {
-        display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
-    }
-    .stat-item .value { font-size: 1.125rem; font-weight: 700; color: #0f172a; }
-    .stat-item .label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+    .stats-inline .stat { font-weight: 600; color: #334155; }
 
     /* Content sections */
     .content-grid {
@@ -344,43 +312,25 @@
 
 @section('content')
 <div class="business-page">
-    {{-- Hero: banner as background (if exists) or gradient --}}
-    <div class="business-hero-wrap">
-        <div class="business-hero-bg {{ ($pageSettings && $pageSettings->banner_path) ? 'has-banner' : '' }}">
-            @if($pageSettings && $pageSettings->banner_path)
-                <img src="{{ asset('storage/' . $pageSettings->banner_path) }}" alt="" class="banner-img">
-            @endif
-            <div class="overlay"></div>
-            <div class="container business-hero-content">
-                <div>
-                        <h1 class="h4 mb-1 fw-bold text-white" style="{{ $pageSettings && $pageSettings->primary_color ? 'color: ' . $pageSettings->primary_color . ' !important' : '' }}">
-                            {{ $pageSettings->page_name ?? $seller->business_name }}
-                        </h1>
-                        <div class="d-flex flex-wrap align-items-center gap-2 text-white-50 small">
-                            <span class="rating-inline">
-                                <span class="stars">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="bi bi-star{{ $i <= $seller->rating ? '-fill' : '' }}"></i>
-                                    @endfor
-                                </span>
-                                <span class="num">{{ $seller->rating }}</span>
-                                <span>{{ $stats['total_reviews'] }} reviews</span>
-                            </span>
-                            <span>·</span>
-                            <span><i class="bi bi-geo-alt me-1"></i>{{ $seller->city }}, {{ $seller->province }}</span>
-                            @if($seller->phone)
-                                <span>·</span>
-                                <span><i class="bi bi-telephone me-1"></i>{{ $seller->phone }}</span>
-                            @endif
-                        </div>
-                </div>
-            </div>
+    @php
+        $isNew = ($stats['total_sales'] ?? 0) == 0 && ($stats['total_reviews'] ?? 0) == 0;
+    @endphp
+    {{-- Banner image (optional) --}}
+    @if($pageSettings && $pageSettings->banner_path)
+        <div class="business-banner-wrap">
+            <img src="{{ asset('storage/' . $pageSettings->banner_path) }}" alt="" class="business-banner">
         </div>
+    @else
+        <div class="business-banner-wrap">
+            <div class="business-banner business-banner-fallback"></div>
+        </div>
+    @endif
 
-        {{-- Profile card overlapping hero --}}
-        <div class="container">
-            <div class="business-profile-card">
-                <div class="business-logo-wrap">
+    {{-- Single header: logo, name, location, phone, stats (no duplication) --}}
+    <div class="container">
+        <div class="business-header">
+            <div class="business-header-inner">
+                <div class="business-logo">
                     @if($pageSettings && $pageSettings->logo_path)
                         <img src="{{ asset('storage/' . $pageSettings->logo_path) }}" alt="">
                     @elseif($seller->logo)
@@ -389,42 +339,32 @@
                         <div class="placeholder"><i class="bi bi-shop"></i></div>
                     @endif
                 </div>
-                <div class="business-info flex-grow-1">
+                <div class="business-meta">
                     <h1 style="{{ $pageSettings && $pageSettings->primary_color ? 'color: ' . $pageSettings->primary_color . ' !important' : '' }}">
                         {{ $pageSettings->page_name ?? $seller->business_name }}
                     </h1>
-                    <div class="meta-row">
-                        <span class="rating-inline">
-                            <span class="stars">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <i class="bi bi-star{{ $i <= $seller->rating ? '-fill' : '' }}"></i>
-                                @endfor
-                            </span>
-                            <span class="num">{{ $seller->rating }}</span>
-                            <span>{{ $stats['total_reviews'] }} reviews</span>
-                        </span>
-                        <span class="ranking-badge">{{ $seller->getRankingBadge() }}</span>
+                    <div class="info-line mb-1">
                         <span><i class="bi bi-geo-alt"></i>{{ $seller->city }}, {{ $seller->province }}</span>
                         @if($seller->phone)
-                            <span><i class="bi bi-telephone"></i>{{ $seller->phone }}</span>
+                            <span class="ms-3"><i class="bi bi-telephone"></i>{{ $seller->phone }}</span>
                         @endif
                     </div>
-                </div>
-                <div class="stats-row w-100 mb-0 mt-0 pt-2 pb-2 border-0">
-                    <div class="stat-item"><span class="value">{{ $stats['total_products'] }}</span><span class="label">Products</span></div>
-                    <div class="stat-item"><span class="value">{{ $stats['total_sales'] }}</span><span class="label">Sales</span></div>
-                    <div class="stat-item"><span class="value">{{ $stats['rating'] }}</span><span class="label">Rating</span></div>
-                    <div class="stat-item"><span class="value">{{ $stats['total_reviews'] }}</span><span class="label">Reviews</span></div>
+                    <div class="stats-inline">
+                        <span><span class="stat">{{ $stats['total_products'] }}</span> products</span>
+                        @if($isNew)
+                            <span class="ranking-badge">{{ $seller->getRankingBadge() }}</span>
+                        @else
+                            <span><span class="stat">{{ $stats['total_sales'] }}</span> sales</span>
+                            <span><span class="stat">{{ number_format($stats['rating'] ?? 0, 1) }}</span> rating · {{ $stats['total_reviews'] }} reviews</span>
+                            <span class="ranking-badge">{{ $seller->getRankingBadge() }}</span>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container">
-        {{-- Standalone banner only when NOT used in hero --}}
-        @if($pageSettings && $pageSettings->banner_path)
-            {{-- Banner already in hero --}}
-        @endif
 
         <div class="content-grid">
             {{-- Main: Products --}}
