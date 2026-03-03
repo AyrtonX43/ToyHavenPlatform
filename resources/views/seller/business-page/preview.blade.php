@@ -46,17 +46,17 @@
 .bp-stats-row { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; font-size: 0.875rem; color: #64748b; }
 .bp-stats-row .bp-stat { font-weight: 700; color: #334155; }
 .bp-badge { display: inline-flex; padding: 0.3rem 0.75rem; border-radius: 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #b45309; }
-.bp-main { width: 100%; max-width: none; margin: 0 auto; padding: 2rem clamp(1.5rem, 5vw, 4rem) 0; }
-@media (min-width: 992px) { .bp-main { display: grid; grid-template-columns: 1fr 340px; gap: 2.5rem; align-items: start; } }
-.bp-products-section { min-width: 0; width: 100%; }
+.bp-main { width: 100%; max-width: 1400px; margin: 0 auto; padding: 2rem clamp(1.5rem, 5vw, 4rem) 0; }
+@media (min-width: 992px) { .bp-main { display: grid; grid-template-columns: 1fr 320px; gap: 2.5rem; align-items: start; } }
+.bp-products-section { min-width: 0; width: 100%; max-width: 100%; }
 .bp-products-section h2 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1.5rem; }
-.bp-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; justify-items: center; align-items: start; }
-@media (min-width: 768px) { .bp-product-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.75rem; } }
-@media (min-width: 1200px) { .bp-product-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
-.bp-product-card { width: 100%; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.25s, box-shadow 0.25s; }
+.bp-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem; justify-content: center; justify-items: stretch; align-items: start; }
+@media (min-width: 768px) { .bp-product-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; } }
+@media (min-width: 1200px) { .bp-product-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } }
+.bp-product-card { width: 100%; max-width: 280px; margin: 0 auto; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.25s, box-shadow 0.25s; }
 .bp-product-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(14, 165, 233, 0.12); border-color: #0ea5e9; }
-.bp-product-img { aspect-ratio: 1; background: #f8fafc; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.bp-product-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.bp-product-img { aspect-ratio: 1; background: #f8fafc; overflow: hidden; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+.bp-product-img img { width: 100%; height: 100%; max-width: 100%; object-fit: cover; object-position: center; display: block; margin: 0 auto; }
 .bp-product-img .bp-no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 2.5rem; }
 .bp-product-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; }
 .bp-product-title { font-size: 0.95rem; font-weight: 600; color: #1e293b; line-height: 1.4; margin-bottom: 0.5rem; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; display: -webkit-box; }
@@ -69,7 +69,11 @@
 .bp-sidebar-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .bp-sidebar-card .bp-card-header { padding: 1rem 1.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
 .bp-sidebar-card .bp-card-body { padding: 1.25rem 1.5rem; }
-.bp-about-text { font-size: 0.9rem; line-height: 1.75; color: #475569; margin: 0; text-align: justify; letter-spacing: 0.02em; }
+.bp-sidebar-card.bp-about-card .bp-card-body { max-height: 280px; overflow-y: auto; }
+.bp-sidebar-card.bp-about-card .bp-card-body::-webkit-scrollbar { width: 6px; }
+.bp-sidebar-card.bp-about-card .bp-card-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+.bp-sidebar-card.bp-about-card .bp-card-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.bp-about-text { font-size: 0.875rem; line-height: 1.65; color: #475569; margin: 0; text-align: justify; text-justify: inter-word; hyphens: auto; letter-spacing: 0.01em; }
 .bp-social-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .bp-social-btn { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #fff; text-decoration: none; transition: transform 0.2s; }
 .bp-social-btn:hover { transform: translateY(-3px); color: #fff; }
@@ -209,7 +213,7 @@
 
         <aside class="bp-sidebar">
             @if(($pageSettings && ($pageSettings->business_description ?? null)) || $seller->description)
-                <div class="bp-sidebar-card">
+                <div class="bp-sidebar-card bp-about-card">
                     <div class="bp-card-header">About</div>
                     <div class="bp-card-body">
                         <p class="bp-about-text">{{ $pageSettings->business_description ?? $seller->description }}</p>
