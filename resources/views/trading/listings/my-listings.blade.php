@@ -81,9 +81,14 @@
                 <h1>My Listings</h1>
                 <p class="text-muted mb-0">Manage your trade listings</p>
             </div>
-            <a href="{{ route('trading.listings.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i>Create Listing
-            </a>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ route('trading.trades.history') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-clock-history me-1"></i>Trade History
+                </a>
+                <a href="{{ route('trading.listings.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Create Listing
+                </a>
+            </div>
         </div>
     </div>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Trading;
 
 use App\Http\Controllers\Controller;
+use App\Models\Report;
 use App\Models\Trade;
 use App\Models\TradeDispute;
 use App\Models\TradeReview;
@@ -45,6 +46,31 @@ class TradeController extends Controller
             ->paginate(12);
 
         return view('trading.trades.index', compact('trades'));
+    }
+
+    /**
+     * Trade History: completed trades with proof display.
+     * Barter/Barter+Cash: Trade 1 & Trade 2 + both proofs; Cash: listing product + proof(s).
+     */
+    public function history()
+    {
+        $trades = Trade::where('status', 'completed')
+            ->where(function ($q) {
+                $q->where('initiator_id', Auth::id())
+                    ->orWhere('participant_id', Auth::id());
+            })
+            ->with([
+                'tradeListing.images',
+                'tradeListing.product.images',
+                'tradeListing.userProduct.images',
+                'initiator',
+                'participant',
+                'items',
+            ])
+            ->orderBy('completed_at', 'desc')
+            ->paginate(12);
+
+        return view('trading.trades.history', compact('trades'));
     }
 
     public function show($id)
@@ -382,6 +408,74 @@ class TradeController extends Controller
             DB::rollBack();
             return back()->with('error', 'Failed to open dispute: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Show form to report this trade (product/seller not received or issue).
+     * Creates a Report for moderator review.
+     */
+    public function reportForm($id)
+    {
+        $trade = Trade::where(function ($q) {
+            $q->where('initiator_id', Auth::id())
+                ->orWhere('participant_id', Auth::id());
+        })
+            ->with(['tradeListing', 'initiator', 'participant'])
+            ->findOrFail($id);
+
+        if ($trade->status === 'completed' || $trade->status === 'cancelled') {
+            return redirect()->route('trading.trades.show', $trade->id)
+                ->with('info', 'You cannot report a completed or cancelled trade.');
+        }
+
+        return view('trading.trades.report-form', compact('trade'));
+    }
+
+    /**
+     * Store a report for this trade. Moderators can review and take action.
+     */
+    public function report(Request $request, $id)
+    {
+        $trade = Trade::where(function ($q) {
+            $q->where('initiator_id', Auth::id())
+                ->orWhere('participant_id', Auth::id());
+        })
+            ->findOrFail($id);
+
+        if ($trade->status === 'completed' || $trade->status === 'cancelled') {
+            return back()->with('error', 'You cannot report a completed or cancelled trade.');
+        }
+
+        $validated = $request->validate([
+            'report_type' => 'required|in:product_not_received,payment_not_received,wrong_item,damaged,seller_issue,other',
+            'reason' => 'required|string|max:500',
+            'description' => 'nullable|string|max:2000',
+            'evidence' => 'nullable|array|max:5',
+            'evidence.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
+        ]);
+
+        $evidencePaths = [];
+        if ($request->hasFile('evidence')) {
+            foreach ($request->file('evidence') as $file) {
+                if ($file->isValid()) {
+                    $evidencePaths[] = $file->store('reports/' . Auth::id(), 'public');
+                }
+            }
+        }
+
+        Report::create([
+            'reporter_id' => Auth::id(),
+            'reportable_type' => Trade::class,
+            'reportable_id' => $trade->id,
+            'report_type' => $validated['report_type'],
+            'reason' => $validated['reason'],
+            'description' => $validated['description'] ?? null,
+            'evidence' => $evidencePaths,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('trading.trades.show', $trade->id)
+            ->with('success', 'Report submitted. A moderator will review and take action.');
     }
 
     public function cancel($id)

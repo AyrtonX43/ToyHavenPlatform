@@ -318,6 +318,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         
         // Trades
         Route::get('/trades', [\App\Http\Controllers\Trading\TradeController::class, 'index'])->name('trades.index');
+        Route::get('/trades/history', [\App\Http\Controllers\Trading\TradeController::class, 'history'])->name('trades.history');
         Route::get('/trades/{id}', [\App\Http\Controllers\Trading\TradeController::class, 'show'])->name('trades.show');
         Route::put('/trades/{id}/shipping', [\App\Http\Controllers\Trading\TradeController::class, 'updateShipping'])->name('trades.update-shipping');
         Route::post('/trades/{id}/lock', [\App\Http\Controllers\Trading\TradeController::class, 'lock'])->name('trades.lock');
@@ -327,6 +328,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/trades/{id}/review', [\App\Http\Controllers\Trading\TradeController::class, 'storeTradeReview'])->name('trades.review');
         Route::get('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'disputeForm'])->name('trades.dispute-form');
         Route::post('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'dispute'])->name('trades.dispute');
+        Route::get('/trades/{id}/report', [\App\Http\Controllers\Trading\TradeController::class, 'reportForm'])->name('trades.report-form');
+        Route::post('/trades/{id}/report', [\App\Http\Controllers\Trading\TradeController::class, 'report'])->name('trades.report');
         Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
         
         // Conversations (trade chat)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Trading;
 
 use App\Http\Controllers\Controller;
+use App\Models\Conversation;
 use App\Models\TradeListing;
 use App\Models\TradeOffer;
 use App\Models\Product;
@@ -138,8 +139,10 @@ class TradeOfferController extends Controller
             $offer->load(['offerer', 'tradeListing']);
             $listing->user->notify(new TradeOfferReceivedNotification($offer));
 
-            return redirect()->route('trading.listings.show', $listing->id)
-                ->with('success', 'Offer submitted successfully!');
+            $conversation = Conversation::firstOrCreateForListing($listing->id, $listing->user_id, Auth::id());
+
+            return redirect()->route('trading.conversations.show', $conversation)
+                ->with('success', 'Offer submitted successfully! Continue negotiating in chat.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Failed to create offer: ' . $e->getMessage());
