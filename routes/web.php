@@ -48,6 +48,10 @@ Route::prefix('toyshop')->name('toyshop.')->group(function () {
     Route::get('/business/{slug}', [\App\Http\Controllers\Toyshop\BusinessPageController::class, 'show'])->name('business.show');
 });
 
+// Auction Business Page (public)
+Route::get('/auctions/business/{slug}', [\App\Http\Controllers\Auction\AuctionBusinessPageController::class, 'show'])
+    ->name('auctions.business.show');
+
 // Seller business email verification (public signed URL from email link)
 Route::get('/seller/verify-business-email', [\App\Http\Controllers\Seller\BusinessPageController::class, 'verifyBusinessEmail'])
     ->name('seller.business-page.verify-email')
@@ -154,8 +158,10 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Membership Routes
     Route::prefix('membership')->name('membership.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Membership\PlanController::class, 'index'])->name('index');
+        Route::get('/terms/{plan:slug}', [\App\Http\Controllers\Membership\PlanController::class, 'terms'])->name('terms');
+        Route::post('/agree-terms', [\App\Http\Controllers\Membership\SubscriptionController::class, 'agreeTerms'])->name('agree-terms');
         Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
-        Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
+        Route::match(['get', 'post'], '/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
         Route::get('/payment-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment-return');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
@@ -637,6 +643,16 @@ Route::prefix('moderator')->middleware(['moderator'])->name('moderator.')->group
         ->name('reports.resolve');
     Route::post('/reports/{id}/dismiss', [\App\Http\Controllers\Moderator\ReportController::class, 'dismiss'])
         ->name('reports.dismiss');
+
+    // Auctions (requires auctions_view permission; approve/reject require auctions_moderate)
+    Route::get('/auctions', [\App\Http\Controllers\Moderator\AuctionController::class, 'index'])
+        ->name('auctions.index');
+    Route::get('/auctions/{auction}', [\App\Http\Controllers\Moderator\AuctionController::class, 'show'])
+        ->name('auctions.show');
+    Route::post('/auctions/{auction}/approve', [\App\Http\Controllers\Moderator\AuctionController::class, 'approve'])
+        ->name('auctions.approve');
+    Route::post('/auctions/{auction}/reject', [\App\Http\Controllers\Moderator\AuctionController::class, 'reject'])
+        ->name('auctions.reject');
 });
 
 require __DIR__.'/auth.php';

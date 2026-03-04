@@ -27,4 +27,17 @@ class PlanController extends Controller
             'activeAuctionsCount' => $activeAuctionsCount,
         ]);
     }
+
+    /**
+     * Display plan-specific terms and conditions before payment
+     */
+    public function terms(Plan $plan)
+    {
+        if (! $plan->is_active) {
+            return redirect()->route('membership.index')
+                ->with('error', 'This plan is no longer available.');
+        }
+
+        return view('membership.terms', compact('plan'));
+    }
 }

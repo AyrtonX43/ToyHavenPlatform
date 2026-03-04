@@ -79,6 +79,7 @@ class ModeratorUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'moderator',
+            'moderator_permissions' => $this->normalizeModeratorPermissions($request->input('moderator_permissions', [])),
         ]);
         $moderator->email_verified_at = now();
         $moderator->save();
@@ -140,6 +141,7 @@ class ModeratorUserController extends Controller
         $updateData = [
             'name' => $request->name,
             'email' => $request->email,
+            'moderator_permissions' => $this->normalizeModeratorPermissions($request->input('moderator_permissions', [])),
         ];
 
         if ($request->filled('password')) {
@@ -163,5 +165,22 @@ class ModeratorUserController extends Controller
 
         return redirect()->route('admin.moderators.index')
             ->with('success', 'Moderator account removed successfully.');
+    }
+
+    private function normalizeModeratorPermissions(array $raw): array
+    {
+        $allowed = [
+            'auctions_view',
+            'auctions_moderate',
+            'auction_reports_view',
+            'auction_sellers_view',
+        ];
+
+        $result = [];
+        foreach ($allowed as $key) {
+            $result[$key] = in_array($key, $raw, true);
+        }
+
+        return $result;
     }
 }

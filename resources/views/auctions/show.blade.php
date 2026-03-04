@@ -245,12 +245,19 @@
 
                 <!-- Seller Info -->
                 <hr class="my-4">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-person-circle fs-3 text-muted me-3"></i>
-                    <div>
-                        <small class="text-muted d-block">Seller</small>
-                        <strong>{{ $auction->user->name }}</strong>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle fs-3 text-muted me-3"></i>
+                        <div>
+                            <small class="text-muted d-block">Seller</small>
+                            <strong>{{ $auction->user->name ?? 'N/A' }}</strong>
+                        </div>
                     </div>
+                    @if(!empty($sellerBusinessUrl))
+                        <a href="{{ $sellerBusinessUrl }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-building me-1"></i>More from this seller
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

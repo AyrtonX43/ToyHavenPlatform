@@ -42,11 +42,14 @@ class AuctionVerificationController extends Controller
             return back()->with('error', 'Verification is not pending.');
         }
 
+        $slug = $this->generateAuctionSellerSlug($verification);
+
         $verification->update([
             'status' => 'approved',
             'verified_at' => now(),
             'verified_by' => Auth::id(),
             'rejection_reason' => null,
+            'auction_seller_slug' => $slug,
         ]);
 
         $verification->documents()->update(['status' => 'approved']);
@@ -84,5 +87,28 @@ class AuctionVerificationController extends Controller
         ]);
 
         return back()->with('success', 'Resubmission requested.');
+    }
+
+    private function generateAuctionSellerSlug(AuctionSellerVerification $verification): string
+    {
+        $base = $verification->auction_business_name
+            ? \Illuminate\Support\Str::slug($verification->auction_business_name)
+            : 'seller-' . $verification->user_id;
+
+        if (empty($base)) {
+            $base = 'seller-' . $verification->user_id;
+        }
+
+        $slug = $base;
+        $counter = 1;
+
+        while (AuctionSellerVerification::where('auction_seller_slug', $slug)
+            ->where('id', '!=', $verification->id)
+            ->exists()) {
+            $slug = $base . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
     }
 }

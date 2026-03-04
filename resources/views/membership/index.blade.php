@@ -156,23 +156,10 @@
                         @if(auth()->user()->hasActiveMembership() && auth()->user()->currentPlan()?->id === $plan->id)
                             <button class="btn btn-outline-secondary w-100 mt-3" disabled>Current Plan</button>
                         @else
-                            <form action="{{ route('membership.subscribe') }}" method="POST" class="mt-3">
-                                @csrf
-                                <input type="hidden" name="plan" value="{{ $plan->slug }}">
-                                @if($plan->slug === 'vip')
-                                    <button type="submit" class="btn btn-warning w-100 fw-bold" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
-                                        Get {{ $plan->name }}
-                                    </button>
-                                @elseif($plan->slug === 'pro')
-                                    <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
-                                        Get {{ $plan->name }}
-                                    </button>
-                                @else
-                                    <button type="submit" class="btn btn-outline-primary w-100">
-                                        Get {{ $plan->name }}
-                                    </button>
-                                @endif
-                            </form>
+                            <a href="{{ route('membership.terms', ['plan' => $plan->slug]) }}" class="btn w-100 mt-3 {{ $plan->slug === 'vip' ? 'btn-warning fw-bold' : ($plan->slug === 'pro' ? 'btn-primary' : 'btn-outline-primary') }}"
+                               @if($plan->slug === 'vip') style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;" @elseif($plan->slug === 'pro') style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none; color: white;" @endif>
+                                Get {{ $plan->name }}
+                            </a>
                         @endif
                     @else
                         <a href="{{ route('login', ['redirect' => route('membership.index')]) }}" class="btn btn-primary w-100 mt-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">

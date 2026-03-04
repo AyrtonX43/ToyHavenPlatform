@@ -16,6 +16,7 @@ class Plan extends Model
         'description',
         'benefits',
         'features',
+        'terms_and_conditions',
         'sort_order',
         'is_active',
     ];

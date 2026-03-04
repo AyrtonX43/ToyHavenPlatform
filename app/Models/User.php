@@ -38,6 +38,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'banned_by',
         'related_report_id',
         'last_seen_at',
+        'moderator_permissions',
     ];
 
     /**
@@ -64,6 +65,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_seen_at' => 'datetime',
             'password' => 'hashed',
             'is_banned' => 'boolean',
+            'moderator_permissions' => 'array',
         ];
     }
 
@@ -248,6 +250,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isModerator(): bool
     {
         return $this->role === 'moderator';
+    }
+
+    /**
+     * Check if moderator has a specific auction permission.
+     * Admins always have full access.
+     */
+    public function hasAuctionPermission(string $key): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (! $this->isModerator()) {
+            return false;
+        }
+
+        $perms = $this->moderator_permissions ?? [];
+
+        return (bool) ($perms[$key] ?? false);
     }
 
     public function canModerate(): bool

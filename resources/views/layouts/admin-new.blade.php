@@ -706,6 +706,12 @@
                 <i class="bi bi-flag menu-icon"></i> Trade Reports
             </a>
             @endif
+            @if(auth()->user()->hasAuctionPermission('auctions_view') && Route::has('moderator.auctions.index'))
+            <a href="{{ route('moderator.auctions.index') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.auctions.*') ? 'active' : '' }}">
+                <i class="bi bi-hammer menu-icon"></i> Auctions
+            </a>
+            @endif
             <hr class="text-white-50 my-2 mx-4">
             @endif
 

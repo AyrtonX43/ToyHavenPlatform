@@ -52,6 +52,34 @@
                 </div>
             </div>
 
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Auction Permissions</label>
+                <div class="card card-body bg-light">
+                    @php $checked = old('moderator_permissions', []); @endphp
+                    <div class="form-check">
+                        <input type="checkbox" name="moderator_permissions[]" value="auctions_view" id="perm_auctions_view"
+                               class="form-check-input" {{ in_array('auctions_view', $checked) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="perm_auctions_view">View Auctions</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="moderator_permissions[]" value="auctions_moderate" id="perm_auctions_moderate"
+                               class="form-check-input" {{ in_array('auctions_moderate', $checked) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="perm_auctions_moderate">Approve/Reject Auctions</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="moderator_permissions[]" value="auction_reports_view" id="perm_auction_reports_view"
+                               class="form-check-input" {{ in_array('auction_reports_view', $checked) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="perm_auction_reports_view">View Auction Reports</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="moderator_permissions[]" value="auction_sellers_view" id="perm_auction_sellers_view"
+                               class="form-check-input" {{ in_array('auction_sellers_view', $checked) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="perm_auction_sellers_view">View Auction Sellers</label>
+                    </div>
+                </div>
+                <small class="text-muted">Grant auction-related permissions to this moderator.</small>
+            </div>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">

@@ -7,6 +7,8 @@ use App\Models\TradeListing;
 use App\Models\TradeOffer;
 use App\Models\Product;
 use App\Models\UserProduct;
+use App\Notifications\TradeOfferReceivedNotification;
+use App\Notifications\TradeOfferRejectedNotification;
 use App\Services\TradeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -132,7 +134,7 @@ class TradeOfferController extends Controller
 
             DB::commit();
 
-            // TODO: Send notification to listing owner
+            $listing->user->notify(new TradeOfferReceivedNotification($offer->load(['tradeListing', 'offerer', 'offeredProduct.images', 'offeredUserProduct.images'])));
 
             return redirect()->route('trading.listings.show', $listing->id)
                 ->with('success', 'Offer submitted successfully!');
@@ -194,7 +196,7 @@ class TradeOfferController extends Controller
 
         $offer->update(['status' => 'rejected']);
 
-        // TODO: Send notification to offerer
+        $offer->offerer->notify(new TradeOfferRejectedNotification($offer->load('tradeListing')));
 
         return back()->with('success', 'Offer rejected.');
     }

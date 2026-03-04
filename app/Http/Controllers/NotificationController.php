@@ -196,6 +196,7 @@ class NotificationController extends Controller
             'auction_outbid' => 'bi-hammer',
             'trade_offer_received' => 'bi-arrow-left-right',
             'trade_offer_accepted' => 'bi-check-circle',
+            'trade_offer_rejected' => 'bi-x-circle',
             'trade_status_updated' => 'bi-arrow-repeat',
             'trade_listing_submitted' => 'bi-hourglass-split',
             'seller_approved' => 'bi-shield-check',
@@ -221,6 +222,7 @@ class NotificationController extends Controller
             'auction_outbid' => 'warning',
             'trade_offer_received' => 'info',
             'trade_offer_accepted' => 'success',
+            'trade_offer_rejected' => 'danger',
             'trade_status_updated' => 'info',
             'seller_approved' => 'success',
             'seller_rejected' => 'danger',
@@ -247,6 +249,7 @@ class NotificationController extends Controller
             
             case 'trade_offer_received':
             case 'trade_offer_accepted':
+            case 'trade_offer_rejected':
                 return isset($data['offer_id']) ? route('trading.offers.show', $data['offer_id']) : route('trading.offers.received');
             
             case 'trade_status_updated':

@@ -13,6 +13,7 @@ class AuctionSellerVerification extends Model
         'seller_id',
         'seller_type',
         'auction_business_name',
+        'auction_seller_slug',
         'status',
         'rejection_reason',
         'phone',

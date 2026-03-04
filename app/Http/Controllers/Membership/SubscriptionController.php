@@ -18,16 +18,45 @@ class SubscriptionController extends Controller
     ) {}
 
     /**
+     * Store terms acceptance and redirect to subscribe (or create subscription directly).
+     * Terms must be accepted before payment.
+     */
+    public function agreeTerms(Request $request)
+    {
+        $request->validate([
+            'plan' => 'required|string|exists:plans,slug',
+            'terms_accepted' => 'required|accepted',
+        ]);
+
+        $plan = Plan::where('slug', $request->plan)->active()->firstOrFail();
+        $request->session()->put('membership_terms_accepted', [
+            'plan_slug' => $plan->slug,
+            'accepted_at' => now()->toIso8601String(),
+        ]);
+
+        return redirect()->route('membership.subscribe')
+            ->with('plan', $plan->slug);
+    }
+
+    /**
      * Subscribe to a plan — creates a local subscription (pending) and a PayMongo payment intent.
+     * Requires prior terms acceptance via agreeTerms().
      */
     public function subscribe(Request $request)
     {
-        $plan = Plan::where('slug', $request->get('plan', 'basic'))->active()->firstOrFail();
+        $planSlug = $request->get('plan', session('plan', 'basic'));
+        $plan = Plan::where('slug', $planSlug)->active()->firstOrFail();
         $user = Auth::user();
 
         if ($user->hasActiveMembership()) {
             return redirect()->route('membership.manage')
                 ->with('info', 'You already have an active subscription.');
+        }
+
+        $termsAccepted = session('membership_terms_accepted');
+        if (! $termsAccepted || ($termsAccepted['plan_slug'] ?? null) !== $plan->slug) {
+            return redirect()->route('membership.terms', ['plan' => $plan->slug])
+                ->with('error', 'Please read and accept the terms and conditions before subscribing.');
         }
 
         $subscription = Subscription::create([
@@ -36,7 +65,10 @@ class SubscriptionController extends Controller
             'status' => 'pending',
             'current_period_start' => now(),
             'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
+            'subscription_terms_accepted_at' => now(),
         ]);
+
+        $request->session()->forget('membership_terms_accepted');
 
         $intent = $this->payMongo->createPaymentIntent(
             (float) $plan->price,

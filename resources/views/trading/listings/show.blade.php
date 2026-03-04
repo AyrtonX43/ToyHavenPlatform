@@ -575,33 +575,49 @@
                 <h5 class="mb-3">Active Offers ({{ $listing->activeOffers->count() }})</h5>
                 @foreach($listing->activeOffers as $offer)
                 <div class="offer-card">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <strong>{{ $offer->offerer->name }}</strong>
-                            @if($offer->getOfferedItem())
-                            <div class="text-muted small">{{ $offer->getOfferedItem()->name }}</div>
-                            @endif
-                            @if($offer->cash_amount)
-                            <div class="text-success small">+ ₱{{ number_format($offer->cash_amount, 2) }}</div>
-                            @endif
-                        </div>
-                        @if(Auth::id() === $listing->user_id)
-                        <div class="btn-group btn-group-sm">
-                            <form method="POST" action="{{ route('trading.offers.accept', $offer->id) }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-success btn-sm">Accept</button>
-                            </form>
-                            <form method="POST" action="{{ route('trading.offers.reject', $offer->id) }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                            </form>
-                        </div>
+                    <div class="d-flex gap-3 mb-2">
+                        @php
+                            $offeredItem = $offer->getOfferedItem();
+                            $offeredImg = $offeredItem && $offeredItem->images->isNotEmpty() ? $offeredItem->images->first() : null;
+                        @endphp
+                        @if($offeredImg)
+                        <a href="{{ route('trading.offers.show', $offer->id) }}" class="text-decoration-none flex-shrink-0">
+                            <img src="{{ asset('storage/' . $offeredImg->image_path) }}" alt="{{ $offeredItem->name ?? 'Product' }}" class="rounded" style="width: 72px; height: 72px; object-fit: cover; border: 1px solid #e2e8f0;">
+                        </a>
                         @endif
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ $offer->offerer->name }}</strong>
+                                    @if($offeredItem)
+                                    <div class="text-muted small">{{ $offeredItem->name }}</div>
+                                    @endif
+                                    @if($offer->cash_amount)
+                                    <div class="text-success small">+ ₱{{ number_format($offer->cash_amount, 2) }}</div>
+                                    @endif
+                                </div>
+                                @if(Auth::id() === $listing->user_id)
+                                <div class="btn-group btn-group-sm">
+                                    <form method="POST" action="{{ route('trading.offers.accept', $offer->id) }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('trading.offers.reject', $offer->id) }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
+                            @if($offer->message)
+                            <p class="small text-muted mb-1 mt-1">{{ Str::limit($offer->message, 80) }}</p>
+                            @endif
+                            <a href="{{ route('trading.offers.show', $offer->id) }}" class="small text-primary text-decoration-none">
+                                <i class="bi bi-eye me-1"></i>View full offer
+                            </a>
+                            <small class="text-muted d-block">{{ $offer->created_at->diffForHumans() }}</small>
+                        </div>
                     </div>
-                    @if($offer->message)
-                    <p class="small text-muted mb-0">{{ $offer->message }}</p>
-                    @endif
-                    <small class="text-muted">{{ $offer->created_at->diffForHumans() }}</small>
                 </div>
                 @endforeach
             </div>
