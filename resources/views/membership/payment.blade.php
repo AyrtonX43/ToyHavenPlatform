@@ -161,9 +161,6 @@
                                 <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
                                 <span class="text-muted small">Waiting for payment...</span>
                             </div>
-                            <button type="button" id="change-method-btn" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Change Payment Method
-                            </button>
                         </div>
 
                         <div id="pay-error" class="alert alert-danger d-none"></div>
@@ -262,21 +259,6 @@
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
             new bootstrap.Modal(document.getElementById('cancelPaymentModal')).show();
-        });
-    }
-
-    var changeMethodBtn = document.getElementById('change-method-btn');
-    if (changeMethodBtn) {
-        changeMethodBtn.addEventListener('click', function() {
-            stopPolling();
-            document.getElementById('qr-display').classList.add('d-none');
-            document.getElementById('pay-btn').classList.remove('d-none');
-            document.getElementById('qrph-notice').classList.remove('d-none');
-            document.querySelectorAll('.payment-method-option').forEach(function(o) { 
-                o.style.pointerEvents = ''; 
-                o.style.opacity = ''; 
-            });
-            clearError();
         });
     }
 
