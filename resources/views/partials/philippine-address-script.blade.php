@@ -110,7 +110,7 @@
         const code = opt.dataset.code;
         const name = this.value;
 
-        if (name.includes('NCR') || name.includes('National Capital Region') || code === '130000000') {
+        if (name.includes('NCR') || name.includes('National Capital Region') || code === '130000000' || code === '1300000000') {
             provinceSelect.innerHTML = '<option value="Metro Manila">Metro Manila</option>';
             provinceSelect.value = 'Metro Manila';
             provinceSelect.style.backgroundColor = '#e9ecef';
@@ -228,10 +228,6 @@
         });
     }
 
-                document.dispatchEvent(new CustomEvent('phRegionsLoaded', { detail: { prefix } }));
-            })
-            .catch(e => console.error('Error loading regions:', e));
-    }
     loadRegions();
 })();
 </script>
