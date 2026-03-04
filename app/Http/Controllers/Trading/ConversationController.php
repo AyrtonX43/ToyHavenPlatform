@@ -123,13 +123,34 @@ class ConversationController extends Controller
 
     public function storeFromListing(Request $request, $id)
     {
-        $listing = TradeListing::findOrFail($id);
-        if ($listing->user_id === Auth::id()) {
-            return redirect()->route('trading.listings.show', $id)->with('error', 'You cannot message yourself.');
+        try {
+            $listing = TradeListing::with('user')->findOrFail($id);
+
+            if ($listing->user_id === Auth::id()) {
+                return redirect()->route('trading.listings.show', $id)->with('error', 'You cannot message yourself.');
+            }
+
+            if (!$listing->canAcceptOffers()) {
+                return redirect()->route('trading.listings.show', $id)
+                    ->with('error', 'This listing is not accepting offers right now.');
+            }
+
+            $conversation = Conversation::firstOrCreateForListing($listing->id, Auth::id(), $listing->user_id);
+
+            return redirect()->route('trading.conversations.show', $conversation)
+                ->with('success', 'Conversation started.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('trading.index')->with('error', 'Listing not found.');
+        } catch (\Throwable $e) {
+            Log::error('Make an offer failed', [
+                'listing_id' => $id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('trading.listings.show', $id)
+                ->with('error', 'Unable to start conversation. Please try again.');
         }
-        $conversation = Conversation::firstOrCreateForListing($listing->id, Auth::id(), $listing->user_id);
-        return redirect()->route('trading.conversations.show', $conversation)
-            ->with('success', 'Conversation started.');
     }
 
     public function getMessages(Request $request, Conversation $conversation)

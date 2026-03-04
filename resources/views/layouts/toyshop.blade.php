@@ -676,8 +676,8 @@
                                         @if($recentNotifications->count() > 0)
                                             @foreach($recentNotifications as $notification)
                                                 @php
-                                                    $data = $notification->data;
-                                                    $type = $data['type'] ?? class_basename($notification->type);
+                                                    $data = is_array($notification->data ?? null) ? ($notification->data) : [];
+                                                    $type = $data['type'] ?? class_basename($notification->type ?? '');
                                                     $isUnread = is_null($notification->read_at);
                                                     
                                                     $icons = [
