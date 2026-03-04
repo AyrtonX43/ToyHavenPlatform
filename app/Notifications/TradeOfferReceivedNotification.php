@@ -3,14 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\TradeOffer;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TradeOfferReceivedNotification extends Notification implements ShouldQueue
+class TradeOfferReceivedNotification extends Notification
 {
-    use Queueable;
 
     protected $offer;
 
@@ -35,14 +32,17 @@ class TradeOfferReceivedNotification extends Notification implements ShouldQueue
 
     public function toArray($notifiable)
     {
+        $offererName = $this->offer->offerer->name ?? 'Someone';
+        $listingTitle = $this->offer->tradeListing->title;
         return [
             'type' => 'trade_offer_received',
             'offer_id' => $this->offer->id,
             'listing_id' => $this->offer->trade_listing_id,
-            'listing_title' => $this->offer->tradeListing->title,
-            'offerer_name' => $this->offer->offerer->name ?? 'Someone',
-            'message' => 'You have received a new trade offer on your listing: ' . $this->offer->tradeListing->title,
-            'action_url' => route('trading.offers.show', $this->offer->id),
+            'listing_title' => $listingTitle,
+            'offerer_name' => $offererName,
+            'title' => 'New trade offer from ' . $offererName,
+            'message' => $offererName . ' made an offer on your listing: ' . $listingTitle,
+            'action_url' => route('trading.listings.show', $this->offer->trade_listing_id) . '?offer=' . $this->offer->id,
         ];
     }
 }

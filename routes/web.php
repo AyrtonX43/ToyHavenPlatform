@@ -112,6 +112,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Notification Routes
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/poll', [\App\Http\Controllers\NotificationController::class, 'poll'])->name('poll');
         Route::get('/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('unread-count');
         Route::get('/recent', [\App\Http\Controllers\NotificationController::class, 'recent'])->name('recent');
         Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');
@@ -304,6 +305,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Trading Routes - Authenticated (continued)
     Route::middleware(['auth'])->prefix('trading')->name('trading.')->group(function () {
+        Route::get('/listings/{id}/active-offers-partial', [\App\Http\Controllers\Trading\TradeListingController::class, 'activeOffersPartial'])->name('listings.active-offers-partial');
         // Trade Offers
         Route::post('/listings/{id}/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'store'])->name('offers.store');
         Route::get('/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'myOffers'])->name('offers.my');

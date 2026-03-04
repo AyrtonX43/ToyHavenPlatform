@@ -410,6 +410,49 @@ class TradeListingController extends Controller
         return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings', 'offererProducts', 'offererListingsByOffer'));
     }
 
+    /**
+     * Partial HTML for Active Offers (for real-time polling)
+     */
+    public function activeOffersPartial($id)
+    {
+        $listing = TradeListing::with([
+            'activeOffers.offeredProduct.images',
+            'activeOffers.offeredUserProduct.images',
+            'activeOffers.offerer',
+        ])->findOrFail($id);
+
+        if ($listing->user_id !== Auth::id()) {
+            abort(403, 'Only the listing owner can poll active offers.');
+        }
+
+        $offererListingsByOffer = collect();
+        foreach ($listing->activeOffers ?? [] as $offer) {
+            $offererListing = TradeListing::where('user_id', $offer->offerer_id)
+                ->where(function ($q) use ($offer) {
+                    if ($offer->offered_product_id) {
+                        $q->where('product_id', $offer->offered_product_id);
+                    } else {
+                        $q->where('user_product_id', $offer->offered_user_product_id);
+                    }
+                })
+                ->with(['images', 'product.images', 'userProduct.images', 'category'])
+                ->first();
+            if ($offererListing) {
+                $offererListingsByOffer[$offer->id] = $offererListing;
+            }
+        }
+
+        $html = view('trading.listings._active-offers', [
+            'listing' => $listing,
+            'offererListingsByOffer' => $offererListingsByOffer,
+        ])->render();
+
+        return response()->json([
+            'html' => $html,
+            'count' => $listing->activeOffers->count(),
+        ]);
+    }
+
     public function edit($id)
     {
         $listing = TradeListing::where('user_id', Auth::id())

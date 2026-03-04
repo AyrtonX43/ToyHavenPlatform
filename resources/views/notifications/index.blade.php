@@ -571,7 +571,7 @@
     @endif
 
     @if($notifications->count() > 0)
-        <div class="notifications-list">
+        <div class="notifications-list" id="notifications-list-container" data-latest-id="{{ $notifications->first()->id }}">
             @foreach($notifications as $notification)
                 @php
                     $data = $notification->data;
@@ -676,7 +676,8 @@
             {{ $notifications->links() }}
         </div>
     @else
-        <div class="empty-state">
+        <div class="notifications-list" id="notifications-list-container" data-latest-id=""></div>
+        <div class="empty-state" id="notifications-empty-state" style="display:block">
             <i class="bi bi-bell-slash empty-state-icon"></i>
             <h4 class="fw-bold mb-2">No notifications</h4>
             <p class="text-muted mb-0">You're all caught up! We'll notify you when there's something new.</p>
@@ -726,13 +727,16 @@
             updateNotificationCount();
         });
 
-        // Get notification data
+        // Get notification data (from initial load or from data attribute for polled notifications)
         const notificationItem = event.currentTarget;
         const notificationData = @json($notifications->keyBy('id')->map(function($n) {
             return $n->data;
         }));
-
-        const data = notificationData[notificationId];
+        let data = notificationData[notificationId];
+        if (!data && notificationItem) {
+            const attr = notificationItem.getAttribute('data-notification-data');
+            if (attr) try { data = JSON.parse(attr); } catch (e) {}
+        }
         if (!data) return;
 
         const type = data.type || '';
@@ -1063,6 +1067,58 @@
                     }
                 }
             });
+    }
+
+    // Real-time: poll for new notifications every 3 seconds
+    var _pageLoadTime = new Date().toISOString();
+    (function pollNotifications() {
+        var container = document.getElementById('notifications-list-container');
+        if (!container) return;
+        
+        function doPoll() {
+            var afterId = container.getAttribute('data-latest-id') || '';
+            var url = afterId
+                ? '{{ route("notifications.poll") }}?after_id=' + encodeURIComponent(afterId)
+                : '{{ route("notifications.poll") }}?since=' + encodeURIComponent(_pageLoadTime);
+            
+            fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.notifications && res.notifications.length > 0) {
+                        var emptyEl = document.getElementById('notifications-empty-state');
+                        if (emptyEl) emptyEl.style.display = 'none';
+                        res.notifications.forEach(function(n) {
+                            var html = buildNotificationItemHtml(n);
+                            container.insertAdjacentHTML('afterbegin', html);
+                        });
+                        var newestId = res.notifications[res.notifications.length - 1].id;
+                        container.setAttribute('data-latest-id', newestId);
+                        if (typeof updateNotificationCount === 'function') updateNotificationCount();
+                        var badge = document.querySelector('.notification-badge');
+                        if (badge && res.total_count !== undefined) {
+                            badge.textContent = res.total_count > 99 ? '99+' : res.total_count;
+                            badge.style.display = 'block';
+                        }
+                    }
+                })
+                .catch(function() {});
+            setTimeout(doPoll, 3000);
+        }
+        setTimeout(doPoll, 3000);
+    })();
+    
+    function buildNotificationItemHtml(n) {
+        var data = n.data || {};
+        var type = data.type || 'default';
+        var icons = { order_status: 'bi-box-seam', trade_offer_received: 'bi-arrow-left-right', trade_offer_rejected: 'bi-x-circle', trade_offer_accepted: 'bi-check-circle', trade_status_updated: 'bi-arrow-repeat', trade_listing_submitted: 'bi-hourglass-split', trade_listing_approved: 'bi-check-circle', trade_listing_rejected: 'bi-x-circle', seller_approved: 'bi-shield-check', seller_rejected: 'bi-x-circle', seller_suspended: 'bi-exclamation-triangle', account_banned: 'bi-ban', account_suspended: 'bi-pause-circle', profile_update: 'bi-person-check', auction_won: 'bi-trophy', auction_outbid: 'bi-hammer', order_shipped: 'bi-truck', order_delivered: 'bi-check-circle', payment_success: 'bi-credit-card-2-front', product_approved: 'bi-check-circle', product_rejected: 'bi-x-circle', document_rejected: 'bi-file-earmark-x', business_page_revision_approved: 'bi-check-circle', business_page_revision_rejected: 'bi-x-circle' };
+        var colors = { order_status: 'primary', trade_offer_received: 'info', trade_offer_rejected: 'danger', trade_offer_accepted: 'success', trade_status_updated: 'info', trade_listing_submitted: 'warning', trade_listing_approved: 'success', trade_listing_rejected: 'danger', seller_approved: 'success', seller_rejected: 'danger', seller_suspended: 'warning', account_banned: 'danger', account_suspended: 'warning', profile_update: 'primary', auction_won: 'success', auction_outbid: 'warning', order_shipped: 'info', order_delivered: 'success', payment_success: 'success', product_approved: 'success', product_rejected: 'danger', document_rejected: 'danger', business_page_revision_approved: 'success', business_page_revision_rejected: 'danger' };
+        var icon = icons[type] || 'bi-bell';
+        var color = colors[type] || 'secondary';
+        var title = data.title || data.message || 'New notification';
+        var msg = (data.message && data.title && data.message !== data.title) ? '<div class="notification-message">' + (data.message.length > 100 ? data.message.substring(0, 100) + '...' : data.message) + '</div>' : '';
+        var business = (data.business_name) ? '<div class="notification-message text-muted"><i class="bi bi-shop me-1"></i>' + data.business_name + '</div>' : '';
+        var dataAttr = (n.data ? ' data-notification-data="' + JSON.stringify(n.data).replace(/"/g, '&quot;') + '"' : '');
+        return '<div class="notification-item unread" data-notification-id="' + n.id + '"' + dataAttr + ' onclick="viewNotification(\'' + n.id + '\', event)"><span class="notification-dot"></span><div class="notification-item-content"><div class="notification-icon bg-' + color + ' text-white"><i class="bi ' + icon + '"></i></div><div class="notification-content"><div class="notification-title fw-bold">' + (title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' + business + msg + '<div class="notification-time mt-2"><i class="bi bi-clock me-1"></i>' + (n.created_at || 'Just now') + '</div></div><div class="notification-actions"><span class="badge bg-primary rounded-pill" style="font-size: 0.7rem;">New</span></div></div><button type="button" class="notification-delete-btn" onclick="deleteNotification(\'' + n.id + '\', event)" title="Delete notification"><i class="bi bi-trash"></i></button></div>';
     }
 
     // Auto-open notification modal if 'open' parameter is present in URL

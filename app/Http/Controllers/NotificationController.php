@@ -116,6 +116,56 @@ class NotificationController extends Controller
     }
 
     /**
+     * Poll for new notifications (real-time)
+     * GET ?after_id=uuid - returns notifications created after the one with this id
+     * GET ?since=ISO8601 - when no notifications yet, returns notifications created after this time
+     */
+    public function poll(Request $request)
+    {
+        $afterId = $request->get('after_id');
+        $since = $request->get('since');
+
+        $query = Auth::user()->notifications();
+        if ($afterId) {
+            $after = Auth::user()->notifications()->find($afterId);
+            if (!$after) {
+                return response()->json(['notifications' => [], 'unread_count' => Auth::user()->unreadNotifications()->count()]);
+            }
+            $query->where('created_at', '>', $after->created_at);
+        } elseif ($since) {
+            try {
+                $sinceDate = new \DateTime($since);
+                $query->where('created_at', '>', $sinceDate);
+            } catch (\Exception $e) {
+                return response()->json(['notifications' => [], 'unread_count' => Auth::user()->unreadNotifications()->count()]);
+            }
+        } else {
+            return response()->json(['notifications' => [], 'unread_count' => Auth::user()->unreadNotifications()->count()]);
+        }
+
+        $newNotifications = $query->orderBy('created_at', 'asc')->get();
+
+        $user = Auth::user()->load('addresses');
+        $profileWarnings = $this->getProfileWarnings($user);
+        $unreadCount = Auth::user()->unreadNotifications()->count();
+
+        return response()->json([
+            'notifications' => $newNotifications->map(function ($notification) {
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->type,
+                    'data' => $notification->data,
+                    'read_at' => $notification->read_at,
+                    'created_at' => $notification->created_at->diffForHumans(),
+                    'created_at_raw' => $notification->created_at->toIso8601String(),
+                ];
+            })->values()->all(),
+            'unread_count' => $unreadCount,
+            'total_count' => $unreadCount + count($profileWarnings),
+        ]);
+    }
+
+    /**
      * Get recent notifications (AJAX)
      */
     public function recent()
