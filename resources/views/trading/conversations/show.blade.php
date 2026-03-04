@@ -147,22 +147,33 @@
         </a>
     @endif
 
-    {{-- Deal actions: Lock deal (new flow) / Confirm received / Status --}}
+    {{-- Deal actions: Lock deal (both must agree) / Confirm received / Status --}}
     @php
         $trade = $conversation->trade;
+        $userHasLocked = $trade && (
+            ($trade->isInitiator(auth()->id()) && $trade->initiator_locked_at) ||
+            ($trade->isParticipant(auth()->id()) && $trade->participant_locked_at)
+        );
         $userHasReceived = $trade && (
             ($trade->isInitiator(auth()->id()) && $trade->initiator_received_at) ||
             ($trade->isParticipant(auth()->id()) && $trade->participant_received_at)
         );
-        $canLockDeal = !$trade && $conversation->tradeListing && $conversation->tradeListing->status === 'active' && !$conversation->is_locked;
-        $showConfirmReceived = $trade && $trade->status === 'deal_locked' && !$userHasReceived;
+        $canProposeDeal = !$trade && $conversation->tradeListing && $conversation->tradeListing->status === 'active' && !$conversation->is_locked;
+        $canAgreeToDeal = $trade && $trade->status === 'deal_locked' && !$userHasLocked;
+        $bothLocked = $trade && $trade->bothLocked();
+        $showConfirmReceived = $trade && $trade->status === 'deal_locked' && $bothLocked && !$userHasReceived;
     @endphp
-    @if($canLockDeal || $trade)
+    @if($canProposeDeal || $canAgreeToDeal || $trade)
         <div class="deal-actions mb-2">
-            @if($canLockDeal)
-                <form method="POST" action="{{ route('trading.conversations.lock-deal', $conversation) }}" class="d-inline" onsubmit="return confirm('Lock the deal for this listing? Both parties will then confirm receipt of payment/product.');">
+            @if($canProposeDeal)
+                <form method="POST" action="{{ route('trading.conversations.lock-deal', $conversation) }}" class="d-inline" onsubmit="return confirm('Propose locking the deal? The other party must also agree before the deal is locked.');">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-lock me-1"></i>Lock deal</button>
+                </form>
+            @elseif($canAgreeToDeal)
+                <form method="POST" action="{{ route('trading.conversations.lock-deal', $conversation) }}" class="d-inline" onsubmit="return confirm('I agree to this deal. Once both agree, you can confirm receipt of payment/product.');">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle me-1"></i>I agree to this deal</button>
                 </form>
             @elseif($trade)
                 @if($trade->status === 'completed')
@@ -170,20 +181,24 @@
                 @elseif($trade->status === 'cancelled')
                     <div class="text-muted fw-semibold"><i class="bi bi-x-circle me-1"></i> Trade cancelled</div>
                 @elseif($trade->status === 'deal_locked')
-                    <span class="badge bg-info me-2">Deal locked</span>
-                    @if($userHasReceived)
-                        <span class="badge bg-success">You confirmed received</span>
-                        @if(!$trade->bothConfirmedReceived())
-                            <span class="text-muted small">Waiting for other party to confirm...</span>
+                    @if($userHasLocked && !$bothLocked)
+                        <span class="badge bg-warning text-dark me-2">You agreed. Waiting for the other party to agree.</span>
+                    @elseif($bothLocked)
+                        <span class="badge bg-info me-2">Deal locked (both agreed)</span>
+                        @if($userHasReceived)
+                            <span class="badge bg-success">You confirmed received</span>
+                            @if(!$trade->bothConfirmedReceived())
+                                <span class="text-muted small">Waiting for other party to confirm...</span>
+                            @endif
                         @endif
-                    @endif
-                    @if($showConfirmReceived)
-                        <form method="POST" action="{{ route('trading.conversations.confirm-received', $conversation) }}" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2 flex-wrap mt-2">
-                            @csrf
-                            <label class="mb-0 small">I received the payment/product (proof optional):</label>
-                            <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" class="form-control form-control-sm" style="max-width: 200px;">
-                            <button type="submit" class="btn btn-sm btn-success">Confirm received</button>
-                        </form>
+                        @if($showConfirmReceived)
+                            <form method="POST" action="{{ route('trading.conversations.confirm-received', $conversation) }}" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2 flex-wrap mt-2">
+                                @csrf
+                                <label class="mb-0 small">I received the payment/product (proof optional):</label>
+                                <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" class="form-control form-control-sm" style="max-width: 200px;">
+                                <button type="submit" class="btn btn-sm btn-success">Confirm received</button>
+                            </form>
+                        @endif
                     @endif
                 @endif
             @endif

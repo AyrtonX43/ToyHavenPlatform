@@ -427,7 +427,8 @@ class ConversationController extends Controller
     }
 
     /**
-     * Lock deal: create a Trade from the listing conversation (no offer flow).
+     * Lock deal: User 1 proposes (creates Trade with only their lock). User 2 must click to agree (sets their lock).
+     * Deal is only locked when BOTH users have agreed.
      */
     public function lockDeal(Request $request, Conversation $conversation)
     {
@@ -436,11 +437,8 @@ class ConversationController extends Controller
         if ($conversation->is_locked) {
             return back()->with('error', 'This conversation is locked.');
         }
-        if ($conversation->trade_id) {
-            return back()->with('error', 'A deal is already locked for this conversation.');
-        }
         $listing = $conversation->tradeListing;
-        if (!$listing || $listing->status !== 'active') {
+        if (!$listing || !in_array($listing->status, ['active', 'pending_trade'])) {
             return back()->with('error', 'The listing is no longer available for a deal.');
         }
 
@@ -455,24 +453,52 @@ class ConversationController extends Controller
             return back()->with('error', 'Cannot lock deal with yourself.');
         }
 
+        $userId = Auth::id();
+        $isInitiator = ($userId === $initiatorId);
+        $isParticipant = ($userId === $participantId);
+
         DB::beginTransaction();
         try {
-            $trade = Trade::create([
-                'trade_listing_id' => $listing->id,
-                'trade_offer_id' => null,
-                'initiator_id' => $initiatorId,
-                'initiator_seller_id' => null,
-                'participant_id' => $participantId,
-                'participant_seller_id' => null,
-                'cash_amount' => $listing->cash_difference,
-                'status' => 'deal_locked',
-                'initiator_locked_at' => now(),
-                'participant_locked_at' => now(),
-            ]);
-            $conversation->update(['trade_id' => $trade->id]);
-            $listing->update(['status' => 'pending_trade']);
+            if (!$conversation->trade_id) {
+                // First user: create Trade and set only their side as locked
+                $trade = Trade::create([
+                    'trade_listing_id' => $listing->id,
+                    'trade_offer_id' => null,
+                    'initiator_id' => $initiatorId,
+                    'initiator_seller_id' => null,
+                    'participant_id' => $participantId,
+                    'participant_seller_id' => null,
+                    'cash_amount' => $listing->cash_difference,
+                    'status' => 'deal_locked',
+                    'initiator_locked_at' => $isInitiator ? now() : null,
+                    'participant_locked_at' => $isParticipant ? now() : null,
+                ]);
+                $conversation->update(['trade_id' => $trade->id]);
+                $listing->update(['status' => 'pending_trade']);
+                DB::commit();
+                return back()->with('success', 'You proposed the deal. Waiting for the other party to agree.');
+            }
+
+            $trade = $conversation->trade;
+            if (!$trade || $trade->status !== 'deal_locked') {
+                DB::rollBack();
+                return back()->with('error', 'No pending deal to agree to.');
+            }
+
+            // Second user (or first user clicking again): set their locked_at if not already set
+            if ($isInitiator && !$trade->initiator_locked_at) {
+                $trade->update(['initiator_locked_at' => now()]);
+            } elseif ($isParticipant && !$trade->participant_locked_at) {
+                $trade->update(['participant_locked_at' => now()]);
+            } else {
+                DB::rollBack();
+                return back()->with('info', 'You have already agreed to this deal.');
+            }
+
             DB::commit();
-            return back()->with('success', 'Deal locked. Both parties can now confirm receipt of payment/product.');
+            return back()->with('success', $trade->fresh()->bothLocked()
+                ? 'Both parties agreed. You can now confirm receipt of payment/product.'
+                : 'You agreed to the deal. Waiting for the other party.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::warning('Lock deal failed: ' . $e->getMessage());
@@ -488,8 +514,8 @@ class ConversationController extends Controller
         $this->authorize('view', $conversation);
 
         $trade = $conversation->trade;
-        if (!$trade || $trade->status !== 'deal_locked') {
-            return back()->with('error', 'No locked deal to confirm.');
+        if (!$trade || $trade->status !== 'deal_locked' || !$trade->bothLocked()) {
+            return back()->with('error', 'The deal must be agreed by both parties before confirming receipt.');
         }
 
         $request->validate([

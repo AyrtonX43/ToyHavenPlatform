@@ -299,6 +299,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'myListings'])->name('listings.my');
         Route::get('/listings/create', [\App\Http\Controllers\Trading\TradeListingController::class, 'create'])->name('listings.create');
         Route::post('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'store'])->name('listings.store');
+        Route::get('/listings/{id}/history', [\App\Http\Controllers\Trading\TradeListingController::class, 'history'])->name('listings.history');
         Route::get('/listings/{id}/edit', [\App\Http\Controllers\Trading\TradeListingController::class, 'edit'])->name('listings.edit');
         Route::put('/listings/{id}', [\App\Http\Controllers\Trading\TradeListingController::class, 'update'])->name('listings.update');
         Route::post('/listings/{id}/mark-sold', [\App\Http\Controllers\Trading\TradeListingController::class, 'markAsSold'])->name('listings.mark-sold');
