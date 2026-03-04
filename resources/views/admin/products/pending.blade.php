@@ -68,8 +68,11 @@
                         </button>
                     </div>
                 </li>
-                <!-- Reject modal per product -->
-                <div class="modal fade" id="rejectModal-{{ $product->id }}" tabindex="-1" aria-labelledby="rejectModalLabel-{{ $product->id }}" aria-hidden="true">
+                @endforeach
+            </ul>
+            @foreach($shopGroup->products as $product)
+            <!-- Reject modal per product (outside ul for valid HTML) -->
+            <div class="modal fade" id="rejectModal-{{ $product->id }}" tabindex="-1" aria-labelledby="rejectModalLabel-{{ $product->id }}" aria-hidden="true" data-bs-backdrop="false">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <form action="{{ route('admin.products.reject', $product->id) }}" method="POST">
@@ -107,8 +110,7 @@
                         </div>
                     </div>
                 </div>
-                @endforeach
-            </ul>
+            @endforeach
         </div>
         @endforeach
     </div>

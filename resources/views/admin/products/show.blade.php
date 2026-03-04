@@ -270,7 +270,7 @@
 </div>
 
 <!-- Reject Product Modal -->
-<div class="modal fade" id="rejectProductModal" tabindex="-1" aria-labelledby="rejectProductModalLabel" aria-hidden="true">
+<div class="modal fade" id="rejectProductModal" tabindex="-1" aria-labelledby="rejectProductModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="{{ route('admin.products.reject', $product->id) }}" method="POST">
