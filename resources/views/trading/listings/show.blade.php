@@ -574,48 +574,97 @@
             <div class="offers-section">
                 <h5 class="mb-3">Active Offers ({{ $listing->activeOffers->count() }})</h5>
                 @foreach($listing->activeOffers as $offer)
+                @php
+                    $offeredItem = $offer->getOfferedItem();
+                    $offeredImages = $offeredItem ? $offeredItem->images : collect();
+                    $offerModalId = 'offerProductModal' . $offer->id;
+                @endphp
                 <div class="offer-card">
-                    <div class="d-flex gap-3 mb-2">
-                        @php
-                            $offeredItem = $offer->getOfferedItem();
-                            $offeredImg = $offeredItem && $offeredItem->images->isNotEmpty() ? $offeredItem->images->first() : null;
-                        @endphp
-                        @if($offeredImg)
-                        <a href="{{ route('trading.offers.show', $offer->id) }}" class="text-decoration-none flex-shrink-0">
-                            <img src="{{ asset('storage/' . $offeredImg->image_path) }}" alt="{{ $offeredItem->name ?? 'Product' }}" class="rounded" style="width: 72px; height: 72px; object-fit: cover; border: 1px solid #e2e8f0;">
-                        </a>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <strong>{{ $offer->offerer->name }}</strong>
+                            @if($offeredItem)
+                            <div class="text-muted small">{{ $offeredItem->name }}</div>
+                            <button type="button" class="btn btn-link btn-sm p-0 mt-1" data-bs-toggle="modal" data-bs-target="#{{ $offerModalId }}" title="View full product">
+                                <i class="bi bi-eye me-1"></i>View Product
+                            </button>
+                            @endif
+                            @if($offer->cash_amount)
+                            <div class="text-success small">+ ₱{{ number_format($offer->cash_amount, 2) }}</div>
+                            @endif
+                        </div>
+                        @if(Auth::id() === $listing->user_id)
+                        <div class="btn-group btn-group-sm">
+                            <form method="POST" action="{{ route('trading.offers.accept', $offer->id) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                            </form>
+                            <form method="POST" action="{{ route('trading.offers.reject', $offer->id) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                        </div>
                         @endif
-                        <div class="flex-grow-1 min-width-0">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <strong>{{ $offer->offerer->name }}</strong>
-                                    @if($offeredItem)
-                                    <div class="text-muted small">{{ $offeredItem->name }}</div>
-                                    @endif
-                                    @if($offer->cash_amount)
-                                    <div class="text-success small">+ ₱{{ number_format($offer->cash_amount, 2) }}</div>
-                                    @endif
+                    </div>
+                    @if($offer->message)
+                    <p class="small text-muted mb-0">{{ $offer->message }}</p>
+                    @endif
+                    <small class="text-muted">{{ $offer->created_at->diffForHumans() }}</small>
+                </div>
+
+                <!-- Full Product View Modal -->
+                <div class="modal fade" id="{{ $offerModalId }}" tabindex="-1" aria-labelledby="{{ $offerModalId }}Label" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="{{ $offerModalId }}Label">
+                                    Offered: {{ $offeredItem ? $offeredItem->name : 'Product' }}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                @if($offeredItem)
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        @if($offeredImages->isNotEmpty())
+                                        <div class="position-relative rounded overflow-hidden bg-light" style="min-height: 200px;">
+                                            <img src="{{ asset('storage/' . $offeredImages->first()->image_path) }}" alt="{{ $offeredItem->name }}" class="w-100" style="object-fit: contain; max-height: 320px;">
+                                            @if($offeredImages->count() > 1)
+                                            <div class="d-flex gap-1 mt-2 flex-wrap">
+                                                @foreach($offeredImages as $img)
+                                                <img src="{{ asset('storage/' . $img->image_path) }}" alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;" onclick="this.closest('.modal-body').querySelector('.modal-body img.w-100').src = this.src">
+                                                @endforeach
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @else
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="min-height: 200px;">
+                                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    <div class="col-md-7">
+                                        <h6 class="fw-bold">{{ $offeredItem->name }}</h6>
+                                        @if($offeredItem->description)
+                                        <p class="small text-muted mb-2">{{ $offeredItem->description }}</p>
+                                        @endif
+                                        @if(!empty($offeredItem->condition))
+                                        <p class="small mb-1"><strong>Condition:</strong> {{ ucfirst($offeredItem->condition) }}</p>
+                                        @endif
+                                        @if(!empty($offeredItem->brand))
+                                        <p class="small mb-1"><strong>Brand:</strong> {{ $offeredItem->brand }}</p>
+                                        @endif
+                                        @if($offeredItem instanceof \App\Models\Product && $offeredItem->price)
+                                        <p class="small mb-0"><strong>Price:</strong> ₱{{ number_format($offeredItem->price, 2) }}</p>
+                                        @elseif($offeredItem instanceof \App\Models\UserProduct && $offeredItem->estimated_value)
+                                        <p class="small mb-0"><strong>Est. Value:</strong> ₱{{ number_format($offeredItem->estimated_value, 2) }}</p>
+                                        @endif
+                                    </div>
                                 </div>
-                                @if(Auth::id() === $listing->user_id)
-                                <div class="btn-group btn-group-sm">
-                                    <form method="POST" action="{{ route('trading.offers.accept', $offer->id) }}" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success btn-sm">Accept</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('trading.offers.reject', $offer->id) }}" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                                    </form>
-                                </div>
+                                @else
+                                <p class="text-muted mb-0">Product details not available.</p>
                                 @endif
                             </div>
-                            @if($offer->message)
-                            <p class="small text-muted mb-1 mt-1">{{ Str::limit($offer->message, 80) }}</p>
-                            @endif
-                            <a href="{{ route('trading.offers.show', $offer->id) }}" class="small text-primary text-decoration-none">
-                                <i class="bi bi-eye me-1"></i>View full offer
-                            </a>
-                            <small class="text-muted d-block">{{ $offer->created_at->diffForHumans() }}</small>
                         </div>
                     </div>
                 </div>

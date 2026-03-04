@@ -134,7 +134,8 @@ class TradeOfferController extends Controller
 
             DB::commit();
 
-            $listing->user->notify(new TradeOfferReceivedNotification($offer->load(['tradeListing', 'offerer', 'offeredProduct.images', 'offeredUserProduct.images'])));
+            $offer->load(['offerer', 'tradeListing']);
+            $listing->user->notify(new TradeOfferReceivedNotification($offer));
 
             return redirect()->route('trading.listings.show', $listing->id)
                 ->with('success', 'Offer submitted successfully!');
@@ -196,7 +197,8 @@ class TradeOfferController extends Controller
 
         $offer->update(['status' => 'rejected']);
 
-        $offer->offerer->notify(new TradeOfferRejectedNotification($offer->load('tradeListing')));
+        $offer->load(['offerer', 'tradeListing']);
+        $offer->offerer->notify(new TradeOfferRejectedNotification($offer));
 
         return back()->with('success', 'Offer rejected.');
     }

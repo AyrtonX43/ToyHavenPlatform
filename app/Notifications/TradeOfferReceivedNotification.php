@@ -40,8 +40,9 @@ class TradeOfferReceivedNotification extends Notification implements ShouldQueue
             'offer_id' => $this->offer->id,
             'listing_id' => $this->offer->trade_listing_id,
             'listing_title' => $this->offer->tradeListing->title,
-            'offerer_name' => $this->offer->offerer->name,
+            'offerer_name' => $this->offer->offerer->name ?? 'Someone',
             'message' => 'You have received a new trade offer on your listing: ' . $this->offer->tradeListing->title,
+            'action_url' => route('trading.offers.show', $this->offer->id),
         ];
     }
 }

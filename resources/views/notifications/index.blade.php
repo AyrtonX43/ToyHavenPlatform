@@ -582,6 +582,7 @@
                     $icons = [
                         'order_status' => 'bi-box-seam',
                         'trade_offer_received' => 'bi-arrow-left-right',
+                        'trade_offer_rejected' => 'bi-x-circle',
                         'trade_offer_accepted' => 'bi-check-circle',
                         'trade_status_updated' => 'bi-arrow-repeat',
                         'trade_listing_submitted' => 'bi-hourglass-split',
@@ -608,6 +609,7 @@
                     $colors = [
                         'order_status' => 'primary',
                         'trade_offer_received' => 'info',
+                        'trade_offer_rejected' => 'danger',
                         'trade_offer_accepted' => 'success',
                         'trade_status_updated' => 'info',
                         'trade_listing_submitted' => 'warning',
@@ -772,6 +774,7 @@
         const colors = {
             'order_status': 'primary',
             'trade_offer_received': 'info',
+            'trade_offer_rejected': 'danger',
             'trade_offer_accepted': 'success',
             'trade_status_updated': 'info',
             'trade_listing_submitted': 'warning',
