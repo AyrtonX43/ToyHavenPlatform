@@ -66,10 +66,13 @@ class CheckoutController extends Controller
                 ->with('error', 'Some items were removed because the seller is no longer active. Please review your cart.');
         }
 
-        // Refresh cart items
-        $cartItems = CartItem::with(['product.images', 'product.seller'])
-            ->where('user_id', Auth::id())
-            ->get();
+        // Refresh cart items (only selected ones - invalid ones may have been deleted)
+        $refreshQuery = CartItem::with(['product.images', 'product.seller'])
+            ->where('user_id', Auth::id());
+        if (!empty($selectedIds)) {
+            $refreshQuery->whereIn('id', $selectedIds);
+        }
+        $cartItems = $refreshQuery->get();
 
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');

@@ -181,7 +181,7 @@
     @endif
 
     @if($cartItems->count() > 0)
-        <form id="cart-checkout-form" action="{{ route('checkout.index') }}" method="GET" onsubmit="return document.querySelectorAll('.cart-item-select:checked').length > 0 || (alert('Please select at least one item to proceed to checkout.'), false);">
+        <form id="cart-checkout-form" action="{{ route('checkout.index') }}" method="GET">
         <div class="row">
             <div class="col-lg-8">
                 @foreach($cartItems as $item)
@@ -271,6 +271,7 @@
                 <div class="summary-card reveal" style="animation-delay: 0.2s;">
                     <h5 class="fw-bold mb-4"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
                     <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i>Select items above to include in checkout</p>
+                    <p class="text-warning small mb-0 d-none" id="no-items-selected-msg"><i class="bi bi-exclamation-triangle me-1"></i>Select at least one item to proceed</p>
                     <div class="summary-row">
                         <span class="text-muted">Subtotal:</span>
                         <span class="fw-semibold" id="summary-subtotal">₱{{ number_format($subtotal, 2) }}</span>
@@ -290,7 +291,7 @@
                     </div>
                     
                     <div class="d-grid gap-2 mt-4">
-                        <button type="submit" form="cart-checkout-form" class="btn btn-primary btn-lg">
+                        <button type="submit" form="cart-checkout-form" class="btn btn-primary btn-lg" id="proceed-checkout-btn">
                             <i class="bi bi-credit-card me-2"></i>Proceed to Checkout
                         </button>
                         <a href="{{ route('toyshop.products.index') }}" class="btn btn-outline-secondary">
@@ -355,16 +356,14 @@
         updateCartSummary();
     }
     
-    // Update cart summary totals - only include CHECKED items
+    // Update cart summary totals (only includes SELECTED/checked items)
     function updateCartSummary() {
         let subtotal = 0;
-        const checkedIds = new Set(
-            Array.from(document.querySelectorAll('.cart-item-select:checked')).map(function(cb) { return cb.value; })
-        );
         
         document.querySelectorAll('.item-total').forEach(function(el) {
-            const itemId = el.dataset.itemId;
-            if (!itemId || !checkedIds.has(itemId)) return;
+            const itemId = el.getAttribute('data-item-id');
+            const checkbox = document.getElementById('cart_item_' + itemId);
+            if (!checkbox || !checkbox.checked) return;
             const priceText = el.textContent.replace(/[₱,]/g, '');
             const price = parseFloat(priceText) || 0;
             subtotal += price;
@@ -377,15 +376,20 @@
         const subtotalEl = document.getElementById('summary-subtotal');
         const vatEl = document.getElementById('summary-vat');
         const totalEl = document.getElementById('summary-total');
-        const checkoutBtn = document.querySelector('button[form="cart-checkout-form"]');
         
         if (subtotalEl) subtotalEl.textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (vatEl) vatEl.textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
-        if (checkoutBtn) {
-            checkoutBtn.disabled = checkedIds.size === 0;
-            checkoutBtn.title = checkedIds.size === 0 ? 'Select at least one item to proceed' : '';
+        var checkedCount = document.querySelectorAll('.cart-item-select:checked').length;
+        var submitBtn = document.getElementById('proceed-checkout-btn');
+        var noItemsMsg = document.getElementById('no-items-selected-msg');
+        if (submitBtn) {
+            submitBtn.disabled = checkedCount === 0;
+            submitBtn.title = checkedCount === 0 ? 'Select at least one item to checkout' : '';
+        }
+        if (noItemsMsg) {
+            noItemsMsg.classList.toggle('d-none', checkedCount > 0);
         }
     }
     
@@ -516,14 +520,11 @@
             });
         });
         
-        // Handle cart item selection for checkout - real-time sync of Order Summary & Total
+        // Handle cart item selection for checkout
         document.querySelectorAll('.cart-item-select').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                updateCartSummary();
-            });
+            checkbox.addEventListener('change', updateCartSummary);
         });
         
-        // Initial sync in case any items are unchecked on load
         updateCartSummary();
         
         // Handle remove item button
