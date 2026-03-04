@@ -3,15 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\TradeOffer;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TradeOfferRejectedNotification extends Notification implements ShouldQueue
+class TradeOfferRejectedNotification extends Notification
 {
-    use Queueable;
-
     protected $offer;
 
     public function __construct(TradeOffer $offer)

@@ -384,12 +384,30 @@ class TradeListingController extends Controller
             }
         }
 
+        // Map of offer_id => offerer's trade listing (for View Product full details)
+        $offererListingsByOffer = collect();
+        foreach ($listing->activeOffers ?? [] as $offer) {
+            $offererListing = TradeListing::where('user_id', $offer->offerer_id)
+                ->where(function ($q) use ($offer) {
+                    if ($offer->offered_product_id) {
+                        $q->where('product_id', $offer->offered_product_id);
+                    } else {
+                        $q->where('user_product_id', $offer->offered_user_product_id);
+                    }
+                })
+                ->with(['images', 'product.images', 'userProduct.images', 'category'])
+                ->first();
+            if ($offererListing) {
+                $offererListingsByOffer[$offer->id] = $offererListing;
+            }
+        }
+
         // Check if chat is requested
         $showChat = request()->has('chat') && Auth::check() && $listing->user_id !== Auth::id();
 
         $suggestedListings = $matchingService->getSuggestedListingsForListing($listing->id, 6, Auth::check() ? Auth::id() : null);
 
-        return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings', 'offererProducts'));
+        return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings', 'offererProducts', 'offererListingsByOffer'));
     }
 
     public function edit($id)

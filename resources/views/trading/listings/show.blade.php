@@ -576,7 +576,9 @@
                 @foreach($listing->activeOffers as $offer)
                 @php
                     $offeredItem = $offer->getOfferedItem();
-                    $offeredImages = $offeredItem ? $offeredItem->images : collect();
+                    $offererListing = $offererListingsByOffer[$offer->id] ?? null;
+                    $displayListing = $offererListing ?? null;
+                    $listingImages = $displayListing ? ($displayListing->images->isNotEmpty() ? $displayListing->images : ($displayListing->getItem() ? $displayListing->getItem()->images : collect())) : ($offeredItem ? $offeredItem->images : collect());
                     $offerModalId = 'offerProductModal' . $offer->id;
                 @endphp
                 <div class="offer-card">
@@ -612,55 +614,115 @@
                     <small class="text-muted">{{ $offer->created_at->diffForHumans() }}</small>
                 </div>
 
-                <!-- Full Product View Modal -->
+                <!-- Full Product Listing View Modal -->
                 <div class="modal fade" id="{{ $offerModalId }}" tabindex="-1" aria-labelledby="{{ $offerModalId }}Label" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="{{ $offerModalId }}Label">
-                                    Offered: {{ $offeredItem ? $offeredItem->name : 'Product' }}
+                                    @if($displayListing)
+                                        {{ $displayListing->title }}
+                                        <span class="badge ms-2" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8);">{{ ucfirst(str_replace('_', ' ', $displayListing->trade_type ?? 'Trade')) }}</span>
+                                    @else
+                                        Offered: {{ $offeredItem ? $offeredItem->name : 'Product' }}
+                                    @endif
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                @if($offeredItem)
-                                <div class="row g-3">
-                                    <div class="col-md-5">
-                                        @if($offeredImages->isNotEmpty())
-                                        <div class="position-relative rounded overflow-hidden bg-light" style="min-height: 200px;">
-                                            <img src="{{ asset('storage/' . $offeredImages->first()->image_path) }}" alt="{{ $offeredItem->name }}" class="w-100" style="object-fit: contain; max-height: 320px;">
-                                            @if($offeredImages->count() > 1)
-                                            <div class="d-flex gap-1 mt-2 flex-wrap">
-                                                @foreach($offeredImages as $img)
-                                                <img src="{{ asset('storage/' . $img->image_path) }}" alt="" class="rounded" style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;" onclick="this.closest('.modal-body').querySelector('.modal-body img.w-100').src = this.src">
-                                                @endforeach
-                                            </div>
-                                            @endif
+                                @if($displayListing || $offeredItem)
+                                <div class="row g-4">
+                                    <div class="col-lg-6">
+                                        @php
+                                            $modalImages = $displayListing
+                                                ? ($displayListing->images->isNotEmpty() ? $displayListing->images : ($displayListing->getItem() ? $displayListing->getItem()->images : collect()))
+                                                : ($offeredItem ? $offeredItem->images : collect());
+                                            $modalFirstImg = $modalImages->first();
+                                        @endphp
+                                        @if($modalFirstImg)
+                                        <div class="rounded overflow-hidden bg-light mb-2" style="min-height: 280px;">
+                                            <img src="{{ asset('storage/' . $modalFirstImg->image_path) }}" alt="{{ $displayListing ? $displayListing->title : ($offeredItem ? $offeredItem->name : '') }}" class="w-100 offer-modal-main-img" style="object-fit: contain; max-height: 360px; cursor: zoom-in;">
                                         </div>
+                                        @if($modalImages->count() > 1)
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            @foreach($modalImages as $img)
+                                            <img src="{{ asset('storage/' . $img->image_path) }}" alt="" class="rounded border offer-modal-thumb" style="width: 64px; height: 64px; object-fit: cover; cursor: pointer;" data-src="{{ asset('storage/' . $img->image_path) }}">
+                                            @endforeach
+                                        </div>
+                                        @endif
                                         @else
                                         <div class="bg-light rounded d-flex align-items-center justify-content-center" style="min-height: 200px;">
                                             <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
                                         </div>
                                         @endif
                                     </div>
-                                    <div class="col-md-7">
-                                        <h6 class="fw-bold">{{ $offeredItem->name }}</h6>
-                                        @if($offeredItem->description)
-                                        <p class="small text-muted mb-2">{{ $offeredItem->description }}</p>
+                                    <div class="col-lg-6">
+                                        <h5 class="fw-bold mb-3">{{ $displayListing ? $displayListing->title : ($offeredItem ? $offeredItem->name : 'Product') }}</h5>
+                                        @if($displayListing && $displayListing->description)
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small text-uppercase mb-1">Description</h6>
+                                            <p class="mb-0">{{ $displayListing->description }}</p>
+                                        </div>
+                                        @elseif($offeredItem && $offeredItem->description)
+                                        <div class="mb-3">
+                                            <h6 class="text-muted small text-uppercase mb-1">Description</h6>
+                                            <p class="mb-0">{{ $offeredItem->description }}</p>
+                                        </div>
                                         @endif
-                                        @if(!empty($offeredItem->condition))
-                                        <p class="small mb-1"><strong>Condition:</strong> {{ ucfirst($offeredItem->condition) }}</p>
+                                        <div class="row g-2 small">
+                                            @php $dItem = $displayListing ? $displayListing->getItem() : $offeredItem; @endphp
+                                            @if($dItem)
+                                            @if(!empty($dItem->condition))
+                                            <div class="col-6"><strong>Condition:</strong> {{ ucfirst($dItem->condition) }}</div>
+                                            @endif
+                                            @if(!empty($dItem->brand))
+                                            <div class="col-6"><strong>Brand:</strong> {{ $dItem->brand }}</div>
+                                            @endif
+                                            @if($displayListing && $displayListing->category)
+                                            <div class="col-6"><strong>Category:</strong> {{ $displayListing->category->name }}</div>
+                                            @endif
+                                            @if($dItem instanceof \App\Models\Product && $dItem->price)
+                                            <div class="col-6"><strong>Price:</strong> ₱{{ number_format($dItem->price, 2) }}</div>
+                                            @elseif($dItem instanceof \App\Models\UserProduct && $dItem->estimated_value)
+                                            <div class="col-6"><strong>Est. Value:</strong> ₱{{ number_format($dItem->estimated_value, 2) }}</div>
+                                            @endif
+                                            @endif
+                                            @if($displayListing && $displayListing->cash_difference)
+                                            <div class="col-6"><strong>Cash difference:</strong> ₱{{ number_format($displayListing->cash_difference, 2) }}</div>
+                                            @endif
+                                        </div>
+                                        @if($displayListing && ($displayListing->location || $displayListing->meet_up_references))
+                                        <div class="mt-3 pt-3 border-top">
+                                            <h6 class="text-muted small text-uppercase mb-1">Meet-up</h6>
+                                            @if($displayListing->location)
+                                            <p class="mb-1 small"><i class="bi bi-geo-alt me-1"></i>{{ $displayListing->location }}</p>
+                                            @endif
+                                            @if($displayListing->meet_up_references)
+                                            <p class="mb-0 small">{{ $displayListing->meet_up_references }}</p>
+                                            @endif
+                                        </div>
                                         @endif
-                                        @if(!empty($offeredItem->brand))
-                                        <p class="small mb-1"><strong>Brand:</strong> {{ $offeredItem->brand }}</p>
-                                        @endif
-                                        @if($offeredItem instanceof \App\Models\Product && $offeredItem->price)
-                                        <p class="small mb-0"><strong>Price:</strong> ₱{{ number_format($offeredItem->price, 2) }}</p>
-                                        @elseif($offeredItem instanceof \App\Models\UserProduct && $offeredItem->estimated_value)
-                                        <p class="small mb-0"><strong>Est. Value:</strong> ₱{{ number_format($offeredItem->estimated_value, 2) }}</p>
+                                        @if($displayListing && in_array($displayListing->status, ['active', 'pending_approval']))
+                                        <a href="{{ route('trading.listings.show', $displayListing->id) }}" class="btn btn-outline-primary btn-sm mt-3" target="_blank">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>View Full Listing
+                                        </a>
                                         @endif
                                     </div>
                                 </div>
+                                <script>
+                                (function() {
+                                    var modal = document.getElementById('{{ $offerModalId }}');
+                                    if (!modal) return;
+                                    modal.addEventListener('shown.bs.modal', function() {
+                                        modal.querySelectorAll('.offer-modal-thumb').forEach(function(t) {
+                                            t.onclick = function() {
+                                                var main = modal.querySelector('.offer-modal-main-img');
+                                                if (main && this.dataset.src) main.src = this.dataset.src;
+                                            };
+                                        });
+                                    });
+                                })();
+                                </script>
                                 @else
                                 <p class="text-muted mb-0">Product details not available.</p>
                                 @endif
