@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\UserProduct;
 use App\Services\TradeService;
 use App\Models\TradeListing;
+use App\Models\TradeOffer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -200,7 +201,9 @@ class TradeController extends Controller
             })
             ->findOrFail($id);
 
-        if ($trade->status !== 'shipped' && $trade->status !== 'received') {
+        $canReceive = in_array($trade->status, ['shipped', 'received'])
+            || ($trade->status === 'pending_shipping' && $trade->bothLocked());
+        if (!$canReceive) {
             return back()->with('error', 'Invalid trade status for receiving.');
         }
 
@@ -233,6 +236,8 @@ class TradeController extends Controller
                 if ($listing && $listing->status === 'pending_trade') {
                     $listing->update(['status' => 'completed']);
                 }
+
+                $this->tradeService->updateTradeStatus($trade->id, 'completed');
             }
 
             DB::commit();
@@ -381,7 +386,7 @@ class TradeController extends Controller
 
     public function cancel($id)
     {
-        $trade = Trade::where(function($q) {
+        $trade = Trade::with('items')->where(function($q) {
                 $q->where('initiator_id', Auth::id())
                   ->orWhere('participant_id', Auth::id());
             })
@@ -393,6 +398,10 @@ class TradeController extends Controller
 
         DB::beginTransaction();
         try {
+            if ($trade->trade_offer_id) {
+                TradeOffer::where('id', $trade->trade_offer_id)->update(['status' => 'rejected']);
+            }
+
             // Update product statuses back to available
             foreach ($trade->items as $item) {
                 if ($item->product_id) {

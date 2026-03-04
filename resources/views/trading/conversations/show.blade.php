@@ -98,6 +98,8 @@
     .msg-unsend-btn { opacity: 0.6; text-decoration: none !important; }
     .msg-unsend-btn:hover { opacity: 1; }
     .msg-bubble:hover .msg-unsend-btn { opacity: 0.8; }
+    .deal-actions { background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .deal-actions .btn-group-chat { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 </style>
 @endpush
 
@@ -114,6 +116,12 @@
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info">{{ session('info') }}</div>
     @endif
 
     {{-- Listing context (product description + images) – clickable to view listing --}}
@@ -137,6 +145,66 @@
                 </div>
             </div>
         </a>
+    @endif
+
+    {{-- Deal actions: Lock / Cancel / Received (when conversation has an active trade) --}}
+    @php
+        $trade = $conversation->trade;
+        $tradeActive = $trade && !in_array($trade->status, ['completed', 'cancelled']);
+        $userHasLocked = $trade && (
+            ($trade->isInitiator(auth()->id()) && $trade->initiator_locked_at) ||
+            ($trade->isParticipant(auth()->id()) && $trade->participant_locked_at)
+        );
+        $userHasReceived = $trade && (
+            ($trade->isInitiator(auth()->id()) && $trade->initiator_received_at) ||
+            ($trade->isParticipant(auth()->id()) && $trade->participant_received_at)
+        );
+    @endphp
+    @if($trade)
+        <div class="deal-actions">
+            @if($trade->status === 'completed')
+                <div class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> Trade completed</div>
+                <a href="{{ route('trading.trades.show', $trade->id) }}" class="btn btn-sm btn-outline-primary mt-2">View trade details</a>
+            @elseif($trade->status === 'cancelled')
+                <div class="text-muted fw-semibold"><i class="bi bi-x-circle me-1"></i> Trade cancelled</div>
+                <a href="{{ route('trading.trades.index') }}" class="btn btn-sm btn-outline-secondary mt-2">Back to trade listings</a>
+            @else
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <a href="{{ route('trading.trades.show', $trade->id) }}" class="btn btn-sm btn-outline-primary">Trade #{{ $trade->id }}</a>
+                    @if($userHasLocked)
+                        <span class="badge bg-success">You locked</span>
+                    @endif
+                    @if($trade->bothLocked())
+                        <span class="badge bg-info">Both locked</span>
+                    @endif
+                </div>
+                <div class="btn-group-chat">
+                    @if(!$userHasLocked)
+                        <form method="POST" action="{{ route('trading.trades.lock', $trade->id) }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-primary">Lock the offer</button>
+                        </form>
+                    @endif
+                    <form method="POST" action="{{ route('trading.trades.cancel', $trade->id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this offer? The trade will be cancelled and both listings will return to trade listings.');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancel the offer</button>
+                    </form>
+                    @if($trade->bothLocked() && !$userHasReceived)
+                        <form method="POST" action="{{ route('trading.trades.mark-received', $trade->id) }}" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2 flex-wrap">
+                            @csrf
+                            <label class="mb-0 small">I received the product (photo proof required):</label>
+                            <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" required class="form-control form-control-sm" style="max-width: 200px;">
+                            <button type="submit" class="btn btn-sm btn-success">Confirm received</button>
+                        </form>
+                    @elseif($trade->bothLocked() && $userHasReceived)
+                        <span class="badge bg-success">You confirmed received</span>
+                        @if(!$trade->initiator_received_at || !$trade->participant_received_at)
+                            <span class="text-muted small">Waiting for other party to confirm...</span>
+                        @endif
+                    @endif
+                </div>
+            @endif
+        </div>
     @endif
 
     <div class="chat-header">
@@ -186,6 +254,10 @@
         </div>
     </div>
 
+    @php
+        $chatLocked = $trade && in_array($trade->status ?? '', ['completed', 'cancelled']);
+    @endphp
+    @if(!$chatLocked)
     <div class="chat-footer">
         <form id="messageForm" class="d-flex flex-column gap-2">
             @csrf
@@ -214,6 +286,11 @@
             <div id="attachmentPreview" class="d-flex flex-wrap gap-2"></div>
         </form>
     </div>
+    @else
+    <div class="chat-footer bg-light text-muted text-center py-3 rounded-3">
+        <i class="bi bi-lock me-1"></i> This chat is locked because the trade has been {{ $trade->status === 'completed' ? 'completed' : 'cancelled' }}.
+    </div>
+    @endif
 
     <!-- Unsend confirmation modal -->
     <div class="modal fade" id="unsendModal" tabindex="-1" aria-labelledby="unsendModalLabel" aria-hidden="true">
