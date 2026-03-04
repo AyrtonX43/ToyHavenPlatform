@@ -823,9 +823,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(function() {});
-        setTimeout(pollOffers, 3000);
+        setTimeout(pollOffers, 2000);
     }
-    setTimeout(pollOffers, 3000);
+    setTimeout(pollOffers, 2000);
 })();
 @endif
 @endauth

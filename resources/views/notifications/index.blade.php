@@ -1102,9 +1102,9 @@
                     }
                 })
                 .catch(function() {});
-            setTimeout(doPoll, 3000);
+            setTimeout(doPoll, 2000);
         }
-        setTimeout(doPoll, 3000);
+        setTimeout(doPoll, 2000);
     })();
     
     function buildNotificationItemHtml(n) {

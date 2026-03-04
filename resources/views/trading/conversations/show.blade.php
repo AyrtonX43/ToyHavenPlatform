@@ -623,8 +623,8 @@ window.ECHO_CONFIG = @json($echoConfig);
             })
             .catch(function() {});
     };
-    var pollInterval = setInterval(pollMessages, 2000);
-    setTimeout(pollMessages, 500);
+    var pollInterval = setInterval(pollMessages, 1200);
+    setTimeout(pollMessages, 300);
     
     // Poll message statuses (seen/delivered) so sender sees updates in real-time without WebSockets
     var lastStatusByMessage = {};
@@ -648,8 +648,8 @@ window.ECHO_CONFIG = @json($echoConfig);
             })
             .catch(function() {});
     }
-    var statusPollInterval = setInterval(pollMessageStatuses, 2500);
-    setTimeout(pollMessageStatuses, 800);
+    var statusPollInterval = setInterval(pollMessageStatuses, 1500);
+    setTimeout(pollMessageStatuses, 500);
     
     // Poll typing indicator so "X is typing..." shows in real-time without WebSockets
     function pollTypingStatus() {
@@ -662,14 +662,16 @@ window.ECHO_CONFIG = @json($echoConfig);
             })
             .catch(function() {});
     }
-    var typingPollInterval = setInterval(pollTypingStatus, 1000);
-    setTimeout(pollTypingStatus, 400);
+    var typingPollInterval = setInterval(pollTypingStatus, 800);
+    setTimeout(pollTypingStatus, 200);
     
     // Update presence when user interacts
     chatBody.addEventListener('scroll', function() { updateMyPresence(); }, { passive: true });
     input.addEventListener('focus', function() { updateMyPresence(); });
     
-    // Cleanup on page unload
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) { pollMessages(); pollMessageStatuses(); pollTypingStatus(); }
+    });
     window.addEventListener('beforeunload', function() {
         clearInterval(presenceRefreshInterval);
         clearInterval(myPresenceInterval);

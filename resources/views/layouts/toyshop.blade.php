@@ -1283,9 +1283,15 @@
                 });
         }
         
-        // Update notification count periodically
+        // Update notification count periodically (real-time: every 5 seconds)
         @auth
-        setInterval(updateNotificationCount, 30000); // Every 30 seconds
+        if (typeof updateNotificationCount === 'function') {
+            updateNotificationCount();
+            setInterval(updateNotificationCount, 5000);
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) updateNotificationCount();
+            });
+        }
         @endauth
 
         // Real-time search suggest (products + business pages)
@@ -1426,8 +1432,11 @@
                 })
                 .catch(function() {});
         }
-        setInterval(pollUnread, 3000);
-        setTimeout(pollUnread, 1000);
+        setInterval(pollUnread, 2000);
+        setTimeout(pollUnread, 500);
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) pollUnread();
+        });
     })();
     </script>
     @endauth
