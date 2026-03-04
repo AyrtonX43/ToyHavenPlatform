@@ -124,32 +124,19 @@ class ConversationController extends Controller
     public function storeFromListing(Request $request, $id)
     {
         try {
-            $listing = TradeListing::with('user')->findOrFail($id);
-
+            $listing = TradeListing::findOrFail($id);
             if ($listing->user_id === Auth::id()) {
                 return redirect()->route('trading.listings.show', $id)->with('error', 'You cannot message yourself.');
             }
-
-            if (!$listing->canAcceptOffers()) {
-                return redirect()->route('trading.listings.show', $id)
-                    ->with('error', 'This listing is not accepting offers right now.');
-            }
-
             $conversation = Conversation::firstOrCreateForListing($listing->id, Auth::id(), $listing->user_id);
-
             return redirect()->route('trading.conversations.show', $conversation)
                 ->with('success', 'Conversation started.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return redirect()->route('trading.index')->with('error', 'Listing not found.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Make an offer failed (DB): ' . $e->getMessage(), ['listing_id' => $id, 'trace' => $e->getTraceAsString()]);
+            return redirect()->route('trading.listings.show', $id)->with('error', 'Unable to start conversation. Please try again or contact support.');
         } catch (\Throwable $e) {
-            Log::error('Make an offer failed', [
-                'listing_id' => $id,
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return redirect()->route('trading.listings.show', $id)
-                ->with('error', 'Unable to start conversation. Please try again.');
+            Log::error('Make an offer failed: ' . $e->getMessage(), ['listing_id' => $id, 'trace' => $e->getTraceAsString()]);
+            return redirect()->route('trading.listings.show', $id)->with('error', 'Something went wrong. Please try again.');
         }
     }
 

@@ -120,6 +120,8 @@ class Conversation extends Model
             ],
             [
                 'subject' => 'Trade listing #' . $tradeListingId,
+                'seller_id' => null,
+                'customer_id' => null,
             ]
         );
     }
