@@ -60,7 +60,12 @@ class SellerController extends Controller
         $seller = Seller::with([
             'user', 
             'products' => function($q) {
-                $q->withCount('orderItems')->orderBy('created_at', 'desc');
+                $q->withCount('orderItems')
+                    ->where(function($q2) {
+                        $q2->where('status', '!=', 'inactive')
+                            ->orWhereNull('rejection_reason');
+                    })
+                    ->orderBy('created_at', 'desc');
             }, 
             'orders' => function($q) {
                 $q->orderBy('created_at', 'desc')->limit(10);

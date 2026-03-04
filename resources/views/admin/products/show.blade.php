@@ -229,6 +229,10 @@
                         <p class="text-success mb-0 text-center small">
                             <i class="bi bi-check-circle-fill me-1"></i> This product has been approved. It cannot be approved or rejected again.
                         </p>
+                    @elseif($product->rejection_reason)
+                        <p class="text-danger mb-0 text-center small">
+                            <i class="bi bi-x-circle-fill me-1"></i> This product has been rejected and cannot be reactivated.
+                        </p>
                     @else
                         <form action="{{ route('admin.products.approve', $product->id) }}" method="POST">
                             @csrf
@@ -236,7 +240,7 @@
                                 <i class="bi bi-check-circle me-1"></i> Reactivate Product
                             </button>
                         </form>
-                        <p class="text-muted mb-0 text-center small">Rejected products can be reactivated; they cannot be rejected again.</p>
+                        <p class="text-muted mb-0 text-center small">Inactive products can be reactivated.</p>
                     @endif
                 </div>
             </div>
@@ -270,8 +274,8 @@
 </div>
 
 <!-- Reject Product Modal -->
-<div class="modal fade" id="rejectProductModal" tabindex="-1" aria-labelledby="rejectProductModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog">
+<div class="modal fade" id="rejectProductModal" tabindex="-1" aria-labelledby="rejectProductModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form action="{{ route('admin.products.reject', $product->id) }}" method="POST">
                 @csrf
@@ -314,4 +318,21 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    var btn = document.querySelector('[data-bs-target="#rejectProductModal"]');
+    var modal = document.getElementById('rejectProductModal');
+    if (btn && modal) {
+        btn.addEventListener('click', function() {
+            modal.addEventListener('shown.bs.modal', function scrollToModal() {
+                modal.querySelector('.modal-dialog').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                modal.removeEventListener('shown.bs.modal', scrollToModal);
+            }, { once: true });
+        });
+    }
+})();
+</script>
+@endpush
 @endsection

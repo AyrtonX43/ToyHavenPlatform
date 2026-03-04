@@ -240,6 +240,10 @@ class ProductController extends Controller
             return back()->with('error', 'This product is already approved and cannot be approved again.');
         }
 
+        if ($product->rejection_reason) {
+            return back()->with('error', 'Rejected products cannot be reactivated.');
+        }
+
         $wasPending = $product->status === 'pending';
         $data = ['status' => 'active'];
         if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'condition')) {
@@ -310,7 +314,7 @@ class ProductController extends Controller
             );
         }
         
-        return back()->with('success', 'Product rejected and seller has been notified.');
+        return back()->with('success', 'Product rejected. Feedback has been submitted and the seller has been notified via email.');
     }
 
     public function bulkAction(Request $request)

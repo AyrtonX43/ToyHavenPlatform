@@ -68,12 +68,9 @@
                         </button>
                     </div>
                 </li>
-                @endforeach
-            </ul>
-            @foreach($shopGroup->products as $product)
-            <!-- Reject modal per product (outside ul for valid HTML) -->
-            <div class="modal fade" id="rejectModal-{{ $product->id }}" tabindex="-1" aria-labelledby="rejectModalLabel-{{ $product->id }}" aria-hidden="true" data-bs-backdrop="false">
-                    <div class="modal-dialog">
+                <!-- Reject modal per product -->
+                <div class="modal fade" id="rejectModal-{{ $product->id }}" tabindex="-1" aria-labelledby="rejectModalLabel-{{ $product->id }}" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                         <div class="modal-content">
                             <form action="{{ route('admin.products.reject', $product->id) }}" method="POST">
                                 @csrf
@@ -110,7 +107,8 @@
                         </div>
                     </div>
                 </div>
-            @endforeach
+                @endforeach
+            </ul>
         </div>
         @endforeach
     </div>
@@ -124,4 +122,21 @@
     </div>
 </div>
 @endforelse
+
+@push('scripts')
+<script>
+document.querySelectorAll('[data-bs-toggle="modal"][data-bs-target^="#rejectModal-"]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var targetId = this.getAttribute('data-bs-target');
+        var modal = document.querySelector(targetId);
+        if (modal) {
+            modal.addEventListener('shown.bs.modal', function scrollToModal() {
+                modal.querySelector('.modal-dialog').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                modal.removeEventListener('shown.bs.modal', scrollToModal);
+            }, { once: true });
+        }
+    });
+});
+</script>
+@endpush
 @endsection
