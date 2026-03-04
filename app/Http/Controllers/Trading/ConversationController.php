@@ -14,6 +14,8 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Trade;
 use App\Models\TradeListing;
+use App\Models\TradeOffer;
+use App\Models\UserProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -550,7 +552,22 @@ class ConversationController extends Controller
 
             if ($trade->bothConfirmedReceived()) {
                 $trade->update(['status' => 'completed', 'completed_at' => now()]);
-                $trade->tradeListing->update(['status' => 'completed']);
+                $listing = $trade->tradeListing;
+                $listing->update(['status' => 'completed']);
+
+                // Mark listing owner's user product as sold (so both sides show as sold)
+                if ($listing->user_product_id) {
+                    UserProduct::where('id', $listing->user_product_id)->update(['status' => 'sold']);
+                }
+
+                // If this deal came from an offer, mark the participant's offered item as sold too
+                if ($trade->trade_offer_id) {
+                    $offer = TradeOffer::find($trade->trade_offer_id);
+                    if ($offer && $offer->offered_user_product_id) {
+                        UserProduct::where('id', $offer->offered_user_product_id)->update(['status' => 'sold']);
+                    }
+                }
+
                 $conversation->update(['is_locked' => true]);
             }
             DB::commit();

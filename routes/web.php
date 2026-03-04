@@ -112,6 +112,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Notification Routes
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [\App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/poll', [\App\Http\Controllers\NotificationController::class, 'poll'])->name('poll');
         Route::get('/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('unread-count');
         Route::get('/recent', [\App\Http\Controllers\NotificationController::class, 'recent'])->name('recent');
         Route::post('/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('mark-read');

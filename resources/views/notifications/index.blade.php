@@ -729,9 +729,7 @@
 
         // Get notification data (from initial load or from data attribute for polled notifications)
         const notificationItem = event.currentTarget;
-        const notificationData = @json($notifications->keyBy('id')->map(function($n) {
-            return $n->data;
-        }));
+        const notificationData = @json($notificationDataForJs ?? []);
         let data = notificationData[notificationId];
         if (!data && notificationItem) {
             const attr = notificationItem.getAttribute('data-notification-data');

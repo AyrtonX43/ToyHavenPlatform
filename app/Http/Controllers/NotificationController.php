@@ -32,16 +32,22 @@ class NotificationController extends Controller
         }
         
         $notifications = $query->orderBy('created_at', 'desc')->paginate(20);
-        
+
+        // Build safe notification data for JS (avoid 500 from null or non-array data)
+        $notificationDataForJs = $notifications->keyBy('id')->map(function ($n) {
+            $data = $n->data ?? [];
+            return is_array($data) ? $data : [];
+        })->toArray();
+
         // Mark as read when viewing
         if ($request->has('mark_read')) {
             $user->unreadNotifications->markAsRead();
         }
-        
+
         // Get profile completion warnings
         $profileWarnings = $this->getProfileWarnings($user);
-        
-        return view('notifications.index', compact('notifications', 'profileWarnings'));
+
+        return view('notifications.index', compact('notifications', 'profileWarnings', 'notificationDataForJs'));
     }
     
     /**
