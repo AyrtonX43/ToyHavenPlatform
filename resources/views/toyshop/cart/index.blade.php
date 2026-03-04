@@ -29,10 +29,6 @@
         border-color: #cbd5e1;
     }
 
-    .cart-item-card.cart-item-unselected {
-        opacity: 0.65;
-    }
-
     .cart-item-image {
         width: 110px;
         height: 110px;
@@ -185,7 +181,7 @@
     @endif
 
     @if($cartItems->count() > 0)
-        <form id="cart-checkout-form" action="{{ route('checkout.index') }}" method="GET">
+        <form id="cart-checkout-form" action="{{ route('checkout.index') }}" method="GET" onsubmit="return document.querySelectorAll('.cart-item-select:checked').length > 0 || (alert('Please select at least one item to proceed to checkout.'), false);">
         <div class="row">
             <div class="col-lg-8">
                 @foreach($cartItems as $item)
@@ -359,44 +355,37 @@
         updateCartSummary();
     }
     
-    // Update cart summary totals (only from CHECKED items)
+    // Update cart summary totals - only include CHECKED items
     function updateCartSummary() {
         let subtotal = 0;
-        let hasSelection = false;
-
-        document.querySelectorAll('.cart-item-card').forEach(function(card) {
-            const itemId = card.dataset.itemId;
-            const checkbox = card.querySelector('.cart-item-select');
-            if (!checkbox || !checkbox.checked) {
-                card.classList.add('cart-item-unselected');
-                return;
-            }
-            card.classList.remove('cart-item-unselected');
-            hasSelection = true;
-
-            const totalEl = card.querySelector('.item-total[data-item-id="' + itemId + '"]');
-            if (!totalEl) return;
-
-            const priceText = totalEl.textContent.replace(/[₱,]/g, '');
+        const checkedIds = new Set(
+            Array.from(document.querySelectorAll('.cart-item-select:checked')).map(function(cb) { return cb.value; })
+        );
+        
+        document.querySelectorAll('.item-total').forEach(function(el) {
+            const itemId = el.dataset.itemId;
+            if (!itemId || !checkedIds.has(itemId)) return;
+            const priceText = el.textContent.replace(/[₱,]/g, '');
             const price = parseFloat(priceText) || 0;
             subtotal += price;
         });
-
+        
         const commission = subtotal * commissionRate;
         const vat = (subtotal + commission) * taxRate;
         const total = subtotal + commission + vat;
-
+        
         const subtotalEl = document.getElementById('summary-subtotal');
         const vatEl = document.getElementById('summary-vat');
         const totalEl = document.getElementById('summary-total');
         const checkoutBtn = document.querySelector('button[form="cart-checkout-form"]');
-
+        
         if (subtotalEl) subtotalEl.textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (vatEl) vatEl.textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
         if (checkoutBtn) {
-            checkoutBtn.disabled = !hasSelection;
-            checkoutBtn.title = hasSelection ? '' : 'Select at least one item to checkout';
+            checkoutBtn.disabled = checkedIds.size === 0;
+            checkoutBtn.title = checkedIds.size === 0 ? 'Select at least one item to proceed' : '';
         }
     }
     
@@ -527,10 +516,15 @@
             });
         });
         
-        // Handle cart item selection for checkout
+        // Handle cart item selection for checkout - real-time sync of Order Summary & Total
         document.querySelectorAll('.cart-item-select').forEach(function(checkbox) {
-            checkbox.addEventListener('change', updateCartSummary);
+            checkbox.addEventListener('change', function() {
+                updateCartSummary();
+            });
         });
+        
+        // Initial sync in case any items are unchecked on load
+        updateCartSummary();
         
         // Handle remove item button
         document.querySelectorAll('.remove-item-btn').forEach(function(btn) {
@@ -593,8 +587,6 @@
                     this.innerHTML = '<i class="bi bi-trash me-1"></i>Remove';
                 });
             });
-
-            updateCartSummary();
         });
     });
 })();
