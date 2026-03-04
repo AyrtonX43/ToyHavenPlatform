@@ -299,13 +299,19 @@ class NotificationController extends Controller
             
             case 'trade_offer_received':
             case 'trade_offer_accepted':
-                return isset($data['offer_id']) ? route('trading.offers.show', $data['offer_id']) : route('trading.offers.received');
+                return route('trading.conversations.index');
             
             case 'trade_status_updated':
-                return isset($data['trade_id']) ? route('trading.trades.show', $data['trade_id']) : route('trading.trades.index');
+                return route('trading.conversations.index');
             
             case 'trade_listing_submitted':
                 return isset($data['listing_id']) ? route('trading.listings.show', $data['listing_id']) : route('trading.index');
+
+            case 'trade_listing_approved':
+                return isset($data['listing_id']) ? route('trading.listings.show', $data['listing_id']) : route('trading.index');
+
+            case 'trade_listing_rejected':
+                return route('trading.listings.create');
             
             case 'seller_approved':
             case 'seller_rejected':

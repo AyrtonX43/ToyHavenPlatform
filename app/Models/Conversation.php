@@ -17,10 +17,12 @@ class Conversation extends Model
         'trade_listing_id',
         'subject',
         'last_message_at',
+        'is_locked',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
+        'is_locked' => 'boolean',
     ];
 
     public function seller(): BelongsTo

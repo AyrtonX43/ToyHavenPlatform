@@ -288,14 +288,10 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Trading Routes - Authenticated
     Route::middleware(['auth'])->prefix('trading')->name('trading.')->group(function () {
-        // Trade Listings - Specific routes must come before parameterized routes
         Route::get('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'myListings'])->name('listings.my');
         Route::get('/listings/create', [\App\Http\Controllers\Trading\TradeListingController::class, 'create'])->name('listings.create');
         Route::post('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'store'])->name('listings.store');
-        Route::get('/listings/{id}/edit', [\App\Http\Controllers\Trading\TradeListingController::class, 'edit'])->name('listings.edit');
-        Route::put('/listings/{id}', [\App\Http\Controllers\Trading\TradeListingController::class, 'update'])->name('listings.update');
-        Route::post('/listings/{id}/mark-sold', [\App\Http\Controllers\Trading\TradeListingController::class, 'markAsSold'])->name('listings.mark-sold');
-        Route::delete('/listings/{id}', [\App\Http\Controllers\Trading\TradeListingController::class, 'destroy'])->name('listings.destroy');
+        Route::get('/listings/{id}/history', [\App\Http\Controllers\Trading\TradeListingController::class, 'history'])->name('listings.history');
     });
 
     // Trading Routes - Public (show listing)
@@ -305,33 +301,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Trading Routes - Authenticated (continued)
     Route::middleware(['auth'])->prefix('trading')->name('trading.')->group(function () {
-        Route::get('/listings/{id}/active-offers-partial', [\App\Http\Controllers\Trading\TradeListingController::class, 'activeOffersPartial'])->name('listings.active-offers-partial');
-        // Trade Offers
-        Route::post('/listings/{id}/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'store'])->name('offers.store');
-        Route::get('/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'myOffers'])->name('offers.my');
-        Route::get('/offers/received', [\App\Http\Controllers\Trading\TradeOfferController::class, 'offersOnMyListings'])->name('offers.received');
-        Route::get('/offers/{id}', [\App\Http\Controllers\Trading\TradeOfferController::class, 'show'])->name('offers.show');
-        Route::post('/offers/{id}/accept', [\App\Http\Controllers\Trading\TradeOfferController::class, 'accept'])->name('offers.accept');
-        Route::post('/offers/{id}/reject', [\App\Http\Controllers\Trading\TradeOfferController::class, 'reject'])->name('offers.reject');
-        Route::post('/offers/{id}/counter', [\App\Http\Controllers\Trading\TradeOfferController::class, 'counterOffer'])->name('offers.counter');
-        Route::post('/offers/{id}/withdraw', [\App\Http\Controllers\Trading\TradeOfferController::class, 'withdraw'])->name('offers.withdraw');
-        
-        // Trades
-        Route::get('/trades', [\App\Http\Controllers\Trading\TradeController::class, 'index'])->name('trades.index');
-        Route::get('/trades/history', [\App\Http\Controllers\Trading\TradeController::class, 'history'])->name('trades.history');
-        Route::get('/trades/{id}', [\App\Http\Controllers\Trading\TradeController::class, 'show'])->name('trades.show');
-        Route::put('/trades/{id}/shipping', [\App\Http\Controllers\Trading\TradeController::class, 'updateShipping'])->name('trades.update-shipping');
-        Route::post('/trades/{id}/lock', [\App\Http\Controllers\Trading\TradeController::class, 'lock'])->name('trades.lock');
-        Route::post('/trades/{id}/shipped', [\App\Http\Controllers\Trading\TradeController::class, 'markShipped'])->name('trades.mark-shipped');
-        Route::post('/trades/{id}/received', [\App\Http\Controllers\Trading\TradeController::class, 'markReceived'])->name('trades.mark-received');
-        Route::post('/trades/{id}/complete', [\App\Http\Controllers\Trading\TradeController::class, 'complete'])->name('trades.complete');
-        Route::post('/trades/{id}/review', [\App\Http\Controllers\Trading\TradeController::class, 'storeTradeReview'])->name('trades.review');
-        Route::get('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'disputeForm'])->name('trades.dispute-form');
-        Route::post('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'dispute'])->name('trades.dispute');
-        Route::get('/trades/{id}/report', [\App\Http\Controllers\Trading\TradeController::class, 'reportForm'])->name('trades.report-form');
-        Route::post('/trades/{id}/report', [\App\Http\Controllers\Trading\TradeController::class, 'report'])->name('trades.report');
-        Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
-        
         // Conversations (trade chat)
         Route::get('/conversations/unread', [\App\Http\Controllers\Trading\ConversationController::class, 'unreadCount'])->name('conversations.unread');
         Route::get('/conversations', [\App\Http\Controllers\Trading\ConversationController::class, 'index'])->name('conversations.index');
@@ -350,6 +319,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');
         Route::post('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'report'])->name('conversations.report');
+        Route::post('/conversations/{conversation}/lock-deal', [\App\Http\Controllers\Trading\ConversationController::class, 'lockDeal'])->name('conversations.lock-deal');
+        Route::post('/conversations/{conversation}/confirm-received', [\App\Http\Controllers\Trading\ConversationController::class, 'confirmReceived'])->name('conversations.confirm-received');
         
         // User Products
         Route::get('/my-products', [\App\Http\Controllers\Trading\UserProductController::class, 'index'])->name('products.index');
@@ -644,6 +615,14 @@ Route::prefix('moderator')->middleware(['moderator'])->name('moderator.')->group
         ->name('reports.resolve');
     Route::post('/reports/{id}/dismiss', [\App\Http\Controllers\Moderator\ReportController::class, 'dismiss'])
         ->name('reports.dismiss');
+
+    // Conversation reports (trade chat / product & seller reports)
+    Route::get('/conversation-reports', [\App\Http\Controllers\Moderator\ConversationReportController::class, 'index'])
+        ->name('conversation-reports.index');
+    Route::get('/conversation-reports/{report}', [\App\Http\Controllers\Moderator\ConversationReportController::class, 'show'])
+        ->name('conversation-reports.show');
+    Route::put('/conversation-reports/{report}', [\App\Http\Controllers\Moderator\ConversationReportController::class, 'update'])
+        ->name('conversation-reports.update');
 });
 
 require __DIR__.'/auth.php';

@@ -50,10 +50,12 @@ class TradeListingRejectedNotification extends Notification implements ShouldQue
     {
         return [
             'type' => 'trade_listing_rejected',
+            'title' => 'Listing not approved',
             'listing_id' => $this->listing->id,
             'listing_title' => $this->listing->title,
             'reason' => $this->reason,
-            'message' => 'Your listing "' . $this->listing->title . '" was not approved.' . ($this->reason ? ' Reason: ' . $this->reason : ''),
+            'message' => 'Your listing "' . $this->listing->title . '" was not approved.' . ($this->reason ? ' Reason: ' . $this->reason : '') . ' You may try again with a new listing.',
+            'action_url' => route('trading.listings.create'),
         ];
     }
 }

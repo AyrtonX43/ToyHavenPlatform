@@ -39,9 +39,11 @@ class TradeListingApprovedNotification extends Notification implements ShouldQue
     {
         return [
             'type' => 'trade_listing_approved',
+            'title' => 'Listing approved',
             'listing_id' => $this->listing->id,
             'listing_title' => $this->listing->title,
             'message' => 'Your listing "' . $this->listing->title . '" has been approved and is now live on the marketplace.',
+            'action_url' => route('trading.listings.show', $this->listing->id),
         ];
     }
 }

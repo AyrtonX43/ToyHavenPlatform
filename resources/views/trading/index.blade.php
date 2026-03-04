@@ -324,10 +324,12 @@
             </div>
             <div class="col-md-4 text-end">
                 @auth
+                <a href="{{ route('trading.listings.my') }}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-list-ul me-1"></i>My Listings
+                </a>
                 <a href="{{ route('trading.listings.create') }}" class="btn btn-marketplace btn-marketplace-primary me-2">
                     <i class="bi bi-plus-circle me-1"></i>Create Listing
                 </a>
-                <a href="{{ route('trading.listings.my') }}" class="btn btn-outline-secondary">My Listings</a>
                 @else
                 <a href="{{ route('login') }}" class="btn btn-marketplace btn-marketplace-primary">
                     <i class="bi bi-box-arrow-in-right me-1"></i>Login to Trade

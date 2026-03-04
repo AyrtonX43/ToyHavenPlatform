@@ -12,6 +12,7 @@ use App\Models\Conversation;
 use App\Models\ConversationReport;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\Trade;
 use App\Models\TradeListing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -423,6 +424,118 @@ class ConversationController extends Controller
     {
         $this->authorize('view', $conversation);
         return view('trading.conversations.report', compact('conversation'));
+    }
+
+    /**
+     * Lock deal: create a Trade from the listing conversation (no offer flow).
+     */
+    public function lockDeal(Request $request, Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        if ($conversation->is_locked) {
+            return back()->with('error', 'This conversation is locked.');
+        }
+        if ($conversation->trade_id) {
+            return back()->with('error', 'A deal is already locked for this conversation.');
+        }
+        $listing = $conversation->tradeListing;
+        if (!$listing || $listing->status !== 'active') {
+            return back()->with('error', 'The listing is no longer available for a deal.');
+        }
+
+        $other = $conversation->getOtherUser(Auth::id());
+        if (!$other) {
+            return back()->with('error', 'Invalid conversation.');
+        }
+
+        $initiatorId = $listing->user_id;
+        $participantId = ($listing->user_id === Auth::id()) ? $other->id : Auth::id();
+        if ($initiatorId === $participantId) {
+            return back()->with('error', 'Cannot lock deal with yourself.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $trade = Trade::create([
+                'trade_listing_id' => $listing->id,
+                'trade_offer_id' => null,
+                'initiator_id' => $initiatorId,
+                'initiator_seller_id' => null,
+                'participant_id' => $participantId,
+                'participant_seller_id' => null,
+                'cash_amount' => $listing->cash_difference,
+                'status' => 'deal_locked',
+                'initiator_locked_at' => now(),
+                'participant_locked_at' => now(),
+            ]);
+            $conversation->update(['trade_id' => $trade->id]);
+            $listing->update(['status' => 'pending_trade']);
+            DB::commit();
+            return back()->with('success', 'Deal locked. Both parties can now confirm receipt of payment/product.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::warning('Lock deal failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to lock deal. Please try again.');
+        }
+    }
+
+    /**
+     * Confirm received (payment/product) for the locked deal. Optional proof image.
+     */
+    public function confirmReceived(Request $request, Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        $trade = $conversation->trade;
+        if (!$trade || $trade->status !== 'deal_locked') {
+            return back()->with('error', 'No locked deal to confirm.');
+        }
+
+        $request->validate([
+            'proof_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        $userId = Auth::id();
+        $isInitiator = $trade->initiator_id === $userId;
+        $isParticipant = $trade->participant_id === $userId;
+        if (!$isInitiator && !$isParticipant) {
+            return back()->with('error', 'You are not part of this deal.');
+        }
+
+        $proofPath = null;
+        if ($request->hasFile('proof_image') && $request->file('proof_image')->isValid()) {
+            $proofPath = $request->file('proof_image')->store('trade-proofs/' . $trade->id, 'public');
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($isInitiator) {
+                $trade->update([
+                    'initiator_received_at' => now(),
+                    'initiator_received_proof_path' => $proofPath ?? $trade->initiator_received_proof_path,
+                ]);
+            } else {
+                $trade->update([
+                    'participant_received_at' => now(),
+                    'participant_received_proof_path' => $proofPath ?? $trade->participant_received_proof_path,
+                ]);
+            }
+
+            if ($trade->bothConfirmedReceived()) {
+                $trade->update(['status' => 'completed', 'completed_at' => now()]);
+                $trade->tradeListing->update(['status' => 'completed']);
+                $conversation->update(['is_locked' => true]);
+            }
+            DB::commit();
+            return back()->with('success', $trade->bothConfirmedReceived()
+                ? 'Trade completed. This chat is now locked.'
+                : 'You confirmed receipt. Waiting for the other party.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::warning('Confirm received failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to confirm. Please try again.');
+        }
     }
 
     /**

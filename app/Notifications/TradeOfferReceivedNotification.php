@@ -26,7 +26,7 @@ class TradeOfferReceivedNotification extends Notification
         return (new MailMessage)
             ->subject('New Trade Offer Received')
             ->line('You have received a new trade offer on your listing: ' . $this->offer->tradeListing->title)
-            ->action('View Offer', route('trading.offers.show', $this->offer->id))
+            ->action('View in Messages', route('trading.conversations.index'))
             ->line('Thank you for using our platform!');
     }
 
@@ -42,7 +42,7 @@ class TradeOfferReceivedNotification extends Notification
             'offerer_name' => $offererName,
             'title' => 'New trade offer from ' . $offererName,
             'message' => $offererName . ' made an offer on your listing: ' . $listingTitle,
-            'action_url' => route('trading.listings.show', $this->offer->trade_listing_id) . '?offer=' . $this->offer->id,
+            'action_url' => route('trading.conversations.index'),
         ];
     }
 }

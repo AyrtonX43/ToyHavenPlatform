@@ -122,6 +122,7 @@ class Trade extends Model
             'completed' => 'Completed',
             'disputed' => 'Disputed',
             'cancelled' => 'Cancelled',
+            'deal_locked' => 'Deal Locked',
             default => 'Unknown',
         };
     }
@@ -135,8 +136,19 @@ class Trade extends Model
             'completed' => 100,
             'disputed' => 0,
             'cancelled' => 0,
+            'deal_locked' => 50,
             default => 0,
         };
+    }
+
+    public function isDealLocked(): bool
+    {
+        return $this->status === 'deal_locked';
+    }
+
+    public function bothConfirmedReceived(): bool
+    {
+        return $this->initiator_received_at && $this->participant_received_at;
     }
 
     public function getOtherParty($userId)

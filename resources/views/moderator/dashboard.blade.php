@@ -44,6 +44,17 @@
                             </div>
                         </a>
                     </div>
+                    <div class="col-md-4">
+                        <a href="{{ route('moderator.conversation-reports.index') }}" class="text-decoration-none">
+                            <div class="card border-primary h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-chat-dots display-4 text-primary d-block mb-2"></i>
+                                    <h5 class="card-title">Conversation Reports</h5>
+                                    <p class="card-text text-muted small mb-0">Review reports on trade chat (product & seller).</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

@@ -401,7 +401,7 @@
             <div class="product-info-card">
                 @if($listing->status === 'pending_approval')
                     <div class="alert alert-warning py-2 mb-3 mb-md-3" role="alert">
-                        <i class="bi bi-hourglass-split me-2"></i><strong>Pending approval.</strong> Your listing is under review. You can still view and edit it until an admin approves it.
+                        <i class="bi bi-hourglass-split me-2"></i><strong>Pending approval.</strong> Your listing is under review. Check your notifications for approval or rejection.
                     </div>
                 @endif
                 <h1 class="product-title-large">{{ $listing->title }}</h1>
@@ -437,36 +437,10 @@
 
                 <div class="action-buttons">
                     @auth
-                        @if($listing->user_id !== Auth::id())
-                            <a href="#make-offer" class="btn btn-action btn-offer">
-                                <i class="bi bi-hand-thumbs-up me-2"></i>Make an Offer
+                        @if($listing->user_id !== Auth::id() && $canMakeOffer)
+                            <a href="{{ route('trading.conversations.store-from-listing', $listing->id) }}" class="btn btn-action btn-offer">
+                                <i class="bi bi-chat-dots me-2"></i>Make an Offer
                             </a>
-                            <a href="{{ route('trading.conversations.store-from-listing', $listing->id) }}" class="btn btn-action btn-message">
-                                <i class="bi bi-chat-dots me-2"></i>Message Seller
-                            </a>
-                        @else
-                            <a href="{{ route('trading.listings.edit', $listing->id) }}" class="btn btn-action btn-outline-primary">
-                                <i class="bi bi-pencil me-2"></i>Edit Listing
-                            </a>
-                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                @if(in_array($listing->status, ['active', 'pending_approval']))
-                                <form method="POST" action="{{ route('trading.listings.mark-sold', $listing->id) }}" class="d-inline" onsubmit="return confirm('Mark this listing as sold?');">
-                                    @csrf
-                                    <button type="submit" class="btn btn-action btn-outline-success">
-                                        <i class="bi bi-check-circle me-2"></i>Mark as Sold
-                                    </button>
-                                </form>
-                                @endif
-                                @if($listing->status !== 'pending_trade')
-                                <form method="POST" action="{{ route('trading.listings.destroy', $listing->id) }}" class="d-inline" onsubmit="return confirm('Delete this listing? This cannot be undone.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-action btn-outline-danger">
-                                        <i class="bi bi-trash me-2"></i>Delete Listing
-                                    </button>
-                                </form>
-                                @endif
-                            </div>
                         @endif
                     @else
                         <a href="{{ route('login') }}" class="btn btn-action btn-message">
@@ -479,10 +453,6 @@
                     <div class="stat-item">
                         <div class="stat-value">{{ number_format($listing->views_count) }}</div>
                         <div class="stat-label">Views</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ number_format($listing->offers_count) }}</div>
-                        <div class="stat-label">Offers</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-value">{{ $listing->created_at->diffForHumans() }}</div>
@@ -500,7 +470,7 @@
 
     <!-- Product Details -->
     <div class="row g-4">
-        <div class="col-xl-8 col-lg-7">
+        <div class="col-12">
             <div class="product-details-card">
                 <h4 class="mb-3">Description</h4>
                 <p class="text-muted">{{ $listing->description }}</p>
@@ -568,10 +538,6 @@
             </div>
         </div>
 
-        <!-- Active Offers -->
-        <div class="col-xl-4 col-lg-5" id="active-offers-column">
-            @include('trading.listings._active-offers', ['offererListingsByOffer' => $offererListingsByOffer ?? collect()])
-        </div>
     </div>
 
     @if(isset($suggestedListings) && $suggestedListings->isNotEmpty())
@@ -614,60 +580,6 @@
     </div>
     @endif
 
-    <!-- Make Offer Form -->
-    @auth
-    @if($listing->user_id !== Auth::id() && $listing->canAcceptOffers())
-    <div id="make-offer" class="row mt-5 pt-2">
-        <div class="col-xl-8 col-lg-7">
-            <div class="make-offer-section">
-                <h4 class="mb-4" style="font-size: 1.25rem; font-weight: 700; color: #1e1b18;">
-                    <i class="bi bi-hand-thumbs-up me-2 text-primary"></i>Make an Offer
-                </h4>
-                @if(isset($offererProducts) && $offererProducts->isNotEmpty())
-                <form method="POST" action="{{ route('trading.offers.store', $listing->id) }}">
-                    @csrf
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">Your Product (from My Listings)</label>
-                            <select name="offered_item" class="form-select form-select-lg" required>
-                                <option value="">Select a product from your listings</option>
-                                @foreach($offererProducts as $op)
-                                <option value="{{ $op->type }}:{{ $op->product_id ?? $op->user_product_id }}" data-type="{{ $op->type }}" data-product-id="{{ $op->product_id ?? '' }}" data-user-product-id="{{ $op->user_product_id ?? '' }}">
-                                    {{ $op->name }} ({{ $op->listing_title }})
-                                </option>
-                                @endforeach
-                            </select>
-                            <input type="hidden" name="product_type" id="offerProductType" value="">
-                            <input type="hidden" name="product_id" id="offerProductId" value="">
-                            <input type="hidden" name="user_product_id" id="offerUserProductId" value="">
-                        </div>
-                        <div class="col-12" id="cashAmountWrap">
-                            <label class="form-label fw-semibold">Cash Amount (Optional)</label>
-                            <input type="number" name="cash_amount" id="offerCashAmount" step="0.01" min="0" class="form-control form-control-lg" placeholder="0.00">
-                            <small class="text-muted d-none" id="cashDisabledHint">Not applicable for barter-only listings</small>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">Message (Optional)</label>
-                            <textarea name="message" rows="3" class="form-control" placeholder="Add a message to your offer..."></textarea>
-                        </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-offer btn-action">
-                                <i class="bi bi-send me-2"></i>Submit Offer
-                            </button>
-                        </div>
-                    </div>
-                </form>
-                @else
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <strong>No products to offer yet.</strong> To make an offer, you need either: (1) an active listing in <a href="{{ route('trading.listings.my') }}">My Listings</a> (listings are auto-linked for offers), or (2) products in <a href="{{ route('trading.products.create') }}">My Products</a>. <a href="{{ route('trading.listings.create') }}">Create a listing</a> to get started.
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-    @endif
-    @endauth
 </div>
 </div>
 
@@ -720,38 +632,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!t.getAttribute('data-fullscreen-src')) t.setAttribute('data-fullscreen-src', t.src);
     });
     startSlideshow();
-    var offerSelect = document.querySelector('select[name="offered_item"]');
-    var productTypeInput = document.getElementById('offerProductType');
-    var productIdInput = document.getElementById('offerProductId');
-    var userProductIdInput = document.getElementById('offerUserProductId');
-    var cashInput = document.getElementById('offerCashAmount');
-    var cashWrap = document.getElementById('cashAmountWrap');
-    var cashHint = document.getElementById('cashDisabledHint');
-    var isBarter = {{ ($listing->trade_type ?? '') === 'barter' ? 'true' : 'false' }};
-
-    if (offerSelect && productTypeInput) {
-        function syncOfferFields() {
-            var val = offerSelect.value;
-            if (!val) return;
-            var parts = val.split(':');
-            var type = parts[0];
-            var id = parts[1] || '';
-            productTypeInput.value = type;
-            productIdInput.value = type === 'seller_product' ? id : '';
-            userProductIdInput.value = type === 'user_product' ? id : '';
-        }
-        offerSelect.addEventListener('change', syncOfferFields);
-        var form = offerSelect.closest('form');
-        if (form) form.addEventListener('submit', syncOfferFields);
-    }
-
-    if (isBarter && cashInput && cashWrap && cashHint) {
-        cashInput.disabled = true;
-        cashInput.value = '';
-        cashInput.required = false;
-        cashHint.classList.remove('d-none');
-    }
-
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeImageFullscreen();
     });
@@ -801,34 +681,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 })();
 
-// Real-time: poll Active Offers when seller (every 3 seconds)
-@auth
-@if(Auth::id() === $listing->user_id)
-(function() {
-    var listingId = {{ $listing->id }};
-    var url = '{{ route("trading.listings.active-offers-partial", $listing->id) }}';
-    var lastCount = {{ $listing->activeOffers->count() }};
-    function pollOffers() {
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-                if (res.count !== lastCount || (res.html && document.getElementById('active-offers-column'))) {
-                    var hadNew = res.count > lastCount;
-                    lastCount = res.count;
-                    var col = document.getElementById('active-offers-column');
-                    if (col && res.html !== undefined) {
-                        col.innerHTML = res.html;
-                    }
-                    if (hadNew && typeof updateNotificationCount === 'function') updateNotificationCount();
-                }
-            })
-            .catch(function() {});
-        setTimeout(pollOffers, 2000);
-    }
-    setTimeout(pollOffers, 2000);
-})();
-@endif
-@endauth
 </script>
 @endpush
 @endsection

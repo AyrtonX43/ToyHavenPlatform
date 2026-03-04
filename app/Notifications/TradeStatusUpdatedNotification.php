@@ -40,7 +40,7 @@ class TradeStatusUpdatedNotification extends Notification implements ShouldQueue
             ->subject('Trade Status Updated')
             ->line($message)
             ->line('Trade: ' . $this->trade->tradeListing->title)
-            ->action('View Trade', route('trading.trades.show', $this->trade->id));
+            ->action('View in Messages', route('trading.conversations.index'));
     }
 
     public function toArray($notifiable)

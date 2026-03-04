@@ -147,62 +147,45 @@
         </a>
     @endif
 
-    {{-- Deal actions: Lock / Cancel / Received (when conversation has an active trade) --}}
+    {{-- Deal actions: Lock deal (new flow) / Confirm received / Status --}}
     @php
         $trade = $conversation->trade;
-        $tradeActive = $trade && !in_array($trade->status, ['completed', 'cancelled']);
-        $userHasLocked = $trade && (
-            ($trade->isInitiator(auth()->id()) && $trade->initiator_locked_at) ||
-            ($trade->isParticipant(auth()->id()) && $trade->participant_locked_at)
-        );
         $userHasReceived = $trade && (
             ($trade->isInitiator(auth()->id()) && $trade->initiator_received_at) ||
             ($trade->isParticipant(auth()->id()) && $trade->participant_received_at)
         );
+        $canLockDeal = !$trade && $conversation->tradeListing && $conversation->tradeListing->status === 'active' && !$conversation->is_locked;
+        $showConfirmReceived = $trade && $trade->status === 'deal_locked' && !$userHasReceived;
     @endphp
-    @if($trade)
-        <div class="deal-actions">
-            @if($trade->status === 'completed')
-                <div class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> Trade completed</div>
-                <a href="{{ route('trading.trades.show', $trade->id) }}" class="btn btn-sm btn-outline-primary mt-2">View trade details</a>
-            @elseif($trade->status === 'cancelled')
-                <div class="text-muted fw-semibold"><i class="bi bi-x-circle me-1"></i> Trade cancelled</div>
-                <a href="{{ route('trading.trades.index') }}" class="btn btn-sm btn-outline-secondary mt-2">Back to trade listings</a>
-            @else
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                    <a href="{{ route('trading.trades.show', $trade->id) }}" class="btn btn-sm btn-outline-primary">Trade #{{ $trade->id }}</a>
-                    @if($userHasLocked)
-                        <span class="badge bg-success">You locked</span>
-                    @endif
-                    @if($trade->bothLocked())
-                        <span class="badge bg-info">Both locked</span>
-                    @endif
-                </div>
-                <div class="btn-group-chat">
-                    @if(!$userHasLocked)
-                        <form method="POST" action="{{ route('trading.trades.lock', $trade->id) }}" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-primary">Lock the offer</button>
-                        </form>
-                    @endif
-                    <form method="POST" action="{{ route('trading.trades.cancel', $trade->id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this offer? The trade will be cancelled and both listings will return to trade listings.');">
-                        @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancel the offer</button>
-                    </form>
-                    @if($trade->bothLocked() && !$userHasReceived)
-                        <form method="POST" action="{{ route('trading.trades.mark-received', $trade->id) }}" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2 flex-wrap">
-                            @csrf
-                            <label class="mb-0 small">I received the product (photo proof required):</label>
-                            <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" required class="form-control form-control-sm" style="max-width: 200px;">
-                            <button type="submit" class="btn btn-sm btn-success">Confirm received</button>
-                        </form>
-                    @elseif($trade->bothLocked() && $userHasReceived)
+    @if($canLockDeal || $trade)
+        <div class="deal-actions mb-2">
+            @if($canLockDeal)
+                <form method="POST" action="{{ route('trading.conversations.lock-deal', $conversation) }}" class="d-inline" onsubmit="return confirm('Lock the deal for this listing? Both parties will then confirm receipt of payment/product.');">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-lock me-1"></i>Lock deal</button>
+                </form>
+            @elseif($trade)
+                @if($trade->status === 'completed')
+                    <div class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> Trade completed</div>
+                @elseif($trade->status === 'cancelled')
+                    <div class="text-muted fw-semibold"><i class="bi bi-x-circle me-1"></i> Trade cancelled</div>
+                @elseif($trade->status === 'deal_locked')
+                    <span class="badge bg-info me-2">Deal locked</span>
+                    @if($userHasReceived)
                         <span class="badge bg-success">You confirmed received</span>
-                        @if(!$trade->initiator_received_at || !$trade->participant_received_at)
+                        @if(!$trade->bothConfirmedReceived())
                             <span class="text-muted small">Waiting for other party to confirm...</span>
                         @endif
                     @endif
-                </div>
+                    @if($showConfirmReceived)
+                        <form method="POST" action="{{ route('trading.conversations.confirm-received', $conversation) }}" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2 flex-wrap mt-2">
+                            @csrf
+                            <label class="mb-0 small">I received the payment/product (proof optional):</label>
+                            <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" class="form-control form-control-sm" style="max-width: 200px;">
+                            <button type="submit" class="btn btn-sm btn-success">Confirm received</button>
+                        </form>
+                    @endif
+                @endif
             @endif
         </div>
     @endif
@@ -220,8 +203,8 @@
             </div>
         </div>
         <div>
-            @if($conversation->trade_id)
-                <a href="{{ route('trading.trades.show', $conversation->trade->id) }}" class="btn btn-sm btn-outline-primary">Trade #{{ $conversation->trade_id }}</a>
+            @if($conversation->tradeListing)
+                <a href="{{ route('trading.listings.show', $conversation->tradeListing->id) }}" class="btn btn-sm btn-outline-primary">View listing</a>
             @endif
             <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary ms-1" title="Report conversation">Report</a>
         </div>
@@ -255,7 +238,7 @@
     </div>
 
     @php
-        $chatLocked = $trade && in_array($trade->status ?? '', ['completed', 'cancelled']);
+        $chatLocked = $conversation->is_locked || ($trade && in_array($trade->status ?? '', ['completed', 'cancelled']));
     @endphp
     @if(!$chatLocked)
     <div class="chat-footer">
@@ -288,7 +271,7 @@
     </div>
     @else
     <div class="chat-footer bg-light text-muted text-center py-3 rounded-3">
-        <i class="bi bi-lock me-1"></i> This chat is locked because the trade has been {{ $trade->status === 'completed' ? 'completed' : 'cancelled' }}.
+        <i class="bi bi-lock me-1"></i> This chat is locked{{ $trade ? ' because the trade has been ' . ($trade->status === 'completed' ? 'completed' : 'cancelled') : '' }}.
     </div>
     @endif
 

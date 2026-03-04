@@ -14,7 +14,6 @@ use App\Services\TradeMatchingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class TradeListingController extends Controller
 {
@@ -263,10 +262,6 @@ class TradeListingController extends Controller
             'product.category',
             'userProduct.images',
             'userProduct.category',
-            'activeOffers.offeredProduct.images',
-            'activeOffers.offeredUserProduct.images',
-            'activeOffers.offerer',
-            'activeOffers.offererSeller',
         ])->findOrFail($id);
 
         // Only active (or pending_trade) listings are visible to public; owner and admins can always view
@@ -281,345 +276,31 @@ class TradeListingController extends Controller
             $listing->increment('views_count');
         }
 
-        $canMakeOffer = Auth::check() && 
-            $listing->user_id !== Auth::id() && 
+        $canMakeOffer = Auth::check() &&
+            $listing->user_id !== Auth::id() &&
             $listing->canAcceptOffers();
-
-        // Products from offerer's own trade listings (for Make an Offer)
-        $offererProducts = collect();
-        if ($canMakeOffer) {
-            $seen = [];
-            $myListings = TradeListing::where('user_id', Auth::id())
-                ->whereIn('status', ['active', 'pending_approval'])
-                ->with(['product.images', 'userProduct.images', 'images'])
-                ->get();
-            foreach ($myListings as $myListing) {
-                $item = $myListing->getItem();
-                // Backfill: create UserProduct for existing listings that have images but no linked product
-                if (!$item && $myListing->images->isNotEmpty()) {
-                    DB::beginTransaction();
-                    try {
-                        $up = UserProduct::create([
-                            'user_id' => Auth::id(),
-                            'category_id' => $myListing->category_id,
-                            'name' => $myListing->title,
-                            'description' => $myListing->description ?? '',
-                            'brand' => $myListing->brand,
-                            'condition' => $myListing->condition,
-                            'status' => 'available',
-                        ]);
-                        $firstImg = $myListing->images()->first();
-                        if ($firstImg) {
-                            UserProductImage::create([
-                                'user_product_id' => $up->id,
-                                'image_path' => $firstImg->image_path,
-                                'is_primary' => true,
-                                'display_order' => 0,
-                            ]);
-                        }
-                        $myListing->update(['user_product_id' => $up->id]);
-                        DB::commit();
-                        $item = $up;
-                        $myListing->setRelation('userProduct', $up);
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                    }
-                }
-                if ($item) {
-                    $key = $item instanceof Product ? 'p:' . $item->id : 'u:' . $item->id;
-                    if (isset($seen[$key])) continue;
-                    $seen[$key] = true;
-                    if ($item instanceof Product) {
-                        $offererProducts->push((object)[
-                            'type' => 'seller_product',
-                            'product_id' => $item->id,
-                            'user_product_id' => null,
-                            'name' => $item->name,
-                            'listing_title' => $myListing->title,
-                        ]);
-                    } else {
-                        $offererProducts->push((object)[
-                            'type' => 'user_product',
-                            'product_id' => null,
-                            'user_product_id' => $item->id,
-                            'name' => $item->name,
-                            'listing_title' => $myListing->title,
-                        ]);
-                    }
-                }
-            }
-            // Fallback: if no products from listings, include UserProducts and Seller Products
-            if ($offererProducts->isEmpty()) {
-                $userProducts = UserProduct::where('user_id', Auth::id())
-                    ->where('status', 'available')
-                    ->with(['images'])
-                    ->get();
-                foreach ($userProducts as $up) {
-                    $offererProducts->push((object)[
-                        'type' => 'user_product',
-                        'product_id' => null,
-                        'user_product_id' => $up->id,
-                        'name' => $up->name,
-                        'listing_title' => 'My Personal Product',
-                    ]);
-                }
-                $offererSellerId = Auth::user()->isSeller() && Auth::user()->seller ? Auth::user()->seller->id : null;
-                if ($offererSellerId) {
-                    $sellerProducts = Product::where('seller_id', $offererSellerId)
-                        ->where('is_tradeable', true)
-                        ->where('trade_status', 'available_for_trade')
-                        ->where('status', 'active')
-                        ->with(['images'])
-                        ->get();
-                    foreach ($sellerProducts as $sp) {
-                        $offererProducts->push((object)[
-                            'type' => 'seller_product',
-                            'product_id' => $sp->id,
-                            'user_product_id' => null,
-                            'name' => $sp->name,
-                            'listing_title' => 'Business Product',
-                        ]);
-                    }
-                }
-            }
-        }
-
-        // Map of offer_id => offerer's trade listing (for View Product full details)
-        $offererListingsByOffer = collect();
-        foreach ($listing->activeOffers ?? [] as $offer) {
-            $offererListing = TradeListing::where('user_id', $offer->offerer_id)
-                ->where(function ($q) use ($offer) {
-                    if ($offer->offered_product_id) {
-                        $q->where('product_id', $offer->offered_product_id);
-                    } else {
-                        $q->where('user_product_id', $offer->offered_user_product_id);
-                    }
-                })
-                ->with(['images', 'product.images', 'userProduct.images', 'category'])
-                ->first();
-            if ($offererListing) {
-                $offererListingsByOffer[$offer->id] = $offererListing;
-            }
-        }
-
-        // Check if chat is requested
-        $showChat = request()->has('chat') && Auth::check() && $listing->user_id !== Auth::id();
 
         $suggestedListings = $matchingService->getSuggestedListingsForListing($listing->id, 6, Auth::check() ? Auth::id() : null);
 
-        return view('trading.listings.show', compact('listing', 'canMakeOffer', 'showChat', 'suggestedListings', 'offererProducts', 'offererListingsByOffer'));
+        return view('trading.listings.show', compact('listing', 'canMakeOffer', 'suggestedListings'));
     }
 
     /**
-     * Partial HTML for Active Offers (for real-time polling)
+     * Trade history for a listing: completed trades with proof (Barter/Barter+Cash: Trade 1 & 2 + proofs; Cash: listing + proof).
      */
-    public function activeOffersPartial($id)
-    {
-        $listing = TradeListing::with([
-            'activeOffers.offeredProduct.images',
-            'activeOffers.offeredUserProduct.images',
-            'activeOffers.offerer',
-        ])->findOrFail($id);
-
-        if ($listing->user_id !== Auth::id()) {
-            abort(403, 'Only the listing owner can poll active offers.');
-        }
-
-        $offererListingsByOffer = collect();
-        foreach ($listing->activeOffers ?? [] as $offer) {
-            $offererListing = TradeListing::where('user_id', $offer->offerer_id)
-                ->where(function ($q) use ($offer) {
-                    if ($offer->offered_product_id) {
-                        $q->where('product_id', $offer->offered_product_id);
-                    } else {
-                        $q->where('user_product_id', $offer->offered_user_product_id);
-                    }
-                })
-                ->with(['images', 'product.images', 'userProduct.images', 'category'])
-                ->first();
-            if ($offererListing) {
-                $offererListingsByOffer[$offer->id] = $offererListing;
-            }
-        }
-
-        $html = view('trading.listings._active-offers', [
-            'listing' => $listing,
-            'offererListingsByOffer' => $offererListingsByOffer,
-        ])->render();
-
-        return response()->json([
-            'html' => $html,
-            'count' => $listing->activeOffers->count(),
-        ]);
-    }
-
-    public function edit($id)
+    public function history($id)
     {
         $listing = TradeListing::where('user_id', Auth::id())
-            ->with(['product.images', 'userProduct.images', 'images', 'category'])
+            ->with(['images', 'product.images', 'userProduct.images', 'category'])
             ->findOrFail($id);
 
-        if (!in_array($listing->status, ['active', 'pending_approval'])) {
-            return redirect()->route('trading.listings.show', $listing->id)
-                ->with('error', 'Cannot edit this listing.');
-        }
-
-        $userProducts = UserProduct::where('user_id', Auth::id())
-            ->where('status', 'available')
-            ->orWhere('id', $listing->user_product_id)
-            ->with(['images'])
+        $trades = \App\Models\Trade::where('trade_listing_id', $listing->id)
+            ->where('status', 'completed')
+            ->with(['initiator', 'participant', 'tradeListing.images'])
+            ->orderBy('completed_at', 'desc')
             ->get();
 
-        $sellerProducts = collect();
-        if (Auth::user()->isSeller() && Auth::user()->seller) {
-            $sellerProducts = Product::where('seller_id', Auth::user()->seller->id)
-                ->where(function($q) use ($listing) {
-                    $q->where('is_tradeable', true)
-                      ->where('trade_status', 'available_for_trade')
-                      ->orWhere('id', $listing->product_id);
-                })
-                ->where('status', 'active')
-                ->with(['images'])
-                ->get();
-        }
-
-        $categories = Category::orderBy('name')->get();
-
-        return view('trading.listings.edit', compact('listing', 'userProducts', 'sellerProducts', 'categories'));
+        return view('trading.listings.history', compact('listing', 'trades'));
     }
 
-    public function update(Request $request, $id)
-    {
-        $listing = TradeListing::where('user_id', Auth::id())->findOrFail($id);
-
-        if (!in_array($listing->status, ['active', 'pending_approval'])) {
-            return redirect()->route('trading.listings.show', $listing->id)
-                ->with('error', 'Cannot update this listing.');
-        }
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'brand' => 'nullable|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'condition' => 'nullable|string|in:new,used,refurbished',
-            'location' => 'nullable|string|max:500',
-            'location_lat' => 'nullable|numeric|between:-90,90',
-            'location_lng' => 'nullable|numeric|between:-180,180',
-            'meet_up_references' => 'nullable|string|max:1000',
-            'trade_type' => 'required|in:barter,barter_with_cash,cash',
-            'cash_difference' => 'nullable|numeric|min:0',
-            'desired_items' => 'nullable|array',
-            'expires_at' => 'nullable|date|after:today',
-            'images' => 'nullable|array|max:10',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
-            'remove_images' => 'nullable|array',
-            'remove_images.*' => 'exists:trade_listing_images,id',
-        ]);
-
-        $updateData = [
-            'title' => $validated['title'],
-            'brand' => $validated['brand'] ?? null,
-            'description' => $validated['description'],
-            'category_id' => $validated['category_id'],
-            'condition' => $validated['condition'] ?? null,
-            'location' => $validated['location'] ?? null,
-            'location_lat' => isset($validated['location_lat']) ? (float) $validated['location_lat'] : null,
-            'location_lng' => isset($validated['location_lng']) ? (float) $validated['location_lng'] : null,
-            'meet_up_references' => $validated['meet_up_references'] ?? null,
-            'trade_type' => $validated['trade_type'],
-            'cash_difference' => $validated['trade_type'] === 'barter' ? null : ($validated['cash_difference'] ?? null),
-            'desired_items' => $validated['desired_items'] ?? null,
-            'expires_at' => $validated['expires_at'] ?? null,
-        ];
-
-        // Re-approval required when editing an active listing
-        if ($listing->status === 'active') {
-            $updateData['status'] = 'pending_approval';
-        }
-
-        $listing->update($updateData);
-
-        if ($request->has('remove_images')) {
-            foreach ($request->remove_images as $imageId) {
-                $img = $listing->images()->find($imageId);
-                if ($img) {
-                    Storage::disk('public')->delete($img->image_path);
-                    $img->delete();
-                }
-            }
-        }
-
-        if ($request->hasFile('images')) {
-            $maxOrder = $listing->images()->max('display_order') ?? -1;
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('trade-listings/' . Auth::id(), 'public');
-                $listing->images()->create([
-                    'image_path' => $path,
-                    'display_order' => ++$maxOrder,
-                ]);
-            }
-        }
-
-        $totalImages = $listing->images()->count();
-        $minImages = $listing->status === 'pending_approval' ? 1 : 4;
-        if ($totalImages < $minImages) {
-            return back()->withInput()->with('error', 'Listing must have between ' . $minImages . ' and 10 images. Currently has ' . $totalImages . '.');
-        }
-        if ($totalImages > 10) {
-            return back()->withInput()->with('error', 'Listing cannot have more than 10 images. Please remove some.');
-        }
-
-        return redirect()->route('trading.listings.show', $listing->id)
-            ->with('success', 'Trade listing updated successfully!');
-    }
-
-    public function markAsSold($id)
-    {
-        $listing = TradeListing::where('user_id', Auth::id())->findOrFail($id);
-
-        if (!in_array($listing->status, ['active', 'pending_approval'])) {
-            return redirect()->route('trading.listings.show', $listing->id)
-                ->with('error', 'Cannot mark this listing as sold.');
-        }
-
-        if ($listing->status === 'pending_trade') {
-            return redirect()->route('trading.listings.show', $listing->id)
-                ->with('error', 'Cannot mark as sold while a trade is in progress.');
-        }
-
-        $listing->update(['status' => 'completed']);
-
-        return redirect()->route('trading.listings.my')
-            ->with('success', 'Listing marked as sold successfully.');
-    }
-
-    public function destroy($id)
-    {
-        $listing = TradeListing::where('user_id', Auth::id())->findOrFail($id);
-
-        if ($listing->status === 'pending_trade') {
-            return redirect()->route('trading.listings.my')
-                ->with('error', 'Cannot delete listing that has an active trade.');
-        }
-
-        DB::beginTransaction();
-        try {
-            // Update product status back to available
-            if ($listing->product_id) {
-                Product::where('id', $listing->product_id)->update(['trade_status' => 'available_for_trade']);
-            } elseif ($listing->user_product_id) {
-                UserProduct::where('id', $listing->user_product_id)->update(['status' => 'available']);
-            }
-
-            $listing->update(['status' => 'cancelled']);
-            DB::commit();
-
-            return redirect()->route('trading.listings.my')
-                ->with('success', 'Trade listing cancelled successfully!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to cancel listing: ' . $e->getMessage());
-        }
-    }
 }

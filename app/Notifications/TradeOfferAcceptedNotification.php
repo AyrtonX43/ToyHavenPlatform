@@ -24,7 +24,7 @@ class TradeOfferAcceptedNotification extends Notification
     {
         $chatUrl = $this->trade->conversation
             ? route('trading.conversations.show', $this->trade->conversation)
-            : route('trading.trades.show', $this->trade->id);
+            : route('trading.conversations.index');
         return (new MailMessage)
             ->subject('Your Trade Offer Was Accepted!')
             ->line('Great news! Your trade offer has been accepted.')
@@ -38,7 +38,7 @@ class TradeOfferAcceptedNotification extends Notification
     {
         $chatUrl = $this->trade->conversation
             ? route('trading.conversations.show', $this->trade->conversation)
-            : route('trading.trades.show', $this->trade->id);
+            : route('trading.conversations.index');
         return [
             'type' => 'trade_offer_accepted',
             'trade_id' => $this->trade->id,
