@@ -141,10 +141,6 @@
                 Already have an account? 
                 <a href="{{ route('login') }}" class="text-primary fw-semibold text-decoration-none">Sign in</a>
             </p>
-            <p class="text-muted mb-0 mt-2">
-                Want to register as a business? 
-                <a href="{{ route('business.register') }}" class="text-primary fw-semibold text-decoration-none">Business Registration</a>
-            </p>
         </div>
     </form>
 

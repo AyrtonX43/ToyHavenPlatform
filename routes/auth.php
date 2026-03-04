@@ -17,15 +17,6 @@ Route::middleware('guest')->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    // Business Registration Routes
-    Route::get('register/business', [\App\Http\Controllers\Auth\BusinessRegistrationController::class, 'create'])
-        ->name('business.register');
-
-    Route::post('register/business', [\App\Http\Controllers\Auth\BusinessRegistrationController::class, 'store']);
-
-    Route::post('check-business-email', [\App\Http\Controllers\Auth\BusinessRegistrationController::class, 'checkEmail'])
-        ->name('business.check-email');
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
