@@ -29,6 +29,10 @@
         border-color: #cbd5e1;
     }
 
+    .cart-item-card.cart-item-unselected {
+        opacity: 0.65;
+    }
+
     .cart-item-image {
         width: 110px;
         height: 110px;
@@ -355,29 +359,45 @@
         updateCartSummary();
     }
     
-    // Update cart summary totals
+    // Update cart summary totals (only from CHECKED items)
     function updateCartSummary() {
         let subtotal = 0;
-        
-        // Calculate subtotal from all items
-        document.querySelectorAll('.item-total').forEach(function(el) {
-            const priceText = el.textContent.replace(/[₱,]/g, '');
+        let hasSelection = false;
+
+        document.querySelectorAll('.cart-item-card').forEach(function(card) {
+            const itemId = card.dataset.itemId;
+            const checkbox = card.querySelector('.cart-item-select');
+            if (!checkbox || !checkbox.checked) {
+                card.classList.add('cart-item-unselected');
+                return;
+            }
+            card.classList.remove('cart-item-unselected');
+            hasSelection = true;
+
+            const totalEl = card.querySelector('.item-total[data-item-id="' + itemId + '"]');
+            if (!totalEl) return;
+
+            const priceText = totalEl.textContent.replace(/[₱,]/g, '');
             const price = parseFloat(priceText) || 0;
             subtotal += price;
         });
-        
+
         const commission = subtotal * commissionRate;
         const vat = (subtotal + commission) * taxRate;
         const total = subtotal + commission + vat;
-        
-        // Update summary display
+
         const subtotalEl = document.getElementById('summary-subtotal');
         const vatEl = document.getElementById('summary-vat');
         const totalEl = document.getElementById('summary-total');
-        
+        const checkoutBtn = document.querySelector('button[form="cart-checkout-form"]');
+
         if (subtotalEl) subtotalEl.textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (vatEl) vatEl.textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (checkoutBtn) {
+            checkoutBtn.disabled = !hasSelection;
+            checkoutBtn.title = hasSelection ? '' : 'Select at least one item to checkout';
+        }
     }
     
     // Save quantity to server (silently in background)
@@ -573,6 +593,8 @@
                     this.innerHTML = '<i class="bi bi-trash me-1"></i>Remove';
                 });
             });
+
+            updateCartSummary();
         });
     });
 })();
