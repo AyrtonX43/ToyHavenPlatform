@@ -454,16 +454,16 @@ function loadSavedAddress() {
     if (postalEl) postalEl.value = postal || '';
     
     window.phAddressPrefill = window.phAddressPrefill || {};
-    if (region) {
-        window.phAddressPrefill['shipping_'] = { region, province, city, barangay };
+    if (region || province) {
+        window.phAddressPrefill['shipping_'] = { region: region || 'National Capital Region', province, city, barangay };
         if (regionEl && regionEl.options.length > 1) {
             var normalize = function(t) { return (t||'').replace(/ñ/g,'n').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u'); };
-            var r = normalize(region);
-            if (/^NCR$/i.test(r)) r = 'National Capital Region';
+            var r = normalize(region || '');
+            if (/^NCR$/i.test(r) || /metro manila|national capital/i.test(province || '')) r = 'National Capital Region';
             var opts = regionEl.querySelectorAll('option[value]');
             for (var i = 0; i < opts.length; i++) {
                 var ov = opts[i].value;
-                if (ov && (normalize(ov) === r || ov === r || (/National Capital Region/i.test(ov) && /^NCR$/i.test(region)))) {
+                if (ov && (normalize(ov) === r || ov === r || ov.startsWith(r) || (r && ov.indexOf(r) === 0) || (/National Capital Region/i.test(ov) && /^NCR$/i.test(region || '')) || (/National Capital Region/i.test(ov) && /metro manila|ncr|national capital/i.test(province || '')))) {
                     regionEl.value = ov;
                     regionEl.dispatchEvent(new Event('change'));
                     break;
@@ -478,14 +478,17 @@ function loadSavedAddress() {
 function applySavedAddressToRegion() {
     var regionEl = document.getElementById('shipping_region');
     var prefill = window.phAddressPrefill && window.phAddressPrefill['shipping_'];
-    if (!regionEl || !prefill || !prefill.region || regionEl.options.length <= 1) return false;
+    if (!regionEl || !prefill || regionEl.options.length <= 1) return false;
+    var r = (prefill.region || '');
+    if (!r && /metro manila|ncr|national capital/i.test(prefill.province || '')) r = 'National Capital Region';
+    if (!r) return false;
     var normalize = function(t) { return (t||'').replace(/ñ/g,'n').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u'); };
-    var r = normalize(prefill.region);
+    r = normalize(r);
     if (/^NCR$/i.test(r)) r = 'National Capital Region';
     var opts = regionEl.querySelectorAll('option[value]');
     for (var i = 0; i < opts.length; i++) {
         var ov = opts[i].value;
-        if (ov && (normalize(ov) === r || ov === r || (/National Capital Region/i.test(ov) && /^NCR$/i.test(prefill.region)))) {
+        if (ov && (normalize(ov) === r || ov === r || ov.startsWith(r) || (r && ov.indexOf(r) === 0) || (/National Capital Region/i.test(ov) && /^NCR$/i.test(prefill.region || '')) || (/National Capital Region/i.test(ov) && /metro manila|ncr|national capital/i.test(prefill.province || '')))) {
             regionEl.value = ov;
             regionEl.dispatchEvent(new Event('change'));
             return true;

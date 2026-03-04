@@ -70,6 +70,7 @@
             const optNorm = normalizeText(optVal);
             if (optNorm.replace(/^(City|Municipality) of\s+/i, '').trim() === n) return optVal;
             if (optNorm === n.replace(/^(City|Municipality) of\s+/i, '').trim()) return optVal;
+            if (n && optNorm.startsWith(n)) return optVal;
         }
         return null;
     }
