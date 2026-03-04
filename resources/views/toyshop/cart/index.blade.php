@@ -277,12 +277,16 @@
                         <span class="fw-semibold" id="summary-subtotal">₱{{ number_format($subtotal, 2) }}</span>
                     </div>
                     <div class="summary-row">
+                        <span class="text-muted">Commission ({{ $commissionRate ?? 5 }}%):</span>
+                        <span class="fw-semibold" id="summary-commission">₱{{ number_format(($subtotal * (($commissionRate ?? 5) / 100)), 2) }}</span>
+                    </div>
+                    <div class="summary-row">
                         <span class="text-muted">VAT ({{ $taxRate ?? 12 }}%):</span>
                         <span class="fw-semibold" id="summary-vat">₱{{ number_format($vat ?? 0, 2) }}</span>
                     </div>
                     <div class="summary-row">
                         <span class="text-muted">Shipping:</span>
-                        <span class="fw-semibold">₱0.00</span>
+                        <span class="fw-semibold" id="summary-shipping">₱0.00</span>
                     </div>
                     <hr class="my-3">
                     <div class="summary-row">
@@ -371,14 +375,19 @@
         
         const commission = subtotal * commissionRate;
         const vat = (subtotal + commission) * taxRate;
-        const total = subtotal + commission + vat;
+        const shipping = 0;
+        const total = subtotal + commission + vat + shipping;
         
         const subtotalEl = document.getElementById('summary-subtotal');
+        const commissionEl = document.getElementById('summary-commission');
         const vatEl = document.getElementById('summary-vat');
+        const shippingEl = document.getElementById('summary-shipping');
         const totalEl = document.getElementById('summary-total');
         
         if (subtotalEl) subtotalEl.textContent = '₱' + subtotal.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (commissionEl) commissionEl.textContent = '₱' + commission.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (vatEl) vatEl.textContent = '₱' + vat.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (shippingEl) shippingEl.textContent = '₱' + shipping.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (totalEl) totalEl.textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
         var checkedCount = document.querySelectorAll('.cart-item-select:checked').length;
