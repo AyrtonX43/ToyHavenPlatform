@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Auth;
 class PlanController extends Controller
 {
     /**
+     * Display terms & conditions for a plan (before payment).
+     */
+    public function terms(string $planSlug)
+    {
+        $plan = Plan::where('slug', $planSlug)->active()->firstOrFail();
+
+        return view('membership.terms', ['plan' => $plan]);
+    }
+
+    /**
      * Display the membership plans / pricing page
      */
     public function index(Request $request)
@@ -26,18 +36,5 @@ class PlanController extends Controller
             'intent' => $request->get('intent', session('intent')),
             'activeAuctionsCount' => $activeAuctionsCount,
         ]);
-    }
-
-    /**
-     * Display plan-specific terms and conditions before payment
-     */
-    public function terms(Plan $plan)
-    {
-        if (! $plan->is_active) {
-            return redirect()->route('membership.index')
-                ->with('error', 'This plan is no longer available.');
-        }
-
-        return view('membership.terms', compact('plan'));
     }
 }

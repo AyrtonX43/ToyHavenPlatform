@@ -6,14 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->json('moderator_permissions')->nullable()->after('role')
-                ->comment('For moderator role: auctions_view, auctions_moderate, auction_reports_view, auction_sellers_view');
+            $table->json('moderator_permissions')->nullable()->after('role');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {

@@ -32,11 +32,17 @@
 
                         @if($type === 'business')
                         <h5 class="fw-bold mb-3 mt-2"><i class="bi bi-building me-1"></i>Business Information</h5>
+                        @if(isset($hasToyshopBusiness) && $hasToyshopBusiness)
+                            <div class="alert alert-info small mb-3">
+                                <i class="bi bi-shop-window me-1"></i>
+                                <strong>Using your Toyshop business.</strong> Your business name has been pre-filled. You can edit it for auction listings.
+                            </div>
+                        @endif
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
                                 <label class="form-label fw-semibold">Auction Business Name <span class="text-danger">*</span></label>
                                 <input type="text" name="auction_business_name" class="form-control"
-                                       value="{{ old('auction_business_name', auth()->user()->seller->business_name ?? '') }}"
+                                       value="{{ old('auction_business_name', $prefillBusinessName ?? auth()->user()->seller->business_name ?? '') }}"
                                        placeholder="Enter your business name for auction listings" required>
                                 <small class="text-muted">This name will be displayed on your auction listings. You can change it later.</small>
                                 @error('auction_business_name')

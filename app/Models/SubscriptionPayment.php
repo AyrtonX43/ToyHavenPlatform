@@ -12,12 +12,21 @@ class SubscriptionPayment extends Model
         'amount',
         'status',
         'paid_at',
+        'receipt_number',
+        'receipt_path',
+        'receipt_generated_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'paid_at' => 'datetime',
+        'receipt_generated_at' => 'datetime',
     ];
+
+    public function hasReceipt(): bool
+    {
+        return ! empty($this->receipt_path);
+    }
 
     public function subscription(): BelongsTo
     {

@@ -95,6 +95,16 @@
                     </div>
                 </div>
 
+                @if(isset($hasToyshopBusiness) && $hasToyshopBusiness)
+                    <div class="alert alert-success d-flex align-items-start mb-4">
+                        <i class="bi bi-shop-window fs-4 me-3 mt-1"></i>
+                        <div>
+                            <strong>You have an existing Toyshop business</strong>
+                            <p class="mb-0 small">Register as a <strong>Business Seller</strong> to link your Toyshop to your auction profile. Your business name can be pre-filled for auction listings.</p>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="text-center">
                     <p class="mb-4 fw-semibold">Choose your seller type:</p>
                     <div class="d-flex gap-3 justify-content-center flex-wrap">
@@ -102,7 +112,7 @@
                             <i class="bi bi-person me-2"></i>Individual Seller
                         </a>
                         <a href="{{ route('auctions.verification.create', ['type' => 'business']) }}" class="btn btn-success btn-lg px-5">
-                            <i class="bi bi-building me-2"></i>Business Seller
+                            <i class="bi bi-building me-2"></i>Business Seller{{ isset($hasToyshopBusiness) && $hasToyshopBusiness ? ' (link Toyshop)' : '' }}
                         </a>
                     </div>
                     <div class="row mt-4">

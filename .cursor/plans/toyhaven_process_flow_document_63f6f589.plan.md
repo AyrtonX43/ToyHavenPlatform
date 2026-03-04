@@ -114,15 +114,7 @@ flowchart TB
 
 ## 2. Trade Process Flow
 
-### 2.1 Listing structure and request process
-
-- **Create Listing** — User creates a listing; it is submitted as a **pending request** to Admin/Moderator.
-- **My Listing** — User sees their listings; from here they can access **Trade History** (completed trades with proof).
-- **Listing request outcome**:
-  - **If Approved** → User is notified (notification) → listing is displayed in browse.
-  - **If Rejected** → User is notified (notification) → user can try again (create a new listing).
-
-### 2.2 Trade Listing Creation and Approval
+### 2.1 Trade Listing Creation and Approval
 
 ```mermaid
 flowchart TB
@@ -134,69 +126,39 @@ flowchart TB
 
     subgraph PlatformReview [Platform Review]
         M1{Admin or Moderator}
-        M1 -->|Approve| M2[Notify user -> display listing]
-        M1 -->|Reject| M3[Notify user -> user can try again]
+        M1 -->|Approve| M2[status: active]
+        M1 -->|Reject| M3[status: rejected]
     end
 ```
 
 
 
 - **User**: Creates trade listing via [Trading/TradeListingController](app/Http/Controllers/Trading/TradeListingController.php); status is `pending_approval` ([TradeListing model](app/Models/TradeListing.php)).
-- **Admin**: Approves/rejects in [Admin/TradeController](app/Http/Controllers/Admin/TradeController.php); approved → [TradeListingApprovedNotification](app/Notifications/TradeListingApprovedNotification.php); rejected → [TradeListingRejectedNotification](app/Notifications/TradeListingRejectedNotification.php).
+- **Admin**: Approves/rejects in [Admin/TradeController](app/Http/Controllers/Admin/TradeController.php).
 - **Moderator**: Approves/rejects in [Moderator/TradeListingController](app/Http/Controllers/Moderator/TradeListingController.php) with action logging.
 
-### 2.3 Trade Transaction (execution)
-
-- **Flow**: Browse listing → View listing → Make offer → **Direct to chat** → Negotiate (in chat) → Lock deal (accept offer + lock shipping) → If **both users received** payment/product: mark listing sold, lock history chat, save transaction and listing to **Trade History**. If **both not receive** → user may **report product & seller** → Admin/Moderator view and decision.
+### 2.2 Trade Execution
 
 ```mermaid
 flowchart TB
-    O1[Browse Listing] --> O2[View Listing]
-    O2 --> O3[Make Offer]
-    O3 --> O4[Direct to Chat]
-    O4 --> O5[Negotiate]
-    O5 --> O6[Lock Deal - Accept Offer]
-    O6 --> O7{Both received payment or product?}
-    O7 -->|Yes| O8[Mark listing sold + Lock chat + Save to Trade History]
-    O7 -->|No| O9[Report product and seller]
-    O9 --> O10[Admin or Moderator view and decision]
+    O1[User browses active listings] --> O2[Creates TradeOffer]
+    O2 --> O3[Listing owner receives offer]
+    O3 --> O4{Accept?}
+    O4 -->|Yes| O5[Trade created: pending_shipping]
+    O4 -->|No| O6[Reject offer]
+    O5 --> O7[Both lock shipping addresses]
+    O7 --> O8[Both ship items]
+    O8 --> O9[status: shipped]
+    O9 --> O10[Both confirm receipt]
+    O10 --> O11[status: completed]
 ```
 
 
 
-- **Make offer → chat**: After submitting an offer, the user is redirected to the conversation (chat) for that listing ([TradeOfferController](app/Http/Controllers/Trading/TradeOfferController.php) redirects to [ConversationController](app/Http/Controllers/Trading/ConversationController.php) show). Negotiation continues in chat; listing owner can accept the offer (lock deal).
-- **Trade statuses**: `pending_shipping` → `shipped` → `received` → `completed` ([Trade model](app/Models/Trade.php)). On completion, listing status is set to `completed`, chat is locked (read-only), and the trade appears in **Trade History**.
-- **Report trade**: From the trade detail page, either party can submit a **Report** (product/seller not received or other issue). Reports use [Report](app/Models/Report.php) with `reportable_type` = Trade; [Moderator/ReportController](app/Http/Controllers/Moderator/ReportController.php) lists and resolves them.
-
-### 2.4 Trade History (My Listing)
-
-- **Trade History** is available from My Listings ([trading.listings.my](routes/web.php) → link to [trading.trades.history](routes/web.php)).
-- **Barter and Barter+Cash**: Each completed trade shows **Trade 1** (listing item) and **Trade 2** (offered item), plus **image product proof received** from both users (initiator and participant).
-- **Cash**: Shows the **trade product (listing)** and **image listing proof received** (proof images from both parties where applicable).
-- Implemented in [TradeController::history](app/Http/Controllers/Trading/TradeController.php) and [resources/views/trading/trades/history.blade.php](resources/views/trading/trades/history.blade.php).
-
-### 2.5 Trade Execution (detail)
-
-```mermaid
-flowchart TB
-    E1[User browses active listings] --> E2[Creates TradeOffer]
-    E2 --> E3[Redirected to Chat]
-    E3 --> E4[Listing owner receives offer]
-    E4 --> E5{Accept?}
-    E5 -->|Yes| E6[Trade created: pending_shipping]
-    E5 -->|No| E7[Reject offer]
-    E6 --> E8[Both lock shipping addresses]
-    E8 --> E9[Both ship items]
-    E9 --> E10[status: shipped]
-    E10 --> E11[Both confirm receipt with proof]
-    E11 --> E12[status: completed]
-```
-
-
-
+- **Trade statuses**: `pending_shipping` → `shipped` → `received` → `completed` ([Trade model](app/Models/Trade.php)).
 - **TradeService**: Orchestrates creation, offer acceptance, and status updates ([TradeService](app/Services/TradeService.php)).
 
-### 2.6 Trade Disputes
+### 2.3 Trade Disputes
 
 ```mermaid
 flowchart LR
@@ -213,13 +175,13 @@ flowchart LR
 - **Moderator**: Assigns, investigates, resolves in [Moderator/TradeDisputeController](app/Http/Controllers/Moderator/TradeDisputeController.php) (resolution: `completed` or `cancelled`).
 - **Admin**: Can resolve disputes and cancel trades in [Admin/TradeController](app/Http/Controllers/Admin/TradeController.php).
 
-### 2.7 Trade - Role Summary
+### 2.4 Trade - Role Summary
 
 
 | Actor                   | Key Actions                                                                      |
 | ----------------------- | -------------------------------------------------------------------------------- |
-| **User (Buyer/Seller)** | Create listings, make offer (then chat), accept/reject offers, lock deal, ship, confirm receipt with proof, complete trade or report product/seller; view Trade History |
-| **Moderator**           | Approve/reject trade listings, review trade/listing reports, assign and resolve trade disputes                 |
+| **User (Buyer/Seller)** | Create listings, make/accept/reject offers, ship, confirm receipt, open disputes |
+| **Moderator**           | Approve/reject trade listings, assign and resolve trade disputes                 |
 | **Admin**               | Approve/reject listings, resolve disputes, cancel trades, delete listings        |
 
 

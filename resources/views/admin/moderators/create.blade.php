@@ -52,34 +52,6 @@
                 </div>
             </div>
 
-            <div class="mb-4">
-                <label class="form-label fw-semibold">Auction Permissions</label>
-                <div class="card card-body bg-light">
-                    @php $checked = old('moderator_permissions', []); @endphp
-                    <div class="form-check">
-                        <input type="checkbox" name="moderator_permissions[]" value="auctions_view" id="perm_auctions_view"
-                               class="form-check-input" {{ in_array('auctions_view', $checked) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="perm_auctions_view">View Auctions</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" name="moderator_permissions[]" value="auctions_moderate" id="perm_auctions_moderate"
-                               class="form-check-input" {{ in_array('auctions_moderate', $checked) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="perm_auctions_moderate">Approve/Reject Auctions</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" name="moderator_permissions[]" value="auction_reports_view" id="perm_auction_reports_view"
-                               class="form-check-input" {{ in_array('auction_reports_view', $checked) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="perm_auction_reports_view">View Auction Reports</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" name="moderator_permissions[]" value="auction_sellers_view" id="perm_auction_sellers_view"
-                               class="form-check-input" {{ in_array('auction_sellers_view', $checked) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="perm_auction_sellers_view">View Auction Sellers</label>
-                    </div>
-                </div>
-                <small class="text-muted">Grant auction-related permissions to this moderator.</small>
-            </div>
-
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
@@ -117,9 +89,22 @@
                 </div>
             </div>
 
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Platform permissions</label>
+                <p class="text-muted small mb-2">Grant access to auction moderation (optional). Trade moderation is available to all moderators.</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="auctions_view" id="perm_auctions_view" {{ in_array('auctions_view', old('moderator_permissions', [])) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="perm_auctions_view">View auctions (list and view auction details)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="auctions_moderate" id="perm_auctions_moderate" {{ in_array('auctions_moderate', old('moderator_permissions', [])) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="perm_auctions_moderate">Moderate auctions (approve or reject pending listings)</label>
+                </div>
+            </div>
+
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                <strong>Note:</strong> The moderator will be able to access the moderator panel at <code>{{ url('/moderator/dashboard') }}</code> using their email and password. They can review trade listings, approve/reject them, view trades, and handle trade disputes. Share the credentials securely.
+                <strong>Note:</strong> The moderator will be able to access the moderator panel at <code>{{ url('/moderator/dashboard') }}</code> using their email and password. They can review trade listings, approve/reject them, view trades, and handle trade disputes. If you grant auction permissions, they can also view and moderate auctions. Share the credentials securely.
             </div>
 
             <div class="d-flex justify-content-between">

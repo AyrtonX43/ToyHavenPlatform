@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
-use App\Models\AuctionSellerVerification;
 use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,25 +72,12 @@ class AuctionController extends Controller
         // Increment view count
         $auction->increment('views_count');
 
-        $auction->load(['bids' => fn ($q) => $q->with('user')->orderByDesc('amount')->limit(20), 'category', 'images', 'user']);
-
-        $sellerBusinessUrl = null;
-        if ($auction->user_id) {
-            $verification = AuctionSellerVerification::where('user_id', $auction->user_id)
-                ->where('status', 'approved')
-                ->where('is_suspended', false)
-                ->whereNotNull('auction_seller_slug')
-                ->first();
-            if ($verification) {
-                $sellerBusinessUrl = route('auctions.business.show', $verification->auction_seller_slug);
-            }
-        }
+        $auction->load(['bids' => fn ($q) => $q->with('user')->orderByDesc('amount')->limit(20), 'category', 'images']);
 
         return view('auctions.show', [
             'auction' => $auction,
             'hasMembership' => $hasMembership,
             'canBid' => $user && $auction->canUserBid($user),
-            'sellerBusinessUrl' => $sellerBusinessUrl,
         ]);
     }
 

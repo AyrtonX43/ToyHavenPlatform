@@ -36,6 +36,17 @@
     </x-seller.alert-banner>
 @endif
 
+<div class="alert alert-light border mb-4 d-flex align-items-center">
+    <i class="bi bi-hammer text-warning me-3" style="font-size: 1.5rem;"></i>
+    <div class="flex-grow-1">
+        <strong>Want to sell on ToyHaven Auctions?</strong>
+        <span class="text-muted"> You can link this business as an auction seller and list items for auction.</span>
+    </div>
+    <a href="{{ route('auctions.become-seller') }}" class="btn btn-warning btn-sm flex-shrink-0">
+        <i class="bi bi-hammer me-1"></i>Become an Auction Seller
+    </a>
+</div>
+
 <!-- Tabs Navigation -->
 <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
     <li class="nav-item" role="presentation">

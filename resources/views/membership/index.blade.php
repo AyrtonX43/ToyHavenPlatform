@@ -156,10 +156,21 @@
                         @if(auth()->user()->hasActiveMembership() && auth()->user()->currentPlan()?->id === $plan->id)
                             <button class="btn btn-outline-secondary w-100 mt-3" disabled>Current Plan</button>
                         @else
-                            <a href="{{ route('membership.terms', ['plan' => $plan->slug]) }}" class="btn w-100 mt-3 {{ $plan->slug === 'vip' ? 'btn-warning fw-bold' : ($plan->slug === 'pro' ? 'btn-primary' : 'btn-outline-primary') }}"
-                               @if($plan->slug === 'vip') style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;" @elseif($plan->slug === 'pro') style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none; color: white;" @endif>
-                                Get {{ $plan->name }}
-                            </a>
+                            <div class="mt-3">
+                                @if($plan->slug === 'vip')
+                                    <a href="{{ route('membership.terms', $plan->slug) }}" class="btn btn-warning w-100 fw-bold" style="background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: white;">
+                                        Get {{ $plan->name }}
+                                    </a>
+                                @elseif($plan->slug === 'pro')
+                                    <a href="{{ route('membership.terms', $plan->slug) }}" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
+                                        Get {{ $plan->name }}
+                                    </a>
+                                @else
+                                    <a href="{{ route('membership.terms', $plan->slug) }}" class="btn btn-outline-primary w-100">
+                                        Get {{ $plan->name }}
+                                    </a>
+                                @endif
+                            </div>
                         @endif
                     @else
                         <a href="{{ route('login', ['redirect' => route('membership.index')]) }}" class="btn btn-primary w-100 mt-3" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">

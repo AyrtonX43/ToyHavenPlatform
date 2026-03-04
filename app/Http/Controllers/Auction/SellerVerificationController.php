@@ -23,8 +23,9 @@ class SellerVerificationController extends Controller
 
         $plan = $user->currentPlan();
         $hasVip = $plan && (strtolower($plan->slug) === 'vip' || $plan->canCreateAuction());
+        $hasToyshopBusiness = $user->seller && $user->seller->verification_status === 'approved';
 
-        return view('auctions.seller-verification.index', compact('verification', 'hasVip'));
+        return view('auctions.seller-verification.index', compact('verification', 'hasVip', 'hasToyshopBusiness'));
     }
 
     public function create(Request $request)
@@ -52,7 +53,10 @@ class SellerVerificationController extends Controller
             $type = 'individual';
         }
 
-        return view('auctions.seller-verification.create', compact('type'));
+        $hasToyshopBusiness = $user->seller && $user->seller->verification_status === 'approved';
+        $prefillBusinessName = $type === 'business' && $user->seller ? ($user->seller->business_name ?? '') : '';
+
+        return view('auctions.seller-verification.create', compact('type', 'hasToyshopBusiness', 'prefillBusinessName'));
     }
 
     public function store(Request $request)

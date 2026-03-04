@@ -15,7 +15,6 @@ class Subscription extends Model
         'current_period_start',
         'current_period_end',
         'cancelled_at',
-        'subscription_terms_accepted_at',
         'paymongo_payment_intent_id',
     ];
 
@@ -23,7 +22,6 @@ class Subscription extends Model
         'current_period_start' => 'datetime',
         'current_period_end' => 'datetime',
         'cancelled_at' => 'datetime',
-        'subscription_terms_accepted_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

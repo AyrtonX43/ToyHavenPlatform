@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
 use App\Services\PayMongoService;
+use App\Services\SubscriptionReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -14,49 +15,21 @@ use Illuminate\Support\Facades\Log;
 class SubscriptionController extends Controller
 {
     public function __construct(
-        protected PayMongoService $payMongo
+        protected PayMongoService $payMongo,
+        protected SubscriptionReceiptService $receiptService
     ) {}
 
     /**
-     * Store terms acceptance and redirect to subscribe (or create subscription directly).
-     * Terms must be accepted before payment.
-     */
-    public function agreeTerms(Request $request)
-    {
-        $request->validate([
-            'plan' => 'required|string|exists:plans,slug',
-            'terms_accepted' => 'required|accepted',
-        ]);
-
-        $plan = Plan::where('slug', $request->plan)->active()->firstOrFail();
-        $request->session()->put('membership_terms_accepted', [
-            'plan_slug' => $plan->slug,
-            'accepted_at' => now()->toIso8601String(),
-        ]);
-
-        return redirect()->route('membership.subscribe')
-            ->with('plan', $plan->slug);
-    }
-
-    /**
      * Subscribe to a plan — creates a local subscription (pending) and a PayMongo payment intent.
-     * Requires prior terms acceptance via agreeTerms().
      */
     public function subscribe(Request $request)
     {
-        $planSlug = $request->get('plan', session('plan', 'basic'));
-        $plan = Plan::where('slug', $planSlug)->active()->firstOrFail();
+        $plan = Plan::where('slug', $request->get('plan', 'basic'))->active()->firstOrFail();
         $user = Auth::user();
 
         if ($user->hasActiveMembership()) {
             return redirect()->route('membership.manage')
                 ->with('info', 'You already have an active subscription.');
-        }
-
-        $termsAccepted = session('membership_terms_accepted');
-        if (! $termsAccepted || ($termsAccepted['plan_slug'] ?? null) !== $plan->slug) {
-            return redirect()->route('membership.terms', ['plan' => $plan->slug])
-                ->with('error', 'Please read and accept the terms and conditions before subscribing.');
         }
 
         $subscription = Subscription::create([
@@ -65,10 +38,7 @@ class SubscriptionController extends Controller
             'status' => 'pending',
             'current_period_start' => now(),
             'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
-            'subscription_terms_accepted_at' => now(),
         ]);
-
-        $request->session()->forget('membership_terms_accepted');
 
         $intent = $this->payMongo->createPaymentIntent(
             (float) $plan->price,
@@ -174,7 +144,8 @@ class SubscriptionController extends Controller
         }
 
         if ($subscription->status === 'active') {
-            return redirect()->route('membership.manage')->with('success', 'Your subscription is already active.');
+            return redirect()->route('membership.payment-success', ['subscription' => $subscription->id])
+                ->with('success', 'Your subscription is already active.');
         }
 
         $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
@@ -189,19 +160,63 @@ class SubscriptionController extends Controller
                     : now()->addMonth(),
             ]);
 
-            SubscriptionPayment::create([
+            $payment = SubscriptionPayment::create([
                 'subscription_id' => $subscription->id,
                 'amount' => data_get($intent, 'attributes.amount', 0) / 100,
                 'status' => 'paid',
                 'paid_at' => now(),
             ]);
 
-            return redirect()->route('membership.manage')
+            try {
+                $this->receiptService->generateReceipt($payment);
+            } catch (\Throwable $e) {
+                Log::warning('Subscription receipt generation failed', [
+                    'subscription_payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return redirect()->route('membership.payment-success', ['subscription' => $subscription->id])
                 ->with('success', 'Payment successful! Your membership is now active.');
         }
 
         return redirect()->route('membership.payment', ['subscription' => $subscription->id])
             ->with('error', 'Payment was not completed. Please try again.');
+    }
+
+    /**
+     * Notification / success page after successful membership payment.
+     */
+    public function paymentSuccess(Request $request, Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $latestPayment = $subscription->payments()->where('status', 'paid')->latest('paid_at')->first();
+
+        return view('membership.payment-success', [
+            'subscription' => $subscription,
+            'latestPayment' => $latestPayment,
+        ]);
+    }
+
+    /**
+     * Download receipt PDF for a subscription payment.
+     */
+    public function downloadReceipt(Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $payment = $subscription->payments()->where('status', 'paid')->latest('paid_at')->first();
+
+        if (! $payment) {
+            abort(404, 'No paid payment found for this subscription.');
+        }
+
+        return $this->receiptService->downloadReceipt($payment);
     }
 
     /**
@@ -254,15 +269,19 @@ class SubscriptionController extends Controller
             return response()->json(['error' => 'Subscription is not in pending state.'], 400);
         }
 
-        $paymentType = $request->input('payment_type', 'card');
+        $paymentType = $request->input('payment_type', 'qrph');
 
         $request->validate([
-            'payment_type' => 'in:card,qrph',
-            'card_number' => 'required_if:payment_type,card|nullable|string',
-            'exp_month' => 'required_if:payment_type,card|nullable|integer|between:1,12',
-            'exp_year' => 'required_if:payment_type,card|nullable|integer',
-            'cvc' => 'required_if:payment_type,card|nullable|string|min:3|max:4',
+            'payment_type' => 'in:qrph',
+        ], [
+            'payment_type.in' => 'Membership payment is only available via QR Ph. Please use the QR code to pay.',
         ]);
+
+        if ($paymentType !== 'qrph') {
+            return response()->json([
+                'error' => 'Membership payment is only available via QR Ph.',
+            ], 400);
+        }
 
         $paymentIntentId = $subscription->paymongo_payment_intent_id;
         $needsNewIntent = false;
@@ -323,20 +342,7 @@ class SubscriptionController extends Controller
             }
             $paymentMethodId = $pmId;
         } else {
-            $cardResult = $this->payMongo->createCardPaymentMethod(
-                $request->input('card_number'),
-                (int) $request->input('exp_month'),
-                (int) $request->input('exp_year'),
-                $request->input('cvc'),
-                $user->name ?? 'Customer',
-                $user->email ?? ''
-            );
-            if (! $cardResult['success']) {
-                return response()->json([
-                    'error' => $cardResult['error'] ?? 'Failed to create card payment method.',
-                ], 400);
-            }
-            $paymentMethodId = $cardResult['id'];
+            return response()->json(['error' => 'Only QR Ph payment is accepted for membership.'], 400);
         }
 
         $returnUrl = url('/membership/payment-return') . '?' . http_build_query([
@@ -432,12 +438,21 @@ class SubscriptionController extends Controller
                     : now()->addMonth(),
             ]);
 
-            SubscriptionPayment::create([
+            $payment = SubscriptionPayment::create([
                 'subscription_id' => $subscription->id,
                 'amount' => data_get($intent, 'attributes.amount', 0) / 100,
                 'status' => 'paid',
                 'paid_at' => now(),
             ]);
+
+            try {
+                $this->receiptService->generateReceipt($payment);
+            } catch (\Throwable $e) {
+                Log::warning('Subscription receipt generation failed in checkPaymentStatus', [
+                    'subscription_payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return response()->json(['status' => $status]);

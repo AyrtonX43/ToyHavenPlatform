@@ -212,6 +212,24 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Become an Auction Seller CTA --}}
+            <div class="card mb-4 border-warning">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-hammer text-warning" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1 fw-bold">Become an Auction Seller</h6>
+                            <p class="text-muted small mb-2">List items on ToyHaven Auctions. Link your Toyshop business or register as individual.</p>
+                            <a href="{{ route('auctions.become-seller') }}" class="btn btn-warning btn-sm">
+                                <i class="bi bi-hammer me-1"></i>Get Started
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         @endif
 
         {{-- Low Stock --}}

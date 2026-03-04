@@ -706,7 +706,7 @@
                 <i class="bi bi-flag menu-icon"></i> Trade Reports
             </a>
             @endif
-            @if(auth()->user()->hasAuctionPermission('auctions_view') && Route::has('moderator.auctions.index'))
+            @if(Route::has('moderator.auctions.index') && auth()->user()->hasAuctionPermission('auctions_view'))
             <a href="{{ route('moderator.auctions.index') }}"
                class="sidebar-link {{ request()->routeIs('moderator.auctions.*') ? 'active' : '' }}">
                 <i class="bi bi-hammer menu-icon"></i> Auctions
