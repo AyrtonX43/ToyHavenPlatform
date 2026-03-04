@@ -1104,7 +1104,7 @@
                 .catch(function() {});
             setTimeout(doPoll, 2000);
         }
-        setTimeout(doPoll, 2000);
+        setTimeout(doPoll, 1000);
     })();
     
     function buildNotificationItemHtml(n) {

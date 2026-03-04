@@ -7,6 +7,7 @@ use App\Models\TradeListing;
 use App\Models\TradeOffer;
 use App\Models\Product;
 use App\Models\UserProduct;
+use App\Notifications\TradeOfferAcceptedNotification;
 use App\Notifications\TradeOfferReceivedNotification;
 use App\Notifications\TradeOfferRejectedNotification;
 use App\Services\TradeService;
@@ -176,6 +177,8 @@ class TradeOfferController extends Controller
 
         try {
             $trade = $this->tradeService->acceptOffer($offer->id);
+            $trade->load('conversation');
+            $offer->offerer->notify(new TradeOfferAcceptedNotification($trade));
             return redirect()->route('trading.trades.show', $trade->id)
                 ->with('success', 'Offer accepted! Trade created successfully.');
         } catch (\Exception $e) {

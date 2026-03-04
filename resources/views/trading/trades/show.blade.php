@@ -41,6 +41,9 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
+    @if(session('info'))
+        <div class="alert alert-info">{{ session('info') }}</div>
+    @endif
     @if(session('error'))
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
@@ -83,7 +86,33 @@
                 </div>
             </div>
 
-            @if(in_array($trade->status, ['pending_shipping', 'shipped']))
+            @if(in_array($trade->status, ['pending_shipping', 'shipped', 'received']) && !$trade->bothLocked())
+                <div class="trade-card-block">
+                    <h5 class="fw-bold mb-3">Lock the deal</h5>
+                    <p class="text-muted mb-3">Both parties must confirm the deal before shipping. Proceed to chat if needed to finalize details.</p>
+                    @if($trade->isInitiator(Auth::id()))
+                        @if($trade->initiator_locked_at)
+                            <p class="text-success mb-0"><i class="bi bi-check-circle me-1"></i>You have locked the deal. Waiting for {{ $otherParty->name }}.</p>
+                        @else
+                            <form action="{{ route('trading.trades.lock', $trade->id) }}" method="post" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-primary">Lock / Confirm deal</button>
+                            </form>
+                        @endif
+                    @else
+                        @if($trade->participant_locked_at)
+                            <p class="text-success mb-0"><i class="bi bi-check-circle me-1"></i>You have locked the deal. Waiting for {{ $otherParty->name }}.</p>
+                        @else
+                            <form action="{{ route('trading.trades.lock', $trade->id) }}" method="post" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-primary">Lock / Confirm deal</button>
+                            </form>
+                        @endif
+                    @endif
+                </div>
+            @endif
+
+            @if(in_array($trade->status, ['pending_shipping', 'shipped']) && $trade->bothLocked())
                 <div class="trade-card-block">
                     <h5 class="fw-bold mb-3">Shipping</h5>
                     @if($trade->isInitiator(Auth::id()))
@@ -151,11 +180,35 @@
 
             @if($trade->status === 'shipped' || $trade->status === 'received')
                 <div class="trade-card-block">
-                    @if(($trade->isInitiator(Auth::id()) && !$trade->initiator_received_at) || ($trade->isParticipant(Auth::id()) && !$trade->participant_received_at))
-                        <form action="{{ route('trading.trades.mark-received', $trade->id) }}" method="post" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-success">I received the item</button>
-                        </form>
+                    <h5 class="fw-bold mb-3">Product received</h5>
+                    @if($trade->isInitiator(Auth::id()))
+                        @if($trade->initiator_received_at)
+                            <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>You marked as received.</p>
+                            @if($trade->initiator_received_proof_path)
+                                <img src="{{ asset('storage/' . $trade->initiator_received_proof_path) }}" alt="Proof" class="rounded img-thumbnail" style="max-width: 200px;">
+                            @endif
+                        @else
+                            <form action="{{ route('trading.trades.mark-received', $trade->id) }}" method="post" enctype="multipart/form-data">
+                                @csrf
+                                <p class="text-muted small mb-2">Upload a photo of the product you received as proof.</p>
+                                <input type="file" name="proof_image" accept="image/*" class="form-control form-control-sm mb-2" required>
+                                <button type="submit" class="btn btn-success">I received the item (with photo proof)</button>
+                            </form>
+                        @endif
+                    @else
+                        @if($trade->participant_received_at)
+                            <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>You marked as received.</p>
+                            @if($trade->participant_received_proof_path)
+                                <img src="{{ asset('storage/' . $trade->participant_received_proof_path) }}" alt="Proof" class="rounded img-thumbnail" style="max-width: 200px;">
+                            @endif
+                        @else
+                            <form action="{{ route('trading.trades.mark-received', $trade->id) }}" method="post" enctype="multipart/form-data">
+                                @csrf
+                                <p class="text-muted small mb-2">Upload a photo of the product you received as proof.</p>
+                                <input type="file" name="proof_image" accept="image/*" class="form-control form-control-sm mb-2" required>
+                                <button type="submit" class="btn btn-success">I received the item (with photo proof)</button>
+                            </form>
+                        @endif
                     @endif
                 </div>
             @endif
@@ -166,6 +219,60 @@
                         @csrf
                         <button type="submit" class="btn btn-primary">Complete trade</button>
                     </form>
+                </div>
+            @endif
+
+            @if($canReview ?? false)
+                <div class="trade-card-block">
+                    <h5 class="fw-bold mb-3">Rate {{ $otherParty->name }}</h5>
+                    <form action="{{ route('trading.trades.review', $trade->id) }}" method="post">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label">Rating (1-5 stars)</label>
+                            <select name="rating" class="form-select" required>
+                                <option value="">Choose...</option>
+                                @for($i = 5; $i >= 1; $i--)
+                                    <option value="{{ $i }}">{{ $i }} star{{ $i > 1 ? 's' : '' }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Comment (optional)</label>
+                            <textarea name="comment" class="form-control" rows="3" maxlength="1000" placeholder="How was your trading experience?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit review</button>
+                    </form>
+                </div>
+            @endif
+
+            @if($userReview ?? null)
+                <div class="trade-card-block">
+                    <h5 class="fw-bold mb-3">Your review</h5>
+                    <p class="mb-1"><strong>{{ $userReview->rating }}/5</strong> stars</p>
+                    @if($userReview->comment)
+                        <p class="text-muted mb-0">{{ $userReview->comment }}</p>
+                    @endif
+                </div>
+            @endif
+
+            @if($trade->status === 'completed' && $trade->conversation && $trade->conversation->messages->isNotEmpty())
+                <div class="trade-card-block">
+                    <h5 class="fw-bold mb-3">
+                        <a class="text-decoration-none text-dark" data-bs-toggle="collapse" href="#chatTranscript" aria-expanded="false">
+                            <i class="bi bi-chat-dots me-1"></i>Chat transcript
+                            <i class="bi bi-chevron-down ms-1 small"></i>
+                        </a>
+                    </h5>
+                    <div class="collapse" id="chatTranscript">
+                        <div class="bg-light rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                            @foreach($trade->conversation->messages->sortBy('id') as $msg)
+                            <div class="mb-2">
+                                <small class="text-muted">{{ $msg->sender->name ?? 'User' }} · {{ $msg->created_at->format('M d, H:i') }}</small>
+                                <div class="small">{{ $msg->message }}</div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>

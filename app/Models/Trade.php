@@ -18,6 +18,8 @@ class Trade extends Model
         'participant_seller_id',
         'cash_amount',
         'status',
+        'initiator_locked_at',
+        'participant_locked_at',
         'initiator_shipping_address',
         'participant_shipping_address',
         'initiator_tracking_number',
@@ -26,6 +28,8 @@ class Trade extends Model
         'participant_shipped_at',
         'initiator_received_at',
         'participant_received_at',
+        'initiator_received_proof_path',
+        'participant_received_proof_path',
         'completed_at',
     ];
 
@@ -33,6 +37,8 @@ class Trade extends Model
         'cash_amount' => 'decimal:2',
         'initiator_shipping_address' => 'array',
         'participant_shipping_address' => 'array',
+        'initiator_locked_at' => 'datetime',
+        'participant_locked_at' => 'datetime',
         'initiator_shipped_at' => 'datetime',
         'participant_shipped_at' => 'datetime',
         'initiator_received_at' => 'datetime',
@@ -96,6 +102,11 @@ class Trade extends Model
         return $this->hasOne(TradeDispute::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(TradeReview::class);
+    }
+
     // Helper methods
     public function canBeCompleted(): bool
     {
@@ -144,5 +155,10 @@ class Trade extends Model
     public function isParticipant($userId): bool
     {
         return $this->participant_id === $userId;
+    }
+
+    public function bothLocked(): bool
+    {
+        return $this->initiator_locked_at && $this->participant_locked_at;
     }
 }

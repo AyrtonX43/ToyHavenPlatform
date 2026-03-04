@@ -159,7 +159,7 @@
         </div>
     </div>
 
-    <div class="chat-body" id="chatBody">
+    <div class="chat-body" id="chatBody" data-last-message-id="{{ $messages->max('id') ?? 0 }}">
         @if($conversation->tradeListing)
             <div class="chat-body-product">
                 <a href="{{ route('trading.listings.show', $conversation->tradeListing->id) }}" title="View listing">
@@ -585,11 +585,11 @@ window.ECHO_CONFIG = @json($echoConfig);
     var presenceRefreshInterval = setInterval(refreshPresence, 3000);
     var myPresenceInterval = setInterval(updateMyPresence, 8000);
     
-    // Poll for new messages every 2s so you never need to refresh (Echo is instant when Reverb runs)
-    var lastMessageId = 0;
+    // Poll for new messages (Echo is instant when Reverb runs)
+    var lastMessageId = parseInt(chatBody.getAttribute('data-last-message-id') || '0', 10);
     chatBody.querySelectorAll('[data-message-id]').forEach(function(el) {
         var id = parseInt(el.getAttribute('data-message-id'), 10);
-        if (id > lastMessageId) lastMessageId = id;
+        if (!isNaN(id) && id > lastMessageId) lastMessageId = id;
     });
     window.conversationUpdateLastMessageId = function(id) {
         if (id > lastMessageId) lastMessageId = id;
@@ -623,8 +623,8 @@ window.ECHO_CONFIG = @json($echoConfig);
             })
             .catch(function() {});
     };
-    var pollInterval = setInterval(pollMessages, 1200);
-    setTimeout(pollMessages, 300);
+    var pollInterval = setInterval(pollMessages, 1000);
+    setTimeout(pollMessages, 200);
     
     // Poll message statuses (seen/delivered) so sender sees updates in real-time without WebSockets
     var lastStatusByMessage = {};

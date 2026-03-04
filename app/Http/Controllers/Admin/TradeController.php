@@ -55,6 +55,7 @@ class TradeController extends Controller
             'participant',
             'items',
             'dispute.reporter',
+            'conversation.messages.sender',
         ])->findOrFail($id);
 
         return view('admin.trades.show', compact('trade'));

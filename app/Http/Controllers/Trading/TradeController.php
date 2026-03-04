@@ -5,12 +5,16 @@ namespace App\Http\Controllers\Trading;
 use App\Http\Controllers\Controller;
 use App\Models\Trade;
 use App\Models\TradeDispute;
+use App\Models\TradeReview;
+use App\Models\Seller;
 use App\Models\Product;
 use App\Models\UserProduct;
 use App\Services\TradeService;
+use App\Models\TradeListing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class TradeController extends Controller
 {
@@ -56,7 +60,7 @@ class TradeController extends Controller
                 'initiator',
                 'participant',
                 'items',
-                'conversation',
+                'conversation.messages.sender',
             ])
             ->findOrFail($id);
 
@@ -64,7 +68,10 @@ class TradeController extends Controller
         $isParticipant = $trade->isParticipant(Auth::id());
         $otherParty = $trade->getOtherParty(Auth::id());
 
-        return view('trading.trades.show', compact('trade', 'isInitiator', 'isParticipant', 'otherParty'));
+        $userReview = TradeReview::where('trade_id', $trade->id)->where('reviewer_id', Auth::id())->first();
+        $canReview = $trade->status === 'completed' && !$userReview;
+
+        return view('trading.trades.show', compact('trade', 'isInitiator', 'isParticipant', 'otherParty', 'userReview', 'canReview'));
     }
 
     public function updateShipping(Request $request, $id)
@@ -100,6 +107,33 @@ class TradeController extends Controller
         return back()->with('success', 'Shipping address updated successfully!');
     }
 
+    public function lock($id)
+    {
+        $trade = Trade::where(function($q) {
+                $q->where('initiator_id', Auth::id())
+                  ->orWhere('participant_id', Auth::id());
+            })
+            ->findOrFail($id);
+
+        if (!in_array($trade->status, ['pending_shipping', 'shipped', 'received'])) {
+            return back()->with('error', 'Cannot lock this trade.');
+        }
+
+        if ($trade->isInitiator(Auth::id())) {
+            if ($trade->initiator_locked_at) {
+                return back()->with('info', 'You have already locked the deal.');
+            }
+            $trade->update(['initiator_locked_at' => now()]);
+        } else {
+            if ($trade->participant_locked_at) {
+                return back()->with('info', 'You have already locked the deal.');
+            }
+            $trade->update(['participant_locked_at' => now()]);
+        }
+
+        return back()->with('success', 'Deal locked! You can now proceed with shipping.');
+    }
+
     public function markShipped(Request $request, $id)
     {
         $trade = Trade::where(function($q) {
@@ -110,6 +144,10 @@ class TradeController extends Controller
 
         if ($trade->status !== 'pending_shipping' && $trade->status !== 'shipped') {
             return back()->with('error', 'Invalid trade status for shipping.');
+        }
+
+        if (!$trade->bothLocked()) {
+            return back()->with('error', 'Both parties must lock the deal before shipping.');
         }
 
         $validated = $request->validate([
@@ -154,9 +192,9 @@ class TradeController extends Controller
         }
     }
 
-    public function markReceived($id)
+    public function markReceived(Request $request, $id)
     {
-        $trade = Trade::where(function($q) {
+        $trade = Trade::with('tradeListing')->where(function($q) {
                 $q->where('initiator_id', Auth::id())
                   ->orWhere('participant_id', Auth::id());
             })
@@ -166,26 +204,40 @@ class TradeController extends Controller
             return back()->with('error', 'Invalid trade status for receiving.');
         }
 
+        $request->validate([
+            'proof_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+        ]);
+
         DB::beginTransaction();
         try {
+            $path = $request->file('proof_image')->store('trade-proofs', 'public');
+
             if ($trade->isInitiator(Auth::id())) {
-                $trade->update(['initiator_received_at' => now()]);
+                $trade->update([
+                    'initiator_received_at' => now(),
+                    'initiator_received_proof_path' => $path,
+                ]);
             } else {
-                $trade->update(['participant_received_at' => now()]);
+                $trade->update([
+                    'participant_received_at' => now(),
+                    'participant_received_proof_path' => $path,
+                ]);
             }
 
-            // Check if both parties have received
+            $trade->refresh();
+
             if ($trade->initiator_received_at && $trade->participant_received_at) {
                 $trade->update(['status' => 'received']);
-            } else {
-                $trade->update(['status' => 'received']);
+
+                $listing = $trade->tradeListing;
+                if ($listing && $listing->status === 'pending_trade') {
+                    $listing->update(['status' => 'completed']);
+                }
             }
 
             DB::commit();
 
-            // TODO: Send notification
-
-            return back()->with('success', 'Item marked as received!');
+            return back()->with('success', 'Item marked as received with proof!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Failed to mark as received: ' . $e->getMessage());
@@ -210,6 +262,53 @@ class TradeController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to complete trade: ' . $e->getMessage());
         }
+    }
+
+    public function storeTradeReview(Request $request, $id)
+    {
+        $trade = Trade::with(['initiator', 'participant'])->where(function($q) {
+                $q->where('initiator_id', Auth::id())
+                  ->orWhere('participant_id', Auth::id());
+            })
+            ->findOrFail($id);
+
+        if ($trade->status !== 'completed') {
+            return back()->with('error', 'You can only rate completed trades.');
+        }
+
+        $revieweeId = $trade->getOtherParty(Auth::id())->id;
+        if (TradeReview::where('trade_id', $trade->id)->where('reviewer_id', Auth::id())->exists()) {
+            return back()->with('error', 'You have already rated this trade.');
+        }
+
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        TradeReview::create([
+            'trade_id' => $trade->id,
+            'reviewer_id' => Auth::id(),
+            'reviewee_id' => $revieweeId,
+            'rating' => $request->rating,
+            'comment' => $request->comment,
+        ]);
+
+        $reviewee = $trade->getOtherParty(Auth::id());
+        $seller = Seller::where('user_id', $reviewee->id)->first();
+        if ($seller) {
+            $tradeReviews = TradeReview::where('reviewee_id', $reviewee->id)->get();
+            $sellerReviews = $seller->reviews()->get();
+            $allRatings = $sellerReviews->pluck('overall_rating')->concat($tradeReviews->pluck('rating'))->filter();
+            if ($allRatings->isNotEmpty()) {
+                $seller->update([
+                    'rating' => round($allRatings->avg(), 2),
+                    'total_reviews' => $sellerReviews->count() + $tradeReviews->count(),
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Thank you for your review!');
     }
 
     public function disputeForm($id)

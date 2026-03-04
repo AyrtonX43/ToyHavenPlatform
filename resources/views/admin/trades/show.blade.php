@@ -90,6 +90,19 @@
                     @endforeach
                 </div>
 
+                @if($trade->conversation && $trade->conversation->messages->isNotEmpty())
+                <hr class="my-4">
+                <h6 class="fw-bold mb-2">Chat transcript</h6>
+                <div class="bg-light rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                    @foreach($trade->conversation->messages->sortBy('id') as $msg)
+                    <div class="mb-2">
+                        <small class="text-muted">{{ $msg->sender->name ?? 'User' }} · {{ $msg->created_at->format('M d, H:i') }}</small>
+                        <div class="small">{{ $msg->message }}</div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+
                 @if($trade->dispute)
                 <hr class="my-4">
                 <h6 class="fw-bold mb-2">Dispute</h6>

@@ -132,12 +132,14 @@ class NotificationController extends Controller
                 return response()->json(['notifications' => [], 'unread_count' => Auth::user()->unreadNotifications()->count()]);
             }
             $query->where('created_at', '>', $after->created_at);
-        } elseif ($since) {
+        } elseif ($since && strlen($since) > 5) {
             try {
-                $sinceDate = new \DateTime($since);
+                $sinceDate = \Carbon\Carbon::parse($since);
                 $query->where('created_at', '>', $sinceDate);
             } catch (\Exception $e) {
-                return response()->json(['notifications' => [], 'unread_count' => Auth::user()->unreadNotifications()->count()]);
+                $uc = Auth::user()->unreadNotifications()->count();
+                $pw = count($this->getProfileWarnings(Auth::user()->load('addresses')));
+                return response()->json(['notifications' => [], 'unread_count' => $uc, 'total_count' => $uc + $pw]);
             }
         } else {
             return response()->json(['notifications' => [], 'unread_count' => Auth::user()->unreadNotifications()->count()]);
