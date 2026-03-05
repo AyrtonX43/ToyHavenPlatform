@@ -30,7 +30,7 @@ class TradeOfferService
     public function acceptOffer(int $offerId): Trade
     {
         return DB::transaction(function () use ($offerId) {
-            $offer = TradeOffer::with(['tradeListing'])->findOrFail($offerId);
+            $offer = TradeOffer::with(['tradeListing', 'offeredTradeListing.images'])->findOrFail($offerId);
 
             if ($offer->status !== 'pending') {
                 throw new \Exception('Offer cannot be accepted.');
@@ -55,12 +55,18 @@ class TradeOfferService
             if ($listingItem) {
                 $listingItem->loadMissing('images');
                 $this->createTradeItem($trade, $listingItem, 'initiator');
+            } else {
+                $this->createTradeItemFromListing($trade, $offer->tradeListing->load('images'), 'initiator');
             }
 
             $offeredItem = $offer->getOfferedItem();
             if ($offeredItem) {
-                $offeredItem->loadMissing('images');
-                $this->createTradeItem($trade, $offeredItem, 'participant');
+                if ($offeredItem instanceof TradeListing) {
+                    $this->createTradeItemFromListing($trade, $offeredItem->loadMissing('images'), 'participant');
+                } else {
+                    $offeredItem->loadMissing('images');
+                    $this->createTradeItem($trade, $offeredItem, 'participant');
+                }
             }
 
             $offer->update(['status' => 'accepted']);
@@ -81,6 +87,8 @@ class TradeOfferService
                 Product::where('id', $offer->offered_product_id)->update(['trade_status' => 'in_trade']);
             } elseif ($offer->offered_user_product_id) {
                 UserProduct::where('id', $offer->offered_user_product_id)->update(['status' => 'in_trade']);
+            } elseif ($offer->offered_trade_listing_id) {
+                TradeListing::where('id', $offer->offered_trade_listing_id)->update(['status' => 'pending_deal']);
             }
 
             $u1 = min($trade->initiator_id, $trade->participant_id);
@@ -120,6 +128,26 @@ class TradeOfferService
             'product_images' => $images,
             'product_condition' => $item->condition ?? 'used',
             'estimated_value' => $item instanceof UserProduct ? $item->estimated_value : ($item->final_price ?? $item->price ?? null),
+            'side' => $side,
+        ]);
+    }
+
+    protected function createTradeItemFromListing(Trade $trade, TradeListing $listing, string $side): TradeItem
+    {
+        $userId = $side === 'initiator' ? $trade->initiator_id : $trade->participant_id;
+        $sellerId = $side === 'initiator' ? $trade->initiator_seller_id : $trade->participant_seller_id;
+        $images = $listing->images->pluck('image_path')->take(5)->values()->toArray();
+        return TradeItem::create([
+            'trade_id' => $trade->id,
+            'product_id' => null,
+            'user_product_id' => null,
+            'user_id' => $userId,
+            'seller_id' => $sellerId,
+            'product_name' => $listing->title,
+            'product_description' => $listing->description,
+            'product_images' => $images,
+            'product_condition' => $listing->condition ?? 'used',
+            'estimated_value' => $listing->cash_amount,
             'side' => $side,
         ]);
     }

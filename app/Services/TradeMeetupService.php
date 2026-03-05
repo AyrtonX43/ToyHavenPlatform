@@ -42,6 +42,9 @@ class TradeMeetupService
             ]);
 
             $trade->tradeListing->update(['status' => 'completed']);
+            if ($trade->tradeOffer?->offered_trade_listing_id) {
+                TradeListing::where('id', $trade->tradeOffer->offered_trade_listing_id)->update(['status' => 'completed']);
+            }
 
             foreach ($trade->items as $item) {
                 if ($item->product_id) {
@@ -62,6 +65,9 @@ class TradeMeetupService
 
             $listing = $trade->tradeListing;
             $listing->update(['status' => 'active']);
+            if ($trade->tradeOffer?->offered_trade_listing_id) {
+                TradeListing::where('id', $trade->tradeOffer->offered_trade_listing_id)->update(['status' => 'active']);
+            }
 
             foreach ($trade->items as $item) {
                 if ($item->product_id) {

@@ -34,15 +34,12 @@ class TradeOfferController extends Controller
             return redirect()->route('trading.listings.show', $id)->with('error', 'This listing is not accepting offers.');
         }
 
-        // Reference/sync from My Listings: same source as trading.listings.my
+        // Reference/sync from My Listings: show all active listings (including standalone, no product)
         $myListings = collect();
         if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
             $myListings = TradeListing::where('user_id', Auth::id())
                 ->where('status', 'active')
                 ->where('id', '!=', $id)
-                ->where(function ($q) {
-                    $q->whereNotNull('user_product_id')->orWhereNotNull('product_id');
-                })
                 ->with(['images', 'userProduct', 'product', 'category'])
                 ->orderByDesc('created_at')
                 ->get();
@@ -70,12 +67,7 @@ class TradeOfferController extends Controller
         if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
             $rules['offered_user_product_id'] = 'nullable|exists:user_products,id';
             $rules['offered_product_id'] = 'nullable|exists:products,id';
-            $rules['offer_listing_id'] = 'nullable|exists:trade_listings,id';
-            // Must provide either offer_listing_id (your listing) or both product ids
-            if (empty($request->offer_listing_id)) {
-                $rules['offered_user_product_id'] = 'required_without:offered_product_id';
-                $rules['offered_product_id'] = 'required_without:offered_user_product_id';
-            }
+            $rules['offer_listing_id'] = 'required|exists:trade_listings,id';
         }
         if ($listing->trade_type === 'cash') {
             $rules['cash_amount'] = 'required|numeric|min:0';
@@ -85,11 +77,16 @@ class TradeOfferController extends Controller
 
         $offeredUserProductId = $validated['offered_user_product_id'] ?? null;
         $offeredProductId = $validated['offered_product_id'] ?? null;
+        $offeredTradeListingId = null;
         if (!empty($validated['offer_listing_id'])) {
             $offerListing = TradeListing::find($validated['offer_listing_id']);
             if ($offerListing && $offerListing->user_id === Auth::id()) {
                 $offeredUserProductId = $offerListing->user_product_id;
                 $offeredProductId = $offerListing->product_id;
+                // Standalone listing (no product/user_product) – use offered_trade_listing_id
+                if (!$offeredUserProductId && !$offeredProductId) {
+                    $offeredTradeListingId = $offerListing->id;
+                }
             }
         }
 
@@ -98,6 +95,7 @@ class TradeOfferController extends Controller
             'offerer_seller_id' => Auth::user()->seller?->id,
             'offered_product_id' => $offeredProductId,
             'offered_user_product_id' => $offeredUserProductId,
+            'offered_trade_listing_id' => $offeredTradeListingId,
             'cash_amount' => $validated['cash_amount'] ?? null,
             'message' => $validated['message'] ?? null,
         ];

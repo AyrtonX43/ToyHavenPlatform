@@ -13,6 +13,7 @@ class TradeOffer extends Model
         'offerer_seller_id',
         'offered_product_id',
         'offered_user_product_id',
+        'offered_trade_listing_id',
         'cash_amount',
         'message',
         'status',
@@ -48,6 +49,11 @@ class TradeOffer extends Model
         return $this->belongsTo(UserProduct::class, 'offered_user_product_id');
     }
 
+    public function offeredTradeListing(): BelongsTo
+    {
+        return $this->belongsTo(TradeListing::class, 'offered_trade_listing_id');
+    }
+
     public function getOfferedItem()
     {
         if ($this->offered_product_id) {
@@ -55,6 +61,9 @@ class TradeOffer extends Model
         }
         if ($this->offered_user_product_id) {
             return $this->offeredUserProduct;
+        }
+        if ($this->offered_trade_listing_id) {
+            return $this->offeredTradeListing;
         }
         return null;
     }
