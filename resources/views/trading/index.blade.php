@@ -49,7 +49,9 @@
     <div class="mb-4">
         <a href="{{ route('trading.listings.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Listing</a>
         <a href="{{ route('trading.listings.my') }}" class="btn btn-outline-secondary ms-2">My Listings</a>
+        @if(Route::has('trading.listings.saved'))
         <a href="{{ route('trading.listings.saved') }}" class="btn btn-outline-secondary ms-2"><i class="bi bi-bookmark me-1"></i>Saved Listings</a>
+        @endif
         <a href="{{ route('trading.trades.index') }}" class="btn btn-outline-secondary ms-2">My Trades</a>
     </div>
     @endif

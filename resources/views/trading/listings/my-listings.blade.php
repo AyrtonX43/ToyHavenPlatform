@@ -8,7 +8,9 @@
 
     <div class="mb-4 d-flex gap-2 flex-wrap">
         <a href="{{ route('trading.listings.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Listing</a>
+        @if(Route::has('trading.listings.saved'))
         <a href="{{ route('trading.listings.saved') }}" class="btn btn-outline-secondary"><i class="bi bi-bookmark me-1"></i>Saved Listings</a>
+        @endif
         <a href="{{ route('trading.index') }}" class="btn btn-outline-secondary">Browse Marketplace</a>
     </div>
 
