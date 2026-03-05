@@ -1,5 +1,13 @@
 @extends('layouts.toyshop')
 @section('title', 'Make an offer - ' . $listing->title . ' - ToyHaven Trade')
+@push('styles')
+<style>
+.offer-listing-card { cursor: pointer; }
+.listing-select-card { transition: border-color 0.2s, box-shadow 0.2s; }
+.offer-listing-card:has(input:checked) .listing-select-card { border-color: #0ea5e9 !important; box-shadow: 0 0 0 2px rgba(14,165,233,0.3); }
+.offer-listing-card:hover .listing-select-card { border-color: #bae6fd; }
+</style>
+@endpush
 @section('content')
 <div class="container py-4">
     <nav aria-label="breadcrumb" class="mb-3">
@@ -38,16 +46,37 @@
                 <div class="card-body">
                     @if(in_array($listing->trade_type, ['exchange', 'exchange_with_cash']))
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Select from My Listings <span class="text-danger">*</span></label>
-                        <select name="offer_listing_id" class="form-select form-select-lg" required>
-                            <option value="">— Choose from My Listings —</option>
-                            @foreach($myListings as $my)
-                            <option value="{{ $my->id }}">{{ $my->title }} ({{ ucfirst(str_replace('_', ' ', $my->trade_type ?? 'exchange')) }})</option>
-                            @endforeach
-                        </select>
-                        <p class="small text-muted mt-1 mb-0">Active listings from <a href="{{ route('trading.listings.my') }}">My Listings</a></p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-semibold mb-0">Select from My Listings <span class="text-danger">*</span></label>
+                            <a href="{{ route('trading.listings.my') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-grid-3x3-gap me-1"></i>View My Listings</a>
+                        </div>
+                        <p class="small text-muted mb-3">Choose a listing from your My Listings to offer to the seller.</p>
                         @if($myListings->isEmpty())
-                        <p class="small text-warning mt-2 mb-0">You have no active listings in My Listings. <a href="{{ route('trading.listings.create') }}">Create a listing</a> or check <a href="{{ route('trading.listings.my') }}">My Listings</a>.</p>
+                        <div class="alert alert-warning mb-0">
+                            You have no active listings to offer. <a href="{{ route('trading.listings.create') }}" class="alert-link">Create a listing</a> first, or <a href="{{ route('trading.listings.my') }}" class="alert-link">view My Listings</a>.
+                        </div>
+                        @else
+                        <div class="row g-3">
+                            @foreach($myListings as $my)
+                            <div class="col-md-6 col-lg-4">
+                                <label class="offer-listing-card d-block m-0 cursor-pointer">
+                                    <input type="radio" name="offer_listing_id" value="{{ $my->id }}" class="d-none" required>
+                                    <div class="card h-100 border-2 shadow-sm listing-select-card">
+                                        @php $thumb = $my->getThumbnailImage(); @endphp
+                                        @if($thumb)
+                                        <img src="{{ asset('storage/' . $thumb->image_path) }}" class="card-img-top" style="height:120px;object-fit:cover;" alt="">
+                                        @else
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:120px;"><i class="bi bi-image text-muted"></i></div>
+                                        @endif
+                                        <div class="card-body py-2">
+                                            <div class="small text-muted">{{ ucfirst(str_replace('_', ' ', $my->trade_type ?? 'exchange')) }}</div>
+                                            <div class="fw-semibold text-truncate" title="{{ $my->title }}">{{ Str::limit($my->title, 30) }}</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
                         @endif
                     </div>
                     @if($listing->trade_type === 'exchange_with_cash')

@@ -34,6 +34,7 @@ class TradeOfferController extends Controller
             return redirect()->route('trading.listings.show', $id)->with('error', 'This listing is not accepting offers.');
         }
 
+        // Reference/sync from My Listings: same source as trading.listings.my
         $myListings = collect();
         if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
             $myListings = TradeListing::where('user_id', Auth::id())
@@ -42,8 +43,8 @@ class TradeOfferController extends Controller
                 ->where(function ($q) {
                     $q->whereNotNull('user_product_id')->orWhereNotNull('product_id');
                 })
-                ->with(['images', 'userProduct', 'product'])
-                ->orderBy('title')
+                ->with(['images', 'userProduct', 'product', 'category'])
+                ->orderByDesc('created_at')
                 ->get();
         }
 
