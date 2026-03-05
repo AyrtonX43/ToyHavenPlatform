@@ -13,8 +13,10 @@
 .map-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .category-select-btn { min-height: 48px; text-align: left; border-radius: 10px; border: 1px solid var(--th-border); background: #fff; padding: 0.6rem 1rem; }
 .category-select-btn:hover { background: #fafafa; border-color: #cbd5e1; }
-#categoryModal .modal-body { max-height: 60vh; overflow-y: auto; }
-#categoryModal .form-check { padding: 0.6rem 1rem; margin: 0; border-radius: 8px; }
+#categoryModal .modal-dialog { min-width: 400px; width: 100%; }
+#categoryModal .modal-body { max-height: 60vh; overflow-y: auto; padding: 0; }
+#categoryModal .form-check { display: flex; align-items: center; padding: 0.75rem 1.25rem; margin: 0; border-radius: 0; }
+#categoryModal .form-check-input { flex-shrink: 0; margin: 0; margin-right: 0.75rem; }
 #categoryModal .form-check:hover { background: #f8fafc; }
 .image-zone { border: 2px dashed #cbd5e1; border-radius: 14px; background: #fafbfc; padding: 2rem; text-align: center; transition: all 0.2s; }
 .image-zone:hover, .image-zone.dragover { border-color: var(--th-primary); background: #f0fdfa; }
@@ -165,7 +167,7 @@
 
 {{-- Category selection modal (prevents overlap) --}}
 <div class="modal fade" id="categoryModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content rounded-3 border-0 shadow">
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-semibold">Select categories</h5>
@@ -173,8 +175,9 @@
             </div>
             <div class="modal-body p-0">
                 @foreach($categories as $c)
-                <label class="form-check d-block mb-0 category-option border-bottom" data-id="{{ $c->id }}" data-name="{{ $c->name }}">
-                    <input type="checkbox" class="form-check-input" value="{{ $c->id }}"> <span class="ms-2">{{ $c->name }}</span>
+                <label class="form-check category-option border-bottom" data-id="{{ $c->id }}" data-name="{{ $c->name }}">
+                    <input type="checkbox" class="form-check-input" value="{{ $c->id }}">
+                    <span class="form-check-label">{{ $c->name }}</span>
                 </label>
                 @endforeach
             </div>
