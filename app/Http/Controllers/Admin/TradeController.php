@@ -93,7 +93,7 @@ class TradeController extends Controller
 
         $listing->update(['status' => 'active']);
         $listing->user->notify(new TradeListingApprovedNotification($listing));
-        return back()->with('success', 'Listing approved. User has been notified.');
+        return back()->with('success', 'Listing approved. User has been notified via email and in-app notification.');
     }
 
     public function rejectListing(Request $request, $id)
@@ -104,10 +104,12 @@ class TradeController extends Controller
             return back()->with('error', 'Only listings pending review can be rejected.');
         }
 
-        $reason = $request->input('rejection_reason', '');
+        $request->validate(['rejection_reason' => 'required|string|max:1000']);
+
+        $reason = $request->input('rejection_reason');
         $listing->update(['status' => 'rejected', 'rejection_reason' => $reason]);
         $listing->user->notify(new TradeListingRejectedNotification($listing, $reason));
-        return back()->with('success', 'Listing rejected. User has been notified.');
+        return back()->with('success', 'Listing rejected. User has been notified via email and in-app notification.');
     }
 
     public function resolveDispute(Request $request, $id)
