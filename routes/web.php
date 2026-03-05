@@ -298,6 +298,9 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::middleware(['auth'])->prefix('trading')->name('trading.')->group(function () {
         // Trade Listings - Specific routes must come before parameterized routes
         Route::get('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'myListings'])->name('listings.my');
+        Route::get('/saved-listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'savedListings'])->name('listings.saved');
+        Route::post('/listings/{id}/save', [\App\Http\Controllers\Trading\TradeListingController::class, 'save'])->name('listings.save');
+        Route::post('/listings/{id}/unsave', [\App\Http\Controllers\Trading\TradeListingController::class, 'unsave'])->name('listings.unsave');
         Route::get('/listings/create', [\App\Http\Controllers\Trading\TradeListingController::class, 'create'])->name('listings.create');
         Route::post('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'store'])->name('listings.store');
         Route::get('/listings/{id}/edit', [\App\Http\Controllers\Trading\TradeListingController::class, 'edit'])->name('listings.edit');

@@ -6,7 +6,11 @@
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
 
-    <a href="{{ route('trading.listings.create') }}" class="btn btn-primary mb-4"><i class="bi bi-plus-lg me-1"></i>Create Listing</a>
+    <div class="mb-4 d-flex gap-2 flex-wrap">
+        <a href="{{ route('trading.listings.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Listing</a>
+        <a href="{{ route('trading.listings.saved') }}" class="btn btn-outline-secondary"><i class="bi bi-bookmark me-1"></i>Saved Listings</a>
+        <a href="{{ route('trading.index') }}" class="btn btn-outline-secondary">Browse Marketplace</a>
+    </div>
 
     @if($listings->count() > 0)
     <div class="row g-4">

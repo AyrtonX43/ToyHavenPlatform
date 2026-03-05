@@ -94,6 +94,16 @@ class TradeListing extends Model
         return $this->hasMany(TradeOffer::class);
     }
 
+    public function savedBy(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SavedTradeListing::class);
+    }
+
+    public function isNoLongerAvailable(): bool
+    {
+        return in_array($this->status, ['completed', 'rejected', 'cancelled', 'expired']);
+    }
+
     public function activeOffers(): HasMany
     {
         return $this->hasMany(TradeOffer::class)->where('status', 'pending');

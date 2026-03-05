@@ -179,6 +179,21 @@
                 <div class="listing-card sticky-top" style="top: 1rem;">
                     <div class="listing-card-header"><i class="bi bi-person me-2"></i>Listed by</div>
                     <div class="listing-card-body">
+                        @auth
+                        @if($listing->user_id !== auth()->id())
+                        <div class="mb-3">
+                            @if($isSaved ?? false)
+                            <form action="{{ route('trading.listings.unsave', $listing->id) }}" method="POST" class="d-inline">@csrf
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100 rounded-3"><i class="bi bi-bookmark-fill me-2"></i>Saved – Remove</button>
+                            </form>
+                            @else
+                            <form action="{{ route('trading.listings.save', $listing->id) }}" method="POST" class="d-inline">@csrf
+                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100 rounded-3"><i class="bi bi-bookmark me-2"></i>Save listing</button>
+                            </form>
+                            @endif
+                        </div>
+                        @endif
+                        @endauth
                         <div class="seller-card mb-4"><p class="fw-semibold mb-0" style="color: #0c4a6e;">{{ $listing->user->name }}</p></div>
                         @auth
                         @if(!auth()->user()->isTradeSuspended())

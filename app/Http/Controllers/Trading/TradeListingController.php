@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Trading;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\SavedTradeListing;
 use App\Models\TradeListing;
 use App\Models\UserProduct;
 use App\Notifications\TradeListingSubmittedNotification;
@@ -69,7 +70,10 @@ class TradeListingController extends Controller
 
         $listing->increment('views_count');
 
-        return view('trading.listings.show', compact('listing'));
+        $isSaved = Auth::check() && SavedTradeListing::where('user_id', Auth::id())
+            ->where('trade_listing_id', $listing->id)->exists();
+
+        return view('trading.listings.show', compact('listing', 'isSaved'));
     }
 
     public function create()
@@ -256,6 +260,34 @@ class TradeListingController extends Controller
             DB::rollBack();
             return back()->withInput()->with('error', 'Failed to update listing.');
         }
+    }
+
+    public function savedListings(Request $request)
+    {
+        $saved = SavedTradeListing::where('user_id', Auth::id())
+            ->with(['tradeListing.images', 'tradeListing.user', 'tradeListing.category'])
+            ->orderByDesc('created_at')
+            ->paginate(12);
+
+        return view('trading.listings.saved-listings', compact('saved'));
+    }
+
+    public function save($id)
+    {
+        $listing = TradeListing::findOrFail($id);
+
+        if (SavedTradeListing::where('user_id', Auth::id())->where('trade_listing_id', $id)->exists()) {
+            return back()->with('info', 'Listing already saved.');
+        }
+
+        SavedTradeListing::create(['user_id' => Auth::id(), 'trade_listing_id' => $id]);
+        return back()->with('success', 'Listing saved to your saved list.');
+    }
+
+    public function unsave($id)
+    {
+        SavedTradeListing::where('user_id', Auth::id())->where('trade_listing_id', $id)->delete();
+        return back()->with('success', 'Listing removed from saved list.');
     }
 
     public function myListings(Request $request)
