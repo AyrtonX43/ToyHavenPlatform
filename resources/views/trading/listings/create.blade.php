@@ -60,7 +60,7 @@
     <form action="{{ route('trading.listings.store') }}" method="POST" enctype="multipart/form-data" id="listingForm">
         @csrf
 
-        <div class="create-listing-card">
+                <div class="create-listing-card">
             <div class="card-header">Listing details</div>
             <div class="card-body">
                 <div class="mb-3">
@@ -90,7 +90,7 @@
                             <option value="used">Used</option>
                         </select>
                     </div>
-                </div>
+                        </div>
                 <div class="row g-3 mt-0">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Trade type</label>
@@ -103,14 +103,14 @@
                     <div class="col-md-6" id="cashAmountField">
                         <label class="form-label fw-semibold">Cash amount (₱)</label>
                         <input type="number" name="cash_amount" class="form-control rounded-3" value="{{ old('cash_amount') }}" min="0" step="0.01" placeholder="For cash or add-cash" id="cashAmountInput">
-                    </div>
-                </div>
+                                </div>
+                            </div>
                 <div class="mb-0 mt-3">
                     <label class="form-label fw-semibold">Description</label>
                     <textarea name="description" class="form-control text-justify rounded-3" rows="4" required placeholder="Describe your item...">{{ old('description') }}</textarea>
-                </div>
-            </div>
-        </div>
+                        </div>
+                            </div>
+                            </div>
 
         <div class="create-listing-card">
             <div class="card-header">Photos</div>
@@ -120,13 +120,13 @@
                     <p class="mb-0 text-muted"><i class="bi bi-images fs-4 d-block mb-2"></i>Drag & drop images here or click to upload</p>
                     <div class="upload-btn-wrap">
                         <button type="button" class="btn btn-primary rounded-3 px-4" id="uploadImagesBtn"><i class="bi bi-cloud-upload me-2"></i>Upload images</button>
-                    </div>
-                </div>
+                            </div>
+                            </div>
                 <div id="imagePreviews" class="image-preview-list"></div>
                 <p class="small text-muted mt-2 mb-0">First image is thumbnail. Drag to reorder. Max 10 images.</p>
                 <input type="hidden" name="thumbnail_index" id="thumbnailIndex" value="0">
-            </div>
-        </div>
+                                </div>
+                            </div>
 
         <div class="create-listing-card">
             <div class="card-header">Meetup location</div>
@@ -136,34 +136,34 @@
                         <span class="input-group-text bg-white border-end-0 rounded-0"><i class="bi bi-geo-alt-fill text-primary"></i></span>
                         <input type="text" id="locationSearch" class="form-control border-start-0 rounded-0" placeholder="Search location in Philippines..." autocomplete="off">
                         <button type="button" class="btn rounded-0" id="btnSearch" style="background: var(--th-primary); border-color: var(--th-primary); color: #fff;"><i class="bi bi-search me-1"></i>Search</button>
-                    </div>
+                            </div>
                     <div class="search-results-dropdown d-none" id="searchResults"></div>
-                </div>
+                            </div>
                 <p class="small text-muted mb-2"><i class="bi bi-hand-index me-1"></i>Drag the pin to adjust the exact meetup location</p>
                 <div class="map-toolbar">
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCenterMap" title="Center map on pin"><i class="bi bi-geo-alt me-1"></i>Center to pin</button>
                     <span class="text-muted small">Meetup radius: <strong id="radiusValue">5</strong> km</span>
-                </div>
+                            </div>
                 <div id="map"></div>
                 <div class="mt-2">
                     <input type="range" name="meetup_radius_km" id="radiusSlider" class="form-range" min="1" max="50" value="{{ old('meetup_radius_km', 5) }}" step="0.5">
-                </div>
+                                </div>
                 <input type="hidden" name="location" id="locationText" value="{{ old('location') }}">
                 <input type="hidden" name="location_lat" id="locationLat" value="{{ old('location_lat', 14.5995) }}">
                 <input type="hidden" name="location_lng" id="locationLng" value="{{ old('location_lng', 120.9842) }}">
                 <div class="mt-3">
                     <label class="form-label fw-semibold">Meetup references / notes</label>
                     <input type="text" name="meet_up_references" class="form-control rounded-3" value="{{ old('meet_up_references') }}" placeholder="Landmarks, preferred spots...">
-                </div>
-            </div>
-        </div>
+                            </div>
+                            </div>
+                        </div>
 
         <div class="d-flex gap-2 flex-wrap pt-2">
             <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" style="background: var(--th-primary); border-color: var(--th-primary);"><i class="bi bi-check2 me-2"></i>Submit for review</button>
             <a href="{{ route('trading.index') }}" class="btn btn-light border px-4 py-2">Cancel</a>
-        </div>
-    </form>
-</div>
+                        </div>
+                    </form>
+                </div>
 
 {{-- Category selection modal (prevents overlap) --}}
 <div class="modal fade" id="categoryModal" tabindex="-1">
@@ -285,8 +285,8 @@
         imageInput.click();
     });
     imageZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+            e.preventDefault();
+            e.stopPropagation();
         imageZone.classList.add('dragover');
     });
     imageZone.addEventListener('dragleave', function(e) {
@@ -294,7 +294,7 @@
         imageZone.classList.remove('dragover');
     });
     imageZone.addEventListener('drop', function(e) {
-        e.preventDefault();
+            e.preventDefault();
         imageZone.classList.remove('dragover');
         var files = Array.from(e.dataTransfer.files || []).filter(function(f) { return f.type.indexOf('image/') === 0; });
         addImageFiles(files);
