@@ -13,8 +13,9 @@
         @foreach($listings as $listing)
         <div class="col-md-4">
             <div class="card h-100">
-                @if($listing->images->count() > 0)
-                <img src="{{ asset('storage/' . $listing->images->first()->image_path) }}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="">
+                @php $thumb = $listing->getThumbnailImage(); @endphp
+                @if($thumb)
+                <img src="{{ asset('storage/' . $thumb->image_path) }}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="">
                 @else
                 <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;"><i class="bi bi-image text-muted"></i></div>
                 @endif

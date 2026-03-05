@@ -60,8 +60,9 @@
         <div class="col-md-4 col-lg-3">
             <a href="{{ route('trading.listings.show', $listing->id) }}" class="text-decoration-none text-dark">
                 <div class="listing-card">
-                    @if($listing->images->count() > 0)
-                    <img src="{{ asset('storage/' . $listing->images->first()->image_path) }}" alt="{{ $listing->title }}" class="listing-img">
+                    @php $thumb = $listing->getThumbnailImage(); @endphp
+                    @if($thumb)
+                    <img src="{{ asset('storage/' . $thumb->image_path) }}" alt="{{ $listing->title }}" class="listing-img">
                     @else
                     <div class="listing-img d-flex align-items-center justify-content-center">
                         <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>

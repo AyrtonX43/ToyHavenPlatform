@@ -11,10 +11,12 @@ class TradeListingImage extends Model
         'trade_listing_id',
         'image_path',
         'display_order',
+        'is_thumbnail',
     ];
 
     protected $casts = [
         'display_order' => 'integer',
+        'is_thumbnail' => 'boolean',
     ];
 
     public function tradeListing(): BelongsTo

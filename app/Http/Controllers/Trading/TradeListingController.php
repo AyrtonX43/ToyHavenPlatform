@@ -36,7 +36,11 @@ class TradeListingController extends Controller
             $query->where('trade_type', $request->trade_type);
         }
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+            $catId = (int) $request->category_id;
+            $query->where(function ($q) use ($catId) {
+                $q->where('category_id', $catId)
+                    ->orWhereJsonContains('category_ids', $catId);
+            });
         }
         if ($request->filled('search')) {
             $s = $request->search;
@@ -74,13 +78,8 @@ class TradeListingController extends Controller
             ->where('status', 'available')
             ->with(['category', 'images'])
             ->get();
-        $tradeableProducts = Product::where('user_id', Auth::id())
-            ->where('trade_status', 'available_for_trade')
-            ->where('status', 'active')
-            ->with(['images', 'category'])
-            ->get();
 
-        return view('trading.listings.create', compact('categories', 'myProducts', 'tradeableProducts'));
+        return view('trading.listings.create', compact('categories', 'myProducts'));
     }
 
     public function store(Request $request)
@@ -88,33 +87,37 @@ class TradeListingController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
-            'category_id' => 'required|exists:categories,id',
+            'category_ids' => 'required|array|min:1|max:3',
+            'category_ids.*' => 'exists:categories,id',
             'brand' => 'nullable|string|max:100',
             'condition' => 'required|in:new,like_new,good,fair,used',
-            'location' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:500',
             'location_lat' => 'nullable|numeric',
             'location_lng' => 'nullable|numeric',
+            'meetup_radius_km' => 'nullable|numeric|min:0.5|max:100',
             'meet_up_references' => 'nullable|string|max:500',
             'trade_type' => 'required|in:exchange,exchange_with_cash,cash',
             'desired_items' => 'nullable|array',
             'desired_items.*' => 'string|max:255',
             'cash_amount' => 'nullable|numeric|min:0',
-            'product_source' => 'required|in:user_product,product',
-            'user_product_id' => 'required_if:product_source,user_product|nullable|exists:user_products,id',
-            'product_id' => 'required_if:product_source,product|nullable|exists:products,id',
+            'user_product_id' => 'required|exists:user_products,id',
             'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'thumbnail_index' => 'nullable|integer|min:0',
         ]);
 
         $userId = Auth::id();
         $sellerId = Auth::user()->seller?->id;
+        $categoryIds = $validated['category_ids'];
+        $primaryCategoryId = $categoryIds[0];
 
         $data = [
             'user_id' => $userId,
             'seller_id' => $sellerId,
-            'product_id' => $validated['product_source'] === 'product' ? $validated['product_id'] : null,
-            'user_product_id' => $validated['product_source'] === 'user_product' ? $validated['user_product_id'] : null,
-            'category_id' => $validated['category_id'],
+            'product_id' => null,
+            'user_product_id' => $validated['user_product_id'],
+            'category_id' => $primaryCategoryId,
+            'category_ids' => $categoryIds,
             'title' => $validated['title'],
             'brand' => $validated['brand'] ?? null,
             'description' => $validated['description'],
@@ -122,10 +125,11 @@ class TradeListingController extends Controller
             'location' => $validated['location'] ?? null,
             'location_lat' => $validated['location_lat'] ?? null,
             'location_lng' => $validated['location_lng'] ?? null,
+            'meetup_radius_km' => $validated['meetup_radius_km'] ?? null,
             'meet_up_references' => $validated['meet_up_references'] ?? null,
             'trade_type' => $validated['trade_type'],
             'desired_items' => $validated['desired_items'] ?? null,
-            'cash_amount' => $validated['cash_amount'] ?? null,
+            'cash_amount' => $validated['trade_type'] === 'exchange' ? null : ($validated['cash_amount'] ?? null),
             'status' => 'pending_approval',
         ];
 
@@ -134,11 +138,13 @@ class TradeListingController extends Controller
             $listing = $this->listingService->create($data);
 
             if ($request->hasFile('images')) {
+                $thumbIdx = (int) ($request->input('thumbnail_index', 0));
                 foreach ($request->file('images') as $i => $file) {
                     $path = $file->store('trade-listings/' . $listing->id, 'public');
                     $listing->images()->create([
                         'image_path' => $path,
                         'display_order' => $i,
+                        'is_thumbnail' => $thumbIdx === $i,
                     ]);
                 }
             }
@@ -186,22 +192,28 @@ class TradeListingController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
-            'category_id' => 'required|exists:categories,id',
+            'category_ids' => 'required|array|min:1|max:3',
+            'category_ids.*' => 'exists:categories,id',
             'brand' => 'nullable|string|max:100',
             'condition' => 'required|in:new,like_new,good,fair,used',
-            'location' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:500',
             'location_lat' => 'nullable|numeric',
             'location_lng' => 'nullable|numeric',
+            'meetup_radius_km' => 'nullable|numeric|min:0.5|max:100',
             'meet_up_references' => 'nullable|string|max:500',
             'trade_type' => 'required|in:exchange,exchange_with_cash,cash',
             'desired_items' => 'nullable|array',
             'cash_amount' => 'nullable|numeric|min:0',
             'images' => 'nullable|array|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'thumbnail_index' => 'nullable|integer|min:0',
         ]);
 
+        $categoryIds = $validated['category_ids'];
+        $primaryCategoryId = $categoryIds[0];
         $data = [
-            'category_id' => $validated['category_id'],
+            'category_id' => $primaryCategoryId,
+            'category_ids' => $categoryIds,
             'title' => $validated['title'],
             'brand' => $validated['brand'] ?? null,
             'description' => $validated['description'],
@@ -209,24 +221,30 @@ class TradeListingController extends Controller
             'location' => $validated['location'] ?? null,
             'location_lat' => $validated['location_lat'] ?? null,
             'location_lng' => $validated['location_lng'] ?? null,
+            'meetup_radius_km' => $validated['meetup_radius_km'] ?? null,
             'meet_up_references' => $validated['meet_up_references'] ?? null,
             'trade_type' => $validated['trade_type'],
             'desired_items' => $validated['desired_items'] ?? null,
-            'cash_amount' => $validated['cash_amount'] ?? null,
+            'cash_amount' => $validated['trade_type'] === 'exchange' ? null : ($validated['cash_amount'] ?? null),
         ];
 
         DB::beginTransaction();
         try {
             $this->listingService->update($listing, $data);
 
-            if ($request->hasFile('images')) {
+            if ($request->hasFile('images') && count($request->file('images')) > 0) {
                 foreach ($listing->images as $img) {
                     Storage::disk('public')->delete($img->image_path);
                 }
                 $listing->images()->delete();
+                $thumbIdx = (int) ($request->input('thumbnail_index', 0));
                 foreach ($request->file('images') as $i => $file) {
                     $path = $file->store('trade-listings/' . $listing->id, 'public');
-                    $listing->images()->create(['image_path' => $path, 'display_order' => $i]);
+                    $listing->images()->create([
+                        'image_path' => $path,
+                        'display_order' => $i,
+                        'is_thumbnail' => $thumbIdx === $i,
+                    ]);
                 }
             }
 

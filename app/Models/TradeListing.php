@@ -22,7 +22,9 @@ class TradeListing extends Model
         'location',
         'location_lat',
         'location_lng',
+        'meetup_radius_km',
         'meet_up_references',
+        'category_ids',
         'trade_type',
         'desired_items',
         'cash_amount',
@@ -35,13 +37,27 @@ class TradeListing extends Model
 
     protected $casts = [
         'desired_items' => 'array',
+        'category_ids' => 'array',
         'cash_amount' => 'decimal:2',
         'location_lat' => 'decimal:7',
         'location_lng' => 'decimal:7',
         'expires_at' => 'datetime',
         'views_count' => 'integer',
         'offers_count' => 'integer',
+        'meetup_radius_km' => 'decimal:2',
     ];
+
+    public function getCategoriesAttribute()
+    {
+        $ids = $this->category_ids ?? [];
+        if (empty($ids) && $this->category_id) {
+            return collect([$this->category]);
+        }
+        if (empty($ids)) {
+            return collect();
+        }
+        return Category::whereIn('id', $ids)->get()->sortBy(fn ($c) => array_search($c->id, $ids))->values();
+    }
 
     public function user(): BelongsTo
     {
@@ -138,5 +154,10 @@ class TradeListing extends Model
             return $this->product;
         }
         return $this->userProduct;
+    }
+
+    public function getThumbnailImage(): ?TradeListingImage
+    {
+        return $this->images->firstWhere('is_thumbnail', true) ?? $this->images->first();
     }
 }
