@@ -41,6 +41,7 @@
         <a href="{{ route('trading.listings.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Listing</a>
         <a href="{{ route('trading.listings.my') }}" class="btn btn-outline-secondary ms-2">My Listings</a>
         <a href="{{ route('trading.offers.my') }}" class="btn btn-outline-secondary ms-2"><i class="bi bi-handbag me-1"></i>My Offers</a>
+        <a href="{{ route('trading.offers.received') }}" class="btn btn-outline-secondary ms-2"><i class="bi bi-inbox me-1"></i>Offers Received</a>
         <a href="{{ route('trading.trades.index') }}" class="btn btn-outline-secondary ms-2">My Trade History</a>
     </div>
     @endif

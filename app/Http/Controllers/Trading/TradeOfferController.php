@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Trading;
 use App\Http\Controllers\Controller;
 use App\Models\TradeListing;
 use App\Models\TradeOffer;
+use App\Events\TradeOfferReceived;
 use App\Notifications\TradeOfferAcceptedNotification;
 use App\Notifications\TradeOfferReceivedNotification;
 use App\Notifications\TradeOfferRejectedNotification;
@@ -104,6 +105,11 @@ class TradeOfferController extends Controller
         try {
             $offer = $this->offerService->create((int) $id, $data);
             $listing->user->notify(new TradeOfferReceivedNotification($offer));
+            try {
+                broadcast(new TradeOfferReceived($offer->fresh()))->toOthers();
+            } catch (\Throwable $e) {
+                // Broadcast may fail if Reverb/Pusher not running; notification already sent
+            }
             return redirect()->route('trading.offers.my')
                 ->with('success', 'Offer sent. The seller will be notified.');
         } catch (\Throwable $e) {
@@ -113,8 +119,12 @@ class TradeOfferController extends Controller
 
     public function myOffers()
     {
+        $with = ['tradeListing.images', 'tradeListing.user', 'tradeListing.trade', 'offeredProduct.images', 'offeredUserProduct.images'];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('trade_offers', 'offered_trade_listing_id')) {
+            $with[] = 'offeredTradeListing.images';
+        }
         $offers = TradeOffer::where('offerer_id', Auth::id())
-            ->with(['tradeListing.images', 'tradeListing.user', 'offeredProduct.images', 'offeredUserProduct.images', 'offeredTradeListing.images'])
+            ->with($with)
             ->orderByDesc('created_at')
             ->paginate(15);
 
@@ -133,8 +143,12 @@ class TradeOfferController extends Controller
 
     public function offersReceived()
     {
+        $offerWith = ['offerer', 'offeredProduct.images', 'offeredUserProduct.images'];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('trade_offers', 'offered_trade_listing_id')) {
+            $offerWith[] = 'offeredTradeListing.images';
+        }
         $listings = TradeListing::where('user_id', Auth::id())
-            ->with(['activeOffers.offerer', 'activeOffers.offeredProduct.images', 'activeOffers.offeredUserProduct.images', 'images'])
+            ->with(['activeOffers' => fn ($q) => $q->with($offerWith), 'images'])
             ->whereHas('activeOffers')
             ->orderByDesc('updated_at')
             ->paginate(15);
@@ -144,8 +158,11 @@ class TradeOfferController extends Controller
 
     public function show($id)
     {
-        $offer = TradeOffer::with(['tradeListing.images', 'tradeListing.user', 'offerer', 'offeredProduct.images', 'offeredUserProduct.images'])
-            ->findOrFail($id);
+        $with = ['tradeListing.images', 'tradeListing.user', 'offerer', 'offeredProduct.images', 'offeredUserProduct.images'];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('trade_offers', 'offered_trade_listing_id')) {
+            $with[] = 'offeredTradeListing.images';
+        }
+        $offer = TradeOffer::with($with)->findOrFail($id);
 
         if ($offer->offerer_id !== Auth::id() && $offer->tradeListing->user_id !== Auth::id()) {
             abort(403);

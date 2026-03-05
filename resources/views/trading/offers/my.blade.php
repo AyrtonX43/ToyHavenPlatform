@@ -25,7 +25,7 @@
                             <p class="mb-1"><strong>Your offer on:</strong> {{ $offer->tradeListing->title }} (listed by {{ $offer->tradeListing->user->name }})</p>
                             <p class="mb-1 text-muted small">
                                 <strong>You offered:</strong>
-                                @if($offer->offeredTradeListing)
+                                @if(optional($offer->offeredTradeListing)->title)
                                     {{ $offer->offeredTradeListing->title }}
                                 @elseif($offer->offeredUserProduct)
                                     {{ $offer->offeredUserProduct->title ?? 'Your item' }}
@@ -36,14 +36,14 @@
                                 @else
                                     —
                                 @endif
-                                @if($offer->cash_amount && ($offer->offeredTradeListing || $offer->offeredUserProduct || $offer->offeredProduct))
+                                @if($offer->cash_amount && (optional($offer->offeredTradeListing)->id || $offer->offeredUserProduct || $offer->offeredProduct))
                                     + ₱{{ number_format($offer->cash_amount, 0) }}
                                 @endif
                             </p>
                             @if($offer->message)<p class="mb-0 small text-muted">Message: {{ Str::limit($offer->message, 100) }}</p>@endif
                         </div>
                         <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                            @if($offer->status === 'accepted' && $offer->tradeListing->trade)
+                            @if($offer->status === 'accepted' && optional($offer->tradeListing->trade)->id)
                             <a href="{{ route('trading.trades.show', $offer->tradeListing->trade->id) }}" class="btn btn-success"><i class="bi bi-chat-dots me-1"></i>View Trade / Chat</a>
                             @elseif($offer->status === 'pending')
                             <a href="{{ route('trading.offers.show', $offer->id) }}" class="btn btn-outline-primary"><i class="bi bi-eye me-1"></i>View Offer</a>
@@ -63,7 +63,7 @@
         <div class="card-body text-center py-5">
             <i class="bi bi-handbag text-muted" style="font-size: 4rem;"></i>
             <p class="text-muted mt-3 mb-0">No offers yet. Make an offer on a listing to get started.</p>
-            <a href="{{ route('trading.listings.index') }}" class="btn btn-primary mt-3">Browse Trade Listings</a>
+                            <a href="{{ route('trading.index') }}" class="btn btn-primary mt-3">Browse Trade Listings</a>
         </div>
     </div>
     @endif
