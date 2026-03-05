@@ -52,7 +52,7 @@
         @if(Route::has('trading.listings.saved'))
         <a href="{{ route('trading.listings.saved') }}" class="btn btn-outline-secondary ms-2"><i class="bi bi-bookmark me-1"></i>Saved Listings</a>
         @endif
-        <a href="{{ route('trading.trades.index') }}" class="btn btn-outline-secondary ms-2">My Trades</a>
+        <a href="{{ route('trading.trades.index') }}" class="btn btn-outline-secondary ms-2">My Trade History</a>
     </div>
     @endif
     @endauth

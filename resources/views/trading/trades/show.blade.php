@@ -17,10 +17,22 @@
         </div>
     </div>
 
-    @if(in_array($trade->status, ['pending_meetup', 'meetup_scheduled', 'meetup_completed']) && ($trade->initiator_id === auth()->id() || $trade->participant_id === auth()->id()))
-    @if(!$trade->dispute)
-    <a href="{{ route('trading.trades.dispute-form', $trade->id) }}" class="btn btn-outline-danger">Open Dispute</a>
-    @endif
+    @if(in_array($trade->status, ['pending_meetup', 'meetup_scheduled', 'meetup_completed']))
+        @if($trade->initiator_id === auth()->id() || $trade->participant_id === auth()->id())
+            @php
+                $userRequestedCancel = ($trade->isInitiator(auth()->id()) && $trade->initiator_cancel_requested_at) || ($trade->isParticipant(auth()->id()) && $trade->participant_cancel_requested_at);
+            @endphp
+            @if(!$trade->dispute)
+                <a href="{{ route('trading.trades.dispute-form', $trade->id) }}" class="btn btn-outline-danger me-2">Open Dispute</a>
+            @endif
+            <form method="POST" action="{{ route('trading.trades.cancel', $trade->id) }}" class="d-inline" onsubmit="return confirm('Request to cancel this trade? The other party must also confirm for the trade to be cancelled.');">
+                @csrf
+                <button type="submit" class="btn btn-outline-secondary">{{ $userRequestedCancel ? 'Confirm cancel' : 'Request cancel' }}</button>
+            </form>
+            @if($userRequestedCancel && !$trade->bothRequestedCancel())
+                <span class="text-muted small ms-2">Waiting for the other party to confirm cancel.</span>
+            @endif
+        @endif
     @endif
 
     @if($trade->status === 'disputed' && $trade->dispute)

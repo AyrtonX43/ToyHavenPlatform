@@ -99,9 +99,12 @@ class TradeController extends Controller
             ->with('success', 'Trade completed.');
     }
 
+    /**
+     * Mutual cancel: first call requests cancel; when both have requested, trade is cancelled and conversation locked.
+     */
     public function cancel(Request $request, $id)
     {
-        $trade = Trade::findOrFail($id);
+        $trade = Trade::with('conversation')->findOrFail($id);
         if ($trade->initiator_id !== Auth::id() && $trade->participant_id !== Auth::id()) {
             abort(403);
         }
@@ -109,9 +112,18 @@ class TradeController extends Controller
             return back()->with('error', 'This trade cannot be cancelled.');
         }
 
-        $this->meetupService->cancel($trade);
-        return redirect()->route('trading.trades.index')
-            ->with('success', 'Trade cancelled.');
+        $trade->requestCancel(Auth::id());
+
+        if ($trade->bothRequestedCancel()) {
+            $this->meetupService->cancel($trade);
+            if ($trade->conversation) {
+                $trade->conversation->update(['is_locked' => true]);
+            }
+            return redirect()->route('trading.trades.index')
+                ->with('success', 'Trade cancelled. Both parties confirmed.');
+        }
+
+        return back()->with('success', 'Cancel requested. Waiting for the other party to confirm cancel.');
     }
 
     public function disputeForm($id)

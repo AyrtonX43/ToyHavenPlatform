@@ -352,6 +352,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::post('/conversations/{conversation}/lock-deal', [\App\Http\Controllers\Trading\ConversationController::class, 'lockDeal'])->name('conversations.lock-deal');
         Route::post('/conversations/{conversation}/confirm-received', [\App\Http\Controllers\Trading\ConversationController::class, 'confirmReceived'])->name('conversations.confirm-received');
+        Route::post('/conversations/{conversation}/submit-trade-proof', [\App\Http\Controllers\Trading\ConversationController::class, 'submitTradeProof'])->name('conversations.submit-trade-proof');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');
         Route::post('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'report'])->name('conversations.report');
 

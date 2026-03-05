@@ -39,10 +39,9 @@ class TradeOfferController extends Controller
         if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
             $rules['offered_user_product_id'] = 'nullable|exists:user_products,id';
             $rules['offered_product_id'] = 'nullable|exists:products,id';
-            if ($listing->trade_type === 'exchange') {
-                $rules['offered_user_product_id'] = 'required_without:offered_product_id';
-                $rules['offered_product_id'] = 'required_without:offered_user_product_id';
-            }
+            // Mandatory offer product for both exchange and exchange_with_cash
+            $rules['offered_user_product_id'] = 'required_without:offered_product_id';
+            $rules['offered_product_id'] = 'required_without:offered_user_product_id';
         }
         if ($listing->trade_type === 'cash') {
             $rules['cash_amount'] = 'required|numeric|min:0';

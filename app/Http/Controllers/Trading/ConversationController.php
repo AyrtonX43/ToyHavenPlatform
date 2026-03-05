@@ -15,12 +15,14 @@ use App\Models\MessageAttachment;
 use App\Models\Trade;
 use App\Models\TradeListing;
 use App\Models\TradeOffer;
+use App\Models\TradeProof;
 use App\Models\UserProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\TradeMeetupService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -86,7 +88,7 @@ class ConversationController extends Controller
     {
         $this->authorize('view', $conversation);
 
-        $conversation->load(['user1', 'user2', 'trade', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
+        $conversation->load(['user1', 'user2', 'trade.proofs', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
         $messages = $conversation->messages->sortBy('id')->values();
 
         // Mark others' messages as delivered (if not already) and seen when opening the chat
@@ -532,6 +534,9 @@ class ConversationController extends Controller
         if (!$trade || !in_array($trade->status, ['meetup_scheduled', 'meetup_completed']) || !$trade->bothLocked()) {
             return back()->with('error', 'The meetup must be agreed by both parties before confirming.');
         }
+        if (!$trade->bothSubmittedProof()) {
+            return back()->with('error', 'Both parties must submit their trade photo proof before the trade can be completed.');
+        }
 
         $userId = Auth::id();
         $isInitiator = $trade->initiator_id === $userId;
@@ -581,6 +586,58 @@ class ConversationController extends Controller
             DB::rollBack();
             Log::warning('Confirm received failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to confirm. Please try again.');
+        }
+    }
+
+    /**
+     * Submit trade photo proof (required from both parties). When both have submitted, trade is completed.
+     */
+    public function submitTradeProof(Request $request, Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        $trade = $conversation->trade;
+        if (!$trade || in_array($trade->status, ['completed', 'cancelled'])) {
+            return back()->with('error', 'This trade is no longer active.');
+        }
+
+        $userId = Auth::id();
+        if ($trade->initiator_id !== $userId && $trade->participant_id !== $userId) {
+            return back()->with('error', 'You are not part of this trade.');
+        }
+
+        $existing = $trade->proofs()->where('user_id', $userId)->first();
+        if ($existing) {
+            return back()->with('info', 'You have already submitted your trade proof.');
+        }
+
+        $request->validate([
+            'proof_image' => ['required', 'image', 'max:5120'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $path = $request->file('proof_image')->store('trade_proofs/' . $trade->id, 'public');
+            TradeProof::create([
+                'trade_id' => $trade->id,
+                'user_id' => $userId,
+                'proof_image_path' => $path,
+                'submitted_at' => now(),
+            ]);
+
+            $trade->refresh();
+            if ($trade->bothSubmittedProof()) {
+                app(TradeMeetupService::class)->complete($trade);
+                $conversation->update(['is_locked' => true]);
+            }
+            DB::commit();
+            return back()->with('success', $trade->bothSubmittedProof()
+                ? 'Both parties have submitted proof. Trade completed and chat locked.'
+                : 'Your trade proof has been submitted. Waiting for the other party.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::warning('Submit trade proof failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to submit proof. Please try again.');
         }
     }
 

@@ -180,6 +180,17 @@
                     <div class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> Trade completed</div>
                 @elseif($trade->status === 'cancelled')
                     <div class="text-muted fw-semibold"><i class="bi bi-x-circle me-1"></i> Trade cancelled</div>
+                @elseif(!in_array($trade->status, ['completed', 'cancelled']))
+                    @php
+                        $userRequestedCancel = ($trade->isInitiator(auth()->id()) && $trade->initiator_cancel_requested_at) || ($trade->isParticipant(auth()->id()) && $trade->participant_cancel_requested_at);
+                    @endphp
+                    @if($userRequestedCancel && !$trade->bothRequestedCancel())
+                        <span class="badge bg-warning text-dark me-2"><i class="bi bi-hourglass me-1"></i> Waiting for the other party to confirm cancel.</span>
+                    @endif
+                    <form method="POST" action="{{ route('trading.trades.cancel', $trade->id) }}" class="d-inline" onsubmit="return confirm('Request to cancel this trade? The other party must also confirm for the trade to be cancelled.');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>{{ $userRequestedCancel ? 'Confirm cancel again' : 'Request cancel' }}</button>
+                    </form>
                 @elseif($trade->status === 'deal_locked')
                     @if($userHasLocked && !$bothLocked)
                         <span class="badge bg-warning text-dark me-2">You agreed. Waiting for the other party to agree.</span>
@@ -201,6 +212,34 @@
                         @endif
                     @endif
                 @endif
+            @endif
+        </div>
+    @endif
+
+    {{-- Trade photo proof (required from both before completion) --}}
+    @php
+        $tradeForProof = $conversation->trade;
+        $userHasSubmittedProof = $tradeForProof && $tradeForProof->proofs->where('user_id', auth()->id())->isNotEmpty();
+        $otherHasSubmittedProof = $tradeForProof && $tradeForProof->proofs->where('user_id', '!=', auth()->id())->isNotEmpty();
+        $showProofSection = $tradeForProof && !in_array($tradeForProof->status, ['completed', 'cancelled']);
+    @endphp
+    @if($showProofSection)
+        <div class="deal-actions mb-2">
+            <div class="fw-semibold mb-2"><i class="bi bi-camera me-1"></i> Trade photo proof (required)</div>
+            @if($userHasSubmittedProof)
+                <p class="mb-2 text-success small"><i class="bi bi-check-circle me-1"></i> You have submitted your trade proof.</p>
+                @if(!$otherHasSubmittedProof)
+                    <p class="mb-0 text-muted small">Waiting for the other party to submit their proof.</p>
+                @endif
+            @else
+                <form method="POST" action="{{ route('trading.conversations.submit-trade-proof', $conversation) }}" enctype="multipart/form-data" class="d-flex flex-wrap align-items-end gap-2">
+                    @csrf
+                    <div>
+                        <label class="form-label small mb-1">Upload a photo of the item received / payment proof</label>
+                        <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" class="form-control form-control-sm" style="max-width: 260px;" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-upload me-1"></i>Submit proof</button>
+                </form>
             @endif
         </div>
     @endif

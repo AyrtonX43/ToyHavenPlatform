@@ -1,8 +1,8 @@
 @extends('layouts.toyshop')
-@section('title', 'My Trades - ToyHaven')
+@section('title', 'My Trade History - ToyHaven')
 @section('content')
 <div class="container py-4">
-    <h1 class="h3 mb-4">My Trades</h1>
+    <h1 class="h3 mb-4">My Trade History</h1>
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 
     @if($trades->count() > 0)

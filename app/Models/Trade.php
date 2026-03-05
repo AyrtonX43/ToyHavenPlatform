@@ -28,6 +28,8 @@ class Trade extends Model
         'participant_locked_at',
         'initiator_confirmed_meetup_at',
         'participant_confirmed_meetup_at',
+        'initiator_cancel_requested_at',
+        'participant_cancel_requested_at',
     ];
 
     protected $casts = [
@@ -41,6 +43,8 @@ class Trade extends Model
         'participant_locked_at' => 'datetime',
         'initiator_confirmed_meetup_at' => 'datetime',
         'participant_confirmed_meetup_at' => 'datetime',
+        'initiator_cancel_requested_at' => 'datetime',
+        'participant_cancel_requested_at' => 'datetime',
     ];
 
     public function tradeListing(): BelongsTo
@@ -96,6 +100,32 @@ class Trade extends Model
     public function dispute(): HasOne
     {
         return $this->hasOne(TradeDispute::class);
+    }
+
+    public function proofs(): HasMany
+    {
+        return $this->hasMany(TradeProof::class);
+    }
+
+    public function bothSubmittedProof(): bool
+    {
+        $initiatorSubmitted = $this->proofs()->where('user_id', $this->initiator_id)->exists();
+        $participantSubmitted = $this->proofs()->where('user_id', $this->participant_id)->exists();
+        return $initiatorSubmitted && $participantSubmitted;
+    }
+
+    public function requestCancel(int $userId): void
+    {
+        if ($this->initiator_id === $userId) {
+            $this->update(['initiator_cancel_requested_at' => now()]);
+        } elseif ($this->participant_id === $userId) {
+            $this->update(['participant_cancel_requested_at' => now()]);
+        }
+    }
+
+    public function bothRequestedCancel(): bool
+    {
+        return $this->initiator_cancel_requested_at && $this->participant_cancel_requested_at;
     }
 
     public function reviews(): HasMany
