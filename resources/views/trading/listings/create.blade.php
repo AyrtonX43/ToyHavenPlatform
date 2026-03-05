@@ -4,19 +4,20 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <style>
-:root { --th-primary: #0ea5e9; --th-primary-dark: #0284c7; --th-surface: #ffffff; --th-surface-alt: #f8fafc; --th-border: #e2e8f0; --th-text: #0f172a; --th-text-muted: #64748b; }
+:root { --th-primary: #0891b2; --th-primary-hover: #0e7490; --th-surface: #ffffff; --th-surface-alt: #f8fafc; --th-border: #e2e8f0; --th-text: #0f172a; --th-text-muted: #64748b; }
 .text-justify { text-align: justify; }
-.create-listing-card { background: var(--th-surface); border-radius: 16px; box-shadow: 0 4px 24px rgba(15,23,42,0.06); border: 1px solid var(--th-border); margin-bottom: 1.75rem; overflow: hidden; }
-.create-listing-card .card-header { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 1rem 1.5rem; font-weight: 600; font-size: 0.9375rem; color: var(--th-text); border-bottom: 1px solid var(--th-border); letter-spacing: 0.01em; }
+.create-listing-card { background: var(--th-surface); border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--th-border); margin-bottom: 1.5rem; overflow: visible; }
+.create-listing-card .card-header { background: var(--th-surface); padding: 1.25rem 1.5rem; font-weight: 600; font-size: 0.875rem; color: var(--th-text); border-bottom: 1px solid var(--th-border); text-transform: uppercase; letter-spacing: 0.05em; }
 .create-listing-card .card-body { padding: 1.5rem; }
-#map { height: 400px; border-radius: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06); }
+#map { height: 400px; border-radius: 12px; overflow: hidden; }
 .map-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
-.category-dropdown .dropdown-toggle { min-height: 42px; text-align: left; border-radius: 10px; }
-.category-dropdown .dropdown-menu { max-height: 280px; overflow-y: auto; padding: 0.5rem; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.12); }
-.category-dropdown .form-check { padding: 0.5rem 0.75rem; margin: 0; border-radius: 8px; }
-.category-dropdown .form-check:hover { background: #f1f5f9; }
-.image-zone { border: 2px dashed #cbd5e1; border-radius: 14px; background: #fafbfc; padding: 2rem; text-align: center; transition: all 0.25s ease; }
-.image-zone:hover, .image-zone.dragover { border-color: var(--th-primary); background: #f0f9ff; }
+.category-select-btn { min-height: 48px; text-align: left; border-radius: 10px; border: 1px solid var(--th-border); background: #fff; padding: 0.6rem 1rem; }
+.category-select-btn:hover { background: #fafafa; border-color: #cbd5e1; }
+#categoryModal .modal-body { max-height: 60vh; overflow-y: auto; }
+#categoryModal .form-check { padding: 0.6rem 1rem; margin: 0; border-radius: 8px; }
+#categoryModal .form-check:hover { background: #f8fafc; }
+.image-zone { border: 2px dashed #cbd5e1; border-radius: 14px; background: #fafbfc; padding: 2rem; text-align: center; transition: all 0.2s; }
+.image-zone:hover, .image-zone.dragover { border-color: var(--th-primary); background: #f0fdfa; }
 .image-zone .upload-btn-wrap { margin-top: 1rem; }
 .image-preview-list { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 1.25rem; min-height: 60px; }
 .image-preview-item { position: relative; flex-shrink: 0; cursor: grab; }
@@ -43,15 +44,10 @@
 #imageLightboxModal .modal-backdrop { background-color: rgba(0,0,0,0.85); }
 </style>
 @endpush
-<div class="container py-5">
-    <div class="d-flex align-items-center gap-3 mb-4">
-        <div class="rounded-3 bg-white shadow-sm p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
-            <i class="bi bi-plus-square-dotted text-primary fs-4"></i>
-        </div>
-        <div>
-            <h1 class="h4 mb-0 fw-bold" style="color: var(--th-text);">Create Trade Listing</h1>
-            <p class="text-muted small mb-0">Add your item to the marketplace</p>
-        </div>
+<div class="container py-5" style="max-width: 720px; padding-bottom: 3rem;">
+    <div class="mb-4">
+        <h1 class="h5 mb-1 fw-semibold" style="color: var(--th-text); letter-spacing: -0.02em;">Create Trade Listing</h1>
+        <p class="text-muted small mb-0">List your item for trade or sale</p>
     </div>
     @if($errors->any())
     <div class="alert alert-danger mb-4">
@@ -71,21 +67,11 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Category <span class="text-muted fw-normal">(choose 1–3)</span></label>
-                    <div class="category-dropdown">
-                        <button type="button" class="form-select dropdown-toggle d-block w-100" id="categoryDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span id="categorySelectedText">Select categories...</span>
-                        </button>
-                        <div id="categoryHiddenContainer"></div>
-                        <ul class="dropdown-menu w-100" id="categoryDropdownMenu">
-                            @foreach($categories as $c)
-                            <li>
-                                <label class="form-check d-block mb-0 category-option" data-id="{{ $c->id }}" data-name="{{ $c->name }}">
-                                    <input type="checkbox" class="form-check-input" value="{{ $c->id }}"> {{ $c->name }}
-                                </label>
-                            </li>
-                            @endforeach
-                        </ul>
-                    </div>
+                    <button type="button" class="category-select-btn w-100 d-flex align-items-center justify-content-between" id="categorySelectBtn" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                        <span id="categorySelectedText">Select categories...</span>
+                        <i class="bi bi-chevron-down text-muted"></i>
+                    </button>
+                    <div id="categoryHiddenContainer"></div>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -106,7 +92,7 @@
                 <div class="row g-3 mt-0">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Trade type</label>
-                        <select name="trade_type" class="form-select" id="tradeType" required>
+                        <select name="trade_type" class="form-select rounded-3" id="tradeType" required>
                             <option value="exchange">Exchange (item for item)</option>
                             <option value="exchange_with_cash">Exchange + Add Cash</option>
                             <option value="cash">Cash only</option>
@@ -131,7 +117,7 @@
                     <input type="file" name="images[]" id="imageInput" accept="image/*" multiple class="d-none">
                     <p class="mb-0 text-muted"><i class="bi bi-images fs-4 d-block mb-2"></i>Drag & drop images here or click to upload</p>
                     <div class="upload-btn-wrap">
-                        <button type="button" class="btn btn-primary" id="uploadImagesBtn"><i class="bi bi-upload me-1"></i>Upload images</button>
+                        <button type="button" class="btn btn-primary rounded-3 px-4" id="uploadImagesBtn"><i class="bi bi-cloud-upload me-2"></i>Upload images</button>
                     </div>
                 </div>
                 <div id="imagePreviews" class="image-preview-list"></div>
@@ -147,13 +133,13 @@
                     <div class="input-group rounded-3 overflow-hidden shadow-sm">
                         <span class="input-group-text bg-white border-end-0 rounded-0"><i class="bi bi-geo-alt-fill text-primary"></i></span>
                         <input type="text" id="locationSearch" class="form-control border-start-0 rounded-0" placeholder="Search location in Philippines..." autocomplete="off">
-                        <button type="button" class="btn btn-primary rounded-0" id="btnSearch"><i class="bi bi-search me-1"></i>Search</button>
+                        <button type="button" class="btn rounded-0" id="btnSearch" style="background: var(--th-primary); border-color: var(--th-primary); color: #fff;"><i class="bi bi-search me-1"></i>Search</button>
                     </div>
                     <div class="search-results-dropdown d-none" id="searchResults"></div>
                 </div>
                 <p class="small text-muted mb-2"><i class="bi bi-hand-index me-1"></i>Drag the pin to adjust the exact meetup location</p>
                 <div class="map-toolbar">
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnCenterMap" title="Center map on pin"><i class="bi bi-geo-alt me-1"></i>Center to pin</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCenterMap" title="Center map on pin"><i class="bi bi-geo-alt me-1"></i>Center to pin</button>
                     <span class="text-muted small">Meetup radius: <strong id="radiusValue">5</strong> km</span>
                 </div>
                 <div id="map"></div>
@@ -171,10 +157,33 @@
         </div>
 
         <div class="d-flex gap-2 flex-wrap pt-2">
-            <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm"><i class="bi bi-check2-circle me-2"></i>Submit for review</button>
-            <a href="{{ route('trading.index') }}" class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" style="background: var(--th-primary); border-color: var(--th-primary);"><i class="bi bi-check2 me-2"></i>Submit for review</button>
+            <a href="{{ route('trading.index') }}" class="btn btn-light border px-4 py-2">Cancel</a>
         </div>
     </form>
+</div>
+
+{{-- Category selection modal (prevents overlap) --}}
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold">Select categories</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                @foreach($categories as $c)
+                <label class="form-check d-block mb-0 category-option border-bottom" data-id="{{ $c->id }}" data-name="{{ $c->name }}">
+                    <input type="checkbox" class="form-check-input" value="{{ $c->id }}"> <span class="ms-2">{{ $c->name }}</span>
+                </label>
+                @endforeach
+            </div>
+            <div class="modal-footer border-top">
+                <span class="text-muted small me-auto" id="categoryCountHint">Select 1–3 categories</span>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="categoryModalDone">Done</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Image full-view modal --}}
@@ -207,18 +216,17 @@
     tradeType.addEventListener('change', toggleCash);
     toggleCash();
 
-    // —— Category: dropdown with 1–3 checkboxes
-    var categoryDropdownBtn = document.getElementById('categoryDropdownBtn');
+    // —— Category: modal picker (no overlap)
     var categorySelectedText = document.getElementById('categorySelectedText');
-    var categoryIdsInput = document.getElementById('categoryIdsInput');
-    var categoryOptions = document.querySelectorAll('.category-option');
+    var categoryOptions = document.querySelectorAll('#categoryModal .category-option');
     var selectedCategoryIds = [];
+    var categoryCountHint = document.getElementById('categoryCountHint');
 
     function syncCategoryInput() {
-        var inputs = document.querySelectorAll('#categoryDropdownMenu input[type=checkbox]:checked');
+        var inputs = document.querySelectorAll('#categoryModal input[type=checkbox]:checked');
         selectedCategoryIds = Array.from(inputs).map(function(inp) { return inp.value; });
         if (selectedCategoryIds.length > 3) {
-            var first = document.querySelector('#categoryDropdownMenu input[type=checkbox]:checked');
+            var first = document.querySelector('#categoryModal input[type=checkbox]:checked');
             if (first) first.checked = false;
             syncCategoryInput();
             return;
@@ -234,12 +242,14 @@
         });
         if (selectedCategoryIds.length === 0) {
             categorySelectedText.textContent = 'Select categories...';
+            if (categoryCountHint) categoryCountHint.textContent = 'Select 1–3 categories';
         } else {
             var names = Array.from(inputs).map(function(inp) {
                 var label = inp.closest('label');
                 return label ? label.getAttribute('data-name') : '';
             }).filter(Boolean);
-            categorySelectedText.textContent = names.join(', ') + ' (' + selectedCategoryIds.length + ')';
+            categorySelectedText.textContent = names.join(', ');
+            if (categoryCountHint) categoryCountHint.textContent = selectedCategoryIds.length + ' selected';
         }
     }
 
@@ -247,7 +257,7 @@
         var cb = opt.querySelector('input[type=checkbox]');
         if (!cb) return;
         cb.addEventListener('change', function() {
-            var checked = document.querySelectorAll('#categoryDropdownMenu input[type=checkbox]:checked');
+            var checked = document.querySelectorAll('#categoryModal input[type=checkbox]:checked');
             if (checked.length > 3) { this.checked = false; }
             syncCategoryInput();
         });
@@ -379,9 +389,9 @@
         thumbnailIndex.value = thumbnailIdx;
     }
 
-    // —— Map: zoom in to show radar, center button
+    // —— Map: default zoom 50–70% (zoom 12), minZoom 9 to prevent over-zoom out
     var defaultLat = 14.5995, defaultLng = 120.9842;
-    var map = L.map('map').setView([defaultLat, defaultLng], 11);
+    var map = L.map('map', { minZoom: 9 }).setView([defaultLat, defaultLng], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     map.setMaxBounds([[4.5, 116.9], [21.1, 126.6]]);
     var marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
