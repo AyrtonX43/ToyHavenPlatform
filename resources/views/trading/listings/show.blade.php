@@ -182,8 +182,21 @@
                         <div class="seller-card mb-4"><p class="fw-semibold mb-0" style="color: #0c4a6e;">{{ $listing->user->name }}</p></div>
                         @auth
                         @if(!auth()->user()->isTradeSuspended())
-                            @if($listing->user_id !== auth()->id())
-                                @if(!($fromOfferId ?? false))
+                            @if($offerContext ?? null)
+                                {{-- Viewing offered listing in offer context: show Accept/Deny, hide Make offer & Save listing --}}
+                                <div class="alert alert-info small mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>Viewing as part of an offer from {{ $offerContext->offerer->name ?? 'the offerer' }}.
+                                </div>
+                                <form action="{{ route('trading.offers.accept', $offerContext->id) }}" method="POST" class="d-inline w-100" onsubmit="return confirm('Accept this offer? A conversation will be created.');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success w-100 mb-2"><i class="bi bi-check-lg me-1"></i>Accept Offer</button>
+                                </form>
+                                <form action="{{ route('trading.offers.reject', $offerContext->id) }}" method="POST" class="d-inline w-100" onsubmit="return confirm('Deny this offer?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-danger w-100">Deny Offer</button>
+                                </form>
+                                <a href="{{ route('trading.offers.show', $offerContext->id) }}" class="btn btn-outline-secondary w-100 mt-2">Back to offer details</a>
+                            @elseif($listing->user_id !== auth()->id())
                                 @if($listing->canAcceptOffers())
                                     <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100">
                                         <i class="bi bi-{{ in_array($listing->trade_type, ['exchange', 'exchange_with_cash']) ? 'arrow-left-right' : 'currency-exchange' }} me-2"></i>Make an offer
@@ -200,9 +213,6 @@
                                     </form>
                                     @endif
                                 </div>
-                                @else
-                                <a href="{{ route('trading.offers.show', $fromOfferId) }}" class="btn btn-outline-primary w-100"><i class="bi bi-arrow-left me-2"></i>Back to offer</a>
-                                @endif
                             @else
                             <a href="{{ route('trading.listings.edit', $listing->id) }}" class="btn btn-outline-primary rounded-3 d-block mb-2"><i class="bi bi-pencil me-2"></i>Edit Listing</a>
                             @if($listing->status === 'active')

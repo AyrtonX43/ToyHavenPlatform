@@ -161,7 +161,6 @@ class TradeOfferController extends Controller
         $with = ['tradeListing.images', 'tradeListing.user', 'offerer', 'offeredProduct.images', 'offeredUserProduct.images'];
         if (\Illuminate\Support\Facades\Schema::hasColumn('trade_offers', 'offered_trade_listing_id')) {
             $with[] = 'offeredTradeListing.images';
-            $with[] = 'offeredTradeListing.user';
         }
         $offer = TradeOffer::with($with)->findOrFail($id);
 

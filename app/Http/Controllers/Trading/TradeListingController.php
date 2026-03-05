@@ -59,7 +59,7 @@ class TradeListingController extends Controller
         return view('trading.index', compact('listings', 'categories'));
     }
 
-    public function show(Request $request, $id)
+    public function show($id)
     {
         $listing = TradeListing::with(['user', 'images', 'category', 'product.images', 'userProduct.images', 'product.category', 'userProduct.category'])
             ->findOrFail($id);
@@ -73,9 +73,18 @@ class TradeListingController extends Controller
         $isSaved = Auth::check() && SavedTradeListing::where('user_id', Auth::id())
             ->where('trade_listing_id', $listing->id)->exists();
 
-        $fromOfferId = $request->query('from_offer');
+        $offerContext = null;
+        $offerId = request()->query('offer_id');
+        if (Auth::check() && $offerId && \Illuminate\Support\Facades\Schema::hasColumn('trade_offers', 'offered_trade_listing_id')) {
+            $offer = \App\Models\TradeOffer::with(['tradeListing', 'offerer'])->find($offerId);
+            if ($offer && $offer->status === 'pending'
+                && $offer->tradeListing->user_id === Auth::id()
+                && (int) ($offer->offered_trade_listing_id ?? 0) === (int) $listing->id) {
+                $offerContext = $offer;
+            }
+        }
 
-        return view('trading.listings.show', compact('listing', 'isSaved', 'fromOfferId'));
+        return view('trading.listings.show', compact('listing', 'isSaved', 'offerContext'));
     }
 
     public function create()
