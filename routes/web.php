@@ -520,6 +520,14 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::prefix('trades')->name('trades.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TradeController::class, 'index'])->name('index');
             Route::get('/listings', [\App\Http\Controllers\Admin\TradeController::class, 'listings'])->name('listings');
+            Route::get('/listings/approved', function (\Illuminate\Http\Request $request) {
+                $request->merge(['status' => 'active']);
+                return app(\App\Http\Controllers\Admin\TradeController::class)->listings($request);
+            })->name('listings.approved');
+            Route::get('/listings/rejected', function (\Illuminate\Http\Request $request) {
+                $request->merge(['status' => 'rejected']);
+                return app(\App\Http\Controllers\Admin\TradeController::class)->listings($request);
+            })->name('listings.rejected');
             Route::get('/listings/{id}', [\App\Http\Controllers\Admin\TradeController::class, 'showListing'])->name('listings.show');
             Route::post('/listings/{id}/approve', [\App\Http\Controllers\Admin\TradeController::class, 'approveListing'])->name('approve-listing');
             Route::post('/listings/{id}/reject', [\App\Http\Controllers\Admin\TradeController::class, 'rejectListing'])->name('reject-listing');
