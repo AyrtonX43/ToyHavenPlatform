@@ -147,6 +147,32 @@
         </a>
     @endif
 
+    {{-- Trade action buttons: Receive product, Report user, Request cancel --}}
+    @php
+        $tradeForActions = $conversation->trade;
+        $showTradeActionBar = $tradeForActions && !in_array($tradeForActions->status ?? '', ['completed', 'cancelled']);
+        $userHasSubmittedProofForBar = $tradeForActions && $tradeForActions->proofs->where('user_id', auth()->id())->isNotEmpty();
+        $userRequestedCancelForBar = $tradeForActions && (
+            ($tradeForActions->isInitiator(auth()->id()) && $tradeForActions->initiator_cancel_requested_at) ||
+            ($tradeForActions->isParticipant(auth()->id()) && $tradeForActions->participant_cancel_requested_at)
+        );
+    @endphp
+    @if($showTradeActionBar)
+        <div class="deal-actions mb-2 d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-semibold me-2"><i class="bi bi-tools me-1"></i>Trade actions:</span>
+            @if($userHasSubmittedProofForBar)
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Proof submitted</span>
+            @else
+                <a href="#tradeProofSection" class="btn btn-sm btn-success"><i class="bi bi-box-seam me-1"></i>Receive product</a>
+            @endif
+            <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-flag me-1"></i>Report user</a>
+            <form method="POST" action="{{ route('trading.trades.cancel', $tradeForActions->id) }}" class="d-inline" onsubmit="return confirm('{{ $userRequestedCancelForBar ? 'Confirm cancel again? The other party must also confirm for the trade to be cancelled.' : 'Request to cancel this trade? The other party must also confirm for the trade to be cancelled.' }}');">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>{{ $userRequestedCancelForBar ? 'Confirm cancel' : 'Request cancel' }}</button>
+            </form>
+        </div>
+    @endif
+
     {{-- Deal actions: Lock deal (both must agree) / Confirm received / Status --}}
     @php
         $trade = $conversation->trade;
@@ -224,7 +250,7 @@
         $showProofSection = $tradeForProof && !in_array($tradeForProof->status, ['completed', 'cancelled']);
     @endphp
     @if($showProofSection)
-        <div class="deal-actions mb-2">
+        <div class="deal-actions mb-2" id="tradeProofSection">
             <div class="fw-semibold mb-2"><i class="bi bi-camera me-1"></i> Trade photo proof (required)</div>
             @if($userHasSubmittedProof)
                 <p class="mb-2 text-success small"><i class="bi bi-check-circle me-1"></i> You have submitted your trade proof.</p>
