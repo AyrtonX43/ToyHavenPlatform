@@ -12,6 +12,7 @@ class ConversationReport extends Model
         'reporter_id',
         'reason',
         'snapshot',
+        'proof_images',
         'status',
         'admin_notes',
         'reviewed_by',
@@ -20,6 +21,7 @@ class ConversationReport extends Model
 
     protected $casts = [
         'snapshot' => 'array',
+        'proof_images' => 'array',
         'reviewed_at' => 'datetime',
     ];
 

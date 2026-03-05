@@ -95,9 +95,10 @@ class TradeOfferService
             $u2 = max($trade->initiator_id, $trade->participant_id);
             Conversation::create([
                 'trade_id' => $trade->id,
+                'trade_listing_id' => $offer->trade_listing_id,
                 'user1_id' => $u1,
                 'user2_id' => $u2,
-                'subject' => 'Trade #' . $trade->id,
+                'subject' => 'Offer Trade Approval - Trade #' . $trade->id,
             ]);
 
             return $trade;

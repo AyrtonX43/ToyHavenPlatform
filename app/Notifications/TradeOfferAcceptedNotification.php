@@ -4,11 +4,15 @@ namespace App\Notifications;
 
 use App\Models\Trade;
 use App\Models\TradeOffer;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TradeOfferAcceptedNotification extends Notification
+class TradeOfferAcceptedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(
         public TradeOffer $offer,
         public Trade $trade
@@ -21,27 +25,23 @@ class TradeOfferAcceptedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = $this->trade->conversation
-            ? route('trading.conversations.show', $this->trade->conversation)
-            : route('trading.trades.show', $this->trade->id);
-
+        $conversation = $this->trade->conversation;
+        $url = $conversation ? route('trading.conversations.show', $conversation) : route('trading.trades.show', $this->trade->id);
         return (new MailMessage)
             ->subject('Your Trade Offer Was Accepted - ToyHaven')
             ->line('Great news! Your offer on "' . $this->offer->tradeListing->title . '" was accepted.')
-            ->line('You can now start a conversation to schedule your meetup.')
-            ->action('Open Chat', $url);
+            ->line('You can start the conversation in chat now.')
+            ->action('Offer Trade Approval', $url);
     }
 
     public function toArray(object $notifiable): array
     {
-        $actionUrl = $this->trade->conversation
-            ? route('trading.conversations.show', $this->trade->conversation)
-            : route('trading.trades.show', $this->trade->id);
-
+        $conversation = $this->trade->conversation;
+        $actionUrl = $conversation ? route('trading.conversations.show', $conversation) : route('trading.trades.show', $this->trade->id);
         return [
             'type' => 'trade_offer_accepted',
-            'title' => 'Offer Accepted',
-            'message' => 'Your offer on "' . $this->offer->tradeListing->title . '" was accepted. You can now start a conversation.',
+            'title' => 'Offer Trade Approval',
+            'message' => 'Your offer on "' . $this->offer->tradeListing->title . '" was accepted. You can start the conversation in chat.',
             'offer_id' => $this->offer->id,
             'trade_id' => $this->trade->id,
             'action_url' => $actionUrl,

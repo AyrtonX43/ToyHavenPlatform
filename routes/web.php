@@ -350,6 +350,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/conversations/{conversation}/other-status', [\App\Http\Controllers\Trading\ConversationController::class, 'otherStatus'])->name('conversations.other-status');
         Route::get('/conversations/{conversation}/message-statuses', [\App\Http\Controllers\Trading\ConversationController::class, 'messageStatuses'])->name('conversations.message-statuses');
         Route::get('/conversations/{conversation}/typing-status', [\App\Http\Controllers\Trading\ConversationController::class, 'typingStatus'])->name('conversations.typing-status');
+        Route::get('/conversations/{conversation}/trade-cancel-status', [\App\Http\Controllers\Trading\ConversationController::class, 'tradeCancelStatus'])->name('conversations.trade-cancel-status');
         Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::post('/conversations/{conversation}/lock-deal', [\App\Http\Controllers\Trading\ConversationController::class, 'lockDeal'])->name('conversations.lock-deal');
         Route::post('/conversations/{conversation}/confirm-received', [\App\Http\Controllers\Trading\ConversationController::class, 'confirmReceived'])->name('conversations.confirm-received');

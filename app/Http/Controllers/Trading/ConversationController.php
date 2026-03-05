@@ -10,6 +10,7 @@ use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\ConversationReport;
+use App\Notifications\TradeCompletedAdminNotification;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Trade;
@@ -393,12 +394,47 @@ class ConversationController extends Controller
         ]);
     }
 
+    /**
+     * Get trade cancel request status for real-time polling (who requested, who is waiting).
+     */
+    public function tradeCancelStatus(Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+        $trade = $conversation->trade;
+        if (!$trade || in_array($trade->status, ['completed', 'cancelled'])) {
+            return response()->json(['active' => false]);
+        }
+        if ($trade->bothRequestedCancel()) {
+            return response()->json(['active' => false, 'cancelled' => true]);
+        }
+        $initiatorRequested = (bool) $trade->initiator_cancel_requested_at;
+        $participantRequested = (bool) $trade->participant_cancel_requested_at;
+        $requesterName = null;
+        $waiterName = null;
+        if ($initiatorRequested) {
+            $requesterName = $trade->initiator?->name ?? 'User 1';
+            $waiterName = $trade->participant?->name ?? 'User 2';
+        } elseif ($participantRequested) {
+            $requesterName = $trade->participant?->name ?? 'User 2';
+            $waiterName = $trade->initiator?->name ?? 'User 1';
+        }
+        return response()->json([
+            'active' => $initiatorRequested || $participantRequested,
+            'requester_name' => $requesterName,
+            'waiter_name' => $waiterName,
+            'i_requested' => $trade->isInitiator(Auth::id()) && $initiatorRequested,
+            'they_requested' => ($trade->isParticipant(Auth::id()) && $initiatorRequested) || ($trade->isInitiator(Auth::id()) && $participantRequested),
+        ]);
+    }
+
     public function report(Request $request, Conversation $conversation)
     {
         $this->authorize('view', $conversation);
 
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:2000'],
+            'proof_images' => ['nullable', 'array'],
+            'proof_images.*' => ['image', 'max:5120'],
         ]);
 
         $messages = $conversation->messages()
@@ -421,15 +457,23 @@ class ConversationController extends Controller
             ];
         })->toArray();
 
+        $proofPaths = [];
+        if (!empty($validated['proof_images'])) {
+            foreach ($validated['proof_images'] as $file) {
+                $proofPaths[] = $file->store('report_proofs/' . $conversation->id, 'public');
+            }
+        }
+
         ConversationReport::create([
             'conversation_id' => $conversation->id,
             'reporter_id' => Auth::id(),
             'reason' => $validated['reason'],
             'snapshot' => $snapshot,
+            'proof_images' => $proofPaths,
             'status' => 'pending',
         ]);
 
-        return back()->with('success', 'Conversation reported. Admin will review the snapshot.');
+        return back()->with('success', 'Conversation reported. Admin will review with your proof images.');
     }
 
     public function reportForm(Conversation $conversation)
@@ -612,16 +656,21 @@ class ConversationController extends Controller
         }
 
         $request->validate([
-            'proof_image' => ['required', 'image', 'max:5120'],
+            'proof_images' => ['required', 'array', 'min:1', 'max:2'],
+            'proof_images.*' => ['required', 'image', 'max:5120'],
         ]);
 
         DB::beginTransaction();
         try {
-            $path = $request->file('proof_image')->store('trade_proofs/' . $trade->id, 'public');
+            $paths = [];
+            foreach ($request->file('proof_images') as $file) {
+                $paths[] = $file->store('trade_proofs/' . $trade->id, 'public');
+            }
             TradeProof::create([
                 'trade_id' => $trade->id,
                 'user_id' => $userId,
-                'proof_image_path' => $path,
+                'proof_image_path' => $paths[0],
+                'proof_images' => $paths,
                 'submitted_at' => now(),
             ]);
 
@@ -629,6 +678,10 @@ class ConversationController extends Controller
             if ($trade->bothSubmittedProof()) {
                 app(TradeMeetupService::class)->complete($trade);
                 $conversation->update(['is_locked' => true]);
+                $trade->load(['initiator', 'participant', 'proofs']);
+                foreach (\App\Models\User::where('role', 'admin')->get() as $admin) {
+                    $admin->notify(new TradeCompletedAdminNotification($trade->fresh()));
+                }
             }
             DB::commit();
             return back()->with('success', $trade->bothSubmittedProof()

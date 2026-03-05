@@ -43,6 +43,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'trade_suspended_at',
         'trade_suspension_reason',
         'trade_suspended_by',
+        'trade_penalty_count',
+        'trade_suspended_until',
+        'trade_banned',
     ];
 
     /**
@@ -71,6 +74,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_banned' => 'boolean',
             'trade_suspended' => 'boolean',
             'trade_suspended_at' => 'datetime',
+            'trade_suspended_until' => 'datetime',
+            'trade_banned' => 'boolean',
         ];
     }
 
@@ -269,6 +274,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isTradeSuspended(): bool
     {
+        if ((bool) $this->trade_banned) {
+            return true;
+        }
+        if ($this->trade_suspended_until && $this->trade_suspended_until->isFuture()) {
+            return true;
+        }
         return (bool) $this->trade_suspended;
     }
 
