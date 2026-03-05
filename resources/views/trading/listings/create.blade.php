@@ -4,32 +4,55 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 <style>
+:root { --th-primary: #0ea5e9; --th-primary-dark: #0284c7; --th-surface: #ffffff; --th-surface-alt: #f8fafc; --th-border: #e2e8f0; --th-text: #0f172a; --th-text-muted: #64748b; }
 .text-justify { text-align: justify; }
-.create-listing-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; margin-bottom: 1.5rem; overflow: hidden; }
-.create-listing-card .card-header { background: #f8fafc; padding: 0.75rem 1.25rem; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
-.create-listing-card .card-body { padding: 1.25rem; }
-#map { height: 380px; border-radius: 10px; }
-.map-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
-.category-dropdown { position: relative; }
-.category-dropdown .dropdown-toggle { min-height: 38px; text-align: left; }
-.category-dropdown .dropdown-menu { max-height: 280px; overflow-y: auto; padding: 0.5rem; }
-.category-dropdown .form-check { padding: 0.35rem 0.5rem; margin: 0; border-radius: 6px; }
+.create-listing-card { background: var(--th-surface); border-radius: 16px; box-shadow: 0 4px 24px rgba(15,23,42,0.06); border: 1px solid var(--th-border); margin-bottom: 1.75rem; overflow: hidden; }
+.create-listing-card .card-header { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 1rem 1.5rem; font-weight: 600; font-size: 0.9375rem; color: var(--th-text); border-bottom: 1px solid var(--th-border); letter-spacing: 0.01em; }
+.create-listing-card .card-body { padding: 1.5rem; }
+#map { height: 400px; border-radius: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06); }
+.map-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.category-dropdown .dropdown-toggle { min-height: 42px; text-align: left; border-radius: 10px; }
+.category-dropdown .dropdown-menu { max-height: 280px; overflow-y: auto; padding: 0.5rem; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.12); }
+.category-dropdown .form-check { padding: 0.5rem 0.75rem; margin: 0; border-radius: 8px; }
 .category-dropdown .form-check:hover { background: #f1f5f9; }
-.image-zone { border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; padding: 1.5rem; text-align: center; transition: border-color 0.2s, background 0.2s; }
-.image-zone.dragover { border-color: #0d6efd; background: #eff6ff; }
-.image-zone .upload-btn-wrap { margin-top: 0.75rem; }
-.image-preview-list { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; margin-top: 1rem; min-height: 60px; }
+.image-zone { border: 2px dashed #cbd5e1; border-radius: 14px; background: #fafbfc; padding: 2rem; text-align: center; transition: all 0.25s ease; }
+.image-zone:hover, .image-zone.dragover { border-color: var(--th-primary); background: #f0f9ff; }
+.image-zone .upload-btn-wrap { margin-top: 1rem; }
+.image-preview-list { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; margin-top: 1.25rem; min-height: 60px; }
 .image-preview-item { position: relative; flex-shrink: 0; cursor: grab; }
 .image-preview-item:active { cursor: grabbing; }
 .image-preview-item.dragging { opacity: 0.5; }
-.image-preview-item img { width: 88px; height: 88px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; display: block; }
-.image-preview-item .thumb-badge { position: absolute; top: -6px; left: -6px; z-index: 2; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 11px; line-height: 22px; }
-.image-preview-item .btn-remove { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 14px; line-height: 1; z-index: 2; }
-.image-preview-item .drag-handle { position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #64748b; }
+.image-preview-item img { width: 92px; height: 92px; object-fit: cover; border-radius: 10px; border: 2px solid var(--th-border); display: block; transition: transform 0.2s; cursor: zoom-in; }
+.image-preview-item img:hover { transform: scale(1.03); }
+.image-preview-item .thumb-badge { position: absolute; top: -6px; left: -6px; z-index: 2; width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.image-preview-item .btn-remove { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: 14px; line-height: 1; z-index: 2; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.image-preview-item .drag-handle { position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--th-text-muted); }
+.search-results-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--th-border); border-top: none; border-radius: 0 0 12px 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 260px; overflow-y: auto; z-index: 1000; margin-top: -2px; }
+.search-results-dropdown .search-result-item { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
+.search-results-dropdown .search-result-item:last-child { border-bottom: none; }
+.search-results-dropdown .search-result-item:hover { background: #f8fafc; }
+.search-results-dropdown .search-result-item small { color: var(--th-text-muted); }
+.search-results-dropdown .search-result-item .bi-geo { font-size: 0.875rem; }
+.search-wrapper { position: relative; }
+#imageLightboxModal .modal-dialog { max-width: 95vw; }
+#imageLightboxModal .modal-content { background: transparent; border: none; }
+#imageLightboxModal .modal-header { position: absolute; top: 0; right: 0; z-index: 10; border: none; }
+#imageLightboxModal .modal-header .btn-close { filter: brightness(0) invert(1); opacity: 0.9; }
+#imageLightboxModal .modal-body { padding: 2rem 1rem 1rem; text-align: center; }
+#imageLightboxModal .modal-body img { max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+#imageLightboxModal .modal-backdrop { background-color: rgba(0,0,0,0.85); }
 </style>
 @endpush
-<div class="container py-4">
-    <h1 class="h4 mb-4 fw-bold">Create Trade Listing</h1>
+<div class="container py-5">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="rounded-3 bg-white shadow-sm p-3 d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+            <i class="bi bi-plus-square-dotted text-primary fs-4"></i>
+        </div>
+        <div>
+            <h1 class="h4 mb-0 fw-bold" style="color: var(--th-text);">Create Trade Listing</h1>
+            <p class="text-muted small mb-0">Add your item to the marketplace</p>
+        </div>
+    </div>
     @if($errors->any())
     <div class="alert alert-danger mb-4">
         <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
@@ -44,7 +67,7 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Title</label>
-                    <input type="text" name="title" class="form-control form-control-lg" value="{{ old('title') }}" placeholder="e.g. Lego Star Wars Set" required>
+                    <input type="text" name="title" class="form-control form-control-lg rounded-3" value="{{ old('title') }}" placeholder="e.g. Lego Star Wars Set" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Category <span class="text-muted fw-normal">(choose 1–3)</span></label>
@@ -67,11 +90,11 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Brand</label>
-                        <input type="text" name="brand" class="form-control" value="{{ old('brand') }}" placeholder="Optional">
+                        <input type="text" name="brand" class="form-control rounded-3" value="{{ old('brand') }}" placeholder="Optional">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Condition</label>
-                        <select name="condition" class="form-select" required>
+                        <select name="condition" class="form-select rounded-3" required>
                             <option value="new">New</option>
                             <option value="like_new">Like New</option>
                             <option value="good">Good</option>
@@ -91,12 +114,12 @@
                     </div>
                     <div class="col-md-6" id="cashAmountField">
                         <label class="form-label fw-semibold">Cash amount (₱)</label>
-                        <input type="number" name="cash_amount" class="form-control" value="{{ old('cash_amount') }}" min="0" step="0.01" placeholder="For cash or add-cash" id="cashAmountInput">
+                        <input type="number" name="cash_amount" class="form-control rounded-3" value="{{ old('cash_amount') }}" min="0" step="0.01" placeholder="For cash or add-cash" id="cashAmountInput">
                     </div>
                 </div>
                 <div class="mb-0 mt-3">
                     <label class="form-label fw-semibold">Description</label>
-                    <textarea name="description" class="form-control text-justify" rows="4" required placeholder="Describe your item...">{{ old('description') }}</textarea>
+                    <textarea name="description" class="form-control text-justify rounded-3" rows="4" required placeholder="Describe your item...">{{ old('description') }}</textarea>
                 </div>
             </div>
         </div>
@@ -120,13 +143,18 @@
         <div class="create-listing-card">
             <div class="card-header">Meetup location</div>
             <div class="card-body">
-                <div class="input-group mb-2">
-                    <input type="text" id="locationSearch" class="form-control" placeholder="Search in Philippines..." autocomplete="off">
-                    <button type="button" class="btn btn-outline-primary" id="btnSearch"><i class="bi bi-search me-1"></i>Search</button>
+                <div class="search-wrapper mb-3" id="searchWrapper">
+                    <div class="input-group rounded-3 overflow-hidden shadow-sm">
+                        <span class="input-group-text bg-white border-end-0 rounded-0"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                        <input type="text" id="locationSearch" class="form-control border-start-0 rounded-0" placeholder="Search location in Philippines..." autocomplete="off">
+                        <button type="button" class="btn btn-primary rounded-0" id="btnSearch"><i class="bi bi-search me-1"></i>Search</button>
+                    </div>
+                    <div class="search-results-dropdown d-none" id="searchResults"></div>
                 </div>
+                <p class="small text-muted mb-2"><i class="bi bi-hand-index me-1"></i>Drag the pin to adjust the exact meetup location</p>
                 <div class="map-toolbar">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCenterMap" title="Center map on pin"><i class="bi bi-geo-alt me-1"></i>Center to pin</button>
-                    <span class="text-muted small">Radius: <strong id="radiusValue">5</strong> km</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnCenterMap" title="Center map on pin"><i class="bi bi-geo-alt me-1"></i>Center to pin</button>
+                    <span class="text-muted small">Meetup radius: <strong id="radiusValue">5</strong> km</span>
                 </div>
                 <div id="map"></div>
                 <div class="mt-2">
@@ -137,16 +165,30 @@
                 <input type="hidden" name="location_lng" id="locationLng" value="{{ old('location_lng', 120.9842) }}">
                 <div class="mt-3">
                     <label class="form-label fw-semibold">Meetup references / notes</label>
-                    <input type="text" name="meet_up_references" class="form-control" value="{{ old('meet_up_references') }}" placeholder="Landmarks, preferred spots...">
+                    <input type="text" name="meet_up_references" class="form-control rounded-3" value="{{ old('meet_up_references') }}" placeholder="Landmarks, preferred spots...">
                 </div>
             </div>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary btn-lg">Submit for review</button>
-            <a href="{{ route('trading.index') }}" class="btn btn-outline-secondary btn-lg">Cancel</a>
+        <div class="d-flex gap-2 flex-wrap pt-2">
+            <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm"><i class="bi bi-check2-circle me-2"></i>Submit for review</button>
+            <a href="{{ route('trading.index') }}" class="btn btn-outline-secondary btn-lg px-4">Cancel</a>
         </div>
     </form>
+</div>
+
+{{-- Image full-view modal --}}
+<div class="modal fade" id="imageLightboxModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img src="" alt="Full view" id="lightboxImage" class="w-100" style="cursor: zoom-in;">
+            </div>
+        </div>
+    </div>
 </div>
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -273,6 +315,17 @@
             div.innerHTML = '<span class="drag-handle">⋮⋮</span>';
             var img = document.createElement('img');
             img.src = URL.createObjectURL(f);
+            img.addEventListener('click', function(ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                var modal = document.getElementById('imageLightboxModal');
+                var lightboxImg = document.getElementById('lightboxImage');
+                if (modal && lightboxImg) {
+                    lightboxImg.src = img.src;
+                    var bsModal = typeof bootstrap !== 'undefined' && bootstrap.Modal ? new bootstrap.Modal(modal) : null;
+                    if (bsModal) bsModal.show();
+                }
+            });
             var star = document.createElement('button');
             star.type = 'button';
             star.className = 'btn btn-sm ' + (i === thumbnailIdx ? 'btn-warning' : 'btn-outline-secondary') + ' thumb-badge';
@@ -372,21 +425,62 @@
         centerMapOnPin();
     }
 
-    document.getElementById('btnSearch').addEventListener('click', async function() {
-        var q = document.getElementById('locationSearch').value.trim();
-        if (!q) return;
-        var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ', Philippines') + '&countrycodes=ph&limit=1';
-        try {
-            var res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-            var data = await res.json();
-            if (data && data[0]) {
-                var r = data[0];
+    var searchInput = document.getElementById('locationSearch');
+    var searchResults = document.getElementById('searchResults');
+    var searchWrapper = document.getElementById('searchWrapper');
+    var searchDebounce = null;
+
+    function showSearchResults(data) {
+        searchResults.innerHTML = '';
+        searchResults.classList.remove('d-none');
+        searchWrapper.classList.add('has-results');
+        if (!data || data.length === 0) {
+            searchResults.innerHTML = '<div class="p-3 text-muted small text-center">No locations found. Try a different search.</div>';
+            return;
+        }
+        data.forEach(function(r) {
+            var div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.innerHTML = '<div><i class="bi bi-geo-alt-fill me-2 text-primary"></i>' + (r.display_name || '') + '</div><small class="ms-4">' + (r.type || '') + '</small>';
+            div.addEventListener('click', function() {
                 moveMap(parseFloat(r.lat), parseFloat(r.lon), r.display_name);
-            } else {
-                alert('Location not found in Philippines.');
-            }
-        } catch (e) {
-            alert('Search failed.');
+                searchInput.value = r.display_name;
+                searchResults.classList.add('d-none');
+                searchWrapper.classList.remove('has-results');
+                searchResults.innerHTML = '';
+            });
+            searchResults.appendChild(div);
+        });
+    }
+
+    function doSearch() {
+        var q = searchInput.value.trim();
+        if (q.length < 2) {
+            searchResults.classList.add('d-none');
+            searchWrapper.classList.remove('has-results');
+            return;
+        }
+        var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ', Philippines') + '&countrycodes=ph&limit=5';
+        fetch(url, { headers: { 'Accept-Language': 'en' } })
+            .then(function(res) { return res.json(); })
+            .then(function(data) { showSearchResults(data); })
+            .catch(function() { showSearchResults([]); });
+    }
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(doSearch, 400);
+    });
+    searchInput.addEventListener('focus', function() {
+        if (searchInput.value.trim().length >= 2) doSearch();
+    });
+    document.getElementById('btnSearch').addEventListener('click', function() {
+        doSearch();
+    });
+    document.addEventListener('click', function(e) {
+        if (!searchWrapper.contains(e.target)) {
+            searchResults.classList.add('d-none');
+            searchWrapper.classList.remove('has-results');
         }
     });
 
