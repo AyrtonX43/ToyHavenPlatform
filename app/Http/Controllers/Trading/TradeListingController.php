@@ -12,6 +12,7 @@ use App\Services\TradeListingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -144,10 +145,14 @@ class TradeListingController extends Controller
                 }
             }
 
-            $admins = \App\Models\User::where('role', 'admin')->get();
-            $moderators = \App\Models\User::where('role', 'moderator')->get();
-            foreach ($admins->merge($moderators) as $mod) {
-                $mod->notify(new TradeListingSubmittedNotification($listing));
+            try {
+                $admins = \App\Models\User::where('role', 'admin')->get();
+                $moderators = \App\Models\User::where('role', 'moderator')->get();
+                foreach ($admins->merge($moderators) as $mod) {
+                    $mod->notify(new TradeListingSubmittedNotification($listing));
+                }
+            } catch (\Throwable $notifyEx) {
+                Log::warning('Trade listing notification failed', ['message' => $notifyEx->getMessage()]);
             }
 
             DB::commit();
@@ -155,6 +160,7 @@ class TradeListingController extends Controller
                 ->with('success', 'Your listing has been submitted for review. You will be notified once it is approved.');
         } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Trade listing create failed', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->withInput()->with('error', 'Failed to create listing. Please try again.');
         }
     }
