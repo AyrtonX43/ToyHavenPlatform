@@ -68,12 +68,6 @@
 
 /* Map */
 #listingMap { height: 300px; border-radius: 12px; border: 1px solid #e2e8f0; min-height: 280px; }
-.map-search-wrapper { position: relative; margin-bottom: 12px; }
-#locationSearch { width: 100%; padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid #e2e8f0; }
-.search-results-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; }
-.search-result-item { padding: 0.6rem 1rem; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
-.search-result-item:hover { background: #f0f9ff; }
-.search-result-item:last-child { border-bottom: none; }
 
 /* Seller card */
 .seller-card { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: 14px; padding: 1rem 1.25rem; }
@@ -156,19 +150,12 @@
                     </div>
                 </div>
 
-                {{-- Meetup Area with working search --}}
+                {{-- Meetup Area (Center on pin only, no search) --}}
                 @if($listing->location_lat && $listing->location_lng)
                 <div class="listing-card mb-4">
                     <div class="listing-card-header"><i class="bi bi-geo-alt me-2"></i>Meetup Area</div>
                     <div class="listing-card-body">
-                        <div class="map-search-row d-flex gap-2 mb-2 flex-wrap">
-                            <div class="map-search-wrapper flex-grow-1" style="min-width: 200px;">
-                                <input type="text" id="locationSearch" class="form-control" placeholder="Search location in Philippines...">
-                                <div id="searchResultsDropdown" class="search-results-dropdown d-none"></div>
-                            </div>
-                            <button type="button" class="btn btn-outline-primary" id="btnSearch"><i class="bi bi-search me-1"></i>Search</button>
-                            <button type="button" class="btn btn-outline-secondary" id="btnCenterMap"><i class="bi bi-geo-alt-fill me-1"></i>Center on pin</button>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="btnCenterMap"><i class="bi bi-geo-alt-fill me-1"></i>Center on pin</button>
                         <div id="listingMap"></div>
                         @if($listing->location || $listing->meetup_radius_km)
                         <div class="mt-3 d-flex flex-wrap gap-3 small text-muted">
@@ -282,43 +269,8 @@ listingStartSlideshow();
     if (!mapEl) return;
     var map = L.map('listingMap', { minZoom: 9, maxZoom: 18 }).setView([lat, lng], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-    var marker = L.marker([lat, lng]).addTo(map);
+    L.marker([lat, lng]).addTo(map);
     L.circle([lat, lng], { radius: radius * 1000, color: '#0ea5e9', fillColor: '#0ea5e9', fillOpacity: 0.15 }).addTo(map);
-
-    function doSearch() {
-        var q = document.getElementById('locationSearch').value.trim();
-        var dd = document.getElementById('searchResultsDropdown');
-        if (!q) { dd.classList.add('d-none'); return; }
-        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ', Philippines') + '&countrycodes=ph&limit=5')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                dd.innerHTML = '';
-                if (!data || data.length === 0) { dd.innerHTML = '<div class="search-result-item text-muted">No results</div>'; dd.classList.remove('d-none'); return; }
-                data.forEach(function(r) {
-                    var item = document.createElement('div');
-                    item.className = 'search-result-item small';
-                    item.textContent = r.display_name;
-                    item.onclick = function() {
-                        var newLat = parseFloat(r.lat), newLng = parseFloat(r.lon);
-                        map.setView([newLat, newLng], 14);
-                        dd.classList.add('d-none');
-                        document.getElementById('locationSearch').value = r.display_name;
-                    };
-                    dd.appendChild(item);
-                });
-                dd.classList.remove('d-none');
-            });
-    }
-
-    document.getElementById('btnSearch')?.addEventListener('click', doSearch);
-    var searchInp = document.getElementById('locationSearch');
-    if (searchInp) {
-        searchInp.addEventListener('input', function() { if (searchInp.value.length >= 2) doSearch(); else document.getElementById('searchResultsDropdown').classList.add('d-none'); });
-        searchInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
-    }
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.map-search-row')) document.getElementById('searchResultsDropdown')?.classList.add('d-none');
-    });
 
     document.getElementById('btnCenterMap')?.addEventListener('click', function() { map.setView([lat, lng], 12); });
 })();
