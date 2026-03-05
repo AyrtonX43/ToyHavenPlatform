@@ -127,28 +127,36 @@
     .chat-page .btn-primary:hover { background: linear-gradient(135deg, var(--sky-600), var(--sky-700)); border-color: var(--sky-700); }
     .chat-page .btn-outline-primary { color: var(--sky-600); border-color: var(--sky-400); }
     .chat-page .btn-outline-primary:hover { background: var(--sky-50); color: var(--sky-700); border-color: var(--sky-500); }
+    .attachment-preview .attach-preview-item { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; border: 1px solid var(--sky-200); background: #fff; }
+    .attachment-preview .attach-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .attachment-preview .attach-video-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--sky-50); color: var(--sky-600); font-size: 1.5rem; }
+    .attachment-preview .attach-actions { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; gap: 0.25rem; padding: 4px; opacity: 0; transition: opacity 0.2s; }
+    .attachment-preview .attach-preview-item:hover .attach-actions { opacity: 1; }
+    .attachment-preview .btn-attach-view, .attachment-preview .btn-attach-delete { width: 28px; height: 28px; border: none; border-radius: 6px; background: rgba(255,255,255,0.9); color: #374151; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem; padding: 0; }
+    .attachment-preview .btn-attach-view:hover { background: #fff; color: var(--sky-600); }
+    .attachment-preview .btn-attach-delete:hover { background: #fee2e2; color: #dc2626; }
 </style>
 @endpush
 
 @section('content')
 <div class="container my-4 chat-page">
     <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('trading.index') }}">Trading</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('trading.conversations.index') }}">Messages</a></li>
+        <ol class="breadcrumb mb-0 small text-muted">
+            <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('trading.index') }}" class="text-decoration-none">Trading</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('trading.conversations.index') }}" class="text-decoration-none">Messages</a></li>
             <li class="breadcrumb-item active">Chat</li>
         </ol>
     </nav>
 
     @if(session('success'))
-        <div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>
+        <div class="alert alert-success border-0 mb-3">{{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+        <div class="alert alert-danger border-0 mb-3">{{ session('error') }}</div>
     @endif
     @if(session('info'))
-        <div class="alert alert-info">{{ session('info') }}</div>
+        <div class="alert alert-info border-0 mb-3">{{ session('info') }}</div>
     @endif
 
     {{-- Trade overview: User 1's listing + User 2's listing (when trade from accepted offer) --}}
@@ -383,12 +391,6 @@
                 </div>
             </div>
         </div>
-        <div>
-            @if($conversation->tradeListing)
-                <a href="{{ route('trading.listings.show', $conversation->tradeListing->id) }}" class="btn btn-sm btn-outline-primary">View listing</a>
-            @endif
-            <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary ms-1" title="Report conversation">Report</a>
-        </div>
     </div>
 
     <div class="chat-body" id="chatBody" data-last-message-id="{{ $messages->max('id') ?? 0 }}">
@@ -444,18 +446,7 @@
     <div class="chat-footer">
         <form id="messageForm" class="d-flex flex-column gap-2">
             @csrf
-            @if($myListings->isNotEmpty())
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="small text-muted">Offer your product:</span>
-                    <select id="offerProductSelect" class="form-select form-select-sm" style="max-width:220px;">
-                        <option value="">-- Select listing to offer --</option>
-                        @foreach($myListings as $listing)
-                            <option value="{{ $listing->id }}">{{ Str::limit($listing->title, 35) }}</option>
-                        @endforeach
-                    </select>
-                    <span id="selectedOfferPreview" class="small text-success" style="display:none;"></span>
-                </div>
-            @endif
+            <div id="attachmentPreview" class="attachment-preview d-flex flex-wrap gap-2 mb-2" style="display:none!important;"></div>
             <div class="d-flex gap-2 align-items-end">
                 <input type="text" name="message" id="messageInput" class="form-control rounded-3" placeholder="Type a message..." maxlength="5000" autocomplete="off">
                 <label class="btn btn-outline-secondary btn-sm mb-0 rounded-3" title="Image or video">
@@ -466,7 +457,6 @@
                     <i class="bi bi-send"></i>
                 </button>
             </div>
-            <div id="attachmentPreview" class="d-flex flex-wrap gap-2"></div>
         </form>
     </div>
     @else
@@ -565,40 +555,81 @@ window.ECHO_CONFIG = @json($echoConfig);
         }, 1500);
     });
 
+    var selectedFiles = [];
     attachmentInput.addEventListener('change', function() {
-        selectedFiles = Array.from(this.files);
-        attachmentPreview.innerHTML = '';
-        selectedFiles.forEach(function(file) {
-            var div = document.createElement('div');
-            div.className = 'd-flex align-items-center gap-1 bg-light rounded px-2 py-1 small';
-            div.innerHTML = '<span class="text-truncate" style="max-width:120px">' + escapeHtml(file.name) + '</span> <button type="button" class="btn btn-link btn-sm p-0 text-danger remove-attach" data-name="' + escapeHtml(file.name) + '">&times;</button>';
-            attachmentPreview.appendChild(div);
+        var newFiles = Array.from(this.files || []);
+        newFiles.forEach(function(file) {
+            if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                selectedFiles.push(file);
+            }
         });
+        renderAttachmentPreview();
+        this.value = '';
     });
 
-    var selectedFiles = [];
+    function renderAttachmentPreview() {
+        attachmentPreview.style.display = selectedFiles.length ? 'flex' : 'none';
+        attachmentPreview.innerHTML = '';
+        selectedFiles.forEach(function(file, idx) {
+            var div = document.createElement('div');
+            div.className = 'attach-preview-item';
+            div.dataset.index = idx;
+            var isImg = file.type.startsWith('image/');
+            var previewHtml = '';
+            if (isImg) {
+                var url = URL.createObjectURL(file);
+                div.dataset.objectUrl = url;
+                previewHtml = '<img src="' + url + '" alt="" class="attach-thumb">';
+            } else {
+                previewHtml = '<div class="attach-thumb attach-video-placeholder"><i class="bi bi-film"></i></div>';
+            }
+            div.innerHTML = previewHtml +
+                '<div class="attach-actions">' +
+                '<button type="button" class="btn-attach-view" title="View"><i class="bi bi-eye"></i></button>' +
+                '<button type="button" class="btn-attach-delete" title="Delete"><i class="bi bi-trash"></i></button>' +
+                '</div>';
+            attachmentPreview.appendChild(div);
+        });
+    }
+
     attachmentPreview.addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-attach')) {
-            var fileName = e.target.dataset.name;
-            selectedFiles = selectedFiles.filter(function(f) { return f.name !== fileName; });
-            e.target.closest('.d-flex').remove();
+        var item = e.target.closest('.attach-preview-item');
+        if (!item) return;
+        var idx = parseInt(item.dataset.index, 10);
+        if (e.target.closest('.btn-attach-view')) {
+            var img = item.querySelector('img');
+            if (img && img.src) {
+                var fs = document.getElementById('chatImageFullscreen');
+                var fsImg = document.getElementById('chatImageFullscreenImg');
+                if (fs && fsImg) {
+                    fsImg.src = img.src;
+                    fs.classList.add('show');
+                    fs.setAttribute('aria-hidden', 'false');
+                }
+            }
+        } else if (e.target.closest('.btn-attach-delete')) {
+            if (item.dataset.objectUrl) {
+                URL.revokeObjectURL(item.dataset.objectUrl);
+            }
+            selectedFiles.splice(idx, 1);
+            attachmentPreview.querySelectorAll('.attach-preview-item').forEach(function(el) {
+                if (el.dataset.objectUrl) URL.revokeObjectURL(el.dataset.objectUrl);
+            });
+            renderAttachmentPreview();
         }
     });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         var msg = input.value.trim();
-        var files = selectedFiles.length > 0 ? selectedFiles : Array.from(attachmentInput.files || []);
-        var offerSelect = document.getElementById('offerProductSelect');
-        var offeredId = (offerSelect && offerSelect.value) ? parseInt(offerSelect.value, 10) : 0;
-        if (!msg && files.length === 0 && !offeredId) return;
+        var files = selectedFiles.slice();
+        if (!msg && files.length === 0) return;
 
         sendBtn.disabled = true;
         sendBtn.classList.add('sending');
         var fd = new FormData();
         fd.append('_token', document.querySelector('meta[name="csrf-token"]').content || document.querySelector('input[name="_token"]').value);
         fd.append('message', msg);
-        if (offeredId) fd.append('offered_listing_id', offeredId);
         files.forEach(function(file) { fd.append('attachments[]', file); });
 
         fetch('{{ route("trading.conversations.messages.store", $conversation) }}', {
@@ -639,10 +670,12 @@ window.ECHO_CONFIG = @json($echoConfig);
                 requestAnimationFrame(function() { requestAnimationFrame(scrollToBottom); });
             }
             input.value = '';
-            attachmentInput.value = '';
+            attachmentPreview.querySelectorAll('.attach-preview-item[data-object-url]').forEach(function(el) {
+                if (el.dataset.objectUrl) URL.revokeObjectURL(el.dataset.objectUrl);
+            });
             attachmentPreview.innerHTML = '';
+            attachmentPreview.style.display = 'none';
             selectedFiles = [];
-            if (offerSelect) { offerSelect.value = ''; }
         })
         .catch(function(err) { 
             console.error('Failed to send message:', err);
