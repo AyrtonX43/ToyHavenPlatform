@@ -59,7 +59,7 @@ class TradeListingController extends Controller
         return view('trading.index', compact('listings', 'categories'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $listing = TradeListing::with(['user', 'images', 'category', 'product.images', 'userProduct.images', 'product.category', 'userProduct.category'])
             ->findOrFail($id);
@@ -73,7 +73,9 @@ class TradeListingController extends Controller
         $isSaved = Auth::check() && SavedTradeListing::where('user_id', Auth::id())
             ->where('trade_listing_id', $listing->id)->exists();
 
-        return view('trading.listings.show', compact('listing', 'isSaved'));
+        $fromOfferId = $request->query('from_offer');
+
+        return view('trading.listings.show', compact('listing', 'isSaved', 'fromOfferId'));
     }
 
     public function create()

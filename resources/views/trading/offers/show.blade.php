@@ -43,34 +43,56 @@
             </div>
         </div>
 
-        {{-- Offerer's offered item (clickable to view full listing) --}}
+        {{-- Offerer's offered item - full details + Accept/Deny --}}
         <div class="col-md-6">
             <div class="card h-100">
-                <div class="card-header fw-semibold">Offered by {{ $offer->offerer->name }}</div>
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <span class="fw-semibold">Offered by {{ $offer->offerer->name }}</span>
+                    @if($offer->tradeListing->user_id === auth()->id() && $offer->status === 'pending')
+                    <div class="d-flex gap-1">
+                        <form action="{{ route('trading.offers.accept', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Accept this offer? A conversation will be created.');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Accept</button>
+                        </form>
+                        <form action="{{ route('trading.offers.reject', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Deny this offer?');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Deny</button>
+                        </form>
+                    </div>
+                    @endif
+                </div>
                 <div class="card-body">
                     @php
                         $offeredListing = $offer->offeredTradeListing ?? null;
                         $offeredProduct = $offer->offeredProduct;
                         $offeredUserProduct = $offer->offeredUserProduct;
                         $hasItem = $offeredListing || $offeredProduct || $offeredUserProduct;
-                        $offeredListingUrl = $offeredListing ? route('trading.listings.show', $offeredListing->id) : null;
+                        $offeredListingUrl = $offeredListing ? (route('trading.listings.show', $offeredListing->id) . '?from_offer=' . $offer->id) : null;
                     @endphp
                     @if($hasItem)
-                    <div class="d-flex gap-3">
-                        @if($offeredListing)
-                            <a href="{{ $offeredListingUrl }}" class="text-decoration-none text-dark d-flex gap-3 align-items-start flex-grow-1" title="View full listing">
+                    @if($offeredListing)
+                    {{-- Full details of offered TradeListing --}}
+                    <div class="offered-listing-details">
+                        <div class="d-flex gap-3 mb-3">
                             @php $oThumb = $offeredListing->getThumbnailImage(); @endphp
                             @if($oThumb)
-                            <img src="{{ asset('storage/' . $oThumb->image_path) }}" alt="" class="rounded" style="width:100px;height:100px;object-fit:cover;">
+                            <img src="{{ asset('storage/' . $oThumb->image_path) }}" alt="" class="rounded" style="width:100px;height:100px;object-fit:cover;flex-shrink:0;">
                             @else
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:100px;height:100px;"><i class="bi bi-image text-muted"></i></div>
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:100px;height:100px;flex-shrink:0;"><i class="bi bi-image text-muted"></i></div>
                             @endif
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $offeredListing->title }}</h6>
-                                <span class="badge bg-info">{{ ucfirst(str_replace('_', ' ', $offeredListing->trade_type)) }}</span>
-                                <p class="small text-primary mb-0 mt-1"><i class="bi bi-box-arrow-up-right me-1"></i>View full listing</p>
+                                @if($offeredListing->brand)<p class="small text-muted mb-1">{{ $offeredListing->brand }}</p>@endif
+                                <span class="badge bg-info me-1">{{ ucfirst(str_replace('_', ' ', $offeredListing->trade_type)) }}</span>
+                                <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $offeredListing->condition ?? 'N/A')) }}</span>
+                                @if($offeredListing->cash_amount)<p class="mb-0 mt-1 fw-semibold">₱{{ number_format($offeredListing->cash_amount, 0) }}</p>@endif
                             </div>
-                            </a>
+                        </div>
+                        @if($offeredListing->description)
+                        <p class="small mb-2 text-muted">{{ Str::limit($offeredListing->description, 200) }}</p>
+                        @endif
+                        <a href="{{ $offeredListingUrl }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>View full listing</a>
+                    </div>
                         @elseif($offeredUserProduct)
                             <a href="{{ route('trading.products.show', $offeredUserProduct->id) }}" class="text-decoration-none text-dark d-flex gap-3 align-items-start flex-grow-1" title="View product details">
                             @php $oImg = $offeredUserProduct->images->first(); @endphp

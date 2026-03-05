@@ -183,6 +183,7 @@
                         @auth
                         @if(!auth()->user()->isTradeSuspended())
                             @if($listing->user_id !== auth()->id())
+                                @if(!($fromOfferId ?? false))
                                 @if($listing->canAcceptOffers())
                                     <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100">
                                         <i class="bi bi-{{ in_array($listing->trade_type, ['exchange', 'exchange_with_cash']) ? 'arrow-left-right' : 'currency-exchange' }} me-2"></i>Make an offer
@@ -199,6 +200,9 @@
                                     </form>
                                     @endif
                                 </div>
+                                @else
+                                <a href="{{ route('trading.offers.show', $fromOfferId) }}" class="btn btn-outline-primary w-100"><i class="bi bi-arrow-left me-2"></i>Back to offer</a>
+                                @endif
                             @else
                             <a href="{{ route('trading.listings.edit', $listing->id) }}" class="btn btn-outline-primary rounded-3 d-block mb-2"><i class="bi bi-pencil me-2"></i>Edit Listing</a>
                             @if($listing->status === 'active')
