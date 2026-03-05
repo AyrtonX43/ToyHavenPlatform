@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -9,12 +10,18 @@ return new class extends Migration
     public function up(): void
     {
         // Messages: support system messages (sender_id nullable, is_system flag)
-        Schema::table('messages', function (Blueprint $table) {
-            try {
+        $dbName = config('database.connections.'.config('database.default').'.database');
+        $fkExists = DB::selectOne("
+            SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'messages'
+            AND CONSTRAINT_NAME = 'messages_sender_id_foreign' AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+        ", [$dbName]);
+        if ($fkExists) {
+            Schema::table('messages', function (Blueprint $table) {
                 $table->dropForeign(['sender_id']);
-            } catch (\Throwable $e) {
-                // FK may already be dropped
-            }
+            });
+        }
+        Schema::table('messages', function (Blueprint $table) {
             $table->unsignedBigInteger('sender_id')->nullable()->change();
             if (! Schema::hasColumn('messages', 'is_system')) {
                 $table->boolean('is_system')->default(false)->after('conversation_id');
