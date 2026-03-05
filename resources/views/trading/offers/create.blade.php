@@ -38,15 +38,16 @@
                 <div class="card-body">
                     @if(in_array($listing->trade_type, ['exchange', 'exchange_with_cash']))
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Select your listing to offer <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Select from My Listings <span class="text-danger">*</span></label>
                         <select name="offer_listing_id" class="form-select form-select-lg" required>
-                            <option value="">— Choose a listing —</option>
+                            <option value="">— Choose from My Listings —</option>
                             @foreach($myListings as $my)
                             <option value="{{ $my->id }}">{{ $my->title }} ({{ ucfirst(str_replace('_', ' ', $my->trade_type ?? 'exchange')) }})</option>
                             @endforeach
                         </select>
+                        <p class="small text-muted mt-1 mb-0">Active listings from <a href="{{ route('trading.listings.my') }}">My Listings</a></p>
                         @if($myListings->isEmpty())
-                        <p class="small text-warning mt-2 mb-0">You have no active listings to offer. <a href="{{ route('trading.listings.create') }}">Create a listing</a> first.</p>
+                        <p class="small text-warning mt-2 mb-0">You have no active listings in My Listings. <a href="{{ route('trading.listings.create') }}">Create a listing</a> or check <a href="{{ route('trading.listings.my') }}">My Listings</a>.</p>
                         @endif
                     </div>
                     @if($listing->trade_type === 'exchange_with_cash')
