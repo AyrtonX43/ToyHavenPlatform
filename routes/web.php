@@ -300,7 +300,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'myListings'])->name('listings.my');
         Route::get('/listings/create', [\App\Http\Controllers\Trading\TradeListingController::class, 'create'])->name('listings.create');
         Route::post('/listings', [\App\Http\Controllers\Trading\TradeListingController::class, 'store'])->name('listings.store');
-        Route::get('/listings/{id}/history', [\App\Http\Controllers\Trading\TradeListingController::class, 'history'])->name('listings.history');
         Route::get('/listings/{id}/edit', [\App\Http\Controllers\Trading\TradeListingController::class, 'edit'])->name('listings.edit');
         Route::put('/listings/{id}', [\App\Http\Controllers\Trading\TradeListingController::class, 'update'])->name('listings.update');
         Route::post('/listings/{id}/mark-sold', [\App\Http\Controllers\Trading\TradeListingController::class, 'markAsSold'])->name('listings.mark-sold');
@@ -317,23 +316,20 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         // Trade Offers
         Route::post('/listings/{id}/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'store'])->name('offers.store');
         Route::get('/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'myOffers'])->name('offers.my');
-        Route::get('/offers/received', [\App\Http\Controllers\Trading\TradeOfferController::class, 'offersOnMyListings'])->name('offers.received');
+        Route::get('/offers/received', [\App\Http\Controllers\Trading\TradeOfferController::class, 'offersReceived'])->name('offers.received');
         Route::get('/offers/{id}', [\App\Http\Controllers\Trading\TradeOfferController::class, 'show'])->name('offers.show');
         Route::post('/offers/{id}/accept', [\App\Http\Controllers\Trading\TradeOfferController::class, 'accept'])->name('offers.accept');
         Route::post('/offers/{id}/reject', [\App\Http\Controllers\Trading\TradeOfferController::class, 'reject'])->name('offers.reject');
-        Route::post('/offers/{id}/counter', [\App\Http\Controllers\Trading\TradeOfferController::class, 'counterOffer'])->name('offers.counter');
-        Route::post('/offers/{id}/withdraw', [\App\Http\Controllers\Trading\TradeOfferController::class, 'withdraw'])->name('offers.withdraw');
-        
+
         // Trades
         Route::get('/trades', [\App\Http\Controllers\Trading\TradeController::class, 'index'])->name('trades.index');
         Route::get('/trades/{id}', [\App\Http\Controllers\Trading\TradeController::class, 'show'])->name('trades.show');
-        Route::put('/trades/{id}/shipping', [\App\Http\Controllers\Trading\TradeController::class, 'updateShipping'])->name('trades.update-shipping');
-        Route::post('/trades/{id}/shipped', [\App\Http\Controllers\Trading\TradeController::class, 'markShipped'])->name('trades.mark-shipped');
-        Route::post('/trades/{id}/received', [\App\Http\Controllers\Trading\TradeController::class, 'markReceived'])->name('trades.mark-received');
+        Route::put('/trades/{id}/schedule-meetup', [\App\Http\Controllers\Trading\TradeController::class, 'scheduleMeetup'])->name('trades.schedule-meetup');
+        Route::post('/trades/{id}/confirm-meetup', [\App\Http\Controllers\Trading\TradeController::class, 'confirmMeetup'])->name('trades.confirm-meetup');
         Route::post('/trades/{id}/complete', [\App\Http\Controllers\Trading\TradeController::class, 'complete'])->name('trades.complete');
+        Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
         Route::get('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'disputeForm'])->name('trades.dispute-form');
         Route::post('/trades/{id}/dispute', [\App\Http\Controllers\Trading\TradeController::class, 'dispute'])->name('trades.dispute');
-        Route::post('/trades/{id}/cancel', [\App\Http\Controllers\Trading\TradeController::class, 'cancel'])->name('trades.cancel');
         
         // Conversations (trade chat)
         Route::get('/conversations/unread', [\App\Http\Controllers\Trading\ConversationController::class, 'unreadCount'])->name('conversations.unread');
@@ -429,6 +425,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('show');
             Route::post('/{id}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban'])->name('ban');
             Route::post('/{id}/unban', [\App\Http\Controllers\Admin\UserController::class, 'unban'])->name('unban');
+            Route::post('/{id}/suspend-from-trade', [\App\Http\Controllers\Admin\UserController::class, 'suspendFromTrade'])->name('suspend-from-trade');
+            Route::post('/{id}/unsuspend-from-trade', [\App\Http\Controllers\Admin\UserController::class, 'unsuspendFromTrade'])->name('unsuspend-from-trade');
         });
 
         Route::prefix('moderator-actions')->name('moderator-actions.')->group(function () {
@@ -522,10 +520,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::prefix('trades')->name('trades.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TradeController::class, 'index'])->name('index');
             Route::get('/listings', [\App\Http\Controllers\Admin\TradeController::class, 'listings'])->name('listings');
-            Route::get('/listings/approved', [\App\Http\Controllers\Admin\TradeController::class, 'approvedListings'])->name('listings.approved');
-            Route::get('/listings/rejected', [\App\Http\Controllers\Admin\TradeController::class, 'rejectedListings'])->name('listings.rejected');
             Route::get('/listings/{id}', [\App\Http\Controllers\Admin\TradeController::class, 'showListing'])->name('listings.show');
-            Route::delete('/listings/{id}', [\App\Http\Controllers\Admin\TradeController::class, 'deleteListing'])->name('delete-listing');
             Route::post('/listings/{id}/approve', [\App\Http\Controllers\Admin\TradeController::class, 'approveListing'])->name('approve-listing');
             Route::post('/listings/{id}/reject', [\App\Http\Controllers\Admin\TradeController::class, 'rejectListing'])->name('reject-listing');
             Route::get('/{id}', [\App\Http\Controllers\Admin\TradeController::class, 'show'])->name('show');
@@ -627,6 +622,12 @@ Route::prefix('moderator')->middleware(['moderator'])->name('moderator.')->group
         ->name('trade-listings.approve');
     Route::post('/trade-listings/{id}/reject', [\App\Http\Controllers\Moderator\TradeListingController::class, 'rejectListing'])
         ->name('trade-listings.reject');
+
+    // Trade Users (suspend from trade)
+    Route::post('/trade-users/{id}/suspend', [\App\Http\Controllers\Moderator\TradeUserController::class, 'suspendFromTrade'])
+        ->name('trade-users.suspend');
+    Route::post('/trade-users/{id}/unsuspend', [\App\Http\Controllers\Moderator\TradeUserController::class, 'unsuspendFromTrade'])
+        ->name('trade-users.unsuspend');
 
     // Trade Disputes
     Route::get('/trade-disputes', [\App\Http\Controllers\Moderator\TradeDisputeController::class, 'index'])

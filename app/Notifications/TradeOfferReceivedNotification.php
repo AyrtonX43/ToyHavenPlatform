@@ -3,46 +3,43 @@
 namespace App\Notifications;
 
 use App\Models\TradeOffer;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TradeOfferReceivedNotification extends Notification
+class TradeOfferReceivedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
 
-    protected $offer;
+    public function __construct(
+        public TradeOffer $offer
+    ) {}
 
-    public function __construct(TradeOffer $offer)
+    public function via(object $notifiable): array
     {
-        $this->offer = $offer;
+        return ['mail', 'database'];
     }
 
-    public function via($notifiable)
+    public function toMail(object $notifiable): MailMessage
     {
-        return ['database', 'mail'];
-    }
-
-    public function toMail($notifiable)
-    {
+        $listing = $this->offer->tradeListing;
         return (new MailMessage)
-            ->subject('New Trade Offer Received')
-            ->line('You have received a new trade offer on your listing: ' . $this->offer->tradeListing->title)
-            ->action('View in Messages', route('trading.conversations.index'))
-            ->line('Thank you for using our platform!');
+            ->subject('You Received a New Trade Offer - ToyHaven')
+            ->line('You received a new offer on your listing "' . $listing->title . '".')
+            ->action('View Offer', route('trading.offers.received'));
     }
 
-    public function toArray($notifiable)
+    public function toArray(object $notifiable): array
     {
-        $offererName = $this->offer->offerer->name ?? 'Someone';
-        $listingTitle = $this->offer->tradeListing->title;
+        $listing = $this->offer->tradeListing;
         return [
             'type' => 'trade_offer_received',
+            'title' => 'New Trade Offer',
+            'message' => 'You received an offer on "' . $listing->title . '".',
             'offer_id' => $this->offer->id,
-            'listing_id' => $this->offer->trade_listing_id,
-            'listing_title' => $listingTitle,
-            'offerer_name' => $offererName,
-            'title' => 'New trade offer from ' . $offererName,
-            'message' => $offererName . ' made an offer on your listing: ' . $listingTitle,
-            'action_url' => route('trading.conversations.index'),
+            'listing_id' => $listing->id,
+            'action_url' => route('trading.offers.received'),
         ];
     }
 }

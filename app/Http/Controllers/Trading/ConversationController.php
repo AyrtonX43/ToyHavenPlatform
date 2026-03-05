@@ -448,7 +448,7 @@ class ConversationController extends Controller
             return back()->with('error', 'This conversation is locked.');
         }
         $listing = $conversation->tradeListing;
-        if (!$listing || !in_array($listing->status, ['active', 'pending_trade'])) {
+        if (!$listing || !in_array($listing->status, ['active', 'pending_deal'])) {
             return back()->with('error', 'The listing is no longer available for a deal.');
         }
 
@@ -470,27 +470,27 @@ class ConversationController extends Controller
         DB::beginTransaction();
         try {
             if (!$conversation->trade_id) {
-                // First user: create Trade and set only their side as locked
+                // First user: create Trade (cash-only from chat) and set their agree-to-meet
                 $trade = Trade::create([
                     'trade_listing_id' => $listing->id,
                     'trade_offer_id' => null,
                     'initiator_id' => $initiatorId,
-                    'initiator_seller_id' => null,
+                    'initiator_seller_id' => $listing->seller_id,
                     'participant_id' => $participantId,
                     'participant_seller_id' => null,
-                    'cash_amount' => $listing->cash_difference,
-                    'status' => 'deal_locked',
+                    'cash_amount' => $listing->cash_amount,
+                    'status' => 'pending_meetup',
                     'initiator_locked_at' => $isInitiator ? now() : null,
                     'participant_locked_at' => $isParticipant ? now() : null,
                 ]);
                 $conversation->update(['trade_id' => $trade->id]);
-                $listing->update(['status' => 'pending_trade']);
+                $listing->update(['status' => 'pending_deal']);
                 DB::commit();
                 return back()->with('success', 'You proposed the deal. Waiting for the other party to agree.');
             }
 
             $trade = $conversation->trade;
-            if (!$trade || $trade->status !== 'deal_locked') {
+            if (!$trade || !in_array($trade->status, ['pending_meetup', 'meetup_scheduled'])) {
                 DB::rollBack();
                 return back()->with('error', 'No pending deal to agree to.');
             }
@@ -505,9 +505,14 @@ class ConversationController extends Controller
                 return back()->with('info', 'You have already agreed to this deal.');
             }
 
+            $trade->refresh();
+            if ($trade->bothLocked()) {
+                $trade->update(['status' => 'meetup_scheduled']);
+            }
+
             DB::commit();
-            return back()->with('success', $trade->fresh()->bothLocked()
-                ? 'Both parties agreed. You can now confirm receipt of payment/product.'
+            return back()->with('success', $trade->bothLocked()
+                ? 'Both parties agreed to meet. Schedule your meetup and confirm when done.'
                 : 'You agreed to the deal. Waiting for the other party.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -524,64 +529,54 @@ class ConversationController extends Controller
         $this->authorize('view', $conversation);
 
         $trade = $conversation->trade;
-        if (!$trade || $trade->status !== 'deal_locked' || !$trade->bothLocked()) {
-            return back()->with('error', 'The deal must be agreed by both parties before confirming receipt.');
+        if (!$trade || !in_array($trade->status, ['meetup_scheduled', 'meetup_completed']) || !$trade->bothLocked()) {
+            return back()->with('error', 'The meetup must be agreed by both parties before confirming.');
         }
-
-        $request->validate([
-            'proof_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
-        ]);
 
         $userId = Auth::id();
         $isInitiator = $trade->initiator_id === $userId;
         $isParticipant = $trade->participant_id === $userId;
         if (!$isInitiator && !$isParticipant) {
-            return back()->with('error', 'You are not part of this deal.');
-        }
-
-        $proofPath = null;
-        if ($request->hasFile('proof_image') && $request->file('proof_image')->isValid()) {
-            $proofPath = $request->file('proof_image')->store('trade-proofs/' . $trade->id, 'public');
+            return back()->with('error', 'You are not part of this trade.');
         }
 
         DB::beginTransaction();
         try {
             if ($isInitiator) {
-                $trade->update([
-                    'initiator_received_at' => now(),
-                    'initiator_received_proof_path' => $proofPath ?? $trade->initiator_received_proof_path,
-                ]);
+                $trade->update(['initiator_confirmed_meetup_at' => now()]);
             } else {
-                $trade->update([
-                    'participant_received_at' => now(),
-                    'participant_received_proof_path' => $proofPath ?? $trade->participant_received_proof_path,
-                ]);
+                $trade->update(['participant_confirmed_meetup_at' => now()]);
             }
 
-            if ($trade->bothConfirmedReceived()) {
-                $trade->update(['status' => 'completed', 'completed_at' => now()]);
+            if ($trade->fresh()->bothConfirmedMeetup()) {
+                $trade->update(['status' => 'completed', 'completed_at' => now(), 'meetup_completed_at' => now()]);
                 $listing = $trade->tradeListing;
                 $listing->update(['status' => 'completed']);
 
-                // Mark listing owner's user product as sold (so both sides show as sold)
                 if ($listing->user_product_id) {
-                    UserProduct::where('id', $listing->user_product_id)->update(['status' => 'sold']);
+                    UserProduct::where('id', $listing->user_product_id)->update(['status' => 'traded']);
                 }
-
-                // If this deal came from an offer, mark the participant's offered item as sold too
+                if ($listing->product_id) {
+                    \App\Models\Product::where('id', $listing->product_id)->update(['trade_status' => 'traded']);
+                }
                 if ($trade->trade_offer_id) {
                     $offer = TradeOffer::find($trade->trade_offer_id);
                     if ($offer && $offer->offered_user_product_id) {
-                        UserProduct::where('id', $offer->offered_user_product_id)->update(['status' => 'sold']);
+                        UserProduct::where('id', $offer->offered_user_product_id)->update(['status' => 'traded']);
+                    }
+                    if ($offer && $offer->offered_product_id) {
+                        \App\Models\Product::where('id', $offer->offered_product_id)->update(['trade_status' => 'traded']);
                     }
                 }
 
                 $conversation->update(['is_locked' => true]);
+            } else {
+                $trade->update(['status' => 'meetup_completed']);
             }
             DB::commit();
-            return back()->with('success', $trade->bothConfirmedReceived()
+            return back()->with('success', $trade->fresh()->bothConfirmedMeetup()
                 ? 'Trade completed. This chat is now locked.'
-                : 'You confirmed receipt. Waiting for the other party.');
+                : 'You confirmed the meetup. Waiting for the other party.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::warning('Confirm received failed: ' . $e->getMessage());

@@ -23,11 +23,11 @@ class TradeListing extends Model
         'location_lat',
         'location_lng',
         'meet_up_references',
-        'image_path',
         'trade_type',
         'desired_items',
-        'cash_difference',
+        'cash_amount',
         'status',
+        'rejection_reason',
         'expires_at',
         'views_count',
         'offers_count',
@@ -35,13 +35,14 @@ class TradeListing extends Model
 
     protected $casts = [
         'desired_items' => 'array',
-        'cash_difference' => 'decimal:2',
+        'cash_amount' => 'decimal:2',
+        'location_lat' => 'decimal:7',
+        'location_lng' => 'decimal:7',
         'expires_at' => 'datetime',
         'views_count' => 'integer',
         'offers_count' => 'integer',
     ];
 
-    // Relationships
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -87,13 +88,12 @@ class TradeListing extends Model
         return $this->belongsTo(Trade::class);
     }
 
-    // Scopes
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active')
             ->where(function ($q) {
                 $q->whereNull('expires_at')
-                  ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>', now());
             });
     }
 
@@ -108,7 +108,6 @@ class TradeListing extends Model
         return $query->where('trade_type', $type);
     }
 
-    // Helper methods
     public function isExpired(): bool
     {
         return $this->expires_at && $this->expires_at->isPast();
@@ -121,11 +120,11 @@ class TradeListing extends Model
 
     public function getStatusLabel(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'active' => 'Active',
             'pending_approval' => 'Pending Review',
             'rejected' => 'Rejected',
-            'pending_trade' => 'Trade in Progress',
+            'pending_deal' => 'Deal in Progress',
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
             'expired' => 'Expired',

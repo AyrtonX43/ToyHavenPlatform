@@ -12,37 +12,30 @@ class TradeListingApprovedNotification extends Notification implements ShouldQue
 {
     use Queueable;
 
-    protected TradeListing $listing;
-
-    public function __construct(TradeListing $listing)
-    {
-        $this->listing = $listing;
-    }
+    public function __construct(
+        public TradeListing $listing
+    ) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Trade Listing Approved - ToyHaven')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Great news! Your trade listing **"' . $this->listing->title . '"** has been approved by our admin team.')
-            ->line('Your listing is now live on the marketplace and other users can view it and make trade offers.')
-            ->action('View Your Listing', route('trading.listings.show', $this->listing->id))
-            ->line('Thank you for using ToyHaven Trading!');
+            ->subject('Your Trade Listing Has Been Approved - ToyHaven')
+            ->line('Good news! Your listing "' . $this->listing->title . '" has been approved and is now live on the marketplace.')
+            ->action('View Listing', route('trading.listings.show', $this->listing->id));
     }
 
     public function toArray(object $notifiable): array
     {
         return [
             'type' => 'trade_listing_approved',
-            'title' => 'Listing approved',
+            'title' => 'Listing Approved',
+            'message' => 'Your listing "' . $this->listing->title . '" is now live.',
             'listing_id' => $this->listing->id,
-            'listing_title' => $this->listing->title,
-            'message' => 'Your listing "' . $this->listing->title . '" has been approved and is now live on the marketplace.',
             'action_url' => route('trading.listings.show', $this->listing->id),
         ];
     }

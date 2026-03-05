@@ -10,39 +10,30 @@ class TradeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Trade::with([
-            'tradeListing.user',
-            'tradeListing.seller',
-            'initiator',
-            'participant',
-        ]);
+        $query = Trade::with(['tradeListing.user', 'initiator', 'participant']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('tradeListing', function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%");
-            });
+            $query->whereHas('tradeListing', fn ($q) => $q->where('title', 'like', "%{$search}%"));
         }
 
-        $trades = $query->orderBy('created_at', 'desc')->paginate(20);
-
+        $trades = $query->orderByDesc('created_at')->paginate(20);
         return view('moderator.trades.index', compact('trades'));
     }
 
     public function show($id)
     {
         $trade = Trade::with([
-            'tradeListing.product.images',
-            'tradeListing.userProduct.images',
-            'tradeOffer.offeredProduct.images',
-            'tradeOffer.offeredUserProduct.images',
+            'tradeListing.images',
+            'tradeListing.user',
+            'tradeOffer',
             'initiator',
             'participant',
             'items',
+            'dispute.reporter',
         ])->findOrFail($id);
 
         return view('moderator.trades.show', compact('trade'));

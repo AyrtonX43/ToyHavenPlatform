@@ -12,36 +12,31 @@ class TradeListingSubmittedNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
-    protected TradeListing $listing;
-
-    public function __construct(TradeListing $listing)
-    {
-        $this->listing = $listing;
-    }
+    public function __construct(
+        public TradeListing $listing
+    ) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Trade Listing Submitted for Review - ToyHaven')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Your trade listing **"' . $this->listing->title . '"** has been submitted and will be viewed by an admin for approval before it goes live.')
-            ->line('An admin will review your listing shortly. You can view or edit it from your notifications while it is pending. Once approved, it will appear on the marketplace and other users can make offers.')
-            ->action('Open Notifications', route('notifications.index'))
-            ->line('Thank you for using ToyHaven Trading!');
+            ->subject('New Trade Listing Pending Review - ToyHaven')
+            ->line('A new trade listing "' . $this->listing->title . '" has been submitted and requires your review.')
+            ->action('Review Listings', route('admin.trades.listings', ['status' => 'pending_approval']));
     }
 
     public function toArray(object $notifiable): array
     {
         return [
             'type' => 'trade_listing_submitted',
+            'title' => 'New Trade Listing Pending Review',
+            'message' => 'Listing "' . $this->listing->title . '" awaits approval.',
             'listing_id' => $this->listing->id,
-            'listing_title' => $this->listing->title,
-            'message' => 'Your listing "' . $this->listing->title . '" has been submitted. An admin will view and review it shortly.',
+            'action_url' => route('admin.trades.listings', ['status' => 'pending_approval']),
         ];
     }
 }

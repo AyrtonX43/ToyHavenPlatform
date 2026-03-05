@@ -18,35 +18,31 @@ class Trade extends Model
         'participant_seller_id',
         'cash_amount',
         'status',
+        'meetup_location_lat',
+        'meetup_location_lng',
+        'meetup_location_address',
+        'meetup_scheduled_at',
+        'meetup_completed_at',
+        'completed_at',
         'initiator_locked_at',
         'participant_locked_at',
-        'initiator_shipping_address',
-        'participant_shipping_address',
-        'initiator_tracking_number',
-        'participant_tracking_number',
-        'initiator_shipped_at',
-        'participant_shipped_at',
-        'initiator_received_at',
-        'participant_received_at',
-        'initiator_received_proof_path',
-        'participant_received_proof_path',
-        'completed_at',
+        'initiator_confirmed_meetup_at',
+        'participant_confirmed_meetup_at',
     ];
 
     protected $casts = [
         'cash_amount' => 'decimal:2',
-        'initiator_shipping_address' => 'array',
-        'participant_shipping_address' => 'array',
+        'meetup_location_lat' => 'decimal:7',
+        'meetup_location_lng' => 'decimal:7',
+        'meetup_scheduled_at' => 'datetime',
+        'meetup_completed_at' => 'datetime',
+        'completed_at' => 'datetime',
         'initiator_locked_at' => 'datetime',
         'participant_locked_at' => 'datetime',
-        'initiator_shipped_at' => 'datetime',
-        'participant_shipped_at' => 'datetime',
-        'initiator_received_at' => 'datetime',
-        'participant_received_at' => 'datetime',
-        'completed_at' => 'datetime',
+        'initiator_confirmed_meetup_at' => 'datetime',
+        'participant_confirmed_meetup_at' => 'datetime',
     ];
 
-    // Relationships
     public function tradeListing(): BelongsTo
     {
         return $this->belongsTo(TradeListing::class);
@@ -107,48 +103,17 @@ class Trade extends Model
         return $this->hasMany(TradeReview::class);
     }
 
-    // Helper methods
-    public function canBeCompleted(): bool
-    {
-        return $this->initiator_received_at && $this->participant_received_at && $this->status !== 'completed';
-    }
-
     public function getStatusLabel(): string
     {
-        return match($this->status) {
-            'pending_shipping' => 'Pending Shipping',
-            'shipped' => 'Shipped',
-            'received' => 'Received',
+        return match ($this->status) {
+            'pending_meetup' => 'Pending Meetup',
+            'meetup_scheduled' => 'Meetup Scheduled',
+            'meetup_completed' => 'Meetup Completed',
             'completed' => 'Completed',
             'disputed' => 'Disputed',
             'cancelled' => 'Cancelled',
-            'deal_locked' => 'Deal Locked',
             default => 'Unknown',
         };
-    }
-
-    public function getProgressPercentage(): int
-    {
-        return match($this->status) {
-            'pending_shipping' => 10,
-            'shipped' => 50,
-            'received' => 90,
-            'completed' => 100,
-            'disputed' => 0,
-            'cancelled' => 0,
-            'deal_locked' => 50,
-            default => 0,
-        };
-    }
-
-    public function isDealLocked(): bool
-    {
-        return $this->status === 'deal_locked';
-    }
-
-    public function bothConfirmedReceived(): bool
-    {
-        return $this->initiator_received_at && $this->participant_received_at;
     }
 
     public function getOtherParty($userId)
@@ -172,5 +137,10 @@ class Trade extends Model
     public function bothLocked(): bool
     {
         return $this->initiator_locked_at && $this->participant_locked_at;
+    }
+
+    public function bothConfirmedMeetup(): bool
+    {
+        return $this->initiator_confirmed_meetup_at && $this->participant_confirmed_meetup_at;
     }
 }

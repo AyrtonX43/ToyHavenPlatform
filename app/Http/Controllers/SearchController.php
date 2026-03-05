@@ -75,7 +75,7 @@ class SearchController extends Controller
             });
 
         // Trade Listings
-        $trades = TradeListing::with(['product.images', 'userProduct.images'])
+        $trades = TradeListing::with(['images', 'product.images', 'userProduct.images'])
             ->where('status', 'active')
             ->where(function($query) use ($q) {
                 $query->where('title', 'like', "%{$q}%")
@@ -91,7 +91,7 @@ class SearchController extends Controller
             ->limit(3)
             ->get()
             ->map(function ($t) {
-                $img = $t->product ? $t->product->images->first() : ($t->userProduct ? $t->userProduct->images->first() : null);
+                $img = $t->images->first() ?? ($t->product ? $t->product->images->first() : null) ?? ($t->userProduct ? $t->userProduct->images->first() : null);
                 return [
                     'id' => $t->id,
                     'name' => $t->title,
@@ -192,8 +192,11 @@ class SearchController extends Controller
 
         // Search Trade Listings
         if ($type === 'all' || $type === 'trade') {
-            $tradeQuery = TradeListing::with(['user', 'seller', 'product.images', 'product.category', 'userProduct.images', 'userProduct.category'])
+            $tradeQuery = TradeListing::with(['user', 'seller', 'images', 'product.images', 'product.category', 'userProduct.images', 'userProduct.category'])
                 ->where('status', 'active')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
                 ->where(function($tradeQ) use ($query) {
                     $tradeQ->where('title', 'like', "%{$query}%")
                       ->orWhere('description', 'like', "%{$query}%")

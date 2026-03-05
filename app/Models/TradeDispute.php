@@ -45,26 +45,4 @@ class TradeDispute extends Model
     {
         return $this->belongsTo(User::class, 'resolved_by');
     }
-
-    public function getTypeLabel(): string
-    {
-        return match ($this->type) {
-            'not_received' => 'Not Received',
-            'damaged' => 'Damaged Item',
-            'wrong_item' => 'Wrong Item',
-            'other' => 'Other Issue',
-            default => 'Unknown',
-        };
-    }
-
-    public function getStatusLabel(): string
-    {
-        return match ($this->status) {
-            'open' => 'Open',
-            'investigating' => 'Under Investigation',
-            'resolved' => 'Resolved',
-            'closed' => 'Closed',
-            default => 'Unknown',
-        };
-    }
 }

@@ -12,50 +12,36 @@ class TradeListingRejectedNotification extends Notification implements ShouldQue
 {
     use Queueable;
 
-    protected TradeListing $listing;
-
-    protected ?string $reason;
-
-    public function __construct(TradeListing $listing, ?string $reason = null)
-    {
-        $this->listing = $listing;
-        $this->reason = $reason;
-    }
+    public function __construct(
+        public TradeListing $listing,
+        public ?string $reason = null
+    ) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage)
-            ->subject('Trade Listing Not Approved - ToyHaven')
-            ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Unfortunately, your trade listing **"' . $this->listing->title . '"** was not approved for the marketplace.');
-
+        $msg = (new MailMessage)
+            ->subject('Your Trade Listing Was Not Approved - ToyHaven')
+            ->line('Unfortunately, your listing "' . $this->listing->title . '" was not approved.');
         if ($this->reason) {
-            $message->line('**Reason:**')
-                ->line($this->reason);
+            $msg->line('Reason: ' . $this->reason);
         }
-
-        $message->line('You may create a new listing or contact our support team if you have questions about this decision.')
-            ->action('Create New Listing', route('trading.listings.create'))
-            ->line('Thank you for using ToyHaven Trading.');
-
-        return $message;
+        return $msg->action('View My Listings', route('trading.listings.my'));
     }
 
     public function toArray(object $notifiable): array
     {
         return [
             'type' => 'trade_listing_rejected',
-            'title' => 'Listing not approved',
+            'title' => 'Listing Rejected',
+            'message' => 'Your listing "' . $this->listing->title . '" was not approved.' . ($this->reason ? ' Reason: ' . $this->reason : ''),
             'listing_id' => $this->listing->id,
-            'listing_title' => $this->listing->title,
-            'reason' => $this->reason,
-            'message' => 'Your listing "' . $this->listing->title . '" was not approved.' . ($this->reason ? ' Reason: ' . $this->reason : '') . ' You may try again with a new listing.',
-            'action_url' => route('trading.listings.create'),
+            'rejection_reason' => $this->reason,
+            'action_url' => route('trading.listings.my'),
         ];
     }
 }

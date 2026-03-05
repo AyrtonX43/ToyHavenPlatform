@@ -26,7 +26,6 @@ class TradeItem extends Model
         'estimated_value' => 'decimal:2',
     ];
 
-    // Relationships
     public function trade(): BelongsTo
     {
         return $this->belongsTo(Trade::class);
@@ -50,13 +49,5 @@ class TradeItem extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(Seller::class);
-    }
-
-    public function getItem()
-    {
-        if ($this->product_id) {
-            return $this->product;
-        }
-        return $this->userProduct;
     }
 }

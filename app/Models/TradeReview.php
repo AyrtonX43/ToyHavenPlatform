@@ -15,6 +15,10 @@ class TradeReview extends Model
         'comment',
     ];
 
+    protected $casts = [
+        'rating' => 'integer',
+    ];
+
     public function trade(): BelongsTo
     {
         return $this->belongsTo(Trade::class);

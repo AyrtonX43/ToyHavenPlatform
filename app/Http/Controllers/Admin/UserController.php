@@ -152,4 +152,38 @@ class UserController extends Controller
         
         return back()->with('success', 'User unbanned.');
     }
+
+    public function suspendFromTrade(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot suspend your own trade access.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $user->update([
+            'trade_suspended' => true,
+            'trade_suspended_at' => now(),
+            'trade_suspension_reason' => $request->reason,
+            'trade_suspended_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'User suspended from trade.');
+    }
+
+    public function unsuspendFromTrade($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update([
+            'trade_suspended' => false,
+            'trade_suspended_at' => null,
+            'trade_suspension_reason' => null,
+            'trade_suspended_by' => null,
+        ]);
+
+        return back()->with('success', 'User trade access restored.');
+    }
 }

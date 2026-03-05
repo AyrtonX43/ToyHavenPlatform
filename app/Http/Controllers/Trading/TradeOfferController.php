@@ -5,267 +5,129 @@ namespace App\Http\Controllers\Trading;
 use App\Http\Controllers\Controller;
 use App\Models\TradeListing;
 use App\Models\TradeOffer;
-use App\Models\Product;
-use App\Models\UserProduct;
 use App\Notifications\TradeOfferAcceptedNotification;
 use App\Notifications\TradeOfferReceivedNotification;
 use App\Notifications\TradeOfferRejectedNotification;
-use App\Services\TradeService;
+use App\Services\TradeOfferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class TradeOfferController extends Controller
 {
-    protected $tradeService;
-
-    public function __construct(TradeService $tradeService)
-    {
+    public function __construct(
+        protected TradeOfferService $offerService
+    ) {
         $this->middleware('auth');
-        $this->tradeService = $tradeService;
+        $this->middleware('trade.not.suspended');
+    }
+
+    public function store(Request $request, $id)
+    {
+        $listing = TradeListing::with('user')->findOrFail($id);
+
+        if ($listing->user_id === Auth::id()) {
+            return back()->with('error', 'You cannot make an offer on your own listing.');
+        }
+        if (!$listing->canAcceptOffers()) {
+            return back()->with('error', 'This listing is not accepting offers.');
+        }
+
+        $rules = [
+            'message' => 'nullable|string|max:1000',
+            'cash_amount' => 'nullable|numeric|min:0',
+        ];
+        if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
+            $rules['offered_user_product_id'] = 'nullable|exists:user_products,id';
+            $rules['offered_product_id'] = 'nullable|exists:products,id';
+            if ($listing->trade_type === 'exchange') {
+                $rules['offered_user_product_id'] = 'required_without:offered_product_id';
+                $rules['offered_product_id'] = 'required_without:offered_user_product_id';
+            }
+        }
+        if ($listing->trade_type === 'cash') {
+            $rules['cash_amount'] = 'required|numeric|min:0';
+        }
+
+        $validated = $request->validate($rules);
+
+        $data = [
+            'offerer_id' => Auth::id(),
+            'offerer_seller_id' => Auth::user()->seller?->id,
+            'offered_product_id' => $validated['offered_product_id'] ?? null,
+            'offered_user_product_id' => $validated['offered_user_product_id'] ?? null,
+            'cash_amount' => $validated['cash_amount'] ?? null,
+            'message' => $validated['message'] ?? null,
+        ];
+
+        try {
+            $offer = $this->offerService->create((int) $id, $data);
+            $listing->user->notify(new TradeOfferReceivedNotification($offer));
+            return redirect()->route('trading.offers.my')
+                ->with('success', 'Offer sent. The seller will be notified.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function myOffers()
     {
         $offers = TradeOffer::where('offerer_id', Auth::id())
-            ->with([
-                'tradeListing.product.images',
-                'tradeListing.userProduct.images',
-                'tradeListing.user',
-                'offeredProduct.images',
-                'offeredUserProduct.images',
-            ])
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->with(['tradeListing.images', 'tradeListing.user', 'offeredProduct.images', 'offeredUserProduct.images'])
+            ->orderByDesc('created_at')
+            ->paginate(15);
 
-        return view('trading.offers.my-offers', compact('offers'));
+        return view('trading.offers.my', compact('offers'));
     }
 
-    public function offersOnMyListings()
+    public function offersReceived()
     {
         $listings = TradeListing::where('user_id', Auth::id())
-            ->with([
-                'offers.offeredProduct.images',
-                'offers.offeredUserProduct.images',
-                'offers.offerer',
-                'offers.offererSeller',
-            ])
-            ->has('offers')
-            ->get();
+            ->with(['activeOffers.offerer', 'activeOffers.offeredProduct.images', 'activeOffers.offeredUserProduct.images', 'images'])
+            ->whereHas('activeOffers')
+            ->orderByDesc('updated_at')
+            ->paginate(15);
 
         return view('trading.offers.received', compact('listings'));
     }
 
-    public function store(Request $request, $listingId)
-    {
-        $listing = TradeListing::findOrFail($listingId);
-
-        if ($listing->user_id === Auth::id()) {
-            return back()->with('error', 'You cannot make an offer on your own listing.');
-        }
-
-        if (!$listing->canAcceptOffers()) {
-            return back()->with('error', 'This listing is not accepting offers.');
-        }
-
-        $validated = $request->validate([
-            'product_type' => 'required|in:user_product,seller_product',
-            'product_id' => 'nullable|integer',
-            'user_product_id' => 'nullable|integer',
-            'cash_amount' => 'nullable|numeric|min:0',
-            'message' => 'nullable|string|max:1000',
-        ]);
-
-        // Barter listings: cash amount must be null/0
-        if ($listing->trade_type === 'barter') {
-            $validated['cash_amount'] = null;
-        }
-
-        // Validate that at least one product is provided
-        if ($validated['product_type'] === 'seller_product' && !$validated['product_id']) {
-            return back()->withInput()->with('error', 'Please select a product to offer.');
-        }
-        if ($validated['product_type'] === 'user_product' && !$validated['user_product_id']) {
-            return back()->withInput()->with('error', 'Please select a product to offer.');
-        }
-
-        DB::beginTransaction();
-        try {
-            $offererSellerId = null;
-            if (Auth::user()->isSeller() && Auth::user()->seller) {
-                $offererSellerId = Auth::user()->seller->id;
-            }
-
-            $offeredProductId = null;
-            $offeredUserProductId = null;
-
-            if ($validated['product_type'] === 'seller_product') {
-                $product = Product::where('id', $validated['product_id'])
-                    ->where(function($q) use ($offererSellerId) {
-                        if ($offererSellerId) {
-                            $q->where('seller_id', $offererSellerId);
-                        } else {
-                            $q->where('user_id', Auth::id());
-                        }
-                    })
-                    ->where('is_tradeable', true)
-                    ->where('trade_status', 'available_for_trade')
-                    ->firstOrFail();
-                $offeredProductId = $product->id;
-            } else {
-                $userProduct = UserProduct::where('user_id', Auth::id())
-                    ->where('id', $validated['user_product_id'])
-                    ->where('status', 'available')
-                    ->firstOrFail();
-                $offeredUserProductId = $userProduct->id;
-            }
-
-            $offer = TradeOffer::create([
-                'trade_listing_id' => $listing->id,
-                'offerer_id' => Auth::id(),
-                'offerer_seller_id' => $offererSellerId,
-                'offered_product_id' => $offeredProductId,
-                'offered_user_product_id' => $offeredUserProductId,
-                'cash_amount' => $validated['cash_amount'] ?? null,
-                'message' => $validated['message'] ?? null,
-                'status' => 'pending',
-            ]);
-
-            $listing->increment('offers_count');
-
-            DB::commit();
-
-            $offer->load(['offerer', 'tradeListing']);
-            $listing->user->notify(new TradeOfferReceivedNotification($offer));
-
-            return redirect()->route('trading.listings.show', $listing->id)
-                ->with('success', 'Offer submitted successfully!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withInput()->with('error', 'Failed to create offer: ' . $e->getMessage());
-        }
-    }
-
     public function show($id)
     {
-        $offer = TradeOffer::with([
-            'tradeListing.product.images',
-            'tradeListing.userProduct.images',
-            'tradeListing.user',
-            'offeredProduct.images',
-            'offeredUserProduct.images',
-            'offerer',
-            'offererSeller',
-        ])->findOrFail($id);
+        $offer = TradeOffer::with(['tradeListing.images', 'tradeListing.user', 'offerer', 'offeredProduct.images', 'offeredUserProduct.images'])
+            ->findOrFail($id);
 
-        $canManage = $offer->tradeListing->user_id === Auth::id() || $offer->offerer_id === Auth::id();
-
-        return view('trading.offers.show', compact('offer', 'canManage'));
-    }
-
-    public function accept($id)
-    {
-        $offer = TradeOffer::with('tradeListing')->findOrFail($id);
-
-        if ($offer->tradeListing->user_id !== Auth::id()) {
-            return back()->with('error', 'You can only accept offers on your own listings.');
+        if ($offer->offerer_id !== Auth::id() && $offer->tradeListing->user_id !== Auth::id()) {
+            abort(403);
         }
 
-        if (!$offer->canBeAccepted()) {
-            return back()->with('error', 'This offer cannot be accepted.');
+        return view('trading.offers.show', compact('offer'));
+    }
+
+    public function accept(Request $request, $id)
+    {
+        $offer = TradeOffer::with('tradeListing')->findOrFail($id);
+        if ($offer->tradeListing->user_id !== Auth::id()) {
+            abort(403);
         }
 
         try {
-            $trade = $this->tradeService->acceptOffer($offer->id);
-            $trade->load('conversation');
-            $offer->offerer->notify(new TradeOfferAcceptedNotification($trade));
+            $trade = $this->offerService->acceptOffer((int) $id);
+            $offer->offerer->notify(new TradeOfferAcceptedNotification($offer, $trade));
             return redirect()->route('trading.trades.show', $trade->id)
-                ->with('success', 'Offer accepted! Trade created successfully.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to accept offer: ' . $e->getMessage());
+                ->with('success', 'Offer accepted. Proceed to schedule your meetup.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
 
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
         $offer = TradeOffer::with('tradeListing')->findOrFail($id);
-
         if ($offer->tradeListing->user_id !== Auth::id()) {
-            return back()->with('error', 'You can only reject offers on your own listings.');
-        }
-
-        if ($offer->status !== 'pending') {
-            return back()->with('error', 'This offer cannot be rejected.');
+            abort(403);
         }
 
         $offer->update(['status' => 'rejected']);
-
-        $offer->load(['offerer', 'tradeListing']);
         $offer->offerer->notify(new TradeOfferRejectedNotification($offer));
-
         return back()->with('success', 'Offer rejected.');
-    }
-
-    public function counterOffer(Request $request, $id)
-    {
-        $originalOffer = TradeOffer::with('tradeListing')->findOrFail($id);
-
-        if ($originalOffer->tradeListing->user_id !== Auth::id()) {
-            return back()->with('error', 'You can only counter offer on your own listings.');
-        }
-
-        if ($originalOffer->status !== 'pending') {
-            return back()->with('error', 'This offer cannot be countered.');
-        }
-
-        $validated = $request->validate([
-            'cash_amount' => 'nullable|numeric|min:0',
-            'message' => 'nullable|string|max:1000',
-        ]);
-
-        DB::beginTransaction();
-        try {
-            $counterOffer = TradeOffer::create([
-                'trade_listing_id' => $originalOffer->trade_listing_id,
-                'offerer_id' => Auth::id(),
-                'offerer_seller_id' => $originalOffer->tradeListing->seller_id,
-                'offered_product_id' => $originalOffer->tradeListing->product_id,
-                'offered_user_product_id' => $originalOffer->tradeListing->user_product_id,
-                'cash_amount' => $validated['cash_amount'] ?? null,
-                'message' => $validated['message'] ?? null,
-                'status' => 'pending',
-                'counter_offer_id' => $originalOffer->id,
-            ]);
-
-            $originalOffer->update(['status' => 'counter_offered']);
-
-            DB::commit();
-
-            // TODO: Send notification
-
-            return back()->with('success', 'Counter offer created successfully!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to create counter offer: ' . $e->getMessage());
-        }
-    }
-
-    public function withdraw($id)
-    {
-        $offer = TradeOffer::findOrFail($id);
-
-        if ($offer->offerer_id !== Auth::id()) {
-            return back()->with('error', 'You can only withdraw your own offers.');
-        }
-
-        if (!$offer->canBeWithdrawn()) {
-            return back()->with('error', 'This offer cannot be withdrawn.');
-        }
-
-        $offer->update(['status' => 'withdrawn']);
-
-        // TODO: Send notification
-
-        return back()->with('success', 'Offer withdrawn successfully.');
     }
 }

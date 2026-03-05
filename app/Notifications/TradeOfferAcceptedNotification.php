@@ -3,49 +3,43 @@
 namespace App\Notifications;
 
 use App\Models\Trade;
+use App\Models\TradeOffer;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TradeOfferAcceptedNotification extends Notification
+class TradeOfferAcceptedNotification extends Notification implements ShouldQueue
 {
-    protected $trade;
+    use Queueable;
 
-    public function __construct(Trade $trade)
+    public function __construct(
+        public TradeOffer $offer,
+        public Trade $trade
+    ) {}
+
+    public function via(object $notifiable): array
     {
-        $this->trade = $trade;
+        return ['mail', 'database'];
     }
 
-    public function via($notifiable)
+    public function toMail(object $notifiable): MailMessage
     {
-        return ['database', 'mail'];
-    }
-
-    public function toMail($notifiable)
-    {
-        $chatUrl = $this->trade->conversation
-            ? route('trading.conversations.show', $this->trade->conversation)
-            : route('trading.conversations.index');
         return (new MailMessage)
-            ->subject('Your Trade Offer Was Accepted!')
-            ->line('Great news! Your trade offer has been accepted.')
-            ->line('Listing: ' . $this->trade->tradeListing->title)
-            ->line('Both of you must proceed to chat to finalize the deal, then lock the offer to proceed with shipping.')
-            ->action('Go to Trade Chat', $chatUrl)
-            ->line('Thank you for using ToyHaven Trading!');
+            ->subject('Your Trade Offer Was Accepted - ToyHaven')
+            ->line('Great news! Your offer on "' . $this->offer->tradeListing->title . '" was accepted.')
+            ->action('View Trade', route('trading.trades.show', $this->trade->id));
     }
 
-    public function toArray($notifiable)
+    public function toArray(object $notifiable): array
     {
-        $chatUrl = $this->trade->conversation
-            ? route('trading.conversations.show', $this->trade->conversation)
-            : route('trading.conversations.index');
         return [
             'type' => 'trade_offer_accepted',
+            'title' => 'Offer Accepted',
+            'message' => 'Your offer on "' . $this->offer->tradeListing->title . '" was accepted. Schedule your meetup.',
+            'offer_id' => $this->offer->id,
             'trade_id' => $this->trade->id,
-            'listing_title' => $this->trade->tradeListing->title,
-            'title' => 'Your trade offer was accepted!',
-            'message' => 'Your offer on "' . $this->trade->tradeListing->title . '" was accepted. Proceed to chat to finalize the deal, then lock to start shipping.',
-            'action_url' => $chatUrl,
+            'action_url' => route('trading.trades.show', $this->trade->id),
         ];
     }
 }

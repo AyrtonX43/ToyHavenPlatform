@@ -39,6 +39,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'related_report_id',
         'last_seen_at',
         'moderator_permissions',
+        'trade_suspended',
+        'trade_suspended_at',
+        'trade_suspension_reason',
+        'trade_suspended_by',
     ];
 
     /**
@@ -65,6 +69,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_seen_at' => 'datetime',
             'password' => 'hashed',
             'is_banned' => 'boolean',
+            'trade_suspended' => 'boolean',
+            'trade_suspended_at' => 'datetime',
         ];
     }
 
@@ -254,6 +260,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function canModerate(): bool
     {
         return $this->isModerator() || $this->isAdmin();
+    }
+
+    public function isTradeSuspended(): bool
+    {
+        return (bool) $this->trade_suspended;
+    }
+
+    public function tradeSuspendedBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'trade_suspended_by');
     }
 
     /**

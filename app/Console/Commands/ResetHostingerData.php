@@ -8,11 +8,12 @@ use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\Trade;
+use App\Models\TradeDispute;
 use App\Models\TradeItem;
 use App\Models\TradeListing;
 use App\Models\TradeListingImage;
 use App\Models\TradeOffer;
-use App\Models\Trade;
 use App\Models\UserProduct;
 use App\Models\UserProductImage;
 use Illuminate\Console\Command;
@@ -113,22 +114,30 @@ class ResetHostingerData extends Command
     {
         $this->info('Deleting trade lists and user products...');
 
-        // 1. Delete trade items (must be before trades)
+        // 1. Delete trade reviews (FK trade_id)
+        \App\Models\TradeReview::query()->delete();
+
+        // 2. Delete trade disputes (FK trade_id)
+        $disputesCount = TradeDispute::query()->count();
+        TradeDispute::query()->delete();
+        $this->line("  Deleted {$disputesCount} trade disputes.");
+
+        // 3. Delete trade items (FK trade_id)
         $tradeItemsCount = TradeItem::query()->count();
         TradeItem::query()->delete();
         $this->line("  Deleted {$tradeItemsCount} trade items.");
 
-        // 2. Delete trades
+        // 3. Delete trades
         $tradesCount = Trade::query()->count();
         Trade::query()->delete();
         $this->line("  Deleted {$tradesCount} trades.");
 
-        // 3. Delete trade offers
+        // 5. Delete trade offers
         $offersCount = TradeOffer::query()->count();
         TradeOffer::query()->delete();
         $this->line("  Deleted {$offersCount} trade offers.");
 
-        // 4. Delete trade listing images and their files
+        // 6. Delete trade listing images and their files
         $tliImages = TradeListingImage::with('tradeListing')->get();
         foreach ($tliImages as $img) {
             if (!$skipStorage && $img->image_path && Storage::disk('public')->exists($img->image_path)) {
@@ -138,14 +147,6 @@ class ResetHostingerData extends Command
         $tliCount = TradeListingImage::query()->count();
         TradeListingImage::query()->delete();
         $this->line("  Deleted {$tliCount} trade listing images.");
-
-        // 5. Delete trade listing image_path files (single image column)
-        $listings = TradeListing::whereNotNull('image_path')->get();
-        foreach ($listings as $l) {
-            if (!$skipStorage && $l->image_path && Storage::disk('public')->exists($l->image_path)) {
-                Storage::disk('public')->delete($l->image_path);
-            }
-        }
 
         // 6. Delete trade listings
         $listingsCount = TradeListing::query()->count();

@@ -217,6 +217,23 @@
                 @endif
                 
                 <hr>
+                <h6 class="mb-2">Trade Access</h6>
+                @if($user->isTradeSuspended())
+                    <div class="alert alert-warning small mb-2">
+                        <strong>Suspended from trade</strong><br>
+                        @if($user->trade_suspension_reason){{ $user->trade_suspension_reason }}<br>@endif
+                        <small>{{ $user->trade_suspended_at?->format('M d, Y') }}</small>
+                    </div>
+                    <form action="{{ route('admin.users.unsuspend-from-trade', $user->id) }}" method="POST" class="mb-2">
+                        @csrf
+                        <button type="submit" class="btn btn-success btn-sm w-100">Restore Trade Access</button>
+                    </form>
+                @else
+                    <button type="button" class="btn btn-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#suspendTradeModal">
+                        <i class="bi bi-pause-circle me-1"></i> Suspend from Trade
+                    </button>
+                @endif
+                <hr>
                 <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary w-100">Back to Users</a>
             </div>
         </div>
@@ -257,6 +274,32 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">Ban User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Suspend from Trade Modal -->
+<div class="modal fade" id="suspendTradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('admin.users.suspend-from-trade', $user->id) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Suspend from Trade</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This user will not be able to create listings, make offers, or participate in new trades.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="3" required placeholder="Reason for suspension..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Suspend from Trade</button>
                 </div>
             </form>
         </div>

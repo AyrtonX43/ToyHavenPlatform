@@ -13,12 +13,11 @@ class TradeListingController extends Controller
 {
     public function index(Request $request)
     {
-        $query = TradeListing::with(['user', 'seller', 'product', 'userProduct', 'images', 'category']);
+        $query = TradeListing::with(['user', 'images', 'category']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -27,8 +26,7 @@ class TradeListingController extends Controller
             });
         }
 
-        $listings = $query->orderBy('created_at', 'desc')->paginate(20);
-
+        $listings = $query->orderByDesc('created_at')->paginate(20);
         return view('moderator.trade-listings.index', compact('listings'));
     }
 
@@ -36,14 +34,9 @@ class TradeListingController extends Controller
     {
         $listing = TradeListing::with([
             'user',
-            'product.images',
-            'product.category',
-            'userProduct.images',
-            'userProduct.category',
             'images',
             'category',
             'activeOffers.offerer',
-            'activeOffers.offererSeller',
             'activeOffers.offeredProduct',
             'activeOffers.offeredUserProduct',
         ])->findOrFail($id);
@@ -53,7 +46,7 @@ class TradeListingController extends Controller
 
     public function approveListing($id)
     {
-        $listing = TradeListing::findOrFail($id);
+        $listing = TradeListing::with('user')->findOrFail($id);
 
         if ($listing->status !== 'pending_approval') {
             return back()->with('error', 'Only listings pending review can be approved.');
@@ -62,15 +55,12 @@ class TradeListingController extends Controller
         $listing->update(['status' => 'active']);
         $listing->user->notify(new TradeListingApprovedNotification($listing));
 
-        ModeratorAction::log(
-            auth()->id(),
-            'trade_listing_approved',
-            $listing,
-            'Trade listing approved by moderator',
-            ['listing_id' => $listing->id, 'title' => $listing->title]
-        );
+        ModeratorAction::log(auth()->id(), 'trade_listing_approved', $listing, 'Trade listing approved', [
+            'listing_id' => $listing->id,
+            'listing_title' => $listing->title,
+        ]);
 
-        return back()->with('success', 'Listing approved. It is now visible on the marketplace. The user has been notified.');
+        return back()->with('success', 'Listing approved. User has been notified.');
     }
 
     public function rejectListing(Request $request, $id)
@@ -81,19 +71,15 @@ class TradeListingController extends Controller
             return back()->with('error', 'Only listings pending review can be rejected.');
         }
 
-        $reason = $request->input('rejection_reason');
-
-        $listing->update(['status' => 'rejected']);
+        $reason = $request->input('rejection_reason', '');
+        $listing->update(['status' => 'rejected', 'rejection_reason' => $reason]);
         $listing->user->notify(new TradeListingRejectedNotification($listing, $reason));
 
-        ModeratorAction::log(
-            auth()->id(),
-            'trade_listing_rejected',
-            $listing,
-            'Trade listing rejected by moderator',
-            ['listing_id' => $listing->id, 'title' => $listing->title, 'reason' => $reason]
-        );
+        ModeratorAction::log(auth()->id(), 'trade_listing_rejected', $listing, 'Trade listing rejected', [
+            'listing_id' => $listing->id,
+            'reason' => $reason,
+        ]);
 
-        return back()->with('success', 'Listing rejected. The user has been notified.');
+        return back()->with('success', 'Listing rejected. User has been notified.');
     }
 }
