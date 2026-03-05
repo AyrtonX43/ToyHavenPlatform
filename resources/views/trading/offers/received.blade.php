@@ -48,11 +48,14 @@
                                     $oup = $offer->offeredUserProduct ?? null;
                                 @endphp
                                 @if($ol)
+                                    <a href="{{ route('trading.listings.show', $ol->id) }}" class="text-decoration-none text-dark d-inline-flex align-items-center gap-2" title="View full listing">
                                     @php $oThumb = $ol->getThumbnailImage(); @endphp
                                     @if($oThumb)
                                     <img src="{{ asset('storage/' . $oThumb->image_path) }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;">
                                     @endif
                                     <span class="small">{{ $ol->title }}</span>
+                                    <i class="bi bi-box-arrow-up-right small"></i>
+                                    </a>
                                 @elseif($oup)
                                     @php $oImg = $oup->images->first(); @endphp
                                     @if($oImg)
@@ -81,9 +84,9 @@
                             @csrf
                             <button type="submit" class="btn btn-sm btn-success">Accept</button>
                         </form>
-                        <form action="{{ route('trading.offers.reject', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Reject this offer?');">
+                        <form action="{{ route('trading.offers.reject', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Deny this offer?');">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Deny</button>
                         </form>
                     </div>
                 </div>

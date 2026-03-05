@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        {{-- Offerer's offered item --}}
+        {{-- Offerer's offered item (clickable to view full listing) --}}
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header fw-semibold">Offered by {{ $offer->offerer->name }}</div>
@@ -53,40 +53,59 @@
                         $offeredProduct = $offer->offeredProduct;
                         $offeredUserProduct = $offer->offeredUserProduct;
                         $hasItem = $offeredListing || $offeredProduct || $offeredUserProduct;
+                        $offeredListingUrl = $offeredListing ? route('trading.listings.show', $offeredListing->id) : null;
                     @endphp
                     @if($hasItem)
                     <div class="d-flex gap-3">
                         @if($offeredListing)
+                            <a href="{{ $offeredListingUrl }}" class="text-decoration-none text-dark d-flex gap-3 align-items-start flex-grow-1" title="View full listing">
                             @php $oThumb = $offeredListing->getThumbnailImage(); @endphp
                             @if($oThumb)
                             <img src="{{ asset('storage/' . $oThumb->image_path) }}" alt="" class="rounded" style="width:100px;height:100px;object-fit:cover;">
                             @else
                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:100px;height:100px;"><i class="bi bi-image text-muted"></i></div>
                             @endif
-                            <div>
+                            <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $offeredListing->title }}</h6>
                                 <span class="badge bg-info">{{ ucfirst(str_replace('_', ' ', $offeredListing->trade_type)) }}</span>
+                                <p class="small text-primary mb-0 mt-1"><i class="bi bi-box-arrow-up-right me-1"></i>View full listing</p>
                             </div>
+                            </a>
                         @elseif($offeredUserProduct)
+                            <a href="{{ route('trading.products.show', $offeredUserProduct->id) }}" class="text-decoration-none text-dark d-flex gap-3 align-items-start flex-grow-1" title="View product details">
                             @php $oImg = $offeredUserProduct->images->first(); @endphp
                             @if($oImg)
                             <img src="{{ asset('storage/' . $oImg->image_path) }}" alt="" class="rounded" style="width:100px;height:100px;object-fit:cover;">
                             @else
                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:100px;height:100px;"><i class="bi bi-image text-muted"></i></div>
                             @endif
-                            <div>
+                            <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $offeredUserProduct->title ?? 'Item' }}</h6>
+                                <p class="small text-primary mb-0"><i class="bi bi-box-arrow-up-right me-1"></i>View details</p>
                             </div>
+                            </a>
                         @elseif($offeredProduct)
+                            @php
+                                $productShowRoute = \Illuminate\Support\Facades\Route::has('products.show') ? route('products.show', $offeredProduct->slug ?? $offeredProduct->id) : null;
+                            @endphp
+                            @if($productShowRoute)
+                            <a href="{{ $productShowRoute }}" class="text-decoration-none text-dark d-flex gap-3 align-items-start flex-grow-1" title="View product details">
+                            @endif
                             @php $oImg = $offeredProduct->images->first(); @endphp
                             @if($oImg)
                             <img src="{{ asset('storage/' . $oImg->image_path) }}" alt="" class="rounded" style="width:100px;height:100px;object-fit:cover;">
                             @else
                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:100px;height:100px;"><i class="bi bi-image text-muted"></i></div>
                             @endif
-                            <div>
+                            <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ $offeredProduct->name ?? 'Item' }}</h6>
+                                @if($productShowRoute ?? false)
+                                <p class="small text-primary mb-0"><i class="bi bi-box-arrow-up-right me-1"></i>View details</p>
+                                @endif
                             </div>
+                            @if($productShowRoute ?? false)
+                            </a>
+                            @endif
                         @endif
                         @if($offer->cash_amount)
                         <div class="ms-auto align-self-center">
@@ -118,11 +137,11 @@
             <div class="d-flex gap-2">
                 <form action="{{ route('trading.offers.accept', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Accept this offer? A conversation will be created.');">
                     @csrf
-                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Accept</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Accept Offer</button>
                 </form>
-                <form action="{{ route('trading.offers.reject', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Reject this offer?');">
+                <form action="{{ route('trading.offers.reject', $offer->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Deny this offer?');">
                     @csrf
-                    <button type="submit" class="btn btn-outline-danger">Reject</button>
+                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-x-lg me-1"></i>Deny</button>
                 </form>
             </div>
             @endif
