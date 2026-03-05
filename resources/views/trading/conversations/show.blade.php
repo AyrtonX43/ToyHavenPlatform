@@ -93,6 +93,7 @@
     .msg-offered-product:hover { background: rgba(0,0,0,0.08) !important; }
     .offer-product-btn { font-size: 0.85rem; }
     .msg-unsent { background: rgba(0,0,0,0.06) !important; color: #64748b; }
+    .msg-bubble.msg-system { margin: 0.5rem auto; max-width: 85%; background: #e0f2fe; color: #0c4a6e; border-radius: 12px; }
     .msg-unsent.mine { background: rgba(14, 165, 233, 0.15) !important; color: #64748b; }
     .msg-unsent-text { font-size: 0.85rem; font-style: italic; }
     .msg-unsend-btn { opacity: 0.6; text-decoration: none !important; }
@@ -147,23 +148,50 @@
         </a>
     @endif
 
-    {{-- Deal actions: Lock deal (both must agree) / Confirm received / Status --}}
+    {{-- Post-accept flow: Listing received, Cancel, Report (for trades from accepted offers) --}}
     @php
         $trade = $conversation->trade;
-        $userHasLocked = $trade && (
-            ($trade->isInitiator(auth()->id()) && $trade->initiator_locked_at) ||
-            ($trade->isParticipant(auth()->id()) && $trade->participant_locked_at)
-        );
+        $isOfferAcceptedTrade = $trade && $trade->trade_offer_id && in_array($trade->status, ['pending_meetup', 'meetup_scheduled', 'meetup_completed']);
         $userHasReceived = $trade && (
             ($trade->isInitiator(auth()->id()) && $trade->initiator_received_at) ||
             ($trade->isParticipant(auth()->id()) && $trade->participant_received_at)
+        );
+        $showPostAcceptActions = $isOfferAcceptedTrade && !in_array($trade->status, ['completed', 'cancelled']) && !$conversation->is_locked;
+    @endphp
+    @if($showPostAcceptActions)
+        <div class="deal-actions mb-2">
+            <div class="fw-semibold mb-2"><i class="bi bi-hand-thumbs-up me-1"></i> Trade actions</div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                @if(!$userHasReceived)
+                    <form method="POST" action="{{ route('trading.conversations.mark-received', $conversation) }}" class="d-inline" onsubmit="return confirm('Mark the listing as received?');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle me-1"></i>Listing received</button>
+                    </form>
+                @else
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>You marked listing received</span>
+                @endif
+                <form method="POST" action="{{ route('trading.conversations.cancel-trade', $conversation) }}" class="d-inline" onsubmit="return confirm('Cancel this trade? The chat will end and the trade will be saved to Trade History as rejected. You can report with feedback for admin review.');">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Cancel transaction</button>
+                </form>
+                <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-flag me-1"></i>Report user</a>
+            </div>
+        </div>
+    @endif
+
+    {{-- Deal actions: Lock deal (both must agree) / Confirm received / Status -- for direct chat deals without offer --}}
+    @php
+        $userHasLocked = $trade && (
+            ($trade->isInitiator(auth()->id()) && $trade->initiator_locked_at) ||
+            ($trade->isParticipant(auth()->id()) && $trade->participant_locked_at)
         );
         $canProposeDeal = !$trade && $conversation->tradeListing && $conversation->tradeListing->status === 'active' && !$conversation->is_locked;
         $canAgreeToDeal = $trade && $trade->status === 'deal_locked' && !$userHasLocked;
         $bothLocked = $trade && $trade->bothLocked();
         $showConfirmReceived = $trade && $trade->status === 'deal_locked' && $bothLocked && !$userHasReceived;
+        $showDealLockSection = $canProposeDeal || $canAgreeToDeal || ($trade && !$isOfferAcceptedTrade);
     @endphp
-    @if($canProposeDeal || $canAgreeToDeal || $trade)
+    @if($showDealLockSection)
         <div class="deal-actions mb-2">
             @if($canProposeDeal)
                 <form method="POST" action="{{ route('trading.conversations.lock-deal', $conversation) }}" class="d-inline" onsubmit="return confirm('Propose locking the deal? The other party must also agree before the deal is locked.');">
@@ -183,19 +211,14 @@
                 @elseif(!in_array($trade->status, ['completed', 'cancelled']))
                     @php
                         $userRequestedCancel = ($trade->isInitiator(auth()->id()) && $trade->initiator_cancel_requested_at) || ($trade->isParticipant(auth()->id()) && $trade->participant_cancel_requested_at);
-                        $cancelMsg = '';
-                        if (!$trade->bothRequestedCancel()) {
-                            $cancelMsg = $userRequestedCancel
-                                ? ('You requested to cancel. Waiting for ' . ($other->name ?? 'the other party') . '.')
-                                : (($trade->initiator_cancel_requested_at || $trade->participant_cancel_requested_at) ? ($other->name ?? 'The other party') . ' requested to cancel. Waiting for your confirmation.' : '');
-                        }
                     @endphp
-                    <span id="cancelStatusBadge" class="badge bg-warning text-dark me-2" @if(empty($cancelMsg)) style="display:none;" @endif><i class="bi bi-hourglass me-1"></i> <span id="cancelStatusText">@if(!empty($cancelMsg)){{ $cancelMsg }}@endif</span></span>
+                    @if($userRequestedCancel && !$trade->bothRequestedCancel())
+                        <span class="badge bg-warning text-dark me-2"><i class="bi bi-hourglass me-1"></i> Waiting for the other party to confirm cancel.</span>
+                    @endif
                     <form method="POST" action="{{ route('trading.trades.cancel', $trade->id) }}" class="d-inline" onsubmit="return confirm('Request to cancel this trade? The other party must also confirm for the trade to be cancelled.');">
                         @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>{{ $userRequestedCancel ? 'Confirm cancel' : 'Request cancel' }}</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>{{ $userRequestedCancel ? 'Confirm cancel again' : 'Request cancel' }}</button>
                     </form>
-                    <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-flag me-1"></i>Report user</a>
                 @elseif($trade->status === 'deal_locked')
                     @if($userHasLocked && !$bothLocked)
                         <span class="badge bg-warning text-dark me-2">You agreed. Waiting for the other party to agree.</span>
@@ -221,16 +244,16 @@
         </div>
     @endif
 
-    {{-- Trade photo proof / Received listing product (required from both before completion) --}}
+    {{-- Trade photo proof (required from both before completion) --}}
     @php
         $tradeForProof = $conversation->trade;
         $userHasSubmittedProof = $tradeForProof && $tradeForProof->proofs->where('user_id', auth()->id())->isNotEmpty();
         $otherHasSubmittedProof = $tradeForProof && $tradeForProof->proofs->where('user_id', '!=', auth()->id())->isNotEmpty();
-        $showProofSection = $tradeForProof && !in_array($tradeForProof->status, ['completed', 'cancelled']);
+        $showProofSection = $tradeForProof && !in_array($tradeForProof->status, ['completed', 'cancelled']) && !$isOfferAcceptedTrade;
     @endphp
     @if($showProofSection)
         <div class="deal-actions mb-2">
-            <div class="fw-semibold mb-2"><i class="bi bi-box-seam me-1"></i> Received listing product (upload 1–2 proof images)</div>
+            <div class="fw-semibold mb-2"><i class="bi bi-camera me-1"></i> Trade photo proof (required)</div>
             @if($userHasSubmittedProof)
                 <p class="mb-2 text-success small"><i class="bi bi-check-circle me-1"></i> You have submitted your trade proof.</p>
                 @if(!$otherHasSubmittedProof)
@@ -240,10 +263,10 @@
                 <form method="POST" action="{{ route('trading.conversations.submit-trade-proof', $conversation) }}" enctype="multipart/form-data" class="d-flex flex-wrap align-items-end gap-2">
                     @csrf
                     <div>
-                        <label class="form-label small mb-1">Upload 1–2 photos of the item received / payment proof</label>
-                        <input type="file" name="proof_images[]" accept="image/jpeg,image/png,image/jpg,image/webp" class="form-control form-control-sm" style="max-width: 260px;" multiple required>
+                        <label class="form-label small mb-1">Upload a photo of the item received / payment proof</label>
+                        <input type="file" name="proof_image" accept="image/jpeg,image/png,image/jpg,image/webp" class="form-control form-control-sm" style="max-width: 260px;" required>
                     </div>
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-upload me-1"></i>Received listing product</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-upload me-1"></i>Submit proof</button>
                 </form>
             @endif
         </div>
@@ -783,37 +806,6 @@ window.ECHO_CONFIG = @json($echoConfig);
     }
     var typingPollInterval = setInterval(pollTypingStatus, 800);
     setTimeout(pollTypingStatus, 200);
-
-    // Poll trade cancel status for real-time updates
-    var cancelStatusUrl = '{{ route("trading.conversations.trade-cancel-status", $conversation) }}';
-    function pollCancelStatus() {
-        if (document.hidden) return;
-        fetch(cancelStatusUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function(r) { return r.ok ? r.json() : null; })
-            .then(function(data) {
-                if (!data) return;
-                var badge = document.getElementById('cancelStatusBadge');
-                var text = document.getElementById('cancelStatusText');
-                if (!badge || !text) return;
-                if (data.cancelled) {
-                    badge.style.display = 'none';
-                    window.location.reload();
-                    return;
-                }
-                if (data.active) {
-                    var msg = data.they_requested
-                        ? (data.requester_name || 'The other party') + ' requested to cancel. Waiting for your confirmation.'
-                        : 'You requested to cancel. Waiting for ' + (data.waiter_name || 'the other party') + '.';
-                    text.textContent = msg;
-                    badge.style.display = 'inline-flex';
-                } else {
-                    badge.style.display = 'none';
-                }
-            })
-            .catch(function() {});
-    }
-    var cancelPollInterval = setInterval(pollCancelStatus, 1500);
-    setTimeout(pollCancelStatus, 300);
     
     // Update presence when user interacts
     chatBody.addEventListener('scroll', function() { updateMyPresence(); }, { passive: true });
@@ -828,7 +820,6 @@ window.ECHO_CONFIG = @json($echoConfig);
         clearInterval(pollInterval);
         clearInterval(statusPollInterval);
         clearInterval(typingPollInterval);
-        if (typeof cancelPollInterval !== 'undefined') clearInterval(cancelPollInterval);
     });
     
     // Initial scroll to bottom after page load

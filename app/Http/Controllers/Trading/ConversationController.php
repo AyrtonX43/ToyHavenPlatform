@@ -10,7 +10,6 @@ use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\ConversationReport;
-use App\Notifications\TradeCompletedAdminNotification;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\Trade;
@@ -91,6 +90,22 @@ class ConversationController extends Controller
 
         $conversation->load(['user1', 'user2', 'trade.proofs', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
         $messages = $conversation->messages->sortBy('id')->values();
+
+        // When offerer (participant) first opens conversation: add system welcome message
+        $trade = $conversation->trade;
+        if ($trade && !$conversation->welcome_message_sent && $trade->participant_id === Auth::id()) {
+            DB::transaction(function () use ($conversation, $trade) {
+                $conversation->messages()->create([
+                    'sender_id' => null,
+                    'is_system' => true,
+                    'system_type' => 'welcome',
+                    'message' => 'You can now start the conversation. Use the buttons below to mark listing received, cancel, or report.',
+                ]);
+                $conversation->update(['welcome_message_sent' => true, 'last_message_at' => now()]);
+            });
+            $conversation->refresh();
+            $messages = $conversation->messages()->with(['sender', 'attachments', 'tradeListing.images'])->orderBy('id')->get();
+        }
 
         // Mark others' messages as delivered (if not already) and seen when opening the chat
         $otherMessageIds = Message::where('conversation_id', $conversation->id)
@@ -394,47 +409,12 @@ class ConversationController extends Controller
         ]);
     }
 
-    /**
-     * Get trade cancel request status for real-time polling (who requested, who is waiting).
-     */
-    public function tradeCancelStatus(Conversation $conversation)
-    {
-        $this->authorize('view', $conversation);
-        $trade = $conversation->trade;
-        if (!$trade || in_array($trade->status, ['completed', 'cancelled'])) {
-            return response()->json(['active' => false]);
-        }
-        if ($trade->bothRequestedCancel()) {
-            return response()->json(['active' => false, 'cancelled' => true]);
-        }
-        $initiatorRequested = (bool) $trade->initiator_cancel_requested_at;
-        $participantRequested = (bool) $trade->participant_cancel_requested_at;
-        $requesterName = null;
-        $waiterName = null;
-        if ($initiatorRequested) {
-            $requesterName = $trade->initiator?->name ?? 'User 1';
-            $waiterName = $trade->participant?->name ?? 'User 2';
-        } elseif ($participantRequested) {
-            $requesterName = $trade->participant?->name ?? 'User 2';
-            $waiterName = $trade->initiator?->name ?? 'User 1';
-        }
-        return response()->json([
-            'active' => $initiatorRequested || $participantRequested,
-            'requester_name' => $requesterName,
-            'waiter_name' => $waiterName,
-            'i_requested' => $trade->isInitiator(Auth::id()) && $initiatorRequested,
-            'they_requested' => ($trade->isParticipant(Auth::id()) && $initiatorRequested) || ($trade->isInitiator(Auth::id()) && $participantRequested),
-        ]);
-    }
-
     public function report(Request $request, Conversation $conversation)
     {
         $this->authorize('view', $conversation);
 
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:2000'],
-            'proof_images' => ['nullable', 'array'],
-            'proof_images.*' => ['image', 'max:5120'],
         ]);
 
         $messages = $conversation->messages()
@@ -457,23 +437,17 @@ class ConversationController extends Controller
             ];
         })->toArray();
 
-        $proofPaths = [];
-        if (!empty($validated['proof_images'])) {
-            foreach ($validated['proof_images'] as $file) {
-                $proofPaths[] = $file->store('report_proofs/' . $conversation->id, 'public');
-            }
-        }
-
+        $other = $conversation->getOtherUser(Auth::id());
         ConversationReport::create([
             'conversation_id' => $conversation->id,
             'reporter_id' => Auth::id(),
+            'reported_user_id' => $other?->id,
             'reason' => $validated['reason'],
             'snapshot' => $snapshot,
-            'proof_images' => $proofPaths,
             'status' => 'pending',
         ]);
 
-        return back()->with('success', 'Conversation reported. Admin will review with your proof images.');
+        return back()->with('success', 'Conversation reported. Admin will review the snapshot.');
     }
 
     public function reportForm(Conversation $conversation)
@@ -656,21 +630,16 @@ class ConversationController extends Controller
         }
 
         $request->validate([
-            'proof_images' => ['required', 'array', 'min:1', 'max:2'],
-            'proof_images.*' => ['required', 'image', 'max:5120'],
+            'proof_image' => ['required', 'image', 'max:5120'],
         ]);
 
         DB::beginTransaction();
         try {
-            $paths = [];
-            foreach ($request->file('proof_images') as $file) {
-                $paths[] = $file->store('trade_proofs/' . $trade->id, 'public');
-            }
+            $path = $request->file('proof_image')->store('trade_proofs/' . $trade->id, 'public');
             TradeProof::create([
                 'trade_id' => $trade->id,
                 'user_id' => $userId,
-                'proof_image_path' => $paths[0],
-                'proof_images' => $paths,
+                'proof_image_path' => $path,
                 'submitted_at' => now(),
             ]);
 
@@ -678,10 +647,6 @@ class ConversationController extends Controller
             if ($trade->bothSubmittedProof()) {
                 app(TradeMeetupService::class)->complete($trade);
                 $conversation->update(['is_locked' => true]);
-                $trade->load(['initiator', 'participant', 'proofs']);
-                foreach (\App\Models\User::where('role', 'admin')->get() as $admin) {
-                    $admin->notify(new TradeCompletedAdminNotification($trade->fresh()));
-                }
             }
             DB::commit();
             return back()->with('success', $trade->bothSubmittedProof()
@@ -691,6 +656,96 @@ class ConversationController extends Controller
             DB::rollBack();
             Log::warning('Submit trade proof failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to submit proof. Please try again.');
+        }
+    }
+
+    /**
+     * Cancel trade from chat. Posts system message, locks conversation, saves to Trade History as rejected.
+     */
+    public function cancelTrade(Request $request, Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        $trade = $conversation->trade;
+        if (!$trade || in_array($trade->status, ['completed', 'cancelled'])) {
+            return back()->with('error', 'This trade is no longer active.');
+        }
+
+        $userId = Auth::id();
+        if ($trade->initiator_id !== $userId && $trade->participant_id !== $userId) {
+            return back()->with('error', 'You are not part of this trade.');
+        }
+
+        $userName = Auth::user()->name;
+
+        DB::beginTransaction();
+        try {
+            $conversation->messages()->create([
+                'sender_id' => null,
+                'is_system' => true,
+                'system_type' => 'cancelled',
+                'message' => $userName . ' cancelled the trade transaction.',
+            ]);
+            $conversation->update(['last_message_at' => now(), 'is_locked' => true]);
+
+            $trade->update([
+                'status' => 'cancelled',
+                'cancelled_by_user_id' => $userId,
+            ]);
+
+            app(TradeMeetupService::class)->cancel($trade);
+            DB::commit();
+            return back()->with('success', 'Trade cancelled. You can report this conversation with feedback for admin review.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::warning('Cancel trade failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to cancel. Please try again.');
+        }
+    }
+
+    /**
+     * Mark listing as received. When both have marked, complete trade and lock chat.
+     */
+    public function markListingReceived(Request $request, Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        $trade = $conversation->trade;
+        if (!$trade || in_array($trade->status, ['completed', 'cancelled'])) {
+            return back()->with('error', 'This trade is no longer active.');
+        }
+
+        $userId = Auth::id();
+        if ($trade->initiator_id !== $userId && $trade->participant_id !== $userId) {
+            return back()->with('error', 'You are not part of this trade.');
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($trade->isInitiator($userId)) {
+                $trade->update(['initiator_received_at' => now()]);
+            } else {
+                $trade->update(['participant_received_at' => now()]);
+            }
+
+            if ($trade->fresh()->bothReceived()) {
+                app(TradeMeetupService::class)->complete($trade);
+                $conversation->messages()->create([
+                    'sender_id' => null,
+                    'is_system' => true,
+                    'system_type' => 'completed',
+                    'message' => 'Both parties marked the listing as received. Trade completed.',
+                ]);
+                $conversation->update(['is_locked' => true, 'last_message_at' => now()]);
+            }
+            DB::commit();
+            return back()->with('success', $trade->fresh()->bothReceived()
+                ? 'Trade completed. Both parties received their items. Chat locked.'
+                : 'You marked the listing as received. Waiting for the other party.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::warning('Mark received failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to mark received. Please try again.');
         }
     }
 

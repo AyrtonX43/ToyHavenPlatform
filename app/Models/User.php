@@ -43,9 +43,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'trade_suspended_at',
         'trade_suspension_reason',
         'trade_suspended_by',
-        'trade_penalty_count',
+        'trade_suspension_offence_count',
         'trade_suspended_until',
-        'trade_banned',
     ];
 
     /**
@@ -75,7 +74,6 @@ class User extends Authenticatable implements MustVerifyEmail
             'trade_suspended' => 'boolean',
             'trade_suspended_at' => 'datetime',
             'trade_suspended_until' => 'datetime',
-            'trade_banned' => 'boolean',
         ];
     }
 
@@ -274,13 +272,23 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isTradeSuspended(): bool
     {
-        if ((bool) $this->trade_banned) {
-            return true;
+        if (! $this->trade_suspended) {
+            return false;
         }
-        if ($this->trade_suspended_until && $this->trade_suspended_until->isFuture()) {
-            return true;
+        if ($this->trade_suspended_until === null) {
+            return true; // permanent ban
         }
-        return (bool) $this->trade_suspended;
+        if ($this->trade_suspended_until->isPast()) {
+            $this->update([
+                'trade_suspended' => false,
+                'trade_suspended_at' => null,
+                'trade_suspended_until' => null,
+                'trade_suspension_reason' => null,
+                'trade_suspended_by' => null,
+            ]);
+            return false;
+        }
+        return true;
     }
 
     public function tradeSuspendedBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo

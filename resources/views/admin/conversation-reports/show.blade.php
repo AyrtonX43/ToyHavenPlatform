@@ -16,19 +16,12 @@
             </div>
             <div class="card-body">
                 <p><strong>Reporter:</strong> {{ $report->reporter->name }} (ID: {{ $report->reporter_id }})</p>
-                <p><strong>Reported user:</strong> {{ $reportedUser?->name ?? 'N/A' }} (ID: {{ $reportedUser?->id ?? 'N/A' }})</p>
-                <p><strong>Reported user penalty count:</strong> {{ $reportedUser?->trade_penalty_count ?? 0 }}</p>
+                @if($report->reported_user_id)
+                <p><strong>Reported user:</strong> {{ $report->reportedUser?->name ?? 'Unknown' }} (ID: {{ $report->reported_user_id }})</p>
+                @endif
                 <p><strong>Reported at:</strong> {{ $report->created_at->format('M j, Y g:i A') }}</p>
                 <p><strong>Reason:</strong></p>
-                <div class="bg-light rounded p-3 mb-2">{{ $report->reason }}</div>
-                @if(!empty($report->proof_images) && is_array($report->proof_images))
-                    <p><strong>Proof images:</strong></p>
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        @foreach($report->proof_images as $path)
-                            <a href="{{ asset('storage/' . $path) }}" target="_blank" rel="noopener"><img src="{{ asset('storage/' . $path) }}" alt="Proof" style="max-width: 120px; max-height: 100px; object-fit: cover; border-radius: 8px;"></a>
-                        @endforeach
-                    </div>
-                @endif
+                <div class="bg-light rounded p-3 mb-0">{{ $report->reason }}</div>
             </div>
         </div>
 
@@ -90,16 +83,16 @@
                         <label class="form-label">Admin notes</label>
                         <textarea name="admin_notes" class="form-control" rows="4">{{ $report->admin_notes }}</textarea>
                     </div>
+                    @if($report->reported_user_id)
                     <div class="mb-3">
-                        <label class="form-label">Apply penalty to reported user</label>
-                        <select name="penalty" class="form-select">
-                            <option value="">— No penalty —</option>
-                            <option value="5">First penalty: Suspend 5 days (no trade access)</option>
-                            <option value="30">Second penalty: Suspend 30 days (no trade access)</option>
-                            <option value="ban">Third penalty: Ban from Trade</option>
+                        <label class="form-label">Action on reported user</label>
+                        <select name="action" class="form-select">
+                            <option value="none">None (just resolve)</option>
+                            <option value="suspend">Apply trade suspension (1st: 5 days, 2nd: 30 days, 3rd: ban)</option>
                         </select>
-                        <div class="form-text">Current penalty count: {{ $reportedUser?->trade_penalty_count ?? 0 }}</div>
+                        <div class="form-text">Reported user will be notified. Suspension escalates per offence count.</div>
                     </div>
+                    @endif
                     <button type="submit" class="btn btn-primary">Save</button>
                 </form>
             </div>

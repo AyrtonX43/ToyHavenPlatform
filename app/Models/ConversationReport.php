@@ -10,9 +10,9 @@ class ConversationReport extends Model
     protected $fillable = [
         'conversation_id',
         'reporter_id',
+        'reported_user_id',
         'reason',
         'snapshot',
-        'proof_images',
         'status',
         'admin_notes',
         'reviewed_by',
@@ -21,7 +21,6 @@ class ConversationReport extends Model
 
     protected $casts = [
         'snapshot' => 'array',
-        'proof_images' => 'array',
         'reviewed_at' => 'datetime',
     ];
 
@@ -33,6 +32,11 @@ class ConversationReport extends Model
     public function reporter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reporter_id');
+    }
+
+    public function reportedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_user_id');
     }
 
     public function reviewedBy(): BelongsTo

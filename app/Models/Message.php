@@ -14,6 +14,8 @@ class Message extends Model
     protected $fillable = [
         'conversation_id',
         'sender_id',
+        'is_system',
+        'system_type',
         'trade_listing_id',
         'message',
         'is_read',
@@ -23,6 +25,7 @@ class Message extends Model
     ];
 
     protected $casts = [
+        'is_system' => 'boolean',
         'is_read' => 'boolean',
         'delivered_at' => 'datetime',
         'seen_at' => 'datetime',

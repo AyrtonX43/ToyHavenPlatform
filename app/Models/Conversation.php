@@ -18,6 +18,7 @@ class Conversation extends Model
         'subject',
         'last_message_at',
         'is_locked',
+        'welcome_message_sent',
     ];
 
     protected $casts = [

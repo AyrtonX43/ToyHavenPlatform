@@ -30,6 +30,9 @@ class Trade extends Model
         'participant_confirmed_meetup_at',
         'initiator_cancel_requested_at',
         'participant_cancel_requested_at',
+        'cancelled_by_user_id',
+        'initiator_received_at',
+        'participant_received_at',
     ];
 
     protected $casts = [
@@ -45,6 +48,8 @@ class Trade extends Model
         'participant_confirmed_meetup_at' => 'datetime',
         'initiator_cancel_requested_at' => 'datetime',
         'participant_cancel_requested_at' => 'datetime',
+        'initiator_received_at' => 'datetime',
+        'participant_received_at' => 'datetime',
     ];
 
     public function tradeListing(): BelongsTo
@@ -70,6 +75,11 @@ class Trade extends Model
     public function participant(): BelongsTo
     {
         return $this->belongsTo(User::class, 'participant_id');
+    }
+
+    public function cancelledByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by_user_id');
     }
 
     public function participantSeller(): BelongsTo
@@ -172,5 +182,10 @@ class Trade extends Model
     public function bothConfirmedMeetup(): bool
     {
         return $this->initiator_confirmed_meetup_at && $this->participant_confirmed_meetup_at;
+    }
+
+    public function bothReceived(): bool
+    {
+        return $this->initiator_received_at && $this->participant_received_at;
     }
 }

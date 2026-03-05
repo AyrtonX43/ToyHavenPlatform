@@ -1,11 +1,16 @@
 @php
-    $isMine = $msg->sender_id === Auth::id();
+    $isSystem = !empty($msg->is_system);
+    $isMine = !$isSystem && $msg->sender_id === Auth::id();
     $attrs = $msg->getAttributes();
     $isUnsent = isset($attrs['unsent_at']) && $attrs['unsent_at'] !== null;
     $status = $msg->seen_at ? 'Seen' : ($msg->delivered_at ? 'Delivered' : 'Sent');
     if (!$isMine) $status = '';
 @endphp
-<div class="msg-bubble {{ $isMine ? 'mine' : 'theirs' }} {{ $isUnsent ? 'msg-unsent' : '' }}" data-message-id="{{ $msg->id }}" data-unsent="{{ $isUnsent ? '1' : '0' }}">
+<div class="msg-bubble {{ $isSystem ? 'msg-system' : ($isMine ? 'mine' : 'theirs') }} {{ $isUnsent ? 'msg-unsent' : '' }}" data-message-id="{{ $msg->id }}" data-unsent="{{ $isUnsent ? '1' : '0' }}">
+    @if($isSystem)
+        <div class="msg-system-text"><i class="bi bi-info-circle me-1"></i> {{ $msg->message }}</div>
+        <div class="msg-time">{{ $msg->formatted_created_at }}</div>
+    @else
     @if(!$isMine)
         <div class="msg-sender">{{ $msg->sender?->name }}</div>
     @endif
@@ -67,5 +72,6 @@
             @endif
         @endif
     </div>
+    @endif
     @endif
 </div>

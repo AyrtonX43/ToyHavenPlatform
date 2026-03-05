@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConversationReport;
-use App\Models\User;
+use App\Notifications\TradeReportedNotification;
 use Illuminate\Http\Request;
 
 class ConversationReportController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ConversationReport::with(['conversation.user1', 'conversation.user2', 'reporter'])
+        $query = ConversationReport::with(['conversation.user1', 'conversation.user2', 'reporter', 'reportedUser'])
             ->orderByDesc('created_at');
 
         if ($request->filled('status')) {
@@ -25,11 +25,8 @@ class ConversationReportController extends Controller
 
     public function show(ConversationReport $report)
     {
-        $report->load(['conversation.user1', 'conversation.user2', 'reporter']);
-        $reportedUser = $report->conversation->user1_id == $report->reporter_id
-            ? $report->conversation->user2
-            : $report->conversation->user1;
-        return view('admin.conversation-reports.show', compact('report', 'reportedUser'));
+        $report->load(['conversation.user1', 'conversation.user2', 'reporter', 'reportedUser']);
+        return view('admin.conversation-reports.show', compact('report'));
     }
 
     public function update(Request $request, ConversationReport $report)
@@ -37,7 +34,7 @@ class ConversationReportController extends Controller
         $validated = $request->validate([
             'status' => 'required|in:pending,reviewed,resolved',
             'admin_notes' => 'nullable|string|max:5000',
-            'penalty' => 'nullable|in:5,30,ban',
+            'action' => 'nullable|in:none,suspend',
         ]);
 
         $report->update([
@@ -47,30 +44,22 @@ class ConversationReportController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        if (!empty($validated['penalty'])) {
-            $reportedUser = $report->conversation->user1_id == $report->reporter_id
-                ? User::find($report->conversation->user2_id)
-                : User::find($report->conversation->user1_id);
-
-            if ($reportedUser) {
-                $count = ($reportedUser->trade_penalty_count ?? 0) + 1;
-                $reportedUser->update([
-                    'trade_penalty_count' => $count,
-                    'trade_suspended' => true,
-                    'trade_suspended_at' => now(),
-                    'trade_suspension_reason' => 'Report #' . $report->id . ': ' . ($validated['admin_notes'] ?? 'Trade violation'),
-                    'trade_suspended_by' => auth()->id(),
-                ]);
-
-                if ($validated['penalty'] === 'ban') {
-                    $reportedUser->update([
-                        'trade_banned' => true,
-                        'trade_suspended_until' => null,
+        if ($validated['status'] === 'resolved' && $report->reported_user_id) {
+            $user = $report->reportedUser;
+            if ($user) {
+                if (($validated['action'] ?? '') === 'suspend') {
+                    $count = ($user->trade_suspension_offence_count ?? 0) + 1;
+                    $user->update([
+                        'trade_suspension_offence_count' => $count,
+                        'trade_suspended' => true,
+                        'trade_suspended_at' => now(),
+                        'trade_suspended_until' => $count >= 3 ? null : now()->addDays($count === 1 ? 5 : 30),
+                        'trade_suspension_reason' => 'Report #' . $report->id . ': ' . ($validated['admin_notes'] ?? 'Violation'),
+                        'trade_suspended_by' => auth()->id(),
                     ]);
-                } elseif ($validated['penalty'] === '5') {
-                    $reportedUser->update(['trade_suspended_until' => now()->addDays(5)]);
-                } elseif ($validated['penalty'] === '30') {
-                    $reportedUser->update(['trade_suspended_until' => now()->addDays(30)]);
+                    $user->notify(new TradeReportedNotification($report, $count));
+                } else {
+                    $user->notify(new TradeReportedNotification($report));
                 }
             }
         }

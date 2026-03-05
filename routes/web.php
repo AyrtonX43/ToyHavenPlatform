@@ -350,11 +350,12 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/conversations/{conversation}/other-status', [\App\Http\Controllers\Trading\ConversationController::class, 'otherStatus'])->name('conversations.other-status');
         Route::get('/conversations/{conversation}/message-statuses', [\App\Http\Controllers\Trading\ConversationController::class, 'messageStatuses'])->name('conversations.message-statuses');
         Route::get('/conversations/{conversation}/typing-status', [\App\Http\Controllers\Trading\ConversationController::class, 'typingStatus'])->name('conversations.typing-status');
-        Route::get('/conversations/{conversation}/trade-cancel-status', [\App\Http\Controllers\Trading\ConversationController::class, 'tradeCancelStatus'])->name('conversations.trade-cancel-status');
         Route::delete('/conversations/{conversation}/messages/{message}', [\App\Http\Controllers\Trading\ConversationController::class, 'unsendMessage'])->name('conversations.messages.unsend');
         Route::post('/conversations/{conversation}/lock-deal', [\App\Http\Controllers\Trading\ConversationController::class, 'lockDeal'])->name('conversations.lock-deal');
         Route::post('/conversations/{conversation}/confirm-received', [\App\Http\Controllers\Trading\ConversationController::class, 'confirmReceived'])->name('conversations.confirm-received');
         Route::post('/conversations/{conversation}/submit-trade-proof', [\App\Http\Controllers\Trading\ConversationController::class, 'submitTradeProof'])->name('conversations.submit-trade-proof');
+        Route::post('/conversations/{conversation}/cancel-trade', [\App\Http\Controllers\Trading\ConversationController::class, 'cancelTrade'])->name('conversations.cancel-trade');
+        Route::post('/conversations/{conversation}/mark-received', [\App\Http\Controllers\Trading\ConversationController::class, 'markListingReceived'])->name('conversations.mark-received');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');
         Route::post('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'report'])->name('conversations.report');
 

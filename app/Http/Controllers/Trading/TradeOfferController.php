@@ -180,10 +180,10 @@ class TradeOfferController extends Controller
 
         try {
             $trade = $this->offerService->acceptOffer((int) $id);
-            $offer->offerer->notify(new TradeOfferAcceptedNotification($offer, $trade));
             $conversation = $trade->conversation;
+            $offer->offerer->notify(new TradeOfferAcceptedNotification($offer, $trade));
             return redirect()->route('trading.conversations.show', $conversation)
-                ->with('success', 'Offer accepted. You can start the conversation in chat.');
+                ->with('success', 'Offer accepted. The buyer has been notified. Wait for them to start the conversation.');
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }

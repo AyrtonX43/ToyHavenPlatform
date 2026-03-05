@@ -11,7 +11,12 @@
         <a href="{{ route('trading.trades.show', $trade->id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
             <div>
                 <strong>Trade #{{ $trade->id }}</strong>
-                <span class="badge bg-{{ $trade->status === 'completed' ? 'success' : ($trade->status === 'cancelled' ? 'secondary' : 'primary') }} ms-2">{{ $trade->getStatusLabel() }}</span>
+                @php
+                    $statusLabel = $trade->status === 'cancelled' && $trade->cancelled_by_user_id
+                        ? 'Rejected by ' . ($trade->cancelledByUser?->name ?? 'User')
+                        : $trade->getStatusLabel();
+                @endphp
+                <span class="badge bg-{{ $trade->status === 'completed' ? 'success' : ($trade->status === 'cancelled' ? 'secondary' : 'primary') }} ms-2">{{ $statusLabel }}</span>
                 <p class="mb-0 small text-muted">{{ $trade->tradeListing->title }}</p>
             </div>
             <i class="bi bi-chevron-right"></i>
