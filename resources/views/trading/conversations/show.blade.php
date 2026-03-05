@@ -4,20 +4,19 @@
 
 @push('styles')
 <style>
-    :root { --chat-primary: #1e40af; --chat-primary-light: #dbeafe; --chat-bg: #f8fafc; --chat-border: #e2e8f0; --chat-text: #0f172a; --chat-muted: #64748b; }
-    .chat-page { max-width: 880px; margin: 0 auto; padding: 0 0.5rem; }
-    .chat-header { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); border: 1px solid var(--chat-border); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+    .chat-page { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    .chat-header { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #e5e7eb; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
     .chat-header-left { display: flex; align-items: center; gap: 1rem; }
-    .chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem; }
-    .chat-status { font-size: 0.8rem; color: var(--chat-muted); transition: color 0.2s; }
-    .chat-status.online { color: #16a34a; }
+    .chat-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem; flex-shrink: 0; }
+    .chat-status { font-size: 0.8rem; color: #6b7280; transition: color 0.2s; }
+    .chat-status.online { color: #059669; }
     .chat-status.online .status-dot { animation: onlinePulse 2s ease-in-out infinite; }
-    @keyframes onlinePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .chat-status.offline { color: var(--chat-muted); }
-    .chat-body { background: #fff; border-radius: 12px; border: 1px solid var(--chat-border); min-height: 380px; max-height: 58vh; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; scroll-behavior: smooth; }
+    @keyframes onlinePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .chat-status.offline { color: #9ca3af; }
+    .chat-body { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; min-height: 420px; max-height: 58vh; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.875rem; scroll-behavior: smooth; }
     .msg-bubble { max-width: 75%; padding: 0.6rem 1rem; border-radius: 14px; position: relative; transition: transform 0.2s ease, opacity 0.2s ease; }
-    .msg-bubble.mine { background: #2563eb; color: white; margin-left: auto; border-bottom-right-radius: 6px; }
-    .msg-bubble.theirs { background: #f1f5f9; color: var(--chat-text); margin-right: auto; border-bottom-left-radius: 6px; }
+    .msg-bubble.mine { background: #2563eb; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+    .msg-bubble.theirs { background: #f3f4f6; color: #111827; margin-right: auto; border-bottom-left-radius: 4px; }
     /* Message entrance animations */
     .msg-bubble.mine.msg-enter { animation: msgEnterMine 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
     .msg-bubble.theirs.msg-enter { animation: msgEnterTheirs 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
@@ -72,34 +71,47 @@
     .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
     @keyframes typingBounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
-    .chat-footer { background: #fff; border-radius: 12px; border: 1px solid var(--chat-border); padding: 1rem 1.25rem; margin-top: 0.75rem; }
-    .chat-footer .form-control:focus { box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); border-color: #2563eb; }
-    .chat-footer #sendBtn { background: #2563eb; border-color: #2563eb; transition: opacity 0.2s, background 0.2s; }
-    .chat-footer #sendBtn:hover { background: #1d4ed8; }
-    .chat-footer #sendBtn.sending { pointer-events: none; opacity: 0.8; }
-    .listing-context { background: #fff; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; border: 1px solid var(--chat-border); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .listing-context-link:hover { border-color: #93c5fd; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08); }
-    .listing-context img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; }
-    .chat-body-product { position: sticky; top: 0; z-index: 2; background: #f8fafc; padding: 1rem; margin: -1.25rem -1.25rem 1rem -1.25rem; border-bottom: 1px solid var(--chat-border); flex-shrink: 0; border-radius: 12px 12px 0 0; }
-    .chat-body-product-label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--chat-muted); margin-bottom: 0.5rem; }
-    .chat-body-product a, .chat-body-product-item { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-radius: 10px; transition: background 0.2s; }
-    .chat-body-product a:hover { background: #fff; }
-    .chat-body-product img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; flex-shrink: 0; }
-    .chat-body-product-placeholder { width: 52px; height: 52px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--chat-muted); font-size: 1.25rem; }
-    .chat-body-product .product-title { font-weight: 600; font-size: 0.95rem; color: var(--chat-text); }
-    .chat-body-product .product-view { font-size: 0.8rem; color: #2563eb; margin-top: 0.2rem; display: inline-block; }
-    .deal-actions { background: #fff; border-radius: 12px; border: 1px solid var(--chat-border); padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .deal-actions .btn-group-chat { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-    .msg-offered-product { transition: background 0.2s; }
+    .chat-footer { background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0.75rem 1rem; margin-top: 0.5rem; }
+    .chat-footer .form-control:focus { box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.2); transition: box-shadow 0.2s ease; }
+    .chat-footer #sendBtn { transition: transform 0.15s ease, background-color 0.2s ease; }
+    .chat-footer #sendBtn:hover { transform: scale(1.05); }
+    .chat-footer #sendBtn:active { transform: scale(0.98); }
+    .chat-footer #sendBtn.sending { pointer-events: none; opacity: 0.85; animation: sendPulse 0.6s ease infinite; }
+    @keyframes sendPulse { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+    .trade-overview { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+    @media (max-width: 640px) { .trade-overview { grid-template-columns: 1fr; } }
+    .trade-card { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; transition: box-shadow 0.2s; }
+    .trade-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .trade-card-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; padding: 0.5rem 1rem; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+    .trade-card-body { padding: 1rem; }
+    .trade-card-body a { text-decoration: none; color: inherit; display: flex; gap: 0.875rem; align-items: center; }
+    .trade-card-body img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .trade-card-title { font-weight: 600; font-size: 0.95rem; color: #111827; }
+    .trade-card-meta { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+    .trade-card-link { font-size: 0.8rem; color: #2563eb; margin-top: 0.35rem; font-weight: 500; }
+    .listing-context { background: #f9fafb; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; }
+    .listing-context-link:hover { background: #f3f4f6; }
+    .listing-context img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; }
+    .chat-body-product { position: sticky; top: 0; z-index: 2; background: #fafbfc; padding: 0.75rem 1rem; margin: -1.25rem -1.25rem 0.875rem -1.25rem; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
+    .chat-body-product a { text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem; padding: 0.35rem 0; border-radius: 8px; transition: background 0.15s; }
+    .chat-body-product a:hover { background: rgba(37, 99, 235, 0.05); }
+    .chat-body-product img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .chat-body-product .product-title { font-weight: 600; font-size: 0.9rem; color: #0f172a; }
+    .chat-body-product .product-view { font-size: 0.75rem; color: #0ea5e9; margin-top: 0.15rem; }
+    .chat-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+    .chat-actions .btn-report { font-size: 0.85rem; color: #64748b; }
+    .msg-offered-product { transition: background 0.2s, box-shadow 0.2s; }
     .msg-offered-product:hover { background: rgba(0,0,0,0.08) !important; }
     .offer-product-btn { font-size: 0.85rem; }
     .msg-unsent { background: rgba(0,0,0,0.06) !important; color: #64748b; }
-    .msg-bubble.msg-system { margin: 0.75rem auto; max-width: 90%; background: #eff6ff; color: #1e40af; border-radius: 10px; padding: 0.75rem 1rem; }
+    .msg-bubble.msg-system { margin: 0.5rem auto; max-width: 85%; background: #eff6ff; color: #1e40af; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.9rem; }
     .msg-unsent.mine { background: rgba(14, 165, 233, 0.15) !important; color: #64748b; }
     .msg-unsent-text { font-size: 0.85rem; font-style: italic; }
     .msg-unsend-btn { opacity: 0.6; text-decoration: none !important; }
     .msg-unsend-btn:hover { opacity: 1; }
     .msg-bubble:hover .msg-unsend-btn { opacity: 0.8; }
+    .deal-actions { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+    .deal-actions .btn-group-chat { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 </style>
 @endpush
 
@@ -118,16 +130,88 @@
         <div class="alert alert-success border-0 shadow-sm">{{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger border-0">{{ session('error') }}</div>
+        <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
     @if(session('info'))
-        <div class="alert alert-info border-0">{{ session('info') }}</div>
+        <div class="alert alert-info">{{ session('info') }}</div>
     @endif
 
-    {{-- Your listing (top card) – User 1's listing being traded --}}
-    @if($conversation->tradeListing)
+    {{-- Trade overview: User 1's listing + User 2's listing (when trade from accepted offer) --}}
+    @php
+        $trade = $conversation->trade ?? null;
+        $isTradeWithOffer = $trade && $trade->trade_offer_id;
+        $initiatorListing = $conversation->tradeListing;
+        $participantListing = $participantListing ?? null;
+        $participantItem = $participantItem ?? null;
+    @endphp
+    @if($isTradeWithOffer && ($initiatorListing || $participantListing || $participantItem))
+        <div class="trade-overview">
+            {{-- User 1 (initiator/seller) listing --}}
+            <div class="trade-card">
+                <div class="trade-card-label">{{ $trade->isInitiator(auth()->id()) ? 'Your item' : ($other?->name ?? 'Seller') . "'s item" }}</div>
+                @if($initiatorListing)
+                <div class="trade-card-body">
+                    <a href="{{ route('trading.listings.show', $initiatorListing->id) }}">
+                        @php $img1 = $initiatorListing->image_path ?? $initiatorListing->images->first()?->image_path; @endphp
+                        @if($img1)
+                            <img src="{{ asset('storage/' . $img1) }}" alt="">
+                        @else
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:64px;height:64px;"><i class="bi bi-image text-muted"></i></div>
+                        @endif
+                        <div>
+                            <div class="trade-card-title">{{ Str::limit($initiatorListing->title, 45) }}</div>
+                            @if($initiatorListing->condition)
+                                <div class="trade-card-meta">{{ $initiatorListing->condition }}</div>
+                            @endif
+                            <div class="trade-card-link"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</div>
+                        </div>
+                    </a>
+                </div>
+                @endif
+            </div>
+            {{-- User 2 (participant/offerer) listing --}}
+            <div class="trade-card">
+                <div class="trade-card-label">{{ $trade->isParticipant(auth()->id()) ? 'Your item' : ($other?->name ?? 'Buyer') . "'s item" }}</div>
+                @if($participantListing)
+                <div class="trade-card-body">
+                    <a href="{{ route('trading.listings.show', $participantListing->id) }}">
+                        @php $img2 = $participantListing->image_path ?? $participantListing->images->first()?->image_path; @endphp
+                        @if($img2)
+                            <img src="{{ asset('storage/' . $img2) }}" alt="">
+                        @else
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:64px;height:64px;"><i class="bi bi-image text-muted"></i></div>
+                        @endif
+                        <div>
+                            <div class="trade-card-title">{{ Str::limit($participantListing->title, 45) }}</div>
+                            @if($participantListing->condition)
+                                <div class="trade-card-meta">{{ $participantListing->condition }}</div>
+                            @endif
+                            <div class="trade-card-link"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</div>
+                        </div>
+                    </a>
+                </div>
+                @elseif($participantItem)
+                <div class="trade-card-body">
+                    <div class="d-flex gap-2 align-items-center">
+                        @php $imgs = $participantItem->product_images ?? []; $firstImg = is_array($imgs) ? ($imgs[0] ?? null) : null; @endphp
+                        @if($firstImg)
+                            <img src="{{ asset('storage/' . $firstImg) }}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;">
+                        @else
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:64px;height:64px;"><i class="bi bi-image text-muted"></i></div>
+                        @endif
+                        <div>
+                            <div class="trade-card-title">{{ Str::limit($participantItem->product_name ?? 'Item', 45) }}</div>
+                            @if($participantItem->product_condition)
+                                <div class="trade-card-meta">{{ $participantItem->product_condition }}</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    @elseif($conversation->tradeListing)
         <a href="{{ route('trading.listings.show', $conversation->tradeListing->id) }}" class="listing-context listing-context-link text-decoration-none text-dark d-block">
-            <div class="small text-muted text-uppercase fw-semibold mb-2" style="letter-spacing: 0.04em;">{{ $conversation->tradeListing->user_id === auth()->id() ? 'Your listing' : 'Trade listing' }}</div>
             <div class="d-flex align-items-center gap-3">
                 @if($conversation->tradeListing->image_path)
                     <img src="{{ asset('storage/' . $conversation->tradeListing->image_path) }}" alt="">
@@ -160,21 +244,21 @@
     @endphp
     @if($showPostAcceptActions)
         <div class="deal-actions mb-2">
-            <div class="small text-muted text-uppercase fw-semibold mb-2" style="letter-spacing: 0.04em;">Trade actions</div>
+            <div class="fw-semibold mb-2 text-dark" style="font-size:0.95rem;">Trade actions</div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 @if(!$userHasReceived)
                     <form method="POST" action="{{ route('trading.conversations.mark-received', $conversation) }}" class="d-inline" onsubmit="return confirm('Mark the listing as received?');">
                         @csrf
-                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-circle me-1"></i>Listing received</button>
+                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3"><i class="bi bi-check-circle me-1"></i>Listing received</button>
                     </form>
                 @else
                     <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>You marked listing received</span>
                 @endif
                 <form method="POST" action="{{ route('trading.conversations.cancel-trade', $conversation) }}" class="d-inline" onsubmit="return confirm('Cancel this trade? The chat will end and the trade will be saved to Trade History as rejected. You can report with feedback for admin review.');">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Cancel transaction</button>
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-x-circle me-1"></i>Cancel transaction</button>
                 </form>
-                <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-flag me-1"></i>Report user</a>
+                <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3"><i class="bi bi-flag me-1"></i>Report user</a>
             </div>
         </div>
     @endif
@@ -294,59 +378,39 @@
 
     <div class="chat-body" id="chatBody" data-last-message-id="{{ $messages->max('id') ?? 0 }}">
         @php
-            $chatProductListing = $otherUserListing ?? $conversation->tradeListing;
-            $chatProductUrl = $chatProductListing ? route('trading.listings.show', $chatProductListing->id) : null;
-            $chatProductImg = $chatProductListing ? ($chatProductListing->image_path ?? $chatProductListing->images->first()?->image_path ?? null) : null;
+            $chatProductListing = $isTradeWithOffer && $trade
+                ? ($trade->isInitiator(auth()->id()) ? ($participantListing ?? null) : $initiatorListing)
+                : $conversation->tradeListing;
         @endphp
-        @if($chatProductListing && $chatProductUrl)
+        @if($chatProductListing)
             <div class="chat-body-product">
-                <span class="chat-body-product-label">{{ $other ? $other->name . '\'s listing' : 'Trading for' }}</span>
-                <a href="{{ $chatProductUrl }}" title="View listing">
-                    @if($chatProductImg)
-                        <img src="{{ asset('storage/' . $chatProductImg) }}" alt="">
+                <a href="{{ route('trading.listings.show', $chatProductListing->id) }}" title="View listing">
+                    @php $chatImg = $chatProductListing->image_path ?? $chatProductListing->images->first()?->image_path ?? null; @endphp
+                    @if($chatImg)
+                        <img src="{{ asset('storage/' . $chatImg) }}" alt="">
                     @else
-                        <div class="chat-body-product-placeholder"><i class="bi bi-image"></i></div>
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-image text-muted"></i></div>
                     @endif
                     <div>
-                        <div class="product-title">{{ Str::limit($chatProductListing->title ?? $chatProductListing->product_name ?? 'Item', 40) }}</div>
-                        <span class="product-view"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</span>
+                        <div class="product-title">{{ Str::limit($chatProductListing->title ?? 'Item', 40) }}</div>
+                        <div class="product-view"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</div>
                     </div>
                 </a>
             </div>
-        @elseif(isset($otherUserTradeItem) && $otherUserTradeItem)
+        @elseif($participantItem && $isTradeWithOffer)
             <div class="chat-body-product">
-                <span class="chat-body-product-label">{{ $other ? $other->name . '\'s item' : 'Trading for' }}</span>
-                <div class="chat-body-product-item">
-                    @php $imgs = $otherUserTradeItem->product_images ?? []; $firstImg = is_array($imgs) ? ($imgs[0] ?? null) : null; @endphp
-                    @if($firstImg)
-                        <img src="{{ asset('storage/' . $firstImg) }}" alt="">
+                <div class="d-flex align-items-center gap-2">
+                    @php $piImgs = $participantItem->product_images ?? []; $piFirst = is_array($piImgs) ? ($piImgs[0] ?? null) : null; @endphp
+                    @if($piFirst)
+                        <img src="{{ asset('storage/' . $piFirst) }}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;">
                     @else
-                        <div class="chat-body-product-placeholder"><i class="bi bi-image"></i></div>
+                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;"><i class="bi bi-image text-muted"></i></div>
                     @endif
                     <div>
-                        <div class="product-title">{{ Str::limit($otherUserTradeItem->product_name ?? 'Item', 40) }}</div>
-                        @if($otherUserTradeItem->product_condition)
-                            <span class="badge bg-light text-dark">{{ $otherUserTradeItem->product_condition }}</span>
-                        @endif
+                        <div class="product-title">{{ Str::limit($participantItem->product_name ?? 'Item', 40) }}</div>
+                        <div class="product-view text-muted">{{ $participantItem->product_condition ?? '' }}</div>
                     </div>
                 </div>
-            </div>
-        @elseif($conversation->tradeListing)
-            <div class="chat-body-product">
-                <span class="chat-body-product-label">Trade listing</span>
-                <a href="{{ route('trading.listings.show', $conversation->tradeListing->id) }}" title="View listing">
-                    @if($conversation->tradeListing->image_path)
-                        <img src="{{ asset('storage/' . $conversation->tradeListing->image_path) }}" alt="">
-                    @elseif($conversation->tradeListing->images->isNotEmpty())
-                        <img src="{{ asset('storage/' . $conversation->tradeListing->images->first()->image_path) }}" alt="">
-                    @else
-                        <div class="chat-body-product-placeholder"><i class="bi bi-image"></i></div>
-                    @endif
-                    <div>
-                        <div class="product-title">{{ Str::limit($conversation->tradeListing->title, 40) }}</div>
-                        <span class="product-view"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</span>
-                    </div>
-                </a>
             </div>
         @endif
         @foreach($messages as $msg)

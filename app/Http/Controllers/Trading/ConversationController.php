@@ -88,7 +88,7 @@ class ConversationController extends Controller
     {
         $this->authorize('view', $conversation);
 
-        $conversation->load(['user1', 'user2', 'trade.tradeOffer.offeredTradeListing.images', 'trade.items', 'trade.proofs', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
+        $conversation->load(['user1', 'user2', 'trade.proofs', 'trade.tradeOffer.offeredTradeListing.images', 'trade.items', 'tradeListing.user', 'tradeListing.images', 'messages' => fn ($q) => $q->with(['sender', 'attachments', 'tradeListing.images'])->orderByDesc('id')->limit(100)]);
         $messages = $conversation->messages->sortBy('id')->values();
 
         // When offerer (participant) first opens conversation: add system welcome message
@@ -128,18 +128,6 @@ class ConversationController extends Controller
 
         $other = $conversation->getOtherUser(Auth::id());
 
-        // Other user's item in this trade (for offer-accepted: show their offered item, not duplicate of ours)
-        $otherUserListing = null;
-        $otherUserTradeItem = null;
-        if ($trade && $other) {
-            if ($trade->initiator_id === $other->id) {
-                $otherUserListing = $trade->tradeListing;
-            } elseif ($trade->participant_id === $other->id) {
-                $otherUserListing = $trade->tradeOffer?->offeredTradeListing;
-                $otherUserTradeItem = $otherUserListing ? null : $trade->participantItems->first();
-            }
-        }
-
         // For product offering: load current user's listings (and other's) so they can offer products to each other
         $myListings = $other
             ? TradeListing::active()->where('user_id', Auth::id())->with('images')->orderByDesc('updated_at')->limit(20)->get()
@@ -148,7 +136,9 @@ class ConversationController extends Controller
             ? TradeListing::active()->where('user_id', $other->id)->with('images')->orderByDesc('updated_at')->limit(20)->get()
             : collect();
 
-        return view('trading.conversations.show', compact('conversation', 'messages', 'other', 'otherUserListing', 'otherUserTradeItem', 'myListings', 'otherListings'));
+        $participantListing = $trade?->tradeOffer?->offeredTradeListing;
+        $participantItem = $trade?->participantItems?->first();
+        return view('trading.conversations.show', compact('conversation', 'messages', 'other', 'myListings', 'otherListings', 'participantListing', 'participantItem'));
     }
 
     public function storeFromListing(Request $request, $id)
