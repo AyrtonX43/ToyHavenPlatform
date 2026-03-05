@@ -74,12 +74,7 @@ class TradeListingController extends Controller
     public function create()
     {
         $categories = Category::orderBy('name')->get();
-        $myProducts = UserProduct::where('user_id', Auth::id())
-            ->where('status', 'available')
-            ->with(['category', 'images'])
-            ->get();
-
-        return view('trading.listings.create', compact('categories', 'myProducts'));
+        return view('trading.listings.create', compact('categories'));
     }
 
     public function store(Request $request)
@@ -100,7 +95,7 @@ class TradeListingController extends Controller
             'desired_items' => 'nullable|array',
             'desired_items.*' => 'string|max:255',
             'cash_amount' => 'nullable|numeric|min:0',
-            'user_product_id' => 'required|exists:user_products,id',
+            'user_product_id' => 'nullable|exists:user_products,id',
             'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'thumbnail_index' => 'nullable|integer|min:0',
@@ -115,7 +110,7 @@ class TradeListingController extends Controller
             'user_id' => $userId,
             'seller_id' => $sellerId,
             'product_id' => null,
-            'user_product_id' => $validated['user_product_id'],
+            'user_product_id' => $validated['user_product_id'] ?? null,
             'category_id' => $primaryCategoryId,
             'category_ids' => $categoryIds,
             'title' => $validated['title'],
