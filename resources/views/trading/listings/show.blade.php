@@ -184,14 +184,9 @@
                         @if(!auth()->user()->isTradeSuspended())
                             @if($listing->user_id !== auth()->id())
                                 @if($listing->canAcceptOffers())
-                                    @if(in_array($listing->trade_type, ['exchange', 'exchange_with_cash']))
-                                    <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100"><i class="bi bi-arrow-left-right me-2"></i>Make an offer</a>
-                                    @else
-                                    <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100 mb-2"><i class="bi bi-currency-exchange me-2"></i>Make an offer</a>
-                                    <form action="{{ route('trading.conversations.store-from-listing.post', $listing->id) }}" method="POST">@csrf
-                                        <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-chat-dots me-2"></i>Contact Seller</button>
-                                    </form>
-                                    @endif
+                                    <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100">
+                                        <i class="bi bi-{{ in_array($listing->trade_type, ['exchange', 'exchange_with_cash']) ? 'arrow-left-right' : 'currency-exchange' }} me-2"></i>Make an offer
+                                    </a>
                                 @endif
                                 <div class="mt-3">
                                     @if($isSaved ?? false)

@@ -114,11 +114,21 @@ class TradeOfferController extends Controller
     public function myOffers()
     {
         $offers = TradeOffer::where('offerer_id', Auth::id())
-            ->with(['tradeListing.images', 'tradeListing.user', 'offeredProduct.images', 'offeredUserProduct.images'])
+            ->with(['tradeListing.images', 'tradeListing.user', 'offeredProduct.images', 'offeredUserProduct.images', 'offeredTradeListing.images'])
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        return view('trading.offers.my', compact('offers'));
+        $suggestedListings = TradeListing::with(['images', 'user'])
+            ->where('status', 'active')
+            ->where('user_id', '!=', Auth::id())
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->inRandomOrder()
+            ->limit(8)
+            ->get();
+
+        return view('trading.offers.my', compact('offers', 'suggestedListings'));
     }
 
     public function offersReceived()

@@ -3,15 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\TradeOffer;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TradeOfferReceivedNotification extends Notification implements ShouldQueue
+class TradeOfferReceivedNotification extends Notification
 {
-    use Queueable;
-
     public function __construct(
         public TradeOffer $offer
     ) {}
@@ -33,10 +29,11 @@ class TradeOfferReceivedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         $listing = $this->offer->tradeListing;
+        $offererName = $this->offer->offerer->name ?? 'Someone';
         return [
             'type' => 'trade_offer_received',
             'title' => 'New Trade Offer',
-            'message' => 'You received an offer on "' . $listing->title . '".',
+            'message' => $offererName . ' made an offer on "' . $listing->title . '". Accept or reject to continue.',
             'offer_id' => $this->offer->id,
             'listing_id' => $listing->id,
             'action_url' => route('trading.offers.received'),
