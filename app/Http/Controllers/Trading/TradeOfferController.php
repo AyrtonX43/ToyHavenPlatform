@@ -34,12 +34,13 @@ class TradeOfferController extends Controller
             return redirect()->route('trading.listings.show', $id)->with('error', 'This listing is not accepting offers.');
         }
 
-        // Reference/sync from My Listings: show all active listings (including standalone, no product)
+        // Reference/sync from My Listings: only show exchange/exchange_with_cash when target is exchange-type
         $myListings = collect();
         if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
             $myListings = TradeListing::where('user_id', Auth::id())
                 ->where('status', 'active')
                 ->where('id', '!=', $id)
+                ->whereIn('trade_type', ['exchange', 'exchange_with_cash'])
                 ->with(['images', 'userProduct', 'product', 'category'])
                 ->orderByDesc('created_at')
                 ->get();
