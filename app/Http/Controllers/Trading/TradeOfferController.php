@@ -21,6 +21,35 @@ class TradeOfferController extends Controller
         $this->middleware('trade.not.suspended');
     }
 
+    /**
+     * Show form to make an offer on a listing (select listing to offer for exchange, or enter cash for cash).
+     */
+    public function offerForm($id)
+    {
+        $listing = TradeListing::with(['user', 'images'])->findOrFail($id);
+        if ($listing->user_id === Auth::id()) {
+            return redirect()->route('trading.listings.show', $id)->with('error', 'You cannot make an offer on your own listing.');
+        }
+        if (!$listing->canAcceptOffers()) {
+            return redirect()->route('trading.listings.show', $id)->with('error', 'This listing is not accepting offers.');
+        }
+
+        $myListings = collect();
+        if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
+            $myListings = TradeListing::where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->where('id', '!=', $id)
+                ->where(function ($q) {
+                    $q->whereNotNull('user_product_id')->orWhereNotNull('product_id');
+                })
+                ->with(['images', 'userProduct', 'product'])
+                ->orderBy('title')
+                ->get();
+        }
+
+        return view('trading.offers.create', compact('listing', 'myListings'));
+    }
+
     public function store(Request $request, $id)
     {
         $listing = TradeListing::with('user')->findOrFail($id);
@@ -35,13 +64,17 @@ class TradeOfferController extends Controller
         $rules = [
             'message' => 'nullable|string|max:1000',
             'cash_amount' => 'nullable|numeric|min:0',
+            'offer_listing_id' => 'nullable|exists:trade_listings,id',
         ];
         if (in_array($listing->trade_type, ['exchange', 'exchange_with_cash'])) {
             $rules['offered_user_product_id'] = 'nullable|exists:user_products,id';
             $rules['offered_product_id'] = 'nullable|exists:products,id';
-            // Mandatory offer product for both exchange and exchange_with_cash
-            $rules['offered_user_product_id'] = 'required_without:offered_product_id';
-            $rules['offered_product_id'] = 'required_without:offered_user_product_id';
+            $rules['offer_listing_id'] = 'nullable|exists:trade_listings,id';
+            // Must provide either offer_listing_id (your listing) or both product ids
+            if (empty($request->offer_listing_id)) {
+                $rules['offered_user_product_id'] = 'required_without:offered_product_id';
+                $rules['offered_product_id'] = 'required_without:offered_user_product_id';
+            }
         }
         if ($listing->trade_type === 'cash') {
             $rules['cash_amount'] = 'required|numeric|min:0';
@@ -49,11 +82,21 @@ class TradeOfferController extends Controller
 
         $validated = $request->validate($rules);
 
+        $offeredUserProductId = $validated['offered_user_product_id'] ?? null;
+        $offeredProductId = $validated['offered_product_id'] ?? null;
+        if (!empty($validated['offer_listing_id'])) {
+            $offerListing = TradeListing::find($validated['offer_listing_id']);
+            if ($offerListing && $offerListing->user_id === Auth::id()) {
+                $offeredUserProductId = $offerListing->user_product_id;
+                $offeredProductId = $offerListing->product_id;
+            }
+        }
+
         $data = [
             'offerer_id' => Auth::id(),
             'offerer_seller_id' => Auth::user()->seller?->id,
-            'offered_product_id' => $validated['offered_product_id'] ?? null,
-            'offered_user_product_id' => $validated['offered_user_product_id'] ?? null,
+            'offered_product_id' => $offeredProductId,
+            'offered_user_product_id' => $offeredUserProductId,
             'cash_amount' => $validated['cash_amount'] ?? null,
             'message' => $validated['message'] ?? null,
         ];

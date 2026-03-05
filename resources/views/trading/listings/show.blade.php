@@ -184,9 +184,14 @@
                         @if(!auth()->user()->isTradeSuspended())
                             @if($listing->user_id !== auth()->id())
                                 @if($listing->canAcceptOffers())
-                                <form action="{{ route('trading.conversations.store-from-listing.post', $listing->id) }}" method="POST">@csrf
-                                    <button type="submit" class="btn btn-primary btn-contact w-100"><i class="bi bi-chat-dots me-2"></i>Contact Seller</button>
-                                </form>
+                                    @if(in_array($listing->trade_type, ['exchange', 'exchange_with_cash']))
+                                    <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100"><i class="bi bi-arrow-left-right me-2"></i>Make an offer</a>
+                                    @else
+                                    <a href="{{ route('trading.listings.offer-form', $listing->id) }}" class="btn btn-primary btn-contact w-100 mb-2"><i class="bi bi-currency-exchange me-2"></i>Make an offer</a>
+                                    <form action="{{ route('trading.conversations.store-from-listing.post', $listing->id) }}" method="POST">@csrf
+                                        <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-chat-dots me-2"></i>Contact Seller</button>
+                                    </form>
+                                    @endif
                                 @endif
                                 <div class="mt-3">
                                     @if($isSaved ?? false)
@@ -210,7 +215,7 @@
                         @endif
                         @endauth
                         @guest
-                        <a href="{{ route('login') }}?redirect={{ urlencode(request()->url()) }}" class="btn btn-primary btn-contact w-100"><i class="bi bi-box-arrow-in-right me-2"></i>Log in to Contact Seller</a>
+                        <a href="{{ route('login') }}?redirect={{ urlencode(request()->url()) }}" class="btn btn-primary btn-contact w-100"><i class="bi bi-box-arrow-in-right me-2"></i>Log in to Make an offer</a>
                         @endguest
                     </div>
                 </div>

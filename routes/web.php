@@ -317,6 +317,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Trading Routes - Authenticated (continued)
     Route::middleware(['auth'])->prefix('trading')->name('trading.')->group(function () {
         // Trade Offers
+        Route::get('/listings/{id}/offer', [\App\Http\Controllers\Trading\TradeOfferController::class, 'offerForm'])->name('listings.offer-form');
         Route::post('/listings/{id}/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'store'])->name('offers.store');
         Route::get('/offers', [\App\Http\Controllers\Trading\TradeOfferController::class, 'myOffers'])->name('offers.my');
         Route::get('/offers/received', [\App\Http\Controllers\Trading\TradeOfferController::class, 'offersReceived'])->name('offers.received');
