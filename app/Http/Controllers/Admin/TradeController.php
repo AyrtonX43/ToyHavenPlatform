@@ -92,7 +92,20 @@ class TradeController extends Controller
         }
 
         $listing->update(['status' => 'active']);
-        $listing->user->notify(new TradeListingApprovedNotification($listing));
+
+        if ($listing->user) {
+            try {
+                $listing->user->notify(new TradeListingApprovedNotification($listing));
+            } catch (\Throwable $e) {
+                \Log::warning('Trade listing approved but notification failed', [
+                    'listing_id' => $listing->id,
+                    'user_id' => $listing->user->id,
+                    'error' => $e->getMessage(),
+                ]);
+                return back()->with('warning', 'Listing approved. User notification could not be sent (check logs).');
+            }
+        }
+
         return back()->with('success', 'Listing approved. User has been notified via email and in-app notification.');
     }
 
@@ -108,7 +121,20 @@ class TradeController extends Controller
 
         $reason = $request->input('rejection_reason');
         $listing->update(['status' => 'rejected', 'rejection_reason' => $reason]);
-        $listing->user->notify(new TradeListingRejectedNotification($listing, $reason));
+
+        if ($listing->user) {
+            try {
+                $listing->user->notify(new TradeListingRejectedNotification($listing, $reason));
+            } catch (\Throwable $e) {
+                \Log::warning('Trade listing rejected but notification failed', [
+                    'listing_id' => $listing->id,
+                    'user_id' => $listing->user->id,
+                    'error' => $e->getMessage(),
+                ]);
+                return back()->with('warning', 'Listing rejected. User notification could not be sent (check logs).');
+            }
+        }
+
         return back()->with('success', 'Listing rejected. User has been notified via email and in-app notification.');
     }
 
