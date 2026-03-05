@@ -53,7 +53,15 @@ class TradeListingController extends Controller
         }
 
         $listing->update(['status' => 'active']);
-        $listing->user->notify(new TradeListingApprovedNotification($listing));
+
+        try {
+            $listing->user->notify(new TradeListingApprovedNotification($listing));
+        } catch (\Throwable $e) {
+            \Log::warning('Trade listing approval notification failed: ' . $e->getMessage(), [
+                'listing_id' => $listing->id,
+                'user_id' => $listing->user_id,
+            ]);
+        }
 
         ModeratorAction::log(auth()->id(), 'trade_listing_approved', $listing, 'Trade listing approved', [
             'listing_id' => $listing->id,
@@ -73,7 +81,15 @@ class TradeListingController extends Controller
 
         $reason = $request->input('rejection_reason', '');
         $listing->update(['status' => 'rejected', 'rejection_reason' => $reason]);
-        $listing->user->notify(new TradeListingRejectedNotification($listing, $reason));
+
+        try {
+            $listing->user->notify(new TradeListingRejectedNotification($listing, $reason));
+        } catch (\Throwable $e) {
+            \Log::warning('Trade listing rejection notification failed: ' . $e->getMessage(), [
+                'listing_id' => $listing->id,
+                'user_id' => $listing->user_id,
+            ]);
+        }
 
         ModeratorAction::log(auth()->id(), 'trade_listing_rejected', $listing, 'Trade listing rejected', [
             'listing_id' => $listing->id,

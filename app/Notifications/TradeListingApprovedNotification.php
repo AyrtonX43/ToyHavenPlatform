@@ -3,11 +3,14 @@
 namespace App\Notifications;
 
 use App\Models\TradeListing;
+use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TradeListingApprovedNotification extends Notification
 {
+    use Queueable;
+
     public function __construct(
         public TradeListing $listing
     ) {}
