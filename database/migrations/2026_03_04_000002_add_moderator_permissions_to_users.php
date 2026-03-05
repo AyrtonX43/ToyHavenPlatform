@@ -11,6 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('users', 'moderator_permissions')) {
+            return;
+        }
         Schema::table('users', function (Blueprint $table) {
             $table->json('moderator_permissions')->nullable()->after('role');
         });
@@ -21,6 +24,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasColumn('users', 'moderator_permissions')) {
+            return;
+        }
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('moderator_permissions');
         });
