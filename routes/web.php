@@ -157,6 +157,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Membership\PlanController::class, 'index'])->name('index');
         Route::get('/terms/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'terms'])->name('terms')->where('planSlug', '[a-z0-9\-]+');
         Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
+        Route::get('/upgrade/{planSlug}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade')->where('planSlug', '[a-z0-9\-]+');
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
         Route::get('/payment-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment-return');
@@ -167,12 +168,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/process-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processPayment'])->name('process-payment');
         Route::post('/paypal-demo/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalDemoConfirm'])->name('paypal-demo');
         Route::get('/check-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'checkPaymentStatus'])->name('check-payment');
-        Route::get('/upgrade', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade');
-        Route::post('/process-upgrade', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processUpgrade'])->name('process-upgrade');
-        Route::post('/schedule-upgrade', [\App\Http\Controllers\Membership\SubscriptionController::class, 'scheduleUpgrade'])->name('schedule-upgrade');
-        Route::get('/upgrade-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgradePayment'])->name('upgrade-payment');
-        Route::post('/process-upgrade-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processUpgradePayment'])->name('process-upgrade-payment');
-        Route::get('/check-upgrade-payment', [\App\Http\Controllers\Membership\SubscriptionController::class, 'checkUpgradePayment'])->name('check-upgrade-payment');
     });
 
     // Auction Routes

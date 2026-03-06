@@ -3,9 +3,6 @@
 namespace App\Http\Controllers\Membership;
 
 use App\Http\Controllers\Controller;
-use App\Models\AuctionBid;
-use App\Models\AuctionPayment;
-use App\Models\Order;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
@@ -13,7 +10,6 @@ use App\Services\PayMongoService;
 use App\Services\SubscriptionReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
@@ -169,6 +165,11 @@ class SubscriptionController extends Controller
                     : now()->addMonth(),
             ]);
 
+            Subscription::where('user_id', $subscription->user_id)
+                ->where('id', '!=', $subscription->id)
+                ->where('status', 'active')
+                ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+
             $payment = SubscriptionPayment::create([
                 'subscription_id' => $subscription->id,
                 'amount' => data_get($intent, 'attributes.amount', 0) / 100,
@@ -232,6 +233,11 @@ class SubscriptionController extends Controller
                 : now()->addMonth(),
         ]);
 
+        Subscription::where('user_id', $subscription->user_id)
+            ->where('id', '!=', $subscription->id)
+            ->where('status', 'active')
+            ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+
         $payment = SubscriptionPayment::create([
             'subscription_id' => $subscription->id,
             'amount' => (float) $subscription->plan->price,
@@ -277,352 +283,118 @@ class SubscriptionController extends Controller
     public function manage()
     {
         $user = Auth::user();
-        $subscription = $user->subscriptions()->with(['plan', 'scheduledPlan'])->active()->first()
-            ?? $user->subscriptions()->with(['plan', 'scheduledPlan'])->latest()->first();
-
-        if ($subscription) {
-            $this->applyScheduledUpgradeIfDue($subscription);
-            $subscription->refresh()->load(['plan', 'scheduledPlan']);
-        }
+        $subscription = $user->subscriptions()->active()->first() ?? $user->subscriptions()->latest()->first();
+        $plans = Plan::active()->ordered()->get();
 
         $analytics = $this->getMembershipAnalytics($user, $subscription);
-        $upgradePlans = $subscription && $subscription->plan
-            ? Plan::active()->ordered()->where('sort_order', '>', $subscription->plan->sort_order)->get()
-            : collect();
 
         return view('membership.manage', [
             'subscription' => $subscription,
-            'plans' => Plan::active()->ordered()->get(),
+            'plans' => $plans,
             'analytics' => $analytics,
-            'upgradePlans' => $upgradePlans,
         ]);
     }
 
     /**
-     * Analytics for current billing period: bids, wins, toyshop orders, discount saved.
+     * Upgrade to a different plan. Creates pending subscription and redirects to payment.
      */
+    public function upgrade(string $planSlug)
+    {
+        $user = Auth::user();
+        $plan = Plan::where('slug', $planSlug)->active()->firstOrFail();
+        $current = $user->subscriptions()->active()->first();
+
+        if (! $current) {
+            return redirect()->route('membership.terms', $plan->slug)
+                ->with('info', 'Subscribe to get started.');
+        }
+
+        if ($current->plan_id === $plan->id) {
+            return redirect()->route('membership.manage')->with('info', 'You are already on this plan.');
+        }
+
+        $newSubscription = Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'status' => 'pending',
+            'current_period_start' => now(),
+            'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
+        ]);
+
+        $intent = $this->payMongo->createPaymentIntent(
+            (float) $plan->price,
+            'PHP',
+            [
+                'subscription_id' => (string) $newSubscription->id,
+                'plan_id' => (string) $plan->id,
+                'user_id' => (string) $user->id,
+            ]
+        );
+
+        if (! $intent) {
+            $newSubscription->update(['status' => 'cancelled']);
+
+            return redirect()->route('membership.manage')
+                ->with('error', 'Could not initialize payment. Please try again.');
+        }
+
+        $newSubscription->update(['paymongo_payment_intent_id' => $intent['id']]);
+
+        return redirect()->route('membership.payment', ['subscription' => $newSubscription->id])
+            ->with('success', 'Complete payment to switch to ' . $plan->name . '. Your current plan will be replaced.');
+    }
+
     protected function getMembershipAnalytics($user, $subscription): array
     {
-        if (! $subscription || ! $subscription->current_period_start || ! $subscription->current_period_end) {
+        if (! $subscription) {
             return [
-                'bids_count' => 0,
-                'auctions_won_count' => 0,
+                'period_start' => now()->startOfMonth(),
+                'period_end' => now()->endOfMonth(),
+                'auction_bids' => 0,
+                'auction_wins' => 0,
+                'active_auction_listings' => 0,
                 'toyshop_orders_count' => 0,
                 'toyshop_discount_saved' => 0,
             ];
         }
 
-        $start = $subscription->current_period_start;
-        $end = $subscription->current_period_end;
+        $start = $subscription->current_period_start ?? now()->startOfMonth();
+        $end = $subscription->current_period_end ?? now()->endOfMonth();
 
-        $bids_count = AuctionBid::where('user_id', $user->id)
+        $auctionBids = \App\Models\AuctionBid::where('user_id', $user->id)
             ->whereBetween('created_at', [$start, $end])
             ->count();
 
-        $auctions_won_count = AuctionPayment::where('winner_id', $user->id)
+        $auctionWins = \App\Models\AuctionPayment::where('winner_id', $user->id)
             ->where('payment_status', 'paid')
             ->whereBetween('paid_at', [$start, $end])
             ->count();
 
-        $toyshopOrders = Order::where('user_id', $user->id)
-            ->whereBetween('created_at', [$start, $end]);
-        $toyshop_orders_count = $toyshopOrders->count();
-        $toyshop_discount_saved = (float) $toyshopOrders->sum('membership_discount_saved');
+        $activeListings = 0;
+        if ($subscription && $subscription->plan && $subscription->plan->canCreateAuction()) {
+            $profile = $user->auctionSellerProfile;
+            if ($profile) {
+                $activeListings = \App\Models\Auction::where('auction_seller_profile_id', $profile->id)
+                    ->whereIn('status', ['live', 'approved', 'pending_approval'])
+                    ->count();
+            }
+        }
+
+        $toyshopOrders = \App\Models\Order::where('user_id', $user->id)
+            ->whereBetween('created_at', [$start, $end])
+            ->get();
+
+        $toyshopDiscountSaved = $toyshopOrders->sum('membership_discount_saved') ?? 0;
 
         return [
-            'bids_count' => $bids_count,
-            'auctions_won_count' => $auctions_won_count,
-            'toyshop_orders_count' => $toyshop_orders_count,
-            'toyshop_discount_saved' => $toyshop_discount_saved,
+            'period_start' => $start,
+            'period_end' => $end,
+            'auction_bids' => $auctionBids,
+            'auction_wins' => $auctionWins,
+            'active_auction_listings' => $activeListings,
+            'toyshop_orders_count' => $toyshopOrders->count(),
+            'toyshop_discount_saved' => $toyshopDiscountSaved,
         ];
-    }
-
-    /**
-     * Schedule upgrade at next period.
-     */
-    public function scheduleUpgrade(Request $request)
-    {
-        $request->validate(['plan_id' => 'required|exists:plans,id']);
-
-        $subscription = Subscription::where('user_id', Auth::id())->active()->first();
-        if (! $subscription) {
-            return redirect()->route('membership.manage')->with('error', 'No active subscription found.');
-        }
-
-        $newPlan = Plan::active()->findOrFail($request->plan_id);
-        if ($newPlan->sort_order <= $subscription->plan->sort_order) {
-            return redirect()->route('membership.manage')->with('error', 'Selected plan is not an upgrade.');
-        }
-
-        $subscription->update(['scheduled_plan_id' => $newPlan->id]);
-
-        return redirect()->route('membership.manage')
-            ->with('success', "You will be upgraded to {$newPlan->name} at the end of your current billing period.");
-    }
-
-    /**
-     * Show upgrade payment page (prorated amount for immediate upgrade).
-     */
-    public function upgrade(Request $request)
-    {
-        $user = Auth::user();
-        $subscription = $user->subscriptions()->active()->with('plan')->first();
-        if (! $subscription) {
-            return redirect()->route('membership.manage')->with('error', 'No active subscription found.');
-        }
-
-        $planId = $request->get('plan_id');
-        if (! $planId) {
-            return redirect()->route('membership.manage')->with('error', 'Please select a plan to upgrade to.');
-        }
-
-        $newPlan = Plan::active()->findOrFail($planId);
-        if ($newPlan->sort_order <= $subscription->plan->sort_order) {
-            return redirect()->route('membership.manage')->with('error', 'Selected plan is not an upgrade.');
-        }
-
-        $periodStart = $subscription->current_period_start;
-        $periodEnd = $subscription->current_period_end;
-        $daysTotal = $periodStart->diffInDays($periodEnd) ?: 1;
-        $daysRemaining = now()->diffInDays($periodEnd, false);
-        if ($daysRemaining < 0) {
-            $daysRemaining = 0;
-        }
-        $currentPrice = (float) $subscription->plan->price;
-        $newPrice = (float) $newPlan->price;
-        $proratedCredit = $daysTotal > 0 ? $currentPrice * ($daysRemaining / $daysTotal) : 0;
-        $amountDue = max(0, round($newPrice - $proratedCredit, 2));
-
-        return view('membership.upgrade', [
-            'subscription' => $subscription,
-            'newPlan' => $newPlan,
-            'amountDue' => $amountDue,
-            'proratedCredit' => $proratedCredit,
-        ]);
-    }
-
-    /**
-     * Process immediate upgrade payment (prorated).
-     */
-    public function processUpgrade(Request $request)
-    {
-        $request->validate(['plan_id' => 'required|exists:plans,id']);
-
-        $user = Auth::user();
-        $subscription = $user->subscriptions()->active()->with('plan')->first();
-        if (! $subscription) {
-            return redirect()->route('membership.manage')->with('error', 'No active subscription found.');
-        }
-
-        $newPlan = Plan::active()->findOrFail($request->plan_id);
-        if ($newPlan->sort_order <= $subscription->plan->sort_order) {
-            return redirect()->route('membership.manage')->with('error', 'Selected plan is not an upgrade.');
-        }
-
-        $periodStart = $subscription->current_period_start;
-        $periodEnd = $subscription->current_period_end;
-        $daysTotal = $periodStart->diffInDays($periodEnd) ?: 1;
-        $daysRemaining = now()->diffInDays($periodEnd, false);
-        if ($daysRemaining < 0) {
-            $daysRemaining = 0;
-        }
-        $currentPrice = (float) $subscription->plan->price;
-        $newPrice = (float) $newPlan->price;
-        $proratedCredit = $daysTotal > 0 ? $currentPrice * ($daysRemaining / $daysTotal) : 0;
-        $amountDue = max(0, round($newPrice - $proratedCredit, 2));
-
-        if ($amountDue <= 0) {
-            $subscription->update([
-                'plan_id' => $newPlan->id,
-                'scheduled_plan_id' => null,
-                'current_period_start' => now(),
-                'current_period_end' => $newPlan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
-            ]);
-
-            return redirect()->route('membership.manage')
-                ->with('success', "Upgraded to {$newPlan->name}. No additional payment was required.");
-        }
-
-        $intent = $this->payMongo->createPaymentIntent(
-            $amountDue,
-            'PHP',
-            [
-                'subscription_id' => (string) $subscription->id,
-                'plan_id' => (string) $newPlan->id,
-                'user_id' => (string) $user->id,
-                'type' => 'upgrade',
-            ]
-        );
-
-        if (! $intent) {
-            return redirect()->route('membership.manage')->with('error', 'Could not create payment. Please try again.');
-        }
-
-        session([
-            'upgrade_subscription_id' => $subscription->id,
-            'upgrade_plan_id' => $newPlan->id,
-            'upgrade_intent_id' => $intent['id'],
-            'upgrade_amount' => $amountDue,
-        ]);
-
-        return redirect()->route('membership.upgrade-payment', $subscription);
-    }
-
-    /**
-     * Show upgrade payment page (QR Ph for prorated amount).
-     */
-    public function upgradePayment(Subscription $subscription)
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $intentId = session('upgrade_intent_id');
-        $amount = session('upgrade_amount');
-        $planId = session('upgrade_plan_id');
-
-        if (! $intentId || ! $amount || ! $planId) {
-            return redirect()->route('membership.manage')->with('error', 'Upgrade session expired. Please try again.');
-        }
-
-        $newPlan = Plan::find($planId);
-        if (! $newPlan) {
-            session()->forget(['upgrade_subscription_id', 'upgrade_plan_id', 'upgrade_intent_id', 'upgrade_amount']);
-
-            return redirect()->route('membership.manage')->with('error', 'Invalid upgrade plan.');
-        }
-
-        $publicKey = config('services.paymongo.public_key');
-
-        return view('membership.upgrade-payment', [
-            'subscription' => $subscription,
-            'newPlan' => $newPlan,
-            'amount' => $amount,
-            'intentId' => $intentId,
-            'publicKey' => $publicKey,
-        ]);
-    }
-
-    /**
-     * Attach QR Ph to upgrade intent and return QR image.
-     */
-    public function processUpgradePayment(Subscription $subscription)
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $intentId = session('upgrade_intent_id');
-        if (! $intentId) {
-            return response()->json(['error' => 'Session expired.'], 400);
-        }
-
-        $user = Auth::user();
-        $pmId = $this->payMongo->createQrphPaymentMethod($user->name, $user->email);
-        if (! $pmId) {
-            return response()->json(['error' => 'Failed to create payment method.'], 500);
-        }
-
-        $returnUrl = route('membership.manage');
-        $result = $this->payMongo->attachPaymentMethod($intentId, $pmId, $returnUrl);
-        if (! $result) {
-            return response()->json(['error' => 'Failed to attach payment method.'], 500);
-        }
-
-        $status = $result['attributes']['status'] ?? 'unknown';
-        $nextAction = $result['attributes']['next_action'] ?? null;
-
-        if ($status === 'succeeded') {
-            $planId = session('upgrade_plan_id');
-            $newPlan = Plan::find($planId);
-            if ($newPlan) {
-                $subscription->update([
-                    'plan_id' => $newPlan->id,
-                    'scheduled_plan_id' => null,
-                    'current_period_start' => now(),
-                    'current_period_end' => $newPlan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
-                ]);
-                session()->forget(['upgrade_subscription_id', 'upgrade_plan_id', 'upgrade_intent_id', 'upgrade_amount']);
-            }
-
-            return response()->json(['status' => 'succeeded', 'redirect_url' => route('membership.manage')]);
-        }
-
-        if ($status === 'awaiting_next_action' && $nextAction && ($nextAction['type'] ?? '') === 'consume_qr') {
-            return response()->json([
-                'status' => 'awaiting_next_action',
-                'qr_image' => $nextAction['code']['image_url'] ?? null,
-                'payment_intent_id' => $intentId,
-            ]);
-        }
-
-        return response()->json(['status' => $status, 'redirect_url' => $returnUrl]);
-    }
-
-    /**
-     * Poll upgrade payment intent and apply upgrade on success.
-     */
-    public function checkUpgradePayment(Request $request)
-    {
-        $subscriptionId = session('upgrade_subscription_id');
-        $planId = session('upgrade_plan_id');
-        $intentId = $request->input('payment_intent_id') ?? session('upgrade_intent_id');
-
-        if (! $subscriptionId || ! $planId || ! $intentId) {
-            return response()->json(['status' => 'invalid_session'], 400);
-        }
-
-        $subscription = Subscription::where('id', $subscriptionId)->where('user_id', Auth::id())->first();
-        if (! $subscription) {
-            return response()->json(['status' => 'unauthorized'], 403);
-        }
-
-        $intent = $this->payMongo->getPaymentIntent($intentId);
-        $status = $intent['attributes']['status'] ?? 'unknown';
-
-        if ($status === 'succeeded') {
-            $newPlan = Plan::find($planId);
-            if ($newPlan) {
-                $subscription->update([
-                    'plan_id' => $newPlan->id,
-                    'scheduled_plan_id' => null,
-                    'current_period_start' => now(),
-                    'current_period_end' => $newPlan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
-                ]);
-            }
-            session()->forget(['upgrade_subscription_id', 'upgrade_plan_id', 'upgrade_intent_id', 'upgrade_amount']);
-
-            return response()->json([
-                'status' => 'succeeded',
-                'redirect_url' => route('membership.manage'),
-            ]);
-        }
-
-        return response()->json(['status' => $status]);
-    }
-
-    /**
-     * Apply scheduled upgrade at period end (called by cron or when viewing manage).
-     */
-    public function applyScheduledUpgradeIfDue(Subscription $subscription): void
-    {
-        if (! $subscription->scheduled_plan_id || ! $subscription->current_period_end || $subscription->current_period_end->isFuture()) {
-            return;
-        }
-
-        $newPlan = Plan::find($subscription->scheduled_plan_id);
-        if (! $newPlan || ! $newPlan->is_active) {
-            $subscription->update(['scheduled_plan_id' => null]);
-
-            return;
-        }
-
-        $subscription->update([
-            'plan_id' => $newPlan->id,
-            'scheduled_plan_id' => null,
-            'current_period_start' => now(),
-            'current_period_end' => $newPlan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
-        ]);
     }
 
     /**

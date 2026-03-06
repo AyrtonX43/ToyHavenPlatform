@@ -20,143 +20,162 @@
         border-radius: 20px;
         font-weight: 700;
     }
-    .analytics-card { border-left: 4px solid #0891b2; }
+    .plan-badge.vip { background: linear-gradient(135deg, #f59e0b, #eab308); }
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+    .analytics-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+    .analytics-card .value { font-size: 1.5rem; font-weight: 800; color: #0891b2; }
+    .analytics-card .label { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+    .upgrade-plan-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .upgrade-plan-card:hover { border-color: #0891b2; background: #f0fdfa; }
+    .unsubscribe-modal .modal-content { border-radius: 16px; }
 </style>
 @endpush
 
 @section('content')
 <div class="container py-4">
-    <h1 class="h2 fw-bold mb-4"><i class="bi bi-person-badge me-2"></i>Manage Membership</h1>
+    <h1 class="h2 fw-bold mb-4"><i class="bi bi-gem me-2"></i>Manage Membership</h1>
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show">
+            <i class="bi bi-info-circle me-2"></i>{{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     @if($subscription && $subscription->isActive())
-        {{-- Plan details --}}
+        @php $plan = $subscription->plan; @endphp
+
         <div class="manage-card">
-            <h3 class="h5 fw-bold mb-3">Plan details</h3>
+            <h3 class="h5 fw-bold mb-3">Current Plan</h3>
             <p class="mb-2">
-                <span class="plan-badge">{{ $subscription->plan->name }}</span>
+                <span class="plan-badge {{ $plan->slug === 'vip' ? 'vip' : '' }}">{{ $plan->name }}</span>
             </p>
-            @if($subscription->plan->description)
-                <p class="text-muted mb-2">{{ $subscription->plan->description }}</p>
+            <p class="text-muted mb-1">
+                ₱{{ number_format($plan->price, 0) }} / {{ $plan->interval === 'monthly' ? 'month' : 'year' }}
+            </p>
+            <p class="text-muted small mb-3">
+                @if($subscription->current_period_end)
+                    Current period ends: {{ $subscription->current_period_end->format('F j, Y') }}
+                @endif
+            </p>
+            @if($plan->description)
+                <p class="mb-3">{{ $plan->description }}</p>
             @endif
-            <p class="mb-2">
-                <strong>₱{{ number_format($subscription->plan->price, 0) }}</strong>
-                / {{ $subscription->plan->interval === 'yearly' ? 'year' : 'month' }}
-            </p>
-            <p class="text-muted mb-3">
-                Current period: {{ $subscription->current_period_start?->format('M j, Y') }} – {{ $subscription->current_period_end?->format('M j, Y') }}
-            </p>
-            @php $plan = $subscription->plan; @endphp
-            @if(!empty($plan->benefits) && is_array($plan->benefits))
-                <h4 class="h6 fw-bold mt-3 mb-2">Benefits</h4>
-                <ul class="mb-2">
-                    @foreach($plan->benefits as $key => $val)
-                        <li>{{ is_string($val) ? $val : $key . ': ' . json_encode($val) }}</li>
-                    @endforeach
-                </ul>
-            @endif
-            @if(!empty($plan->features) && is_array($plan->features))
-                <h4 class="h6 fw-bold mt-2 mb-2">Features</h4>
+            @if(!empty($plan->features))
+                <h6 class="fw-bold mb-2">Plan benefits</h6>
                 <ul class="mb-0">
                     @foreach($plan->features as $f)
-                        <li>{{ is_string($f) ? $f : json_encode($f) }}</li>
+                        <li>{{ $f }}</li>
                     @endforeach
                 </ul>
             @endif
         </div>
 
-        {{-- Analytics (current billing period) --}}
         @if(isset($analytics))
         <div class="manage-card">
-            <h3 class="h5 fw-bold mb-3">Usage this period</h3>
-            <div class="row g-3">
-                <div class="col-md-6 col-lg-3">
-                    <div class="card analytics-card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Auction bids placed</div>
-                            <div class="h4 mb-0">{{ $analytics['bids_count'] ?? 0 }}</div>
-                        </div>
-                    </div>
+            <h3 class="h5 fw-bold mb-3">Benefit usage this period</h3>
+            <p class="text-muted small mb-3">
+                {{ $analytics['period_start']->format('M j, Y') }} – {{ $analytics['period_end']->format('M j, Y') }}
+            </p>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="value">{{ $analytics['auction_bids'] }}</div>
+                    <div class="label">Auction bids</div>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="card analytics-card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Auctions won</div>
-                            <div class="h4 mb-0">{{ $analytics['auctions_won'] ?? 0 }}</div>
-                        </div>
-                    </div>
+                <div class="analytics-card">
+                    <div class="value">{{ $analytics['auction_wins'] }}</div>
+                    <div class="label">Auction wins</div>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="card analytics-card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Toyshop orders</div>
-                            <div class="h4 mb-0">{{ $analytics['toyshop_orders_count'] ?? 0 }}</div>
-                        </div>
-                    </div>
+                @if($plan->canCreateAuction())
+                <div class="analytics-card">
+                    <div class="value">{{ $analytics['active_auction_listings'] }}</div>
+                    <div class="label">Active listings</div>
                 </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="card analytics-card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Toyshop discount saved</div>
-                            <div class="h4 mb-0">₱{{ number_format($analytics['toyshop_discount_saved'] ?? 0, 2) }}</div>
-                        </div>
-                    </div>
+                @endif
+                <div class="analytics-card">
+                    <div class="value">{{ $analytics['toyshop_orders_count'] }}</div>
+                    <div class="label">Toyshop orders</div>
+                </div>
+                <div class="analytics-card">
+                    <div class="value">₱{{ number_format($analytics['toyshop_discount_saved'], 0) }}</div>
+                    <div class="label">Discount saved</div>
                 </div>
             </div>
         </div>
         @endif
 
-        {{-- Upgrade options --}}
-        @if(!empty($upgradePlans) && $upgradePlans->isNotEmpty())
+        @if($plans->count() > 1)
         <div class="manage-card">
-            <h3 class="h5 fw-bold mb-3">Upgrade</h3>
-            <div class="row g-3">
-                @foreach($upgradePlans as $upPlan)
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ $upPlan->name }}</h5>
-                            <p class="card-text text-muted small mb-2">₱{{ number_format($upPlan->price, 0) }}/{{ $upPlan->interval === 'yearly' ? 'year' : 'month' }}</p>
-                            <div class="d-flex flex-wrap gap-2">
-                                <a href="{{ route('membership.upgrade', ['plan_id' => $upPlan->id]) }}" class="btn btn-sm btn-primary">Upgrade now</a>
-                                <form action="{{ route('membership.schedule-upgrade') }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <input type="hidden" name="plan_id" value="{{ $upPlan->id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-primary">Upgrade at renewal</button>
-                                </form>
-                            </div>
-                        </div>
+            <h3 class="h5 fw-bold mb-3">Change plan</h3>
+            <p class="text-muted small mb-3">Upgrade or switch to another plan. Your current plan will be replaced after payment.</p>
+            @foreach($plans as $p)
+                @if($p->id !== $plan->id)
+                <div class="upgrade-plan-card">
+                    <div>
+                        <strong>{{ $p->name }}</strong>
+                        <span class="text-muted ms-2">₱{{ number_format($p->price, 0) }}/{{ $p->interval === 'monthly' ? 'mo' : 'yr' }}</span>
                     </div>
+                    <a href="{{ route('membership.upgrade', $p->slug) }}" class="btn btn-primary btn-sm">Upgrade to {{ $p->name }}</a>
                 </div>
-                @endforeach
-            </div>
+                @endif
+            @endforeach
         </div>
         @endif
 
-        {{-- Unsubscribe --}}
         <div class="manage-card">
-            <h3 class="h5 fw-bold mb-2">Subscription</h3>
-            <p class="text-muted mb-3">Cancel before the end of your current period to avoid being charged again. You will keep access until {{ $subscription->current_period_end?->format('F j, Y') }}.</p>
+            <h3 class="h5 fw-bold mb-2">Cancel subscription</h3>
+            <p class="text-muted small mb-3">You will keep access until the end of your current billing period.</p>
             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unsubscribeModal">
                 <i class="bi bi-x-circle me-1"></i>Unsubscribe
             </button>
         </div>
 
-        {{-- Unsubscribe confirmation modal --}}
-        <div class="modal fade" id="unsubscribeModal" tabindex="-1">
-            <div class="modal-dialog">
+        <div class="modal fade unsubscribe-modal" id="unsubscribeModal" tabindex="-1" aria-labelledby="unsubscribeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Unsubscribe</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <h5 class="modal-title fw-bold" id="unsubscribeModalLabel">
+                            <i class="bi bi-exclamation-triangle text-warning me-2"></i>Unsubscribe?
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        Are you sure? You will lose access at the end of your current period ({{ $subscription->current_period_end?->format('F j, Y') }}).
+                        <p class="mb-2">Are you sure you want to cancel your <strong>{{ $plan->name }}</strong> membership?</p>
+                        <p class="text-muted small mb-0">You will keep access until <strong>{{ $subscription->current_period_end?->format('F j, Y') }}</strong>. After that, you will no longer have access to membership benefits (auctions, discounts, etc.).</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep subscription</button>
                         <form action="{{ route('membership.cancel') }}" method="POST" class="d-inline">
                             @csrf
-                            <button type="submit" class="btn btn-danger">Yes, Unsubscribe</button>
+                            <button type="submit" class="btn btn-danger">Yes, unsubscribe</button>
                         </form>
                     </div>
                 </div>
@@ -178,7 +197,7 @@
         <div class="manage-card">
             <p class="text-muted mb-3">You don't have an active membership. Join to access auctions and premium perks.</p>
             <a href="{{ route('membership.index') }}" class="btn btn-primary" style="background: linear-gradient(135deg, #0891b2, #06b6d4); border: none;">
-                <i class="bi bi-gem me-1"></i>View Plans
+                <i class="bi bi-gem me-1"></i>View plans
             </a>
         </div>
     @endif

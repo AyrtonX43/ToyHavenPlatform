@@ -27,9 +27,10 @@
 
             <div id="paypal-demo-form" class="card mb-3 d-none">
                 <div class="card-header bg-light">
-                    <strong>PayPal account details</strong>
+                    <strong><i class="bi bi-paypal me-2" style="color: #003087;"></i>Pay with PayPal</strong>
                 </div>
                 <div class="card-body">
+                    <p class="text-muted small mb-3">Enter your PayPal account details below to complete payment.</p>
                     <div class="mb-2">
                         <label class="form-label">Full Name <span class="text-danger">*</span></label>
                         <input type="text" name="paypal_demo_name" class="form-control" placeholder="John Doe" value="{{ auth()->user()?->name }}" required>
@@ -38,10 +39,11 @@
                         <label class="form-label">Email <span class="text-danger">*</span></label>
                         <input type="email" name="paypal_demo_email" class="form-control" placeholder="john@example.com" value="{{ auth()->user()?->email }}" required>
                     </div>
-                    <div class="mb-0">
+                    <div class="mb-2">
                         <label class="form-label">PayPal Email <span class="text-danger">*</span></label>
                         <input type="email" name="paypal_demo_payer_email" class="form-control" placeholder="paypal@example.com" required>
                     </div>
+                    <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> This is a simulated PayPal checkout. No real payment will be processed.</p>
                 </div>
             </div>
 

@@ -147,8 +147,8 @@
                                 <span class="pm-radio"></span>
                                 <i class="bi bi-paypal fs-4 me-3" style="color: #003087;"></i>
                                 <div>
-                                    <strong>PayPal (Demo)</strong>
-                                    <small class="d-block text-muted">Simulated payment - for testing only</small>
+                                    <strong>PayPal</strong>
+                                    <small class="d-block text-muted">Pay with your PayPal account</small>
                                 </div>
                             </div>
                         </div>
