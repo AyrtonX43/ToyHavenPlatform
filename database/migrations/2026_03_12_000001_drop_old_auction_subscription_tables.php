@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -36,7 +37,8 @@ return new class extends Migration
             });
         }
 
-        // Drop tables in correct FK order (child tables first)
+        // Drop tables - disable FK checks to handle any remaining references
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         Schema::dropIfExists('auction_reviews');
         Schema::dropIfExists('auction_bids');
         Schema::dropIfExists('auction_images');
@@ -52,6 +54,7 @@ return new class extends Migration
         Schema::dropIfExists('plans');
         Schema::dropIfExists('wallet_transactions');
         Schema::dropIfExists('wallets');
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     public function down(): void
