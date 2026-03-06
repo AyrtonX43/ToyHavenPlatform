@@ -8,24 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Drop in correct FK order
-        Schema::dropIfExists('auction_reviews');
-        Schema::dropIfExists('auction_bids');
-        Schema::dropIfExists('auction_images');
-        Schema::dropIfExists('auction_second_chances');
-        Schema::dropIfExists('auction_payments');
-        Schema::dropIfExists('auction_seller_documents');
-        Schema::dropIfExists('auction_seller_verifications');
-        Schema::dropIfExists('auction_category');
-        Schema::dropIfExists('saved_auctions');
-        Schema::dropIfExists('auctions');
-        Schema::dropIfExists('subscription_payments');
-        Schema::dropIfExists('subscriptions');
-        Schema::dropIfExists('plans');
-        Schema::dropIfExists('wallet_transactions');
-        Schema::dropIfExists('wallets');
-
-        // Remove columns from reports
+        // Remove FKs from reports BEFORE dropping tables (reports references auction_payments, auctions)
         if (Schema::hasTable('reports')) {
             Schema::table('reports', function (Blueprint $table) {
                 if (Schema::hasColumn('reports', 'auction_id')) {
@@ -52,6 +35,23 @@ return new class extends Migration
                 $table->dropColumn('auction_alias');
             });
         }
+
+        // Drop tables in correct FK order (child tables first)
+        Schema::dropIfExists('auction_reviews');
+        Schema::dropIfExists('auction_bids');
+        Schema::dropIfExists('auction_images');
+        Schema::dropIfExists('auction_second_chances');
+        Schema::dropIfExists('auction_payments');
+        Schema::dropIfExists('auction_seller_documents');
+        Schema::dropIfExists('auction_seller_verifications');
+        Schema::dropIfExists('auction_category');
+        Schema::dropIfExists('saved_auctions');
+        Schema::dropIfExists('auctions');
+        Schema::dropIfExists('subscription_payments');
+        Schema::dropIfExists('subscriptions');
+        Schema::dropIfExists('plans');
+        Schema::dropIfExists('wallet_transactions');
+        Schema::dropIfExists('wallets');
     }
 
     public function down(): void
