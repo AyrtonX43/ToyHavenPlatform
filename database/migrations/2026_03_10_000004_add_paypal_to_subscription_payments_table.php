@@ -9,8 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('subscription_payments', function (Blueprint $table) {
-            $table->string('payment_method')->nullable()->after('paymongo_payment_id');
-            $table->string('paypal_order_id')->nullable()->after('payment_method');
+            if (! Schema::hasColumn('subscription_payments', 'payment_method')) {
+                $table->string('payment_method')->nullable()->after('paymongo_payment_id');
+            }
+            if (! Schema::hasColumn('subscription_payments', 'paypal_order_id')) {
+                $table->string('paypal_order_id')->nullable()->after('payment_method');
+            }
         });
     }
 
