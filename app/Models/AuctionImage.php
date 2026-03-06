@@ -4,23 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class AuctionImage extends Model
 {
     protected $fillable = [
         'auction_id',
-        'path',
-        'image_type',
-        'display_order',
+        'image_path',
         'is_primary',
     ];
 
-    protected $casts = [
-        'is_primary' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_primary' => 'boolean',
+        ];
+    }
 
     public function auction(): BelongsTo
     {
         return $this->belongsTo(Auction::class);
+    }
+
+    public function getPathAttribute(): string
+    {
+        return $this->image_path ?? '';
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return Storage::url($this->image_path);
     }
 }

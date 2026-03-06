@@ -7,60 +7,59 @@ use App\Models\Auction;
 use App\Models\AuctionBid;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BidController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'membership']);
+    }
+
     public function store(Request $request, Auction $auction)
     {
         $user = Auth::user();
 
-        if (! $user->hasActiveMembership()) {
-            return back()->with('error', 'Active membership required to bid.');
+        if ($user->isAuctionBanned()) {
+            return back()->with('error', 'You are banned from bidding on auctions.');
         }
 
         if ($user->isAuctionSuspended()) {
-            return back()->with('error', 'You are suspended from auction bidding.');
+            return back()->with('error', 'Your bidding privileges are currently suspended.');
         }
 
-        if ($auction->status !== 'live') {
+        if (! $auction->canBid()) {
             return back()->with('error', 'This auction is not accepting bids.');
         }
 
-        $planIds = $auction->allowed_bidder_plan_ids;
-        if ($planIds !== null && $planIds !== []) {
-            $plan = $user->currentPlan();
-            if (! $plan || ! in_array($plan->id, $planIds)) {
-                return back()->with('error', 'Your membership plan cannot bid on this auction.');
-            }
-        }
+        $minBid = $auction->nextMinBid();
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:' . ($auction->starting_bid + ($auction->bid_increment ?? 1)),
+            'amount' => ['required', 'numeric', 'min:' . $minBid],
+        ], [
+            'amount.min' => "Minimum bid is ₱" . number_format($minBid, 2),
         ]);
 
-        $currentHigh = $auction->bids()->orderByDesc('amount')->first();
-        $minBid = $currentHigh
-            ? $currentHigh->amount + ($auction->bid_increment ?? 1)
-            : $auction->starting_bid;
+        $amount = (float) $validated['amount'];
 
-        if ($validated['amount'] < $minBid) {
-            return back()->with('error', 'Your bid must be at least ₱' . number_format($minBid, 0) . '.');
+        if ($amount < $minBid) {
+            return back()->with('error', "Minimum bid is ₱" . number_format($minBid, 2));
         }
 
-        $existingBid = $auction->bids()->where('user_id', $user->id)->orderByDesc('amount')->first();
-        $anonymousId = $existingBid?->anonymous_display_id ?? AuctionBid::generateAnonymousDisplayId();
+        DB::transaction(function () use ($auction, $user, $amount) {
+            $nextRank = ($auction->bids()->max('rank_at_bid') ?? 0) + 1;
+            $auction->bids()->where('is_winning', true)->update(['is_winning' => false]);
 
-        AuctionBid::where('auction_id', $auction->id)->update(['is_winning' => false]);
+            AuctionBid::create([
+                'auction_id' => $auction->id,
+                'user_id' => $user->id,
+                'amount' => $amount,
+                'rank_at_bid' => $nextRank,
+                'is_winning' => true,
+            ]);
 
-        AuctionBid::create([
-            'auction_id' => $auction->id,
-            'user_id' => $user->id,
-            'amount' => $validated['amount'],
-            'anonymous_display_id' => $anonymousId,
-            'is_winning' => true,
-        ]);
-
-        $auction->increment('bids_count');
+            $auction->increment('bids_count');
+        });
 
         return back()->with('success', 'Bid placed successfully!');
     }

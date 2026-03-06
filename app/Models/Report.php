@@ -8,14 +8,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Report extends Model
 {
-    public const AUCTION_REPORT_TYPES = [
-        'counterfeit_item' => 'Counterfeit / Fake Item',
-        'item_not_as_described' => 'Item Not as Described',
-        'seller_not_shipping' => 'Seller Not Shipping',
-        'damaged_in_transit' => 'Damaged in Transit',
-        'auction_manipulation' => 'Bid Manipulation / Shill Bidding',
-    ];
-
     protected $fillable = [
         'reporter_id',
         'reportable_type',
@@ -49,5 +41,4 @@ class Report extends Model
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
-
 }

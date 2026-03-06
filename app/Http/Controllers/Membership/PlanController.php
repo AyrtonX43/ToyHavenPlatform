@@ -4,34 +4,31 @@ namespace App\Http\Controllers\Membership;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class PlanController extends Controller
 {
     /**
-     * Display terms & conditions for a plan (before payment).
-     */
-    public function terms(string $planSlug)
-    {
-        $plan = Plan::where('slug', $planSlug)->active()->firstOrFail();
-
-        return view('membership.terms', ['plan' => $plan]);
-    }
-
-    /**
      * Display the membership plans / pricing page
      */
-    public function index(Request $request)
+    public function index()
     {
-        $plans = Plan::active()->ordered()->get();
-
-        $activeAuctionsCount = \App\Models\Auction::live()->count();
+        $plans = Plan::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('price')
+            ->get();
 
         return view('membership.index', [
             'plans' => $plans,
-            'intent' => $request->get('intent', session('intent')),
-            'activeAuctionsCount' => $activeAuctionsCount,
         ]);
+    }
+
+    /**
+     * Display terms & conditions for a plan
+     */
+    public function terms(string $planSlug)
+    {
+        $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
+
+        return view('membership.terms', ['plan' => $plan]);
     }
 }

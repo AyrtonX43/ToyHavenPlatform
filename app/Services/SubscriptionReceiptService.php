@@ -2,74 +2,61 @@
 
 namespace App\Services;
 
-use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SubscriptionReceiptService
 {
-    public function generateReceipt(SubscriptionPayment $subscriptionPayment): string
+    public function generateReceipt(SubscriptionPayment $payment): string
     {
-        if ($subscriptionPayment->hasReceipt()) {
-            return $subscriptionPayment->receipt_path;
+        if ($payment->hasReceipt()) {
+            return $payment->receipt_path;
         }
 
-        $subscriptionPayment->load(['subscription.plan', 'subscription.user']);
-        $subscription = $subscriptionPayment->subscription;
+        $receiptNumber = $this->generateReceiptNumber($payment);
 
-        $receiptNumber = $this->generateReceiptNumber($subscriptionPayment);
+        $pdf = $this->createPDF($payment, $receiptNumber);
 
-        $subscriptionPayment->update([
-            'receipt_number' => $receiptNumber,
-            'receipt_generated_at' => now(),
-        ]);
+        $filename = "membership_receipt_{$receiptNumber}.pdf";
+        $path = "receipts/subscriptions/{$payment->subscription_id}/{$filename}";
 
-        $pdf = $this->createPDF($subscriptionPayment);
-
-        $filename = "subscription_receipt_{$receiptNumber}.pdf";
-        $path = "receipts/subscriptions/{$subscription->user_id}/{$filename}";
-
-        $directory = "receipts/subscriptions/{$subscription->user_id}";
+        $directory = "receipts/subscriptions/{$payment->subscription_id}";
         if (! Storage::disk('public')->exists($directory)) {
             Storage::disk('public')->makeDirectory($directory);
         }
 
         Storage::disk('public')->put($path, $pdf->output());
 
-        $subscriptionPayment->update(['receipt_path' => $path]);
+        $payment->update(['receipt_path' => $path]);
 
         return $path;
     }
 
-    protected function generateReceiptNumber(SubscriptionPayment $subscriptionPayment): string
+    protected function generateReceiptNumber(SubscriptionPayment $payment): string
     {
-        $prefix = config('app.receipt_prefix', 'TH-SUB');
+        $prefix = config('app.receipt_prefix', 'TH');
         $timestamp = now()->format('Ymd');
-        $id = str_pad($subscriptionPayment->id, 6, '0', STR_PAD_LEFT);
+        $id = str_pad($payment->id, 6, '0', STR_PAD_LEFT);
 
-        return "{$prefix}-{$timestamp}-{$id}";
+        return "{$prefix}-SUB-{$timestamp}-{$id}";
     }
 
-    protected function createPDF(SubscriptionPayment $subscriptionPayment): \Barryvdh\DomPDF\PDF
+    protected function createPDF(SubscriptionPayment $payment): \Barryvdh\DomPDF\PDF
     {
-        $subscriptionPayment->load(['subscription.plan', 'subscription.user']);
-        $subscription = $subscriptionPayment->subscription;
-        $plan = $subscription->plan;
-        $user = $subscription->user;
+        $payment->load(['subscription.plan', 'subscription.user']);
 
         $logoPath = public_path('images/logo.png');
         $data = [
-            'subscriptionPayment' => $subscriptionPayment,
-            'subscription' => $subscription,
-            'plan' => $plan,
-            'user' => $user,
-            'receiptNumber' => $subscriptionPayment->receipt_number,
-            'generatedAt' => $subscriptionPayment->receipt_generated_at ?? now(),
+            'subscriptionPayment' => $payment,
+            'subscription' => $payment->subscription,
+            'plan' => $payment->subscription->plan,
+            'receiptNumber' => $payment->receipt_number,
+            'generatedAt' => $payment->receipt_generated_at ?? now(),
             'companyName' => config('app.name', 'ToyHaven'),
             'companyAddress' => config('app.company_address', 'Philippines'),
-            'companyPhone' => config('app.company_phone', ''),
-            'companyEmail' => config('app.company_email', config('mail.from.address')),
+            'companyEmail' => config('mail.from.address'),
             'logoPath' => file_exists($logoPath) ? $logoPath : null,
         ];
 
@@ -82,14 +69,16 @@ class SubscriptionReceiptService
             ]);
     }
 
-    public function downloadReceipt(SubscriptionPayment $subscriptionPayment): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function downloadReceipt(SubscriptionPayment $payment): BinaryFileResponse
     {
-        if (! $subscriptionPayment->hasReceipt()) {
-            $this->generateReceipt($subscriptionPayment);
+        if (! $payment->hasReceipt()) {
+            $this->generateReceipt($payment);
         }
 
-        $filePath = Storage::disk('public')->path($subscriptionPayment->receipt_path);
+        $filePath = Storage::disk('public')->path($payment->receipt_path);
 
-        return response()->download($filePath, "Subscription_Receipt_{$subscriptionPayment->receipt_number}.pdf");
+        $receiptNumber = $this->generateReceiptNumber($payment);
+
+        return response()->download($filePath, "Membership_Receipt_{$receiptNumber}.pdf");
     }
 }

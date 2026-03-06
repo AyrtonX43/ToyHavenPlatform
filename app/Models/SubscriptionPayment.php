@@ -10,27 +10,27 @@ class SubscriptionPayment extends Model
     protected $fillable = [
         'subscription_id',
         'amount',
-        'payment_method',
+        'payment_reference',
         'status',
         'paid_at',
-        'receipt_number',
         'receipt_path',
-        'receipt_generated_at',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'paid_at' => 'datetime',
-        'receipt_generated_at' => 'datetime',
-    ];
-
-    public function hasReceipt(): bool
+    protected function casts(): array
     {
-        return ! empty($this->receipt_path);
+        return [
+            'amount' => 'decimal:2',
+            'paid_at' => 'datetime',
+        ];
     }
 
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    public function hasReceipt(): bool
+    {
+        return ! empty($this->receipt_path);
     }
 }

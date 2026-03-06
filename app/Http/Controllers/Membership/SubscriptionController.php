@@ -7,577 +7,180 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
 use App\Services\PayMongoService;
-use App\Services\SubscriptionReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
     public function __construct(
-        protected PayMongoService $payMongo,
-        protected SubscriptionReceiptService $receiptService
+        protected PayMongoService $payMongo
     ) {}
 
     /**
-     * Subscribe to a plan — creates a local subscription (pending) and a PayMongo payment intent.
-     */
-    public function subscribe(Request $request)
-    {
-        $request->validate([
-            'plan' => 'required|string',
-            'agree_terms' => 'required|accepted',
-        ]);
-
-        $plan = Plan::where('slug', $request->get('plan', 'basic'))->active()->firstOrFail();
-        $user = Auth::user();
-
-        if ($user->hasActiveMembership()) {
-            return redirect()->route('membership.manage')
-                ->with('info', 'You already have an active subscription.');
-        }
-
-        $subscription = Subscription::create([
-            'user_id' => $user->id,
-            'plan_id' => $plan->id,
-            'status' => 'pending',
-            'current_period_start' => now(),
-            'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
-        ]);
-
-        $intent = $this->payMongo->createPaymentIntent(
-            (float) $plan->price,
-            'PHP',
-            [
-                'subscription_id' => (string) $subscription->id,
-                'plan_id' => (string) $plan->id,
-                'user_id' => (string) $user->id,
-            ]
-        );
-
-        if (! $intent) {
-            $subscription->update(['status' => 'cancelled']);
-
-            return redirect()->route('membership.index')
-                ->with('error', 'Could not initialize payment. Please try again.');
-        }
-
-        $subscription->update([
-            'paymongo_payment_intent_id' => $intent['id'],
-        ]);
-
-        return redirect()->route('membership.payment', [
-            'subscription' => $subscription->id,
-        ])->with('success', 'Subscription created. Complete your payment to activate.');
-    }
-
-    /**
-     * Payment page for subscription.
-     */
-    public function payment(Request $request, Subscription $subscription)
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $publicKey = config('services.paymongo.public_key');
-        $paymentIntentId = $subscription->paymongo_payment_intent_id;
-        $clientKey = null;
-        $needsNewIntent = false;
-
-        if ($paymentIntentId && $subscription->status === 'pending') {
-            $fetched = $this->payMongo->getPaymentIntent($paymentIntentId);
-            $intentStatus = $fetched['attributes']['status'] ?? 'unknown';
-
-            if ($intentStatus === 'awaiting_payment_method') {
-                $clientKey = $fetched['attributes']['client_key'] ?? null;
-            } else {
-                Log::info('PayMongo: Existing intent not reusable, creating fresh one', [
-                    'old_intent_id' => $paymentIntentId,
-                    'old_status' => $intentStatus,
-                ]);
-                $needsNewIntent = true;
-            }
-        } elseif (! $paymentIntentId && $subscription->status === 'pending') {
-            $needsNewIntent = true;
-        }
-
-        if ($needsNewIntent) {
-            $intent = $this->payMongo->createPaymentIntent(
-                (float) $subscription->plan->price,
-                'PHP',
-                [
-                    'subscription_id' => (string) $subscription->id,
-                    'plan_id' => (string) $subscription->plan_id,
-                    'user_id' => (string) $subscription->user_id,
-                ]
-            );
-
-            if ($intent) {
-                $paymentIntentId = $intent['id'];
-                $clientKey = $intent['attributes']['client_key'] ?? null;
-                $subscription->update(['paymongo_payment_intent_id' => $paymentIntentId]);
-            }
-        }
-
-        return view('membership.payment', [
-            'subscription' => $subscription,
-            'paymentIntentId' => $paymentIntentId,
-            'clientKey' => $clientKey,
-            'publicKey' => $publicKey,
-        ]);
-    }
-
-    /**
-     * Handle return from PayMongo after payment redirect.
-     */
-    public function paymentReturn(Request $request)
-    {
-        $subscriptionId = $request->input('subscription_id');
-        $paymentIntentId = $request->input('payment_intent_id');
-
-        if (! $subscriptionId || ! $paymentIntentId) {
-            return redirect()->route('membership.manage')->with('error', 'Invalid payment return.');
-        }
-
-        $subscription = Subscription::where('id', $subscriptionId)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if (! $subscription) {
-            return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
-        }
-
-        if ($subscription->status === 'active') {
-            return redirect()->route('membership.payment-success', ['subscription' => $subscription->id])
-                ->with('success', 'Your subscription is already active.');
-        }
-
-        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
-        $status = data_get($intent, 'attributes.status');
-
-        if ($status === 'succeeded') {
-            $subscription->update([
-                'status' => 'active',
-                'current_period_start' => now(),
-                'current_period_end' => $subscription->plan?->interval === 'yearly'
-                    ? now()->addYear()
-                    : now()->addMonth(),
-            ]);
-
-            Subscription::where('user_id', $subscription->user_id)
-                ->where('id', '!=', $subscription->id)
-                ->where('status', 'active')
-                ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
-
-            $payment = SubscriptionPayment::create([
-                'subscription_id' => $subscription->id,
-                'amount' => data_get($intent, 'attributes.amount', 0) / 100,
-                'status' => 'paid',
-                'paid_at' => now(),
-            ]);
-
-            try {
-                $this->receiptService->generateReceipt($payment);
-            } catch (\Throwable $e) {
-                Log::warning('Subscription receipt generation failed', [
-                    'subscription_payment_id' => $payment->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            return redirect()->route('membership.payment-success', ['subscription' => $subscription->id])
-                ->with('success', 'Payment successful! Your membership is now active.');
-        }
-
-        return redirect()->route('membership.payment', ['subscription' => $subscription->id])
-            ->with('error', 'Payment was not completed. Please try again.');
-    }
-
-    /**
-     * Notification / success page after successful membership payment.
-     */
-    public function paymentSuccess(Request $request, Subscription $subscription)
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $latestPayment = $subscription->payments()->where('status', 'paid')->latest('paid_at')->first();
-
-        return view('membership.payment-success', [
-            'subscription' => $subscription,
-            'latestPayment' => $latestPayment,
-        ]);
-    }
-
-    /**
-     * Process PayPal Demo payment (simulated - no real API).
-     */
-    public function paypalDemoConfirm(Request $request, Subscription $subscription)
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        if ($subscription->status !== 'pending') {
-            return redirect()->route('membership.manage')
-                ->with('error', 'Subscription is not in pending state.');
-        }
-
-        $subscription->update([
-            'status' => 'active',
-            'current_period_start' => now(),
-            'current_period_end' => $subscription->plan?->interval === 'yearly'
-                ? now()->addYear()
-                : now()->addMonth(),
-        ]);
-
-        Subscription::where('user_id', $subscription->user_id)
-            ->where('id', '!=', $subscription->id)
-            ->where('status', 'active')
-            ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
-
-        $payment = SubscriptionPayment::create([
-            'subscription_id' => $subscription->id,
-            'amount' => (float) $subscription->plan->price,
-            'status' => 'paid',
-            'paid_at' => now(),
-            'payment_method' => 'paypal_demo',
-        ]);
-
-        try {
-            $this->receiptService->generateReceipt($payment);
-        } catch (\Throwable $e) {
-            Log::warning('Subscription receipt generation failed (PayPal Demo)', [
-                'subscription_payment_id' => $payment->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return redirect()->route('membership.payment-success', ['subscription' => $subscription->id])
-            ->with('success', 'PayPal Demo payment successful! Your membership is now active.');
-    }
-
-    /**
-     * Download receipt PDF for a subscription payment.
-     */
-    public function downloadReceipt(Subscription $subscription)
-    {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $payment = $subscription->payments()->where('status', 'paid')->latest('paid_at')->first();
-
-        if (! $payment) {
-            abort(404, 'No paid payment found for this subscription.');
-        }
-
-        return $this->receiptService->downloadReceipt($payment);
-    }
-
-    /**
-     * Manage current subscription.
+     * Manage subscription page
      */
     public function manage()
     {
         $user = Auth::user();
-        $subscription = $user->subscriptions()->active()->first() ?? $user->subscriptions()->latest()->first();
-        $plans = Plan::active()->ordered()->get();
-
-        $analytics = $this->getMembershipAnalytics($user, $subscription);
+        $activeSubscription = $user->activeSubscription();
+        $subscriptions = $user->subscriptions()->with(['plan', 'payments'])->orderByDesc('created_at')->get();
 
         return view('membership.manage', [
-            'subscription' => $subscription,
-            'plans' => $plans,
-            'analytics' => $analytics,
+            'activeSubscription' => $activeSubscription,
+            'subscriptions' => $subscriptions,
+            'plans' => Plan::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
     /**
-     * Upgrade to a different plan. Creates pending subscription and redirects to payment.
+     * Subscribe to a plan (redirect to payment)
      */
-    public function upgrade(string $planSlug)
+    public function subscribe(Request $request)
     {
-        $user = Auth::user();
-        $plan = Plan::where('slug', $planSlug)->active()->firstOrFail();
-        $current = $user->subscriptions()->active()->first();
+        $request->validate(['plan_id' => 'required|exists:plans,id']);
 
-        if (! $current) {
-            return redirect()->route('membership.terms', $plan->slug)
-                ->with('info', 'Subscribe to get started.');
+        $plan = Plan::findOrFail($request->plan_id);
+
+        if (Auth::user()->hasActiveMembership()) {
+            return redirect()->route('membership.manage')
+                ->with('info', 'You already have an active membership. Upgrade or cancel from Manage.');
         }
 
-        if ($current->plan_id === $plan->id) {
-            return redirect()->route('membership.manage')->with('info', 'You are already on this plan.');
-        }
-
-        $newSubscription = Subscription::create([
-            'user_id' => $user->id,
+        $subscription = Subscription::create([
+            'user_id' => Auth::id(),
             'plan_id' => $plan->id,
             'status' => 'pending',
-            'current_period_start' => now(),
-            'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
+            'current_period_start' => null,
+            'current_period_end' => null,
         ]);
 
-        $intent = $this->payMongo->createPaymentIntent(
-            (float) $plan->price,
-            'PHP',
-            [
-                'subscription_id' => (string) $newSubscription->id,
-                'plan_id' => (string) $plan->id,
-                'user_id' => (string) $user->id,
-            ]
-        );
-
-        if (! $intent) {
-            $newSubscription->update(['status' => 'cancelled']);
-
-            return redirect()->route('membership.manage')
-                ->with('error', 'Could not initialize payment. Please try again.');
-        }
-
-        $newSubscription->update(['paymongo_payment_intent_id' => $intent['id']]);
-
-        return redirect()->route('membership.payment', ['subscription' => $newSubscription->id])
-            ->with('success', 'Complete payment to switch to ' . $plan->name . '. Your current plan will be replaced.');
-    }
-
-    protected function getMembershipAnalytics($user, $subscription): array
-    {
-        if (! $subscription) {
-            return [
-                'period_start' => now()->startOfMonth(),
-                'period_end' => now()->endOfMonth(),
-                'auction_bids' => 0,
-                'auction_wins' => 0,
-                'active_auction_listings' => 0,
-                'toyshop_orders_count' => 0,
-                'toyshop_discount_saved' => 0,
-            ];
-        }
-
-        $start = $subscription->current_period_start ?? now()->startOfMonth();
-        $end = $subscription->current_period_end ?? now()->endOfMonth();
-
-        $auctionBids = \App\Models\AuctionBid::where('user_id', $user->id)
-            ->whereBetween('created_at', [$start, $end])
-            ->count();
-
-        $auctionWins = \App\Models\AuctionPayment::where('winner_id', $user->id)
-            ->where('payment_status', 'paid')
-            ->whereBetween('paid_at', [$start, $end])
-            ->count();
-
-        $activeListings = 0;
-        if ($subscription && $subscription->plan && $subscription->plan->canCreateAuction()) {
-            $profile = $user->auctionSellerProfile;
-            if ($profile) {
-                $activeListings = \App\Models\Auction::where('auction_seller_profile_id', $profile->id)
-                    ->whereIn('status', ['live', 'approved', 'pending_approval'])
-                    ->count();
-            }
-        }
-
-        $toyshopOrders = \App\Models\Order::where('user_id', $user->id)
-            ->whereBetween('created_at', [$start, $end])
-            ->get();
-
-        $toyshopDiscountSaved = $toyshopOrders->sum('membership_discount_saved') ?? 0;
-
-        return [
-            'period_start' => $start,
-            'period_end' => $end,
-            'auction_bids' => $auctionBids,
-            'auction_wins' => $auctionWins,
-            'active_auction_listings' => $activeListings,
-            'toyshop_orders_count' => $toyshopOrders->count(),
-            'toyshop_discount_saved' => $toyshopDiscountSaved,
-        ];
+        return redirect()->route('membership.payment', ['subscription' => $subscription->id]);
     }
 
     /**
-     * Cancel subscription.
+     * Payment page for a subscription
      */
-    public function cancel(Request $request)
+    public function payment(Subscription $subscription)
     {
-        $subscription = Subscription::where('user_id', Auth::id())
-            ->active()
-            ->first();
-
-        if (! $subscription) {
-            return redirect()->route('membership.manage')->with('error', 'No active subscription found.');
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
         }
 
-        $subscription->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-        ]);
+        if ($subscription->status === 'active' && $subscription->payments()->where('status', 'paid')->exists()) {
+            return redirect()->route('membership.manage');
+        }
 
-        return redirect()->route('membership.manage')
-            ->with('success', 'Subscription cancelled. You will retain access until the end of your billing period.');
+        $subscription->load('plan');
+
+        return view('membership.payment', [
+            'subscription' => $subscription,
+        ]);
     }
 
     /**
-     * Server-side: create payment method and attach to intent via PayMongo secret key.
-     * Returns JSON with status and redirect_url if 3DS/e-wallet auth is needed.
+     * Process payment (QR Ph via PayMongo or PayPal - stubbed for Phase 1)
      */
     public function processPayment(Request $request, Subscription $subscription)
     {
         if ($subscription->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            abort(403);
         }
-
-        if ($subscription->status !== 'pending') {
-            return response()->json(['error' => 'Subscription is not in pending state.'], 400);
-        }
-
-        $paymentType = $request->input('payment_type', 'qrph');
 
         $request->validate([
-            'payment_type' => 'in:qrph',
-        ], [
-            'payment_type.in' => 'Membership payment is only available via QR Ph. Please use the QR code to pay.',
+            'payment_method' => 'required|in:qrph,paypal',
         ]);
 
-        if ($paymentType !== 'qrph') {
-            return response()->json([
-                'error' => 'Membership payment is only available via QR Ph.',
-            ], 400);
+        $paymentMethod = $request->payment_method;
+
+        if ($paymentMethod === 'qrph') {
+            return $this->processPayMongo($subscription);
         }
 
-        $paymentIntentId = $subscription->paymongo_payment_intent_id;
-        $needsNewIntent = false;
-
-        if (! $paymentIntentId) {
-            $needsNewIntent = true;
-        } else {
-            $existingIntent = $this->payMongo->getPaymentIntent($paymentIntentId);
-            $existingStatus = $existingIntent['attributes']['status'] ?? 'unknown';
-            $allowedMethods = $existingIntent['attributes']['payment_method_allowed'] ?? [];
-
-            // Create new intent if: status is not awaiting_payment_method, OR payment type not in allowed methods
-            if ($existingStatus !== 'awaiting_payment_method' || ! in_array($paymentType, $allowedMethods)) {
-                Log::info('Creating fresh payment intent', [
-                    'reason' => $existingStatus !== 'awaiting_payment_method' ? 'status_mismatch' : 'method_not_allowed',
-                    'old_status' => $existingStatus,
-                    'old_allowed_methods' => $allowedMethods,
-                    'requested_method' => $paymentType,
-                ]);
-                $needsNewIntent = true;
-            }
+        if ($paymentMethod === 'paypal') {
+            return $this->processPayPal($subscription);
         }
 
-        if ($needsNewIntent) {
-            $newIntent = $this->payMongo->createPaymentIntent(
-                (float) $subscription->plan->price,
-                'PHP',
-                [
-                    'subscription_id' => (string) $subscription->id,
-                    'plan_id' => (string) $subscription->plan_id,
-                    'user_id' => (string) $subscription->user_id,
-                ]
-            );
+        return back()->with('error', 'Invalid payment method.');
+    }
 
-            if (! $newIntent) {
-                return response()->json(['error' => 'Failed to create a new payment session. Please try again.'], 500);
-            }
-
-            $paymentIntentId = $newIntent['id'];
-            $subscription->update(['paymongo_payment_intent_id' => $paymentIntentId]);
-            Log::info('Fresh payment intent created', ['new_id' => $paymentIntentId]);
+    protected function processPayMongo(Subscription $subscription)
+    {
+        if (! $this->payMongo->isConfigured()) {
+            return back()->with('error', 'QR Ph payment is not configured. Please contact support.');
         }
 
-        $user = Auth::user();
+        $amount = (float) $subscription->plan->price;
+        $metadata = ['subscription_id' => (string) $subscription->id];
 
-        if ($paymentType === 'qrph') {
-            Log::info('Creating QRPh payment method', [
-                'user_name' => $user->name,
-                'user_email' => $user->email,
-            ]);
-            
-            $pmId = $this->payMongo->createQrphPaymentMethod($user->name, $user->email);
-            if (! $pmId) {
-                Log::error('QRPh payment method creation returned null');
-                return response()->json([
-                    'error' => 'Failed to create QR Ph payment method. Please try again.',
-                ], 500);
-            }
-            $paymentMethodId = $pmId;
-        } else {
-            return response()->json(['error' => 'Only QR Ph payment is accepted for membership.'], 400);
+        $intent = $this->payMongo->createPaymentIntent($amount, 'PHP', $metadata);
+
+        if (! $intent) {
+            return back()->with('error', 'Could not create payment. Please try again.');
+        }
+
+        $clientKey = $intent['attributes']['client_key'] ?? null;
+        if (! $clientKey) {
+            return back()->with('error', 'Payment initialization failed.');
         }
 
         $returnUrl = url('/membership/payment-return') . '?' . http_build_query([
             'subscription_id' => $subscription->id,
-            'payment_intent_id' => $paymentIntentId,
         ]);
 
-        Log::info('Attaching payment method to intent', [
-            'payment_intent_id' => $paymentIntentId,
-            'payment_method_id' => $paymentMethodId,
+        return view('membership.payment', [
+            'subscription' => $subscription,
+            'client_key' => $clientKey,
+            'payment_intent_id' => $intent['id'],
+            'amount' => $amount,
             'return_url' => $returnUrl,
         ]);
+    }
 
-        $result = $this->payMongo->attachPaymentMethod($paymentIntentId, $paymentMethodId, $returnUrl);
-
-        if (! $result) {
-            Log::error('Attach payment method returned null');
-            return response()->json([
-                'error' => 'Failed to attach payment method to intent. Please try again or contact support.',
-                'debug' => 'Attach failed - check Laravel logs for PayMongo API response'
-            ], 500);
-        }
-
-        $status = $result['attributes']['status'] ?? 'unknown';
-        $nextAction = $result['attributes']['next_action'] ?? null;
-
-        Log::info('PayMongo: processPayment result', [
-            'subscription_id' => $subscription->id,
-            'payment_type' => $paymentType,
-            'status' => $status,
-            'next_action_raw' => json_encode($nextAction),
-        ]);
-
-        if ($status === 'succeeded') {
-            return response()->json(['status' => 'succeeded', 'redirect_url' => $returnUrl]);
-        }
-
-        if ($status === 'awaiting_next_action' && $nextAction) {
-            $nextActionType = $nextAction['type'] ?? null;
-
-            if ($nextActionType === 'consume_qr') {
-                return response()->json([
-                    'status' => 'awaiting_next_action',
-                    'qr_image' => $nextAction['code']['image_url'] ?? null,
-                    'payment_intent_id' => $paymentIntentId,
-                ]);
-            }
-
-            $redirectUrl = $this->extractRedirectUrl($nextAction);
-            return response()->json([
-                'status' => 'awaiting_next_action',
-                'redirect_url' => $redirectUrl,
-                'next_action' => $nextAction,
-            ]);
-        }
-
-        if ($status === 'processing') {
-            return response()->json(['status' => 'processing', 'redirect_url' => $returnUrl]);
-        }
-
-        if ($status === 'awaiting_payment_method') {
-            $errorMsg = $result['attributes']['last_payment_error']['message']
-                ?? 'Payment failed. Please try again with a different payment method.';
-            return response()->json(['error' => $errorMsg], 400);
-        }
-
-        return response()->json(['error' => "Payment returned unexpected status: {$status}"], 400);
+    protected function processPayPal(Subscription $subscription)
+    {
+        return back()->with('info', 'PayPal Sandbox integration will be available in the next phase.');
     }
 
     /**
-     * Poll payment intent status (used by QRPh to detect when user has paid).
+     * Payment return (after PayMongo redirect)
+     */
+    public function paymentReturn(Request $request)
+    {
+        $subscriptionId = $request->query('subscription_id');
+
+        if (! $subscriptionId) {
+            return redirect()->route('membership.manage')->with('error', 'Invalid payment return.');
+        }
+
+        $subscription = Subscription::find($subscriptionId);
+
+        if (! $subscription || $subscription->user_id !== Auth::id()) {
+            return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
+        }
+
+        return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
+    }
+
+    /**
+     * Payment success page (after webhook confirms - or for demo)
+     */
+    public function paymentSuccess(Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $subscription->load('plan');
+
+        return view('membership.payment-success', [
+            'subscription' => $subscription,
+        ]);
+    }
+
+    /**
+     * Check payment status (for polling)
      */
     public function checkPaymentStatus(Subscription $subscription)
     {
@@ -585,78 +188,65 @@ class SubscriptionController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $paymentIntentId = $subscription->paymongo_payment_intent_id;
-        if (! $paymentIntentId) {
-            return response()->json(['status' => 'unknown']);
-        }
+        $paid = $subscription->payments()->where('status', 'paid')->exists();
 
-        $intent = $this->payMongo->getPaymentIntent($paymentIntentId);
-        $status = $intent['attributes']['status'] ?? 'unknown';
-
-        if ($status === 'succeeded') {
-            $subscription->update([
-                'status' => 'active',
-                'current_period_start' => now(),
-                'current_period_end' => $subscription->plan?->interval === 'yearly'
-                    ? now()->addYear()
-                    : now()->addMonth(),
-            ]);
-
-            $payment = SubscriptionPayment::create([
-                'subscription_id' => $subscription->id,
-                'amount' => data_get($intent, 'attributes.amount', 0) / 100,
-                'status' => 'paid',
-                'paid_at' => now(),
-            ]);
-
-            try {
-                $this->receiptService->generateReceipt($payment);
-            } catch (\Throwable $e) {
-                Log::warning('Subscription receipt generation failed in checkPaymentStatus', [
-                    'subscription_payment_id' => $payment->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        return response()->json(['status' => $status]);
+        return response()->json([
+            'paid' => $paid,
+            'redirect' => $paid ? route('membership.payment-success', $subscription) : null,
+        ]);
     }
 
     /**
-     * Recursively find a redirect URL from PayMongo's next_action object.
+     * Download receipt for a subscription payment
      */
-    private function extractRedirectUrl($nextAction): ?string
+    public function downloadReceipt(Subscription $subscription, SubscriptionPayment $subscriptionPayment)
     {
-        if (is_string($nextAction)) {
-            return filter_var($nextAction, FILTER_VALIDATE_URL) ? $nextAction : null;
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
         }
 
-        if (! is_array($nextAction)) {
-            return null;
+        if ($subscriptionPayment->subscription_id !== $subscription->id) {
+            abort(404);
         }
 
-        if (! empty($nextAction['redirect']['url'])) {
-            return $nextAction['redirect']['url'];
+        if (! $subscriptionPayment->hasReceipt()) {
+            return redirect()->route('membership.manage')->with('error', 'Receipt not available.');
         }
 
-        if (! empty($nextAction['url'])) {
-            return $nextAction['url'];
-        }
+        $receiptService = app(\App\Services\SubscriptionReceiptService::class);
 
-        foreach ($nextAction as $value) {
-            if (is_array($value)) {
-                $found = $this->extractRedirectUrl($value);
-                if ($found) {
-                    return $found;
-                }
-            }
-        }
-
-        return null;
+        return $receiptService->downloadReceipt($subscriptionPayment);
     }
 
     /**
-     * Cancel a pending (unpaid) subscription and redirect back to plan selection.
+     * Cancel active subscription
+     */
+    public function cancel(Request $request)
+    {
+        $user = Auth::user();
+        $activeSubscription = $user->activeSubscription();
+
+        if (! $activeSubscription) {
+            return redirect()->route('membership.manage')->with('error', 'No active subscription found.');
+        }
+
+        $deactivateShop = $request->boolean('deactivate_shop') && $user->currentPlan()?->slug === 'vip';
+
+        DB::transaction(function () use ($activeSubscription, $deactivateShop) {
+            $activeSubscription->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+            ]);
+
+            // VIP deactivate_shop option: auction seller verification remains approved
+        });
+
+        return redirect()->route('membership.manage')
+            ->with('success', 'Your membership has been cancelled.');
+    }
+
+    /**
+     * Cancel pending subscription (before first payment)
      */
     public function cancelPending(Subscription $subscription)
     {
@@ -664,17 +254,43 @@ class SubscriptionController extends Controller
             abort(403);
         }
 
-        if ($subscription->status !== 'pending') {
-            return redirect()->route('membership.manage')
-                ->with('error', 'Only pending subscriptions can be cancelled from the payment page.');
+        if ($subscription->payments()->where('status', 'paid')->exists()) {
+            return redirect()->route('membership.manage')->with('error', 'Cannot cancel - payment already received.');
         }
 
-        $subscription->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
+        $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+
+        return redirect()->route('membership.index')->with('info', 'Subscription cancelled.');
+    }
+
+    /**
+     * Upgrade to another plan
+     */
+    public function upgrade(Request $request, string $targetPlanSlug)
+    {
+        $plan = Plan::where('slug', $targetPlanSlug)->where('is_active', true)->firstOrFail();
+        $user = Auth::user();
+        $activeSubscription = $user->activeSubscription();
+
+        if (! $activeSubscription) {
+            return redirect()->route('membership.index')->with('error', 'Subscribe first.');
+        }
+
+        if ($activeSubscription->plan_id === $plan->id) {
+            return redirect()->route('membership.manage')->with('info', 'You are already on this plan.');
+        }
+
+        $newSubscription = Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'current_period_start' => now(),
+            'current_period_end' => $plan->interval === 'yearly' ? now()->addYear() : now()->addMonth(),
         ]);
 
-        return redirect()->route('membership.index')
-            ->with('info', 'Payment cancelled. You can choose a different plan below.');
+        $activeSubscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+
+        return redirect()->route('membership.payment', ['subscription' => $newSubscription->id])
+            ->with('success', 'Upgraded to ' . $plan->name . '. Complete payment to activate.');
     }
 }

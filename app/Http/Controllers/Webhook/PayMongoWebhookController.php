@@ -75,11 +75,12 @@ class PayMongoWebhookController extends Controller
         // Membership subscription payment
         if ($subscriptionId = ($metadata['subscription_id'] ?? null)) {
             $subscription = Subscription::find($subscriptionId);
-            if ($subscription && $subscription->status !== 'active') {
+            if ($subscription && $subscription->status === 'pending') {
                 $subscription->update([
                     'status' => 'active',
+                    'payment_method' => 'qrph',
                     'current_period_start' => now(),
-                    'current_period_end' => $subscription->plan?->interval === 'yearly'
+                    'current_period_end' => ($subscription->plan?->interval ?? 'month') === 'year'
                         ? now()->addYear()
                         : now()->addMonth(),
                 ]);
@@ -87,6 +88,7 @@ class PayMongoWebhookController extends Controller
                 SubscriptionPayment::create([
                     'subscription_id' => $subscription->id,
                     'amount' => data_get($data, 'attributes.amount', 0) / 100,
+                    'payment_reference' => $paymentIntentId,
                     'status' => 'paid',
                     'paid_at' => now(),
                 ]);

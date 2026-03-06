@@ -89,34 +89,9 @@
                 </div>
             </div>
 
-            <div class="mb-4">
-                <label class="form-label fw-semibold">Platform permissions</label>
-                <p class="text-muted small mb-2">Grant access to auction and plan management (optional). Trade moderation is available to all moderators.</p>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="auctions_view" id="perm_auctions_view" {{ in_array('auctions_view', old('moderator_permissions', [])) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="perm_auctions_view">View auctions</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="auctions_moderate" id="perm_auctions_moderate" {{ in_array('auctions_moderate', old('moderator_permissions', [])) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="perm_auctions_moderate">Moderate auctions (approve/reject listings)</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="auction_payments_moderate" id="perm_auction_payments" {{ in_array('auction_payments_moderate', old('moderator_permissions', [])) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="perm_auction_payments">Moderate auction payments (release escrow)</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="auction_sellers_moderate" id="perm_auction_sellers" {{ in_array('auction_sellers_moderate', old('moderator_permissions', [])) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="perm_auction_sellers">Moderate auction sellers</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="moderator_permissions[]" value="plans_manage" id="perm_plans_manage" {{ in_array('plans_manage', old('moderator_permissions', [])) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="perm_plans_manage">Manage membership plans (edit price & description)</label>
-                </div>
-            </div>
-
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                <strong>Note:</strong> The moderator will be able to access the moderator panel at <code>{{ url('/moderator/dashboard') }}</code> using their email and password. They can review trade listings, approve/reject them, view trades, and handle trade disputes. If you grant auction permissions, they can also view and moderate auctions. Share the credentials securely.
+                <strong>Note:</strong> The moderator will be able to access the moderator panel at <code>{{ url('/moderator/dashboard') }}</code> using their email and password. They can review trade listings, approve/reject them, view trades, and handle trade disputes. Share the credentials securely.
             </div>
 
             <div class="d-flex justify-content-between">

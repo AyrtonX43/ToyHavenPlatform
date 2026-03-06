@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,15 +15,18 @@ class Subscription extends Model
         'status',
         'current_period_start',
         'current_period_end',
+        'payment_method',
         'cancelled_at',
-        'paymongo_payment_intent_id',
     ];
 
-    protected $casts = [
-        'current_period_start' => 'datetime',
-        'current_period_end' => 'datetime',
-        'cancelled_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'current_period_start' => 'datetime',
+            'current_period_end' => 'datetime',
+            'cancelled_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -39,30 +43,17 @@ class Subscription extends Model
         return $this->hasMany(SubscriptionPayment::class);
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active')
             ->where(function ($q) {
                 $q->whereNull('current_period_end')
-                    ->orWhere('current_period_end', '>', now());
+                    ->orWhere('current_period_end', '>=', now());
             });
     }
 
-    public function isActive(): bool
+    public function scopePending(Builder $query): Builder
     {
-        if ($this->status !== 'active' && $this->status !== 'trialing') {
-            return false;
-        }
-
-        if ($this->current_period_end && $this->current_period_end->isPast()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    public function isCancelled(): bool
-    {
-        return $this->status === 'cancelled' || $this->cancelled_at !== null;
+        return $query->where('status', 'pending');
     }
 }

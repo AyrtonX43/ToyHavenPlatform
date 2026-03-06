@@ -13,33 +13,35 @@ class AuctionSecondChanceNotification extends Notification implements ShouldQueu
     use Queueable;
 
     public function __construct(
-        public Auction $auction,
-        public float $bidAmount
+        public Auction $auction
     ) {}
 
-    public function via($notifiable): array
+    public function via(object $notifiable): array
     {
         return ['mail', 'database'];
     }
 
-    public function toMail($notifiable): MailMessage
+    public function toMail(object $notifiable): MailMessage
     {
+        $payment = $this->auction->auctionPayments()->latest()->first();
+        $payUrl = $payment ? route('auctions.payment.index', $payment) : route('auctions.show', $this->auction);
         return (new MailMessage)
-            ->subject('Second Chance: ' . $this->auction->title)
-            ->greeting('Good news!')
-            ->line('The winning bidder did not pay. You have a second chance to win **' . $this->auction->title . '** at ₱' . number_format($this->bidAmount, 0) . '.')
-            ->line('You have **24 hours** to complete payment.')
-            ->action('Pay Now', route('auctions.payment.second-chance.show', $this->auction))
-            ->line('Thank you for bidding on ToyHaven!');
+            ->subject('Second Chance: You won ' . $this->auction->title)
+            ->greeting('Hello ' . $notifiable->name . '!')
+            ->line('The original winner did not pay in time. You are now the winner of "' . $this->auction->title . '".')
+            ->line('Please pay within 24 hours to complete your purchase.')
+            ->action('Pay Now', $payUrl)
+            ->line('Thank you!');
     }
 
-    public function toArray($notifiable): array
+    public function toArray(object $notifiable): array
     {
+        $payment = $this->auction->auctionPayments()->latest()->first();
         return [
             'type' => 'auction_second_chance',
+            'message' => 'Second chance: You won ' . $this->auction->title,
+            'action_url' => $payment ? route('auctions.payment.index', $payment) : route('auctions.show', $this->auction),
             'auction_id' => $this->auction->id,
-            'amount' => $this->bidAmount,
-            'message' => "Second chance to win {$this->auction->title} at ₱" . number_format($this->bidAmount, 0),
         ];
     }
 }

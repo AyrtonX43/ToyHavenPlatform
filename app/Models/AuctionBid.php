@@ -11,14 +11,17 @@ class AuctionBid extends Model
         'auction_id',
         'user_id',
         'amount',
-        'anonymous_display_id',
+        'rank_at_bid',
         'is_winning',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'is_winning' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'is_winning' => 'boolean',
+        ];
+    }
 
     public function auction(): BelongsTo
     {
@@ -30,13 +33,8 @@ class AuctionBid extends Model
         return $this->belongsTo(User::class);
     }
 
-    public static function generateAnonymousDisplayId(): string
+    public function displayName(): string
     {
-        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        $id = 'Bidder #';
-        for ($i = 0; $i < 6; $i++) {
-            $id .= $chars[random_int(0, strlen($chars) - 1)];
-        }
-        return $id;
+        return $this->rank_at_bid ? "Bidder #{$this->rank_at_bid}" : 'Bidder';
     }
 }

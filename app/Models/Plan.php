@@ -12,89 +12,34 @@ class Plan extends Model
         'slug',
         'price',
         'interval',
-        'interval_count',
         'description',
-        'benefits',
         'features',
         'sort_order',
         'is_active',
     ];
 
-    protected $casts = [
-        'price' => 'decimal:2',
-        'benefits' => 'array',
-        'features' => 'array',
-        'is_active' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'price' => 'decimal:2',
+            'features' => 'array',
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
     }
 
-    public function scopeActive($query)
+    public function planTerms(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(PlanTerms::class);
     }
 
-    public function scopeOrdered($query)
+    public function latestTerms(): ?PlanTerms
     {
-        return $query->orderBy('sort_order')->orderBy('price');
+        return $this->planTerms()->orderByDesc('effective_at')->first();
     }
 
-    public function getBenefit(string $key, $default = null)
-    {
-        return data_get($this->benefits, $key, $default);
-    }
-
-    public function getBuyersPremiumRate(): float
-    {
-        return (float) $this->getBenefit('buyers_premium_rate', 5);
-    }
-
-    public function getEarlyAccessHours(): int
-    {
-        return (int) $this->getBenefit('early_access_hours', 0);
-    }
-
-    public function getToyshopDiscount(): float
-    {
-        return (float) $this->getBenefit('toyshop_discount', 0);
-    }
-
-    public function getFreeShippingMin(): ?float
-    {
-        $min = $this->getBenefit('free_shipping_min');
-        return $min !== null ? (float) $min : null;
-    }
-
-    public function hasMembersOnlyAuctions(): bool
-    {
-        return (bool) $this->getBenefit('members_only_auctions', false);
-    }
-
-    public function hasPrioritySupport(): bool
-    {
-        return (bool) $this->getBenefit('priority_support', false);
-    }
-
-    public function getBadgeLabel(): string
-    {
-        return $this->getBenefit('badge_label', $this->name);
-    }
-
-    public function canCreateAuction(): bool
-    {
-        return (bool) $this->getBenefit('can_create_auction', false);
-    }
-
-    public function getMaxActiveAuctions(): int
-    {
-        return (int) $this->getBenefit('max_active_auctions', 0);
-    }
-
-    public function getAuctionListingFee(): float
-    {
-        return (float) $this->getBenefit('auction_listing_fee', 0);
-    }
 }

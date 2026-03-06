@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Auction;
 use App\Models\Product;
 use App\Models\Seller;
 use App\Models\TradeListing;
@@ -21,8 +20,7 @@ class SearchController extends Controller
             return response()->json([
                 'products' => [], 
                 'businesses' => [], 
-                'trades' => [], 
-                'auctions' => []
+                'trades' => []
             ]);
         }
 
@@ -101,33 +99,10 @@ class SearchController extends Controller
                 ];
             });
 
-        // Auction Listings
-        $auctions = Auction::with(['images'])
-            ->where('status', 'live')
-            ->where(function ($query) use ($q) {
-                $query->where('title', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%");
-            })
-            ->orderByDesc('created_at')
-            ->limit(3)
-            ->get()
-            ->map(function ($a) {
-                $img = $a->images->first();
-                return [
-                    'id' => $a->id,
-                    'name' => $a->title,
-                    'starting_bid' => $a->starting_bid,
-                    'url' => route('auctions.show', $a->id),
-                    'image' => $img ? asset('storage/' . $img->path) : null,
-                    'type' => 'auction',
-                ];
-            });
-
         return response()->json([
             'products' => $products,
             'businesses' => $businesses,
             'trades' => $trades,
-            'auctions' => $auctions,
         ]);
     }
 
@@ -137,7 +112,7 @@ class SearchController extends Controller
     public function search(Request $request)
     {
         $query = $request->get('q', '');
-        $type = $request->get('type', 'all'); // all, toyshop, trade, auction
+        $type = $request->get('type', 'all'); // all, toyshop, trade
         
         if (empty($query)) {
             return redirect()->route('home');
@@ -145,8 +120,8 @@ class SearchController extends Controller
 
         $results = [
             'toyshop' => collect(),
+            'businesses' => collect(),
             'trade' => collect(),
-            'auction' => collect(),
         ];
 
         // Search Toyshop Products
@@ -207,32 +182,12 @@ class SearchController extends Controller
             $results['trade'] = $tradeQuery;
         }
 
-        // Search Auction Listings (members only)
-        $user = auth()->user();
-        $canSeeAuctions = $user && $user->hasActiveMembership();
-        if (($type === 'all' || $type === 'auction') && $canSeeAuctions) {
-            $auctionQuery = Auction::with(['images', 'category'])
-                ->where('status', 'live')
-                ->where(function ($q) use ($query) {
-                    $q->where('title', 'like', "%{$query}%")
-                        ->orWhere('description', 'like', "%{$query}%");
-                })
-                ->orderByDesc('created_at')
-                ->limit(12)
-                ->get();
-            $results['auction'] = $auctionQuery;
-        }
-        if (! $canSeeAuctions) {
-            $results['auction'] = collect();
-        }
-
         // Count totals
         $counts = [
             'toyshop' => $results['toyshop']->count(),
             'businesses' => $results['businesses']->count(),
             'trade' => $results['trade']->count(),
-            'auction' => $results['auction']->count(),
-            'total' => $results['toyshop']->count() + $results['businesses']->count() + $results['trade']->count() + $results['auction']->count(),
+            'total' => $results['toyshop']->count() + $results['businesses']->count() + $results['trade']->count(),
         ];
 
         return view('search.results', compact('query', 'results', 'counts', 'type'));

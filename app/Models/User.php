@@ -24,10 +24,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
-        'auction_alias',
-        'auction_suspended_until',
-        'auction_suspension_offence_count',
-        'auction_banned',
         'google_id',
         'phone',
         'phone_verified_at',
@@ -48,6 +44,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'trade_suspended_by',
         'trade_suspension_offence_count',
         'trade_suspended_until',
+        'auction_suspended_until',
+        'auction_banned_at',
     ];
 
     /**
@@ -78,7 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'trade_suspended_at' => 'datetime',
             'trade_suspended_until' => 'datetime',
             'auction_suspended_until' => 'datetime',
-            'auction_banned' => 'boolean',
+            'auction_banned_at' => 'datetime',
         ];
     }
 
@@ -189,19 +187,34 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
     }
 
-    public function wallet()
+    public function auctionSellerVerification()
     {
-        return $this->hasOne(Wallet::class);
+        return $this->hasOne(AuctionSellerVerification::class)->latestOfMany();
     }
 
-    public function getOrCreateWallet(): Wallet
+    public function auctions()
     {
-        return $this->wallet ?? Wallet::create(['user_id' => $this->id, 'balance' => 0]);
+        return $this->hasMany(Auction::class);
     }
 
-    public function hasApprovedAuctionSellerProfile(): bool
+    public function auctionBids()
     {
-        return $this->auctionSellerProfile?->isApproved() ?? false;
+        return $this->hasMany(AuctionBid::class);
+    }
+
+    public function wonAuctions()
+    {
+        return $this->hasMany(Auction::class, 'winner_id');
+    }
+
+    public function auctionOffenses()
+    {
+        return $this->hasMany(AuctionOffense::class);
+    }
+
+    public function hasApprovedAuctionVerification(): bool
+    {
+        return $this->auctionSellerVerification?->isApproved() ?? false;
     }
 
     public function canListAuctions(): bool
@@ -209,24 +222,21 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->isAdmin()) {
             return true;
         }
-        $plan = $this->currentPlan();
-        return $plan
-            && (strtolower($plan->slug) === 'vip' || $plan->canCreateAuction())
-            && $this->hasApprovedAuctionSellerProfile();
+        return $this->hasPlan('vip')
+            && $this->hasApprovedAuctionVerification();
     }
 
-    public function isAuctionSuspended(): bool
+    public function hasPlan(string $slug): bool
     {
-        if ($this->auction_banned) {
-            return true;
-        }
-        if (! $this->auction_suspended_until) {
-            return false;
-        }
-        if ($this->auction_suspended_until->isPast()) {
-            return false;
-        }
-        return true;
+        $plan = $this->currentPlan();
+        return $plan && $plan->slug === $slug;
+    }
+
+    public function auctionOffenseCount(): int
+    {
+        return $this->auctionOffenses()
+            ->where('offense_type', 'payment_deadline_missed')
+            ->max('occurrence') ?? 0;
     }
 
     public function activeSubscription()
@@ -309,25 +319,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check if the user has an auction-related moderator permission.
-     * Admin always has all permissions. Moderators need the permission in moderator_permissions.
-     */
-    public function hasAuctionPermission(string $permission): bool
-    {
-        if ($this->isAdmin()) {
-            return true;
-        }
-
-        if (! $this->isModerator()) {
-            return false;
-        }
-
-        $perms = $this->moderator_permissions ?? [];
-
-        return in_array($permission, $perms, true);
-    }
-
-    /**
      * Get the seller this user can access (own seller or moderated seller).
      */
     public function getSellerForDashboard(): ?Seller
@@ -395,30 +386,26 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getAuctionAlias(): string
     {
-        if (! $this->auction_alias) {
-            $this->auction_alias = self::generateUniqueAlias();
-            $this->saveQuietly();
-        }
-
-        return $this->auction_alias;
+        return 'Bidder';
     }
 
-    public static function generateUniqueAlias(): string
+    public function isAuctionBanned(): bool
     {
-        $prefixes = ['ToyBidder', 'Collector', 'Hunter', 'Seeker', 'Finder', 'Player'];
-        $maxAttempts = 20;
-
-        for ($i = 0; $i < $maxAttempts; $i++) {
-            $prefix = $prefixes[array_rand($prefixes)];
-            $suffix = strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
-            $alias = $prefix . '_' . $suffix;
-
-            if (! self::where('auction_alias', $alias)->exists()) {
-                return $alias;
-            }
-        }
-
-        return 'Bidder_' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+        return $this->auction_banned_at !== null;
     }
 
+    public function isAuctionSuspended(): bool
+    {
+        if ($this->auction_banned_at) {
+            return true;
+        }
+        if (! $this->auction_suspended_until) {
+            return false;
+        }
+        if ($this->auction_suspended_until->isPast()) {
+            $this->update(['auction_suspended_until' => null]);
+            return false;
+        }
+        return true;
+    }
 }

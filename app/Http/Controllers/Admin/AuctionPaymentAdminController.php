@@ -4,48 +4,34 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuctionPayment;
-use Illuminate\Http\Request;
 
 class AuctionPaymentAdminController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $query = AuctionPayment::with(['auction', 'winner', 'seller']);
-
-        if ($request->filled('status')) {
-            $query->where('payment_status', $request->status);
-        }
-        if ($request->filled('escrow')) {
-            $query->where('escrow_status', $request->escrow);
-        }
-
-        $payments = $query->orderByDesc('created_at')->paginate(20);
+        $payments = AuctionPayment::with(['auction', 'winner'])
+            ->whereIn('status', [AuctionPayment::STATUS_HELD, AuctionPayment::STATUS_PENDING])
+            ->orderByDesc('created_at')
+            ->paginate(20);
 
         return view('admin.auction-payments.index', compact('payments'));
     }
 
-    public function show(AuctionPayment $auctionPayment)
+    public function release(AuctionPayment $auctionPayment)
     {
-        $auctionPayment->load(['auction.images', 'auction.category', 'winner', 'seller', 'trackingUpdates']);
+        if (! $auctionPayment->canRelease()) {
+            return back()->with('error', 'Can only release when delivery is confirmed.');
+        }
 
-        return view('admin.auction-payments.show', compact('auctionPayment'));
+        $auctionPayment->update(['status' => AuctionPayment::STATUS_RELEASED]);
+
+        return back()->with('success', 'Payment released to seller.');
     }
 
-    public function releaseEscrow(AuctionPayment $auctionPayment)
+    public function refund(AuctionPayment $auctionPayment)
     {
-        if ($auctionPayment->escrow_status !== 'held') {
-            return back()->with('error', 'Escrow is not in held status.');
-        }
+        $auctionPayment->update(['status' => AuctionPayment::STATUS_REFUNDED]);
 
-        if (! $auctionPayment->canRelease()) {
-            return back()->with('error', 'Cannot release yet. Buyer and seller must confirm delivery.');
-        }
-
-        $auctionPayment->update([
-            'escrow_status' => 'released',
-            'released_at' => now(),
-        ]);
-
-        return back()->with('success', 'Escrow released. Send payout to seller PayPal: ' . ($auctionPayment->seller_paypal_email ?? $auctionPayment->seller->email ?? 'N/A'));
+        return back()->with('success', 'Payment refunded.');
     }
 }

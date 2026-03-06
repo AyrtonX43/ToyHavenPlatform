@@ -189,11 +189,6 @@
         color: white;
     }
     
-    .badge-auction {
-        background: rgba(245, 158, 11, 0.9);
-        color: white;
-    }
-    
     .empty-state {
         text-align: center;
         padding: 3rem 2rem;
@@ -276,9 +271,6 @@
             </button>
             <button class="search-tab {{ $type === 'trade' ? 'active' : '' }}" onclick="filterResults('trade')">
                 <i class="bi bi-arrow-left-right me-2"></i>Trade ({{ $counts['trade'] }})
-            </button>
-            <button class="search-tab {{ $type === 'auction' ? 'active' : '' }}" onclick="filterResults('auction')">
-                <i class="bi bi-hammer me-2"></i>Auction ({{ $counts['auction'] }})
             </button>
         </div>
 
@@ -441,51 +433,6 @@
         </div>
         @endif
 
-        @if($type === 'all' || $type === 'auction')
-        <div class="result-section" id="auction-results">
-            <div class="result-section-title">
-                <i class="bi bi-hammer"></i>
-                <span>Auction Listings</span>
-                <span class="result-count">{{ $results['auction']->count() }} found</span>
-            </div>
-            
-            @if($results['auction']->count() > 0)
-                <div class="row g-4">
-                    @foreach($results['auction'] as $auction)
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <div class="result-card reveal">
-                                <div class="result-image-wrapper">
-                                    @if($auction->images->first())
-                                        <img src="{{ asset('storage/' . $auction->images->first()->path) }}" alt="{{ $auction->title }}">
-                                    @else
-                                        <div class="d-flex align-items-center justify-content-center h-100">
-                                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
-                                        </div>
-                                    @endif
-                                    <span class="result-badge badge-auction">
-                                        <i class="bi bi-hammer me-1"></i>Auction
-                                    </span>
-                                </div>
-                                <div class="result-card-body">
-                                    <h5 class="result-title">
-                                        <a href="{{ route('auctions.show', $auction) }}">{{ $auction->title }}</a>
-                                    </h5>
-                                    <p class="result-description">{{ Str::limit($auction->description, 100) }}</p>
-                                    <div class="result-price">₱{{ number_format($auction->starting_bid, 0) }} starting bid</div>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="empty-state">
-                    <i class="bi bi-inbox empty-state-icon"></i>
-                    <h5>No auction listings found</h5>
-                    <p class="text-muted">Try different search terms</p>
-                </div>
-            @endif
-        </div>
-        @endif
     </div>
 </div>
 

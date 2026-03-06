@@ -55,58 +55,6 @@
                             </div>
                         </a>
                     </div>
-                    @if(auth()->user()->hasAuctionPermission('auctions_view'))
-                    <div class="col-md-4">
-                        <a href="{{ route('moderator.auctions.index') }}" class="text-decoration-none">
-                            <div class="card border-primary h-100">
-                                <div class="card-body">
-                                    <i class="bi bi-hammer display-4 text-primary d-block mb-2"></i>
-                                    <h5 class="card-title">Auctions</h5>
-                                    <p class="card-text text-muted small mb-0">View and moderate auction listings.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    @endif
-                    @if(auth()->user()->hasAuctionPermission('auction_payments_moderate'))
-                    <div class="col-md-4">
-                        <a href="{{ route('moderator.auction-payments.index') }}" class="text-decoration-none">
-                            <div class="card border-primary h-100">
-                                <div class="card-body">
-                                    <i class="bi bi-credit-card display-4 text-primary d-block mb-2"></i>
-                                    <h5 class="card-title">Auction Payments</h5>
-                                    <p class="card-text text-muted small mb-0">Release escrow and manage payments.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    @endif
-                    @if(auth()->user()->hasAuctionPermission('auction_sellers_moderate'))
-                    <div class="col-md-4">
-                        <a href="{{ route('moderator.auction-seller-profiles.index') }}" class="text-decoration-none">
-                            <div class="card border-primary h-100">
-                                <div class="card-body">
-                                    <i class="bi bi-person-badge display-4 text-primary d-block mb-2"></i>
-                                    <h5 class="card-title">Auction Sellers</h5>
-                                    <p class="card-text text-muted small mb-0">Review seller profiles.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    @endif
-                    @if(auth()->user()->hasAuctionPermission('plans_manage'))
-                    <div class="col-md-4">
-                        <a href="{{ route('moderator.plans.index') }}" class="text-decoration-none">
-                            <div class="card border-primary h-100">
-                                <div class="card-body">
-                                    <i class="bi bi-gem display-4 text-primary d-block mb-2"></i>
-                                    <h5 class="card-title">Membership Plans</h5>
-                                    <p class="card-text text-muted small mb-0">Edit plan price and description.</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>

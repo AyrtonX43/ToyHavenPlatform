@@ -692,8 +692,6 @@
                                                         'account_banned' => 'bi-ban',
                                                         'account_suspended' => 'bi-pause-circle',
                                                         'profile_update' => 'bi-person-check',
-                                                        'auction_won' => 'bi-trophy',
-                                                        'auction_outbid' => 'bi-hammer',
                                                     ];
                                                     
                                                     $colors = [
@@ -708,8 +706,6 @@
                                                         'account_banned' => 'danger',
                                                         'account_suspended' => 'warning',
                                                         'profile_update' => 'primary',
-                                                        'auction_won' => 'success',
-                                                        'auction_outbid' => 'warning',
                                                     ];
                                                     
                                                     $icon = $icons[$type] ?? 'bi-bell';
@@ -784,6 +780,11 @@
                                 <li><a class="dropdown-item" href="{{ route('notifications.index') }}"><i class="bi bi-bell me-2"></i>Notifications</a></li>
                                 <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-person me-2"></i>Profile Settings</a></li>
                                 <li><a class="dropdown-item" href="{{ route('membership.index') }}"><i class="bi bi-gem me-2"></i>Membership</a></li>
+                                <li><a class="dropdown-item" href="{{ route('auctions.my-bids') }}"><i class="bi bi-hammer me-2"></i>My Bids</a></li>
+                                <li><a class="dropdown-item" href="{{ route('auctions.history') }}"><i class="bi bi-clock-history me-2"></i>Auction History</a></li>
+                                @if(Route::has('auctions.seller.index'))
+                                    <li><a class="dropdown-item" href="{{ route('auctions.seller.index') }}"><i class="bi bi-tag me-2"></i>Auction Listings</a></li>
+                                @endif
                                 @if(Auth::user()->isSeller() && Auth::user()->seller && Auth::user()->seller->verification_status !== 'rejected')
                                     <li><hr class="dropdown-divider"></li>
                                     <li><h6 class="dropdown-header text-primary"><i class="bi bi-shop me-2"></i>Business</h6></li>

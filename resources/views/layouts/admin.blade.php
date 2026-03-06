@@ -477,95 +477,6 @@
             </ul>
 
             {{-- ═══════════════════════════════════════════
-                 4. AUCTION MANAGEMENT
-            ═══════════════════════════════════════════ --}}
-            <div class="sidebar-section-label">Auction</div>
-
-            <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
-                    onclick="toggleMenu(this)"
-                    aria-expanded="{{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
-                <i class="bi bi-hammer menu-icon"></i> Auction Management
-                <i class="bi bi-chevron-right chevron"></i>
-            </button>
-            <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
-                {{-- Auction Seller Management --}}
-                <li>
-                    <button class="sidebar-parent {{ request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.auction-verifications.*') ? 'active-section' : '' }}"
-                            onclick="toggleMenu(this)"
-                            aria-expanded="{{ request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.auction-verifications.*') ? 'true' : 'false' }}">
-                        <i class="bi bi-people menu-icon"></i> Auction Seller Management
-                        <i class="bi bi-chevron-right chevron"></i>
-                    </button>
-                    <ul class="sidebar-children {{ request()->routeIs('admin.auction-sellers.*') || request()->routeIs('admin.auction-verifications.*') ? 'open' : '' }}">
-                        <li>
-                            <a href="{{ route('admin.auction-sellers.index') }}"
-                               class="sidebar-link {{ request()->routeIs('admin.auction-sellers.*') ? 'active' : '' }}">
-                                <i class="bi bi-person-badge menu-icon"></i> Approved Auction Sellers
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.auction-verifications.index') }}"
-                               class="sidebar-link {{ request()->routeIs('admin.auction-verifications.*') ? 'active' : '' }}">
-                                <i class="bi bi-person-check menu-icon"></i> Seller Verification Requests
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                {{-- Auction Product Management --}}
-                <li>
-                    <button class="sidebar-parent {{ request()->routeIs('admin.auctions.*') ? 'active-section' : '' }}"
-                            onclick="toggleMenu(this)"
-                            aria-expanded="{{ request()->routeIs('admin.auctions.*') ? 'true' : 'false' }}">
-                        <i class="bi bi-box-seam menu-icon"></i> Auction Product Management
-                        <i class="bi bi-chevron-right chevron"></i>
-                    </button>
-                    <ul class="sidebar-children {{ request()->routeIs('admin.auctions.*') ? 'open' : '' }}">
-                        <li>
-                            <a href="{{ route('admin.auctions.index') }}"
-                               class="sidebar-link {{ request()->routeIs('admin.auctions.index') || request()->routeIs('admin.auctions.create') ? 'active' : '' }}">
-                                <i class="bi bi-send menu-icon"></i> Auction Request Listing
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.auctions.index') }}?filter=live"
-                               class="sidebar-link">
-                                <i class="bi bi-broadcast menu-icon"></i> Live Bid & Results
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.auctions.index') }}?filter=reviewed"
-                               class="sidebar-link">
-                                <i class="bi bi-check2-square menu-icon"></i> Approved & Rejected Auction Products
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                {{-- Membership Management --}}
-                <li>
-                    <button class="sidebar-parent {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
-                            onclick="toggleMenu(this)"
-                            aria-expanded="{{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
-                        <i class="bi bi-gem menu-icon"></i> Membership Management
-                        <i class="bi bi-chevron-right chevron"></i>
-                    </button>
-                    <ul class="sidebar-children {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
-                        <li>
-                            <a href="{{ route('admin.plans.index') }}"
-                               class="sidebar-link {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
-                                <i class="bi bi-pencil-square menu-icon"></i> Membership Edit Plan
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.subscriptions.index') }}"
-                               class="sidebar-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
-                                <i class="bi bi-people menu-icon"></i> User Subscriptions by Member Badge
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-
-            {{-- ═══════════════════════════════════════════
                  5. ADMIN MANAGEMENT
             ═══════════════════════════════════════════ --}}
             <div class="sidebar-section-label">Administration</div>
@@ -654,32 +565,17 @@
                                 </li>
                             </ul>
                         </li>
-                        {{-- Auction Reports --}}
                         <li>
-                            <button class="sidebar-parent" onclick="toggleMenu(this)" aria-expanded="false">
-                                <i class="bi bi-hammer menu-icon"></i> Auction
-                                <i class="bi bi-chevron-right chevron"></i>
-                            </button>
-                            <ul class="sidebar-children">
-                                <li>
-                                    <a href="{{ route('admin.auctions.index') }}"
-                                       class="sidebar-link">
-                                        <i class="bi bi-box menu-icon"></i> Auction Products
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('admin.users.index') }}"
-                                       class="sidebar-link">
-                                        <i class="bi bi-people menu-icon"></i> Users (Individual & Business Seller, Customer)
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('admin.conversation-reports.index') }}"
-                                       class="sidebar-link">
-                                        <i class="bi bi-chat-dots menu-icon"></i> Chat
-                                    </a>
-                                </li>
-                            </ul>
+                            <a href="{{ route('admin.users.index') }}"
+                               class="sidebar-link">
+                                <i class="bi bi-people menu-icon"></i> Users (Individual & Business Seller, Customer)
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.conversation-reports.index') }}"
+                               class="sidebar-link">
+                                <i class="bi bi-chat-dots menu-icon"></i> Chat
+                            </a>
                         </li>
                     </ul>
                 </li>

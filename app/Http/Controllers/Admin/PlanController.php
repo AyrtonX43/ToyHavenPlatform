@@ -8,29 +8,42 @@ use Illuminate\Http\Request;
 
 class PlanController extends Controller
 {
+    /**
+     * Display all plans
+     */
     public function index()
     {
-        $plans = Plan::ordered()->get();
+        $plans = Plan::orderBy('sort_order')->orderBy('price')->get();
+
         return view('admin.plans.index', compact('plans'));
     }
 
+    /**
+     * Show edit form for a plan
+     */
     public function edit(Plan $plan)
     {
         return view('admin.plans.edit', compact('plan'));
     }
 
+    /**
+     * Update plan price and description
+     */
     public function update(Request $request, Plan $plan)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $request->validate([
             'price' => 'required|numeric|min:0',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
+            'description' => 'nullable|string|max:2000',
+            'name' => 'required|string|max:255',
         ]);
 
-        $validated['is_active'] = $request->boolean('is_active');
-        $plan->update($validated);
+        $plan->update([
+            'name' => $request->name,
+            'price' => $request->price,
+            'description' => $request->description,
+        ]);
 
-        return redirect()->route('admin.plans.index')->with('success', 'Plan updated.');
+        return redirect()->route('admin.plans.index')
+            ->with('success', 'Plan updated successfully.');
     }
 }
