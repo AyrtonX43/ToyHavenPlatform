@@ -8,6 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('auction_seller_verifications')) {
+            return;
+        }
+        if (Schema::hasColumn('auction_seller_verifications', 'auction_shop_deactivated_at')) {
+            return;
+        }
+
         Schema::table('auction_seller_verifications', function (Blueprint $table) {
             $table->timestamp('auction_shop_deactivated_at')->nullable()->after('verified_at');
         });
