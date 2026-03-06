@@ -155,6 +155,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Membership Routes
     Route::prefix('membership')->name('membership.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Membership\PlanController::class, 'index'])->name('index');
+        Route::get('/checkout/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'checkout'])->name('checkout')->where('planSlug', '[a-z0-9\-]+');
         Route::get('/terms/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'terms'])->name('terms')->where('planSlug', '[a-z0-9\-]+');
         Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
@@ -172,8 +173,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Auction Routes - Public browse
     Route::prefix('auctions')->name('auctions.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
-        Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->middleware('auth')->name('my-bids');
-        Route::get('/history', [\App\Http\Controllers\Auction\AuctionHistoryController::class, 'index'])->middleware('auth')->name('history');
+        Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->middleware(['auth', 'membership:auction'])->name('my-bids');
+        Route::get('/history', [\App\Http\Controllers\Auction\AuctionHistoryController::class, 'index'])->middleware(['auth', 'membership:auction'])->name('history');
         Route::get('/payment/{auctionPayment}', [\App\Http\Controllers\Auction\PaymentController::class, 'index'])->middleware(['auth', 'membership'])->name('payment.index');
         Route::post('/payment/{auctionPayment}/paymongo', [\App\Http\Controllers\Auction\PaymentController::class, 'processPayMongo'])->middleware(['auth', 'membership'])->name('payment.paymongo');
         Route::get('/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('show');

@@ -10,6 +10,12 @@
     .auction-card img { height: 200px; object-fit: cover; }
     .auction-card .badge-live { background: #059669; }
     .auction-card .badge-ended { background: #6b7280; }
+    .plan-card { border: 2px solid #e2e8f0; border-radius: 20px; overflow: hidden; transition: all 0.3s ease; height: 100%; }
+    .plan-card:hover { border-color: #0d9488; box-shadow: 0 12px 40px rgba(13, 148, 136, 0.15); }
+    .plan-card.featured { border-color: #0d9488; box-shadow: 0 8px 32px rgba(13, 148, 136, 0.2); }
+    .plan-header { padding: 2rem 1.5rem; text-align: center; background: #f8fafc; }
+    .plan-card.featured .plan-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: white; }
+    .plan-price { font-size: 2.5rem; font-weight: 800; }
 </style>
 @endpush
 
@@ -17,7 +23,7 @@
 <div class="auction-hero">
     <div class="container text-center">
         <h1 class="mb-2"><i class="bi bi-hammer me-2"></i>ToyHaven Auctions</h1>
-        <p class="mb-0 opacity-90">Browse and bid on rare collectibles</p>
+        <p class="mb-0 opacity-90">@if(!empty($showPlansOnly) && $showPlansOnly)Join membership to browse and bid on auctions@else Browse and bid on rare collectibles @endif</p>
     </div>
 </div>
 
@@ -26,6 +32,37 @@
     @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
     @if(session('info'))<div class="alert alert-info">{{ session('info') }}</div>@endif
 
+    @if(!empty($showPlansOnly) && $showPlansOnly && $plans->isNotEmpty())
+        <div class="text-center mb-4">
+            <h4 class="mb-2">Membership required to access auctions</h4>
+            <p class="text-muted">Choose a plan below to browse auction listings, place bids, and view your history.</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            @foreach($plans as $plan)
+                <div class="col-lg-4 col-md-6">
+                    <div class="plan-card card h-100 {{ $plan->slug === 'pro' ? 'featured' : '' }}">
+                        <div class="plan-header">
+                            <h3 class="h4 fw-bold mb-2">{{ $plan->name }}</h3>
+                            <div class="plan-price">₱{{ number_format($plan->price, 0) }}<small class="fs-6 fw-normal">/mo</small></div>
+                            @if($plan->description)
+                                <p class="mb-0 mt-2 small opacity-90">{{ Str::limit($plan->description, 80) }}</p>
+                            @endif
+                        </div>
+                        <div class="card-body">
+                            @if($plan->features && is_array($plan->features))
+                                <ul class="list-unstyled mb-3">
+                                    @foreach($plan->features as $feature)
+                                        <li class="py-1"><i class="bi bi-check-circle-fill text-success me-2"></i>{{ $feature }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            <a href="{{ route('membership.checkout', $plan->slug) }}" class="btn {{ $plan->slug === 'pro' ? 'btn-success' : 'btn-outline-primary' }} w-100">Select {{ $plan->name }}</a>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @else
     <form action="{{ route('auctions.index') }}" method="GET" class="row g-2 mb-4">
         <div class="col-md-4">
             <input type="text" name="search" class="form-control" placeholder="Search auctions..." value="{{ request('search') }}">
@@ -82,6 +119,7 @@
             @endforeach
         </div>
         <div class="mt-4">{{ $auctions->links() }}</div>
+    @endif
     @endif
 </div>
 @endsection

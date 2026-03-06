@@ -23,6 +23,16 @@ class PlanController extends Controller
     }
 
     /**
+     * Display checkout: terms & conditions + payment method selection
+     */
+    public function checkout(string $planSlug)
+    {
+        $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
+
+        return view('membership.checkout', ['plan' => $plan]);
+    }
+
+    /**
      * Display terms & conditions for a plan
      */
     public function terms(string $planSlug)

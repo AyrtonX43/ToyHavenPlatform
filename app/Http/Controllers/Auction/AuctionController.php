@@ -6,12 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use App\Models\Category;
+use App\Models\Plan;
 use Illuminate\Http\Request;
 
 class AuctionController extends Controller
 {
     public function index(Request $request)
     {
+        $canBid = auth()->check() && auth()->user()->hasActiveMembership();
+        $hasMembership = $canBid;
+
+        // Non-members see only membership plans (no auction listing, my bids, history)
+        if (auth()->check() && ! $hasMembership) {
+            $plans = Plan::where('is_active', true)->orderBy('sort_order')->orderBy('price')->get();
+
+            return view('auctions.index', [
+                'auctions' => collect(),
+                'categories' => collect(),
+                'canBid' => false,
+                'showPlansOnly' => true,
+                'plans' => $plans,
+            ]);
+        }
+
         $query = Auction::where('status', Auction::STATUS_ACTIVE)
             ->where('end_at', '>', now())
             ->with('images', 'category');
@@ -34,9 +51,14 @@ class AuctionController extends Controller
             ->withQueryString();
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
-        $canBid = auth()->check() && auth()->user()->hasActiveMembership();
 
-        return view('auctions.index', compact('auctions', 'categories', 'canBid'));
+        return view('auctions.index', [
+            'auctions' => $auctions,
+            'categories' => $categories,
+            'canBid' => $canBid,
+            'showPlansOnly' => false,
+            'plans' => collect(),
+        ]);
     }
 
     public function show(Auction $auction)

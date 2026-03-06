@@ -39,7 +39,11 @@ class SubscriptionController extends Controller
      */
     public function subscribe(Request $request)
     {
-        $request->validate(['plan_id' => 'required|exists:plans,id']);
+        $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+            'terms_accepted' => 'required|accepted',
+            'payment_method' => 'required|in:qrph,paypal',
+        ]);
 
         $plan = Plan::findOrFail($request->plan_id);
 
@@ -55,6 +59,8 @@ class SubscriptionController extends Controller
             'current_period_start' => null,
             'current_period_end' => null,
         ]);
+
+        session(['membership_payment_method' => $request->payment_method]);
 
         return redirect()->route('membership.payment', ['subscription' => $subscription->id]);
     }
@@ -260,7 +266,7 @@ class SubscriptionController extends Controller
 
         $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
-        return redirect()->route('membership.index')->with('info', 'Subscription cancelled.');
+        return redirect()->route('auctions.index')->with('info', 'Subscription cancelled. You can select a plan when ready.');
     }
 
     /**

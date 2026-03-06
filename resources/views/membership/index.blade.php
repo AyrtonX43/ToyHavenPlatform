@@ -98,13 +98,9 @@
                         <div class="mt-3">
                             <a href="{{ route('membership.terms', $plan->slug) }}" class="btn btn-link text-decoration-none p-0">Terms & Conditions</a>
                         </div>
-                        <form action="{{ route('membership.subscribe') }}" method="POST" class="mt-3">
-                            @csrf
-                            <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                            <button type="submit" class="btn {{ $plan->slug === 'pro' ? 'btn-success' : 'btn-outline-primary' }} w-100">
-                                Get {{ $plan->name }}
-                            </button>
-                        </form>
+                        <a href="{{ route('membership.checkout', $plan->slug) }}" class="btn {{ $plan->slug === 'pro' ? 'btn-success' : 'btn-outline-primary' }} w-100 mt-3">
+                            Get {{ $plan->name }}
+                        </a>
                     </div>
                 </div>
             </div>
