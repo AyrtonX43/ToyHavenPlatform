@@ -17,6 +17,7 @@ class Order extends Model
         'user_id',
         'seller_id',
         'total_amount',
+        'membership_discount_saved',
         'admin_commission',
         'admin_commission_rate',
         'tax_amount',
@@ -43,6 +44,7 @@ class Order extends Model
 
     protected $casts = [
         'total_amount' => 'decimal:2',
+        'membership_discount_saved' => 'decimal:2',
         'admin_commission' => 'decimal:2',
         'admin_commission_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',

@@ -230,6 +230,7 @@ class CheckoutController extends Controller
                     'user_id' => Auth::id(),
                     'seller_id' => $sellerId,
                     'total_amount' => $baseAmount,
+                    'membership_discount_saved' => round($sellerDiscount, 2),
                     'admin_commission' => $priceCalculation['admin_commission'],
                     'admin_commission_rate' => $priceCalculation['admin_commission_rate'],
                     'tax_amount' => $priceCalculation['tax_amount'],

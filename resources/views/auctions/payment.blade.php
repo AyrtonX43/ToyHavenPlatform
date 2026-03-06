@@ -21,18 +21,15 @@
                 </div>
                 <div class="form-check">
                     <input class="form-check-input pm-radio" type="radio" name="payment_type" value="paypal_demo" id="pm_paypal">
-                    <label class="form-check-label" for="pm_paypal">PayPal (Demo)</label>
-                    <small class="d-block text-muted">Simulated checkout – for testing only</small>
+                    <label class="form-check-label" for="pm_paypal">PayPal</label>
                 </div>
             </div>
 
             <div id="paypal-demo-form" class="card mb-3 d-none">
                 <div class="card-header bg-light">
-                    <strong>PayPal Demo Checkout</strong>
-                    <span class="badge bg-warning text-dark ms-2">Demo Only</span>
+                    <strong>PayPal account details</strong>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted small mb-3">Fill out the details below to simulate a PayPal payment. No real payment will be processed.</p>
                     <div class="mb-2">
                         <label class="form-label">Full Name <span class="text-danger">*</span></label>
                         <input type="text" name="paypal_demo_name" class="form-control" placeholder="John Doe" value="{{ auth()->user()?->name }}" required>

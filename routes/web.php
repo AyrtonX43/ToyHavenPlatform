@@ -167,6 +167,12 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/process-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processPayment'])->name('process-payment');
         Route::post('/paypal-demo/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalDemoConfirm'])->name('paypal-demo');
         Route::get('/check-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'checkPaymentStatus'])->name('check-payment');
+        Route::get('/upgrade', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade');
+        Route::post('/process-upgrade', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processUpgrade'])->name('process-upgrade');
+        Route::post('/schedule-upgrade', [\App\Http\Controllers\Membership\SubscriptionController::class, 'scheduleUpgrade'])->name('schedule-upgrade');
+        Route::get('/upgrade-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgradePayment'])->name('upgrade-payment');
+        Route::post('/process-upgrade-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processUpgradePayment'])->name('process-upgrade-payment');
+        Route::get('/check-upgrade-payment', [\App\Http\Controllers\Membership\SubscriptionController::class, 'checkUpgradePayment'])->name('check-upgrade-payment');
     });
 
     // Auction Routes
