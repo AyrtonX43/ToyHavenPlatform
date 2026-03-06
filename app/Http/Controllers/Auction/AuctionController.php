@@ -10,6 +10,13 @@ class AuctionController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
+
+        if (! $user || ! $user->hasActiveMembership()) {
+            return redirect()->route('membership.index', ['intent' => 'auction'])
+                ->with('info', 'Join a membership plan to view and bid on auction listings.');
+        }
+
         $query = Auction::live()->with(['category', 'images']);
 
         $auctions = $query->orderBy('end_at')->paginate(12);
@@ -20,6 +27,11 @@ class AuctionController extends Controller
     public function show(Auction $auction)
     {
         $user = auth()->user();
+
+        if (! $user || ! $user->hasActiveMembership()) {
+            return redirect()->route('membership.index', ['intent' => 'auction'])
+                ->with('info', 'Join a membership plan to view and bid on auction listings.');
+        }
 
         if ($auction->status !== 'live') {
             return redirect()->route('auctions.index')->with('error', 'This auction is not live.');

@@ -121,6 +121,12 @@
 
 @section('content')
 <div class="container py-4">
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle me-2"></i>{{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     <div class="membership-hero reveal">
         <h1><i class="bi bi-gem me-2"></i>Join ToyHaven Membership</h1>
         <p>Access exclusive auctions, place bids on rare collectibles, and enjoy premium perks across our platform.</p>

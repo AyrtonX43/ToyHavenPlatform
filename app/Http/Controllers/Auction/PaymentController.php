@@ -120,22 +120,35 @@ class PaymentController extends Controller
 
         $request->validate([
             'payment_type' => 'in:qrph,paypal_demo',
+            'paypal_demo_name' => 'required_if:payment_type,paypal_demo|nullable|string|max:255',
+            'paypal_demo_email' => 'required_if:payment_type,paypal_demo|nullable|email',
+            'paypal_demo_payer_email' => 'required_if:payment_type,paypal_demo|nullable|email',
+        ], [
+            'paypal_demo_payer_email.required_if' => 'Please enter your PayPal email for the demo.',
         ]);
 
         if ($paymentType === 'paypal_demo') {
+            $demoRef = 'DEMO-' . now()->format('YmdHis') . '-' . $user->id;
+
             $auctionPayment->update([
                 'payment_status' => 'paid',
                 'paid_at' => now(),
                 'payment_method' => 'paypal_demo',
                 'escrow_status' => 'held',
+                'paypal_transaction_id' => $demoRef,
             ]);
 
             $this->completeSecondChanceIfApplicable($auctionPayment);
 
             try {
-                $this->receiptService->generateReceipt($auctionPayment);
+                $this->receiptService->generateAndSendReceipt($auctionPayment);
             } catch (\Throwable $e) {
                 Log::warning('Auction receipt generation failed', ['error' => $e->getMessage()]);
+                try {
+                    $this->receiptService->generateReceipt($auctionPayment);
+                } catch (\Throwable $e2) {
+                    Log::warning('Auction receipt fallback failed', ['error' => $e2->getMessage()]);
+                }
             }
 
             return response()->json([
@@ -222,9 +235,14 @@ class PaymentController extends Controller
             $this->completeSecondChanceIfApplicable($auctionPayment);
 
             try {
-                $this->receiptService->generateReceipt($auctionPayment);
+                $this->receiptService->generateAndSendReceipt($auctionPayment);
             } catch (\Throwable $e) {
                 Log::warning('Auction receipt generation failed', ['error' => $e->getMessage()]);
+                try {
+                    $this->receiptService->generateReceipt($auctionPayment);
+                } catch (\Throwable $e2) {
+                    Log::warning('Auction receipt fallback failed', ['error' => $e2->getMessage()]);
+                }
             }
 
             return redirect()->route('auctions.payment.success', $auctionPayment);

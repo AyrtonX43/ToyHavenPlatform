@@ -3,11 +3,58 @@
 namespace App\Services;
 
 use App\Models\AuctionPayment;
+use App\Notifications\AuctionPaymentReceiptNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class AuctionReceiptService
 {
+    /**
+     * Generate receipt, send email with PDF attachment, and create notification.
+     */
+    public function generateAndSendReceipt(AuctionPayment $auctionPayment): string
+    {
+        $path = $this->generateReceipt($auctionPayment);
+        $auctionPayment->refresh();
+
+        $winner = $auctionPayment->winner;
+        if ($winner && $winner->email) {
+            try {
+                $pdf = $this->createPDF($auctionPayment);
+                $filename = "auction_receipt_{$auctionPayment->receipt_number}.pdf";
+
+                Mail::send([], [], function ($message) use ($winner, $auctionPayment, $pdf, $filename) {
+                    $message->to($winner->email, $winner->name)
+                        ->subject('Your Official Receipt - ' . $auctionPayment->auction->title . ' | ToyHaven')
+                        ->html($this->getReceiptEmailHtml($auctionPayment))
+                        ->attachData($pdf->output(), $filename, ['mime' => 'application/pdf']);
+                });
+
+                $winner->notify(new AuctionPaymentReceiptNotification($auctionPayment));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return $path;
+    }
+
+    protected function getReceiptEmailHtml(AuctionPayment $auctionPayment): string
+    {
+        $auction = $auctionPayment->auction;
+
+        return '<div style="font-family: sans-serif; max-width: 600px;">
+            <h2 style="color: #0891b2;">Payment Received – Official Receipt</h2>
+            <p>Dear ' . e($auctionPayment->winner->name ?? 'Customer') . ',</p>
+            <p>Thank you for your payment. Your official receipt for <strong>' . e($auction->title) . '</strong> is attached to this email.</p>
+            <p><strong>Receipt No:</strong> ' . e($auctionPayment->receipt_number ?? 'N/A') . '<br>
+            <strong>Amount Paid:</strong> ₱' . number_format($auctionPayment->total_amount, 2) . '</p>
+            <p>You can track your order from your <a href="' . route('auctions.wins.show', $auctionPayment) . '">Auction Wins</a> page.</p>
+            <p>Thank you for choosing ToyHaven!</p>
+        </div>';
+    }
+
     public function generateReceipt(AuctionPayment $auctionPayment): string
     {
         if ($auctionPayment->receipt_path) {

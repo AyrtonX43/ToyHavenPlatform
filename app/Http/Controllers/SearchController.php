@@ -207,8 +207,10 @@ class SearchController extends Controller
             $results['trade'] = $tradeQuery;
         }
 
-        // Search Auction Listings
-        if ($type === 'all' || $type === 'auction') {
+        // Search Auction Listings (members only)
+        $user = auth()->user();
+        $canSeeAuctions = $user && $user->hasActiveMembership();
+        if (($type === 'all' || $type === 'auction') && $canSeeAuctions) {
             $auctionQuery = Auction::with(['images', 'category'])
                 ->where('status', 'live')
                 ->where(function ($q) use ($query) {
@@ -219,7 +221,8 @@ class SearchController extends Controller
                 ->limit(12)
                 ->get();
             $results['auction'] = $auctionQuery;
-        } else {
+        }
+        if (! $canSeeAuctions) {
             $results['auction'] = collect();
         }
 
