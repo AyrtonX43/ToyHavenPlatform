@@ -85,13 +85,25 @@ class PayMongoWebhookController extends Controller
                         : now()->addMonth(),
                 ]);
 
-                SubscriptionPayment::create([
+                $payment = SubscriptionPayment::create([
                     'subscription_id' => $subscription->id,
                     'amount' => data_get($data, 'attributes.amount', 0) / 100,
                     'payment_reference' => $paymentIntentId,
                     'status' => 'paid',
                     'paid_at' => now(),
                 ]);
+
+                // Generate receipt and send email + notification
+                try {
+                    $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+                    $receiptService->generateReceipt($payment);
+                    $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($payment));
+                } catch (\Throwable $e) {
+                    Log::error('PayMongo webhook: receipt/notification failed for subscription', [
+                        'subscription' => $subscriptionId,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
 
                 Log::info('PayMongo webhook: subscription payment confirmed', ['subscription' => $subscriptionId]);
             }

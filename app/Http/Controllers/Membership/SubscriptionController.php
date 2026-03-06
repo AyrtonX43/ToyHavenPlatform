@@ -7,6 +7,8 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\SubscriptionPayment;
 use App\Services\PayMongoService;
+use App\Services\PayPalService;
+use App\Services\SubscriptionReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,8 @@ use Illuminate\Support\Facades\Log;
 class SubscriptionController extends Controller
 {
     public function __construct(
-        protected PayMongoService $payMongo
+        protected PayMongoService $payMongo,
+        protected PayPalService $payPal
     ) {}
 
     /**
@@ -146,7 +149,99 @@ class SubscriptionController extends Controller
 
     protected function processPayPal(Subscription $subscription)
     {
-        return back()->with('info', 'PayPal Sandbox integration will be available in the next phase.');
+        if (! $this->payPal->isConfigured()) {
+            return back()->with('error', 'PayPal is not configured. Please use QR Ph or contact support.');
+        }
+
+        $amount = (float) $subscription->plan->price;
+        $returnUrl = url('/membership/paypal-return') . '?' . http_build_query([
+            'subscription_id' => $subscription->id,
+        ]);
+        $cancelUrl = route('membership.payment', ['subscription' => $subscription->id]);
+
+        $result = $this->payPal->createOrder(
+            $amount,
+            'PHP',
+            $returnUrl,
+            $cancelUrl,
+            ['subscription_id' => (string) $subscription->id]
+        );
+
+        if (! $result || empty($result['approval_url'])) {
+            return back()->with('error', 'Could not create PayPal order. Please try again or use QR Ph.');
+        }
+
+        session(['membership_paypal_order_id' => $result['id']]);
+
+        return redirect()->away($result['approval_url']);
+    }
+
+    /**
+     * PayPal return - capture payment and complete subscription
+     */
+    public function paypalReturn(Request $request)
+    {
+        $subscriptionId = $request->query('subscription_id');
+        $token = $request->query('token'); // PayPal order ID
+
+        if (! $subscriptionId || ! $token) {
+            return redirect()->route('membership.index')->with('error', 'Invalid PayPal return.');
+        }
+
+        $subscription = Subscription::find($subscriptionId);
+        if (! $subscription || $subscription->user_id !== Auth::id()) {
+            return redirect()->route('membership.index')->with('error', 'Subscription not found.');
+        }
+
+        if ($subscription->payments()->where('status', 'paid')->exists()) {
+            return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
+        }
+
+        $capture = $this->payPal->captureOrder($token);
+        if (! $capture) {
+            return redirect()->route('membership.payment', ['subscription' => $subscription->id])
+                ->with('error', 'PayPal payment could not be completed. Please try again.');
+        }
+
+        $status = $capture['status'] ?? null;
+        if ($status !== 'COMPLETED') {
+            $purchaseUnits = $capture['purchase_units'] ?? [];
+            $firstStatus = $purchaseUnits[0]['payments']['captures'][0]['status'] ?? null;
+            if ($firstStatus !== 'COMPLETED') {
+                return redirect()->route('membership.payment', ['subscription' => $subscription->id])
+                    ->with('error', 'Payment was not completed. Please try again.');
+            }
+        }
+
+        $captureData = $capture['purchase_units'][0]['payments']['captures'][0] ?? [];
+        $amount = (float) ($captureData['amount']['value'] ?? $subscription->plan->price);
+
+        $subscription->update([
+            'status' => 'active',
+            'payment_method' => 'paypal',
+            'current_period_start' => now(),
+            'current_period_end' => ($subscription->plan?->interval ?? 'month') === 'year'
+                ? now()->addYear()
+                : now()->addMonth(),
+        ]);
+
+        $payment = SubscriptionPayment::create([
+            'subscription_id' => $subscription->id,
+            'amount' => $amount,
+            'payment_reference' => $captureData['id'] ?? $token,
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        try {
+            $receiptService = app(SubscriptionReceiptService::class);
+            $receiptService->generateReceipt($payment);
+            $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($payment));
+        } catch (\Throwable $e) {
+            Log::error('PayPal return: receipt/notification failed', ['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
     }
 
     /**
@@ -166,7 +261,15 @@ class SubscriptionController extends Controller
             return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
         }
 
-        return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
+        // Check if payment was completed (webhook may have already run)
+        $paid = $subscription->payments()->where('status', 'paid')->exists();
+        if ($paid) {
+            return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
+        }
+
+        // Payment not completed - allow retry
+        return redirect()->route('membership.payment', ['subscription' => $subscription->id])
+            ->with('error', 'Payment was not completed. Please try again or choose a different payment method.');
     }
 
     /**
@@ -266,7 +369,7 @@ class SubscriptionController extends Controller
 
         $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
-        return redirect()->route('auctions.index')->with('info', 'Subscription cancelled. You can select a plan when ready.');
+        return redirect()->route('membership.index')->with('info', 'Subscription cancelled. You can select a plan when ready.');
     }
 
     /**

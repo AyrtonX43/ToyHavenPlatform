@@ -4,18 +4,64 @@
 
 @push('styles')
 <style>
-    .auction-hero { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 2.5rem 0; margin-bottom: 2rem; border-radius: 0 0 24px 24px; }
-    .auction-card { border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; transition: all 0.3s; height: 100%; }
-    .auction-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: #0d9488; }
-    .auction-card img { height: 200px; object-fit: cover; }
-    .auction-card .badge-live { background: #059669; }
-    .auction-card .badge-ended { background: #6b7280; }
-    .plan-card { border: 2px solid #e2e8f0; border-radius: 20px; overflow: hidden; transition: all 0.3s ease; height: 100%; }
-    .plan-card:hover { border-color: #0d9488; box-shadow: 0 12px 40px rgba(13, 148, 136, 0.15); }
-    .plan-card.featured { border-color: #0d9488; box-shadow: 0 8px 32px rgba(13, 148, 136, 0.2); }
-    .plan-header { padding: 2rem 1.5rem; text-align: center; background: #f8fafc; }
-    .plan-card.featured .plan-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: white; }
+    .auction-hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f766e 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 28px 28px;
+        box-shadow: 0 4px 20px rgba(15, 118, 110, 0.2);
+    }
+    .auction-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+        background: #fff;
+    }
+    .auction-card:hover {
+        box-shadow: 0 12px 32px rgba(13, 148, 136, 0.12);
+        border-color: #0d9488;
+        transform: translateY(-2px);
+    }
+    .auction-card img { height: 220px; object-fit: cover; }
+    .auction-card .badge-live { background: linear-gradient(135deg, #059669, #10b981); font-weight: 600; }
+    .auction-card .badge-ended { background: #64748b; }
+    .plan-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+        background: #fff;
+    }
+    .plan-card:hover {
+        border-color: #0d9488;
+        box-shadow: 0 16px 48px rgba(13, 148, 136, 0.18);
+        transform: translateY(-4px);
+    }
+    .plan-card.featured {
+        border-color: #0d9488;
+        box-shadow: 0 12px 36px rgba(13, 148, 136, 0.25);
+    }
+    .plan-header {
+        padding: 2.25rem 1.5rem;
+        text-align: center;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+    .plan-card.featured .plan-header {
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+        color: white;
+    }
     .plan-price { font-size: 2.5rem; font-weight: 800; }
+    .search-form-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        margin-bottom: 2rem;
+    }
 </style>
 @endpush
 
@@ -63,35 +109,44 @@
             @endforeach
         </div>
     @else
-    <form action="{{ route('auctions.index') }}" method="GET" class="row g-2 mb-4">
-        <div class="col-md-4">
-            <input type="text" name="search" class="form-control" placeholder="Search auctions..." value="{{ request('search') }}">
-        </div>
-        <div class="col-md-3">
-            <select name="category" class="form-select">
-                <option value="">All categories</option>
-                @foreach($categories ?? [] as $c)
-                    <option value="{{ $c->id }}" {{ request('category') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i> Search</button>
-        </div>
-    </form>
+    <div class="search-form-card">
+        <form action="{{ route('auctions.index') }}" method="GET" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small text-muted">Search</label>
+                <input type="text" name="search" class="form-control form-control-lg" placeholder="Search auctions by title or description..." value="{{ request('search') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Category</label>
+                <select name="category" class="form-select form-select-lg">
+                    <option value="">All categories</option>
+                    @foreach($categories ?? [] as $c)
+                        <option value="{{ $c->id }}" {{ request('category') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-lg w-100"><i class="bi bi-search me-2"></i> Search</button>
+            </div>
+        </form>
+    </div>
 
     @if(!$canBid)
-        <div class="alert alert-info mb-4">
-            <i class="bi bi-info-circle me-2"></i> <a href="{{ route('membership.index') }}">Join membership</a> to place bids on auctions.
+        <div class="alert alert-info d-flex align-items-center mb-4 border-0 shadow-sm">
+            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+            <div>
+                <strong>Membership required</strong> – <a href="{{ route('membership.index') }}" class="alert-link">Join membership</a> to place bids on auctions.
+            </div>
         </div>
     @endif
 
     @if($auctions->isEmpty())
-        <div class="text-center py-5">
-            <i class="bi bi-hammer display-4 text-muted mb-3"></i>
-            <h4>No live auctions</h4>
-            <p class="text-muted">Check back soon for new listings.</p>
-            <a href="{{ route('membership.index') }}" class="btn btn-primary">View Membership Plans</a>
+        <div class="text-center py-5 px-4">
+            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                <i class="bi bi-hammer text-muted" style="font-size: 3rem;"></i>
+            </div>
+            <h4 class="mb-2">No live auctions</h4>
+            <p class="text-muted mb-4">Check back soon for new listings.</p>
+            <a href="{{ route('membership.index') }}" class="btn btn-primary btn-lg">View Membership Plans</a>
         </div>
     @else
         <div class="row g-4">

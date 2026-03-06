@@ -43,7 +43,7 @@ class SubscriptionReceiptService
         return "{$prefix}-SUB-{$timestamp}-{$id}";
     }
 
-    protected function createPDF(SubscriptionPayment $payment): \Barryvdh\DomPDF\PDF
+    protected function createPDF(SubscriptionPayment $payment, string $receiptNumber): \Barryvdh\DomPDF\PDF
     {
         $payment->load(['subscription.plan', 'subscription.user']);
 
@@ -52,8 +52,8 @@ class SubscriptionReceiptService
             'subscriptionPayment' => $payment,
             'subscription' => $payment->subscription,
             'plan' => $payment->subscription->plan,
-            'receiptNumber' => $payment->receipt_number,
-            'generatedAt' => $payment->receipt_generated_at ?? now(),
+            'receiptNumber' => $receiptNumber,
+            'generatedAt' => now(),
             'companyName' => config('app.name', 'ToyHaven'),
             'companyAddress' => config('app.company_address', 'Philippines'),
             'companyEmail' => config('mail.from.address'),
