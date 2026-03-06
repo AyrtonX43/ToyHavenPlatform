@@ -23,7 +23,7 @@ class PlanController extends Controller
     }
 
     /**
-     * Display checkout: terms & conditions + payment method selection
+     * Step 1: Terms & conditions (must accept before payment selection)
      */
     public function checkout(string $planSlug)
     {
@@ -33,7 +33,17 @@ class PlanController extends Controller
     }
 
     /**
-     * Display terms & conditions for a plan
+     * Step 2: Payment method selection (QRPH or PayPal)
+     */
+    public function paymentSelection(string $planSlug)
+    {
+        $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
+
+        return view('membership.payment-selection', ['plan' => $plan]);
+    }
+
+    /**
+     * Display terms & conditions for a plan (read-only)
      */
     public function terms(string $planSlug)
     {

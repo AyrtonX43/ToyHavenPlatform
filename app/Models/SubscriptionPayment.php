@@ -13,7 +13,10 @@ class SubscriptionPayment extends Model
         'payment_reference',
         'status',
         'paid_at',
+        'receipt_number',
         'receipt_path',
+        'receipt_generated_at',
+        'payment_method',
     ];
 
     protected function casts(): array
@@ -21,6 +24,7 @@ class SubscriptionPayment extends Model
         return [
             'amount' => 'decimal:2',
             'paid_at' => 'datetime',
+            'receipt_generated_at' => 'datetime',
         ];
     }
 

@@ -29,7 +29,11 @@ class SubscriptionReceiptService
 
         Storage::disk('public')->put($path, $pdf->output());
 
-        $payment->update(['receipt_path' => $path]);
+        $payment->update([
+            'receipt_number' => $receiptNumber,
+            'receipt_path' => $path,
+            'receipt_generated_at' => now(),
+        ]);
 
         return $path;
     }
@@ -53,7 +57,7 @@ class SubscriptionReceiptService
             'subscription' => $payment->subscription,
             'plan' => $payment->subscription->plan,
             'receiptNumber' => $receiptNumber,
-            'generatedAt' => now(),
+            'generatedAt' => $payment->receipt_generated_at ?? now(),
             'companyName' => config('app.name', 'ToyHaven'),
             'companyAddress' => config('app.company_address', 'Philippines'),
             'companyEmail' => config('mail.from.address'),

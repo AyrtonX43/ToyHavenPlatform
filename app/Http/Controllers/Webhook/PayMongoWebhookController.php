@@ -72,10 +72,12 @@ class PayMongoWebhookController extends Controller
             }
         }
 
-        // Membership subscription payment
+        // Membership subscription payment (QRPH)
         if ($subscriptionId = ($metadata['subscription_id'] ?? null)) {
             $subscription = Subscription::find($subscriptionId);
             if ($subscription && $subscription->status === 'pending') {
+                $amount = data_get($data, 'attributes.amount', 0) / 100;
+
                 $subscription->update([
                     'status' => 'active',
                     'payment_method' => 'qrph',
@@ -85,25 +87,21 @@ class PayMongoWebhookController extends Controller
                         : now()->addMonth(),
                 ]);
 
-                $payment = SubscriptionPayment::create([
+                $subscriptionPayment = SubscriptionPayment::create([
                     'subscription_id' => $subscription->id,
-                    'amount' => data_get($data, 'attributes.amount', 0) / 100,
+                    'amount' => $amount,
                     'payment_reference' => $paymentIntentId,
                     'status' => 'paid',
                     'paid_at' => now(),
+                    'payment_method' => 'qrph',
                 ]);
 
-                // Generate receipt and send email + notification
-                try {
-                    $receiptService = app(\App\Services\SubscriptionReceiptService::class);
-                    $receiptService->generateReceipt($payment);
-                    $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($payment));
-                } catch (\Throwable $e) {
-                    Log::error('PayMongo webhook: receipt/notification failed for subscription', [
-                        'subscription' => $subscriptionId,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                // Generate receipt
+                $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+                $receiptService->generateReceipt($subscriptionPayment);
+
+                // Send email with receipt and notification
+                $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
 
                 Log::info('PayMongo webhook: subscription payment confirmed', ['subscription' => $subscriptionId]);
             }

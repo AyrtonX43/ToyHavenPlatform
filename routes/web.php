@@ -157,11 +157,14 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Membership\PlanController::class, 'index'])->name('index');
         Route::get('/checkout/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'checkout'])->name('checkout')->where('planSlug', '[a-z0-9\-]+');
         Route::get('/terms/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'terms'])->name('terms')->where('planSlug', '[a-z0-9\-]+');
+        Route::get('/payment-selection/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'paymentSelection'])->name('payment-selection')->where('planSlug', '[a-z0-9\-]+');
         Route::get('/manage', [\App\Http\Controllers\Membership\SubscriptionController::class, 'manage'])->name('manage');
+        Route::post('/accept-terms', [\App\Http\Controllers\Membership\SubscriptionController::class, 'acceptTerms'])->name('accept-terms');
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
+        Route::get('/paypal/return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalReturn'])->name('paypal.return');
+        Route::get('/paypal/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalCancel'])->name('paypal.cancel');
         Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
         Route::get('/payment-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment-return');
-        Route::get('/paypal-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalReturn'])->name('paypal-return');
         Route::get('/payment-success/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentSuccess'])->name('payment-success');
         Route::get('/subscriptions/{subscription}/payments/{subscriptionPayment}/receipt', [\App\Http\Controllers\Membership\SubscriptionController::class, 'downloadReceipt'])->name('receipt');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');

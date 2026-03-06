@@ -98,9 +98,7 @@
                         <div class="mt-3">
                             <a href="{{ route('membership.terms', $plan->slug) }}" class="btn btn-link text-decoration-none p-0">Terms & Conditions</a>
                         </div>
-                        <a href="{{ route('membership.checkout', $plan->slug) }}" class="btn {{ $plan->slug === 'pro' ? 'btn-success' : 'btn-outline-primary' }} w-100 mt-3">
-                            Get {{ $plan->name }}
-                        </a>
+                        <a href="{{ route('membership.checkout', $plan->slug) }}" class="btn {{ $plan->slug === 'pro' ? 'btn-success' : 'btn-outline-primary' }} w-100 mt-3">Select Plan & View Terms</a>
                     </div>
                 </div>
             </div>
