@@ -9,88 +9,68 @@ use Illuminate\Support\Facades\Auth;
 
 class AuctionController extends Controller
 {
-    /**
-     * List auctions. Requires auctions_view permission.
-     */
     public function index(Request $request)
     {
         if (! Auth::user()->hasAuctionPermission('auctions_view')) {
             abort(403, 'You do not have permission to view auctions.');
         }
 
-        $query = Auction::with(['user', 'category', 'winner']);
+        $query = Auction::with(['auctionSellerProfile.user', 'category']);
 
         if ($request->filled('status')) {
-            if ($request->status === 'pending_approval') {
-                $query->where('status', 'pending_approval');
-            } elseif ($request->status === 'live') {
-                $query->live();
-            } elseif ($request->status === 'ended') {
-                $query->ended();
-            } else {
-                $query->where('status', $request->status);
-            }
+            $query->where('status', $request->status);
         }
 
-        if ($request->filled('search')) {
-            $q = $request->search;
-            $query->where(fn ($sql) => $sql->where('title', 'like', "%{$q}%"));
-        }
+        $auctions = $query->orderByDesc('created_at')->paginate(20);
 
-        $auctions = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
-
-        return view('moderator.auctions.index', compact('auctions'));
+        return view('admin.auctions.index', compact('auctions'))->with('context', 'moderator');
     }
 
-    /**
-     * Show a single auction. Requires auctions_view permission.
-     */
     public function show(Auction $auction)
     {
         if (! Auth::user()->hasAuctionPermission('auctions_view')) {
-            abort(403, 'You do not have permission to view auctions.');
+            abort(403);
         }
 
-        $auction->load(['user', 'seller', 'product', 'userProduct', 'category', 'categories', 'images', 'bids.user', 'winner']);
+        $auction->load(['auctionSellerProfile.user', 'category', 'images', 'bids']);
 
-        return view('moderator.auctions.show', compact('auction'));
+        return view('admin.auctions.show', compact('auction'))->with('context', 'moderator');
     }
 
-    /**
-     * Approve a pending auction. Requires auctions_moderate permission.
-     */
     public function approve(Auction $auction)
     {
         if (! Auth::user()->hasAuctionPermission('auctions_moderate')) {
-            abort(403, 'You do not have permission to moderate auctions.');
+            abort(403);
         }
 
         if ($auction->status !== 'pending_approval') {
-            return back()->with('error', 'Auction is not pending approval.');
+            return back()->with('error', 'Only pending auctions can be approved.');
         }
 
         $auction->update([
-            'status' => 'live',
-            'start_at' => $auction->start_at ?? now(),
+            'status' => 'approved',
+            'rejection_reason' => null,
         ]);
 
-        return back()->with('success', 'Auction approved and is now live.');
+        return back()->with('success', 'Auction approved.');
     }
 
-    /**
-     * Reject a pending auction. Requires auctions_moderate permission.
-     */
     public function reject(Request $request, Auction $auction)
     {
         if (! Auth::user()->hasAuctionPermission('auctions_moderate')) {
-            abort(403, 'You do not have permission to moderate auctions.');
+            abort(403);
         }
 
         if ($auction->status !== 'pending_approval') {
-            return back()->with('error', 'Auction is not pending approval.');
+            return back()->with('error', 'Only pending auctions can be rejected.');
         }
 
-        $auction->update(['status' => 'cancelled']);
+        $request->validate(['rejection_reason' => 'required|string|max:500']);
+
+        $auction->update([
+            'status' => 'draft',
+            'rejection_reason' => $request->rejection_reason,
+        ]);
 
         return back()->with('success', 'Auction rejected.');
     }

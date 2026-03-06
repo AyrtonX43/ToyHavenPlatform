@@ -18,7 +18,7 @@
             <h5 class="card-title"><i class="bi bi-flag me-2"></i>Report this conversation</h5>
             <p class="text-muted small">A snapshot of the conversation will be saved for admin review. Please describe the issue.</p>
 
-            <form action="{{ route('trading.conversations.report', $conversation) }}" method="post" enctype="multipart/form-data">
+            <form action="{{ route('trading.conversations.report', $conversation) }}" method="post">
                 @csrf
                 <div class="mb-3">
                     <label for="reason" class="form-label">Reason / Description <span class="text-danger">*</span></label>
@@ -27,14 +27,6 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                     <div class="form-text">Max 2000 characters. The current conversation will be captured as a snapshot for admin.</div>
-                </div>
-                <div class="mb-3">
-                    <label for="proof_images" class="form-label">Upload proof images (optional but recommended)</label>
-                    <input type="file" name="proof_images[]" id="proof_images" class="form-control @error('proof_images.*') is-invalid @enderror" accept="image/jpeg,image/png,image/jpg,image/webp" multiple>
-                    @error('proof_images.*')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <div class="form-text">Upload 1 or more images as evidence. Max 5MB per image.</div>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-danger">Submit report</button>

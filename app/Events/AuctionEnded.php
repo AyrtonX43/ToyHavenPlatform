@@ -19,9 +19,7 @@ class AuctionEnded implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return [
-            new Channel('auction.' . $this->auction->id),
-        ];
+        return [new Channel('auction.' . $this->auction->id)];
     }
 
     public function broadcastAs(): string
@@ -33,7 +31,7 @@ class AuctionEnded implements ShouldBroadcast
     {
         return [
             'auction_id' => $this->auction->id,
-            'winner_alias' => $this->auction->winner?->getAuctionAlias(),
+            'winner_id' => $this->auction->winner_id,
             'winning_amount' => (float) $this->auction->winning_amount,
         ];
     }

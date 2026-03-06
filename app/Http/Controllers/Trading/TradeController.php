@@ -119,10 +119,11 @@ class TradeController extends Controller
             if ($trade->conversation) {
                 $trade->conversation->update(['is_locked' => true]);
             }
-            return back()->with('success', 'Trade cancelled. Both parties confirmed.');
+            return redirect()->route('trading.trades.index')
+                ->with('success', 'Trade cancelled. Both parties confirmed.');
         }
 
-        return back()->with('success', 'Cancel requested. Waiting for the other party to confirm.');
+        return back()->with('success', 'Cancel requested. Waiting for the other party to confirm cancel.');
     }
 
     public function disputeForm($id)

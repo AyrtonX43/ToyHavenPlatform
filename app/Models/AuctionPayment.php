@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AuctionPayment extends Model
 {
@@ -18,8 +19,17 @@ class AuctionPayment extends Model
         'seller_payout',
         'payment_status',
         'escrow_status',
+        'payment_method',
         'payment_link',
         'paymongo_payment_intent_id',
+        'paypal_transaction_id',
+        'receipt_number',
+        'receipt_path',
+        'receipt_generated_at',
+        'seller_paypal_email',
+        'winner_proof_path',
+        'winner_received_confirmed_at',
+        'seller_delivery_confirmed_at',
         'tracking_number',
         'delivery_status',
         'payment_deadline',
@@ -37,10 +47,13 @@ class AuctionPayment extends Model
         'total_amount' => 'decimal:2',
         'platform_fee' => 'decimal:2',
         'seller_payout' => 'decimal:2',
+        'receipt_generated_at' => 'datetime',
         'payment_deadline' => 'datetime',
         'paid_at' => 'datetime',
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'winner_received_confirmed_at' => 'datetime',
+        'seller_delivery_confirmed_at' => 'datetime',
         'confirmed_at' => 'datetime',
         'released_at' => 'datetime',
         'is_second_chance' => 'boolean',
@@ -61,6 +74,16 @@ class AuctionPayment extends Model
         return $this->belongsTo(User::class, 'seller_user_id');
     }
 
+    public function trackingUpdates(): HasMany
+    {
+        return $this->hasMany(AuctionTrackingUpdate::class, 'auction_payment_id');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(AuctionReview::class, 'auction_payment_id');
+    }
+
     public function isPastDeadline(): bool
     {
         return $this->payment_deadline && $this->payment_deadline->isPast();
@@ -73,18 +96,8 @@ class AuctionPayment extends Model
 
     public function canRelease(): bool
     {
-        if ($this->escrow_status !== 'held') {
-            return false;
-        }
-
-        if ($this->confirmed_at) {
-            return true;
-        }
-
-        if ($this->delivered_at && $this->delivered_at->addDays(3)->isPast()) {
-            return true;
-        }
-
-        return false;
+        return $this->escrow_status === 'held'
+            && $this->winner_received_confirmed_at
+            && $this->seller_delivery_confirmed_at;
     }
 }

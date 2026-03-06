@@ -31,7 +31,7 @@ class AuctionWonNotification extends Notification implements ShouldQueue
             ->greeting('Congratulations!')
             ->line("You won the auction for **{$this->auction->title}**!")
             ->line("Total amount due: **₱{$amount}**")
-            ->line('You have **24 hours** to complete payment. Failure to pay will result in a ban.')
+            ->line('You have **24 hours** to complete payment. Failure to pay will result in auction suspension.')
             ->action('Pay Now', url('/auctions/payment/' . ($payment?->id ?? '')))
             ->line('Thank you for bidding on ToyHaven!');
     }

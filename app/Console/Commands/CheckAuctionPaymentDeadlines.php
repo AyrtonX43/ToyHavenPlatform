@@ -15,45 +15,46 @@ class CheckAuctionPaymentDeadlines extends Command
 {
     protected $signature = 'auction:check-payment-deadlines';
 
-    protected $description = 'Ban winners who failed to pay within 24 hours and trigger second-chance queue';
+    protected $description = 'Apply penalties for failed payments and offer second chance to next bidder';
 
     public function handle(): int
     {
-        $overduePayments = AuctionPayment::where('payment_status', 'pending')
+        $overdue = AuctionPayment::where('payment_status', 'pending')
             ->where('payment_deadline', '<', now())
             ->with(['auction', 'winner'])
             ->get();
 
-        foreach ($overduePayments as $payment) {
+        foreach ($overdue as $payment) {
             try {
                 DB::transaction(function () use ($payment) {
-                    // Ban the joy bidder
                     $winner = $payment->winner;
-                    if ($winner && ! $winner->is_banned) {
-                        $winner->update([
-                            'is_banned' => true,
-                            'banned_at' => now(),
-                            'ban_reason' => 'Failed to pay for won auction #' . $payment->auction_id . ' within 24 hours (joy bidding).',
-                        ]);
+                    if ($winner) {
+                        $count = ($winner->auction_suspension_offence_count ?? 0) + 1;
+
+                        if ($count >= 3) {
+                            $winner->update([
+                                'auction_banned' => true,
+                                'auction_suspension_offence_count' => $count,
+                            ]);
+                        } else {
+                            $days = $count === 1 ? 5 : 30;
+                            $winner->update([
+                                'auction_suspended_until' => now()->addDays($days),
+                                'auction_suspension_offence_count' => $count,
+                            ]);
+                        }
                     }
 
                     $payment->update(['payment_status' => 'failed']);
-
-                    // Trigger second-chance queue
                     $this->offerSecondChance($payment);
                 });
             } catch (\Exception $e) {
-                Log::error('Failed to process overdue auction payment', [
-                    'payment_id' => $payment->id,
-                    'error' => $e->getMessage(),
-                ]);
+                Log::error('Failed to process overdue auction payment', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
             }
         }
 
-        // Also check second-chance offers that expired
         $expiredOffers = AuctionSecondChance::where('status', 'offered')
             ->where('deadline', '<', now())
-            ->with('auction')
             ->get();
 
         foreach ($expiredOffers as $offer) {
@@ -63,10 +64,7 @@ class CheckAuctionPaymentDeadlines extends Command
                     $this->offerNextInQueue($offer->auction_id, $offer->queue_position);
                 });
             } catch (\Exception $e) {
-                Log::error('Failed to process expired second chance', [
-                    'offer_id' => $offer->id,
-                    'error' => $e->getMessage(),
-                ]);
+                Log::error('Failed to process expired second chance', ['offer_id' => $offer->id, 'error' => $e->getMessage()]);
             }
         }
 
@@ -79,7 +77,7 @@ class CheckAuctionPaymentDeadlines extends Command
 
         $topBidders = AuctionBid::where('auction_id', $auction->id)
             ->where('user_id', '!=', $payment->winner_id)
-            ->select('user_id', DB::raw('MAX(amount) as max_bid'))
+            ->selectRaw('user_id, MAX(amount) as max_bid')
             ->groupBy('user_id')
             ->orderByDesc('max_bid')
             ->limit(5)
@@ -88,7 +86,7 @@ class CheckAuctionPaymentDeadlines extends Command
         $position = 1;
         foreach ($topBidders as $bidder) {
             $user = User::find($bidder->user_id);
-            if (! $user || $user->is_banned) {
+            if (! $user || $user->auction_banned || $user->isAuctionSuspended()) {
                 continue;
             }
 
@@ -112,10 +110,6 @@ class CheckAuctionPaymentDeadlines extends Command
             }
 
             $position++;
-        }
-
-        if ($topBidders->isEmpty()) {
-            $auction->update(['status' => 'ended']);
         }
     }
 
@@ -142,11 +136,6 @@ class CheckAuctionPaymentDeadlines extends Command
                 } catch (\Exception $e) {
                     Log::warning('Failed to send second chance notification', ['error' => $e->getMessage()]);
                 }
-            }
-        } else {
-            $auction = \App\Models\Auction::find($auctionId);
-            if ($auction && $auction->status !== 'ended') {
-                $auction->update(['winner_id' => null, 'winning_amount' => null]);
             }
         }
     }

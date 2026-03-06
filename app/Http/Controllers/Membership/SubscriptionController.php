@@ -24,6 +24,11 @@ class SubscriptionController extends Controller
      */
     public function subscribe(Request $request)
     {
+        $request->validate([
+            'plan' => 'required|string',
+            'agree_terms' => 'required|accepted',
+        ]);
+
         $plan = Plan::where('slug', $request->get('plan', 'basic'))->active()->firstOrFail();
         $user = Auth::user();
 
@@ -199,6 +204,49 @@ class SubscriptionController extends Controller
             'subscription' => $subscription,
             'latestPayment' => $latestPayment,
         ]);
+    }
+
+    /**
+     * Process PayPal Demo payment (simulated - no real API).
+     */
+    public function paypalDemoConfirm(Request $request, Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($subscription->status !== 'pending') {
+            return redirect()->route('membership.manage')
+                ->with('error', 'Subscription is not in pending state.');
+        }
+
+        $subscription->update([
+            'status' => 'active',
+            'current_period_start' => now(),
+            'current_period_end' => $subscription->plan?->interval === 'yearly'
+                ? now()->addYear()
+                : now()->addMonth(),
+        ]);
+
+        $payment = SubscriptionPayment::create([
+            'subscription_id' => $subscription->id,
+            'amount' => (float) $subscription->plan->price,
+            'status' => 'paid',
+            'paid_at' => now(),
+            'payment_method' => 'paypal_demo',
+        ]);
+
+        try {
+            $this->receiptService->generateReceipt($payment);
+        } catch (\Throwable $e) {
+            Log::warning('Subscription receipt generation failed (PayPal Demo)', [
+                'subscription_payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('membership.payment-success', ['subscription' => $subscription->id])
+            ->with('success', 'PayPal Demo payment successful! Your membership is now active.');
     }
 
     /**

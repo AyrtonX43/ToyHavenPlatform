@@ -25,6 +25,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'auction_alias',
+        'auction_suspended_until',
+        'auction_suspension_offence_count',
+        'auction_banned',
         'google_id',
         'phone',
         'phone_verified_at',
@@ -74,6 +77,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'trade_suspended' => 'boolean',
             'trade_suspended_at' => 'datetime',
             'trade_suspended_until' => 'datetime',
+            'auction_suspended_until' => 'datetime',
+            'auction_banned' => 'boolean',
         ];
     }
 
@@ -184,11 +189,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
     }
 
-    public function auctionSellerVerification()
-    {
-        return $this->hasOne(AuctionSellerVerification::class)->latestOfMany();
-    }
-
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
@@ -199,9 +199,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->wallet ?? Wallet::create(['user_id' => $this->id, 'balance' => 0]);
     }
 
-    public function hasApprovedAuctionVerification(): bool
+    public function hasApprovedAuctionSellerProfile(): bool
     {
-        return $this->auctionSellerVerification?->isApproved() ?? false;
+        return $this->auctionSellerProfile?->isApproved() ?? false;
     }
 
     public function canListAuctions(): bool
@@ -209,12 +209,24 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->isAdmin()) {
             return true;
         }
-
         $plan = $this->currentPlan();
-
         return $plan
             && (strtolower($plan->slug) === 'vip' || $plan->canCreateAuction())
-            && $this->hasApprovedAuctionVerification();
+            && $this->hasApprovedAuctionSellerProfile();
+    }
+
+    public function isAuctionSuspended(): bool
+    {
+        if ($this->auction_banned) {
+            return true;
+        }
+        if (! $this->auction_suspended_until) {
+            return false;
+        }
+        if ($this->auction_suspended_until->isPast()) {
+            return false;
+        }
+        return true;
     }
 
     public function activeSubscription()

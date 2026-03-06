@@ -712,6 +712,12 @@
                 <i class="bi bi-hammer menu-icon"></i> Auctions
             </a>
             @endif
+            @if(Route::has('moderator.auction-payments.index') && auth()->user()->hasAuctionPermission('auction_payments_moderate'))
+            <a href="{{ route('moderator.auction-payments.index') }}"
+               class="sidebar-link {{ request()->routeIs('moderator.auction-payments.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card menu-icon"></i> Auction Payments
+            </a>
+            @endif
             <hr class="text-white-50 my-2 mx-4">
             @endif
 

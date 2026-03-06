@@ -26,10 +26,7 @@ class PlanController extends Controller
     {
         $plans = Plan::active()->ordered()->get();
 
-        $activeAuctionsCount = 0;
-        if (class_exists(\App\Models\Auction::class)) {
-            $activeAuctionsCount = \App\Models\Auction::live()->count();
-        }
+        $activeAuctionsCount = \App\Models\Auction::live()->count();
 
         return view('membership.index', [
             'plans' => $plans,

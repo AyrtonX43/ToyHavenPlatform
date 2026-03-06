@@ -26,12 +26,11 @@ class AuctionSecondChanceNotification extends Notification implements ShouldQueu
     {
         return (new MailMessage)
             ->subject('Second Chance: ' . $this->auction->title)
-            ->greeting('You are the Backup Winner!')
-            ->line("The original winner of **{$this->auction->title}** did not complete payment.")
-            ->line("You can now purchase this item at your last bid price of **₱" . number_format($this->bidAmount, 2) . "**.")
-            ->line('You have **24 hours** to accept and pay.')
-            ->action('Claim Your Item', url('/auctions/' . $this->auction->id))
-            ->line('Don\'t miss this second chance!');
+            ->greeting('Good news!')
+            ->line('The winning bidder did not pay. You have a second chance to win **' . $this->auction->title . '** at ₱' . number_format($this->bidAmount, 0) . '.')
+            ->line('You have **24 hours** to complete payment.')
+            ->action('Pay Now', route('auctions.payment.second-chance.show', $this->auction))
+            ->line('Thank you for bidding on ToyHaven!');
     }
 
     public function toArray($notifiable): array
@@ -39,9 +38,8 @@ class AuctionSecondChanceNotification extends Notification implements ShouldQueu
         return [
             'type' => 'auction_second_chance',
             'auction_id' => $this->auction->id,
-            'title' => $this->auction->title,
             'amount' => $this->bidAmount,
-            'message' => "Second chance! You can buy {$this->auction->title} at ₱" . number_format($this->bidAmount, 2),
+            'message' => "Second chance to win {$this->auction->title} at ₱" . number_format($this->bidAmount, 0),
         ];
     }
 }

@@ -4,130 +4,55 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
-use App\Models\Plan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AuctionController extends Controller
 {
-    /**
-     * List live auctions. Teaser for non-members (show but cannot bid)
-     */
     public function index(Request $request)
     {
-        $query = Auction::live()->with(['category', 'categories', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(1)]);
+        $query = Auction::live()->with(['category', 'images']);
 
-        if ($request->filled('category')) {
-            $catId = $request->category;
-            $query->where(function ($sql) use ($catId) {
-                $sql->where('category_id', $catId)
-                    ->orWhereHas('categories', fn ($q) => $q->where('categories.id', $catId));
-            });
-        }
-
-        if ($request->filled('search')) {
-            $q = $request->search;
-            $query->where(fn ($sql) => $sql->where('title', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%"));
-        }
-
-        $user = Auth::user();
         $auctions = $query->orderBy('end_at')->paginate(12);
-        $hasMembership = $user?->hasActiveMembership() ?? false;
 
-        $plans = $hasMembership ? collect() : Plan::active()->ordered()->get();
-
-        $featuredAuctions = Auction::live()
-            ->where('is_promoted', true)
-            ->where('promoted_until', '>', now())
-            ->with(['category'])
-            ->orderByDesc('promoted_until')
-            ->limit(6)
-            ->get();
-
-        $currentPlan = $user?->currentPlan();
-        $isVipMember = $hasMembership && $currentPlan && strtolower($currentPlan->slug) === 'vip';
-
-        return view('auctions.index', [
-            'auctions' => $auctions,
-            'hasMembership' => $hasMembership,
-            'isVipMember' => $isVipMember,
-            'plans' => $plans,
-            'featuredAuctions' => $featuredAuctions,
-        ]);
+        return view('auctions.index', compact('auctions'));
     }
 
-    /**
-     * Show auction detail
-     */
     public function show(Auction $auction)
     {
-        $user = Auth::user();
-        $hasMembership = $user?->hasActiveMembership() ?? false;
+        $user = auth()->user();
 
-        if (! $auction->isVisibleToUser($user)) {
-            return redirect()->route('membership.index', ['intent' => 'auction'])
-                ->with('info', 'This auction is for members only. Join membership to view and bid.');
-        }
-
-        // Increment view count
-        $auction->increment('views_count');
-
-        $auction->load(['bids' => fn ($q) => $q->with('user')->orderByDesc('amount')->limit(20), 'category', 'images']);
-
-        return view('auctions.show', [
-            'auction' => $auction,
-            'hasMembership' => $hasMembership,
-            'canBid' => $user && $auction->canUserBid($user),
-        ]);
-    }
-
-    /**
-     * Live auction room for live_event auctions
-     */
-    public function liveRoom(Auction $auction)
-    {
-        $user = Auth::user();
-        $hasMembership = $user?->hasActiveMembership() ?? false;
-
-        if (! $auction->isVisibleToUser($user)) {
-            return redirect()->route('membership.index', ['intent' => 'auction'])
-                ->with('info', 'This auction is for members only.');
-        }
-
-        if (! $auction->isLiveEvent()) {
-            return redirect()->route('auctions.show', $auction);
+        if ($auction->status !== 'live') {
+            return redirect()->route('auctions.index')->with('error', 'This auction is not live.');
         }
 
         $auction->increment('views_count');
-        $auction->load(['bids' => fn ($q) => $q->with('user')->orderByDesc('amount')->limit(50), 'category', 'images']);
+        $auction->load(['images', 'category', 'auctionSellerProfile']);
 
-        return view('auctions.live-room', [
-            'auction' => $auction,
-            'hasMembership' => $hasMembership,
-            'canBid' => $user && $auction->canUserBid($user),
-        ]);
+        $canBid = $user
+            && $user->hasActiveMembership()
+            && ! $user->isAuctionSuspended()
+            && $this->isUserPlanAllowed($auction, $user);
+
+        $bids = $auction->bids()
+            ->orderByDesc('amount')
+            ->limit(20)
+            ->get()
+            ->map(fn ($b) => [
+                'anonymous_display_id' => $b->anonymous_display_id ?? 'Bidder #----',
+                'amount' => $b->amount,
+                'created_at' => $b->created_at,
+            ]);
+
+        return view('auctions.show', compact('auction', 'canBid', 'bids'));
     }
 
-    /**
-     * User's bids and won auctions
-     */
-    public function myBids()
+    private function isUserPlanAllowed(Auction $auction, $user): bool
     {
-        $user = Auth::user();
-
-        $myBids = \App\Models\AuctionBid::where('user_id', $user->id)
-            ->with(['auction' => fn ($q) => $q->with('category')])
-            ->orderByDesc('created_at')
-            ->paginate(15);
-
-        $wonAuctions = Auction::where('winner_id', $user->id)
-            ->with('category')
-            ->orderByDesc('end_at')
-            ->get();
-
-        return view('auctions.my-bids', [
-            'myBids' => $myBids,
-            'wonAuctions' => $wonAuctions,
-        ]);
+        $planIds = $auction->allowed_bidder_plan_ids;
+        if ($planIds === null || $planIds === []) {
+            return true;
+        }
+        $plan = $user->currentPlan();
+        return $plan && in_array($plan->id, $planIds);
     }
 }

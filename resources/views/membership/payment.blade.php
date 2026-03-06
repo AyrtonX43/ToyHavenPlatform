@@ -143,11 +143,23 @@
                                     <small class="d-block text-muted">Scan with GCash, Maya, banks &amp; e-wallets</small>
                                 </div>
                             </div>
+                            <div class="payment-method-option" data-method="paypal_demo">
+                                <span class="pm-radio"></span>
+                                <i class="bi bi-paypal fs-4 me-3" style="color: #003087;"></i>
+                                <div>
+                                    <strong>PayPal (Demo)</strong>
+                                    <small class="d-block text-muted">Simulated payment - for testing only</small>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="qrph-notice" class="alert alert-light border mb-4">
                             <i class="bi bi-info-circle me-2"></i>
                             A QR code will be generated. Scan it with your GCash, Maya, or banking app to complete payment.
+                        </div>
+                        <div id="paypal-demo-notice" class="alert alert-info border mb-4 d-none">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Demo mode:</strong> This simulates a successful PayPal payment. No real payment will be processed.
                         </div>
 
                         <div id="qr-display" class="d-none text-center mb-4">
@@ -239,6 +251,7 @@
     var publicKey = @json($publicKey);
     var csrfToken = @json(csrf_token());
     var processUrl = @json(route('membership.process-payment', $subscription->id));
+    var paypalDemoUrl = @json(route('membership.paypal-demo', $subscription->id));
     var checkUrl = @json(route('membership.check-payment', $subscription->id));
     var returnUrl = @json(route('membership.payment-return')) + '?subscription_id={{ $subscription->id }}&payment_intent_id={{ $paymentIntentId }}';
     var successUrl = @json(route('membership.payment-success', $subscription));
@@ -316,8 +329,32 @@
         if (countdownTimer) clearInterval(countdownTimer);
     }
 
+    var selectedMethod = 'qrph';
+    document.querySelectorAll('.payment-method-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            document.querySelectorAll('.payment-method-option').forEach(function(o) { o.classList.remove('selected'); });
+            opt.classList.add('selected');
+            selectedMethod = opt.dataset.method || 'qrph';
+            document.getElementById('qrph-notice').classList.toggle('d-none', selectedMethod !== 'qrph');
+            document.getElementById('paypal-demo-notice').classList.toggle('d-none', selectedMethod !== 'paypal_demo');
+        });
+    });
+
     document.getElementById('pay-btn').addEventListener('click', async function() {
         clearError();
+        if (selectedMethod === 'paypal_demo') {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = paypalDemoUrl;
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = csrfToken;
+            form.appendChild(csrf);
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
         setLoading(true);
         try {
             var serverRes = await fetch(processUrl, {

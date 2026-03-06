@@ -68,7 +68,7 @@ class ModeratorUserController extends Controller
             ],
             'password_confirmation' => ['required', 'same:password'],
             'moderator_permissions' => ['nullable', 'array'],
-            'moderator_permissions.*' => 'in:auctions_view,auctions_moderate',
+            'moderator_permissions.*' => 'in:auctions_view,auctions_moderate,auction_payments_moderate,auction_sellers_moderate,plans_manage',
         ], [
             'name.regex' => 'The name field may only contain letters and spaces.',
             'password.min' => 'The password must be at least 8 characters.',
@@ -135,7 +135,7 @@ class ModeratorUserController extends Controller
                 'regex:/[^A-Za-z0-9]/',
             ],
             'moderator_permissions' => ['nullable', 'array'],
-            'moderator_permissions.*' => 'in:auctions_view,auctions_moderate',
+            'moderator_permissions.*' => 'in:auctions_view,auctions_moderate,auction_payments_moderate,auction_sellers_moderate,plans_manage',
         ], [
             'name.regex' => 'The name field may only contain letters and spaces.',
             'password.min' => 'The password must be at least 8 characters.',

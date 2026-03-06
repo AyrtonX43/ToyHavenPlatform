@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Auction;
 
-use App\Events\AuctionBidPlaced;
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
 use App\Models\AuctionBid;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class BidController extends Controller
 {
@@ -16,54 +14,54 @@ class BidController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->hasActiveMembership() && ! $user->isAdmin()) {
-            return redirect()->route('membership.index', ['intent' => 'auction'])
-                ->with('error', 'You need an active membership to place bids.');
+        if (! $user->hasActiveMembership()) {
+            return back()->with('error', 'Active membership required to bid.');
         }
 
-        $request->validate([
-            'amount' => ['required', 'numeric', 'min:0'],
+        if ($user->isAuctionSuspended()) {
+            return back()->with('error', 'You are suspended from auction bidding.');
+        }
+
+        if ($auction->status !== 'live') {
+            return back()->with('error', 'This auction is not accepting bids.');
+        }
+
+        $planIds = $auction->allowed_bidder_plan_ids;
+        if ($planIds !== null && $planIds !== []) {
+            $plan = $user->currentPlan();
+            if (! $plan || ! in_array($plan->id, $planIds)) {
+                return back()->with('error', 'Your membership plan cannot bid on this auction.');
+            }
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:' . ($auction->starting_bid + ($auction->bid_increment ?? 1)),
         ]);
 
-        $minBid = $auction->getMinNextBid();
-        if ((float) $request->amount < $minBid) {
-            return back()->with('error', "Minimum bid is ₱".number_format($minBid, 2));
+        $currentHigh = $auction->bids()->orderByDesc('amount')->first();
+        $minBid = $currentHigh
+            ? $currentHigh->amount + ($auction->bid_increment ?? 1)
+            : $auction->starting_bid;
+
+        if ($validated['amount'] < $minBid) {
+            return back()->with('error', 'Your bid must be at least ₱' . number_format($minBid, 0) . '.');
         }
 
-        if (! $auction->canUserBid($user)) {
-            return back()->with('error', 'You cannot bid on this auction.');
-        }
+        $existingBid = $auction->bids()->where('user_id', $user->id)->orderByDesc('amount')->first();
+        $anonymousId = $existingBid?->anonymous_display_id ?? AuctionBid::generateAnonymousDisplayId();
 
-        try {
-            DB::transaction(function () use ($auction, $user, $request) {
-                AuctionBid::where('auction_id', $auction->id)->update(['is_winning' => false]);
+        AuctionBid::where('auction_id', $auction->id)->update(['is_winning' => false]);
 
-                $bid = AuctionBid::create([
-                    'auction_id' => $auction->id,
-                    'user_id' => $user->id,
-                    'amount' => $request->amount,
-                    'is_winning' => true,
-                ]);
+        AuctionBid::create([
+            'auction_id' => $auction->id,
+            'user_id' => $user->id,
+            'amount' => $validated['amount'],
+            'anonymous_display_id' => $anonymousId,
+            'is_winning' => true,
+        ]);
 
-                $auction->update(['bids_count' => $auction->bids()->count()]);
+        $auction->increment('bids_count');
 
-                // Anti-snipe: extend by 2 min if bid in last 2 min of timed auction
-                if ($auction->isTimed() && $auction->end_at) {
-                    $remaining = now()->diffInSeconds($auction->end_at, false);
-                    if ($remaining > 0 && $remaining <= 120) {
-                        $auction->update(['end_at' => $auction->end_at->addMinutes(2)]);
-                    }
-                }
-
-                // Auto-generate alias on first bid
-                $user->getAuctionAlias();
-
-                event(new AuctionBidPlaced($auction->fresh(), $bid));
-            });
-        } catch (\Exception $e) {
-            return back()->with('error', 'Could not place bid. Please try again.');
-        }
-
-        return back()->with('success', 'Your bid has been placed.');
+        return back()->with('success', 'Bid placed successfully!');
     }
 }

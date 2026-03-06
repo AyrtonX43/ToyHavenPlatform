@@ -11,6 +11,7 @@ class AuctionBid extends Model
         'auction_id',
         'user_id',
         'amount',
+        'anonymous_display_id',
         'is_winning',
     ];
 
@@ -27,5 +28,15 @@ class AuctionBid extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public static function generateAnonymousDisplayId(): string
+    {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $id = 'Bidder #';
+        for ($i = 0; $i < 6; $i++) {
+            $id .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        return $id;
     }
 }

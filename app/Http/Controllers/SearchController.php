@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Auction;
 use App\Models\Product;
 use App\Models\Seller;
 use App\Models\TradeListing;
-use App\Models\Auction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -102,31 +102,24 @@ class SearchController extends Controller
             });
 
         // Auction Listings
-        $auctions = Auction::with(['product.images', 'userProduct.images'])
-            ->whereIn('status', ['pending', 'active', 'live'])
-            ->where(function($query) use ($q) {
+        $auctions = Auction::with(['images'])
+            ->where('status', 'live')
+            ->where(function ($query) use ($q) {
                 $query->where('title', 'like', "%{$q}%")
-                  ->orWhere('description', 'like', "%{$q}%")
-                  ->orWhereHas('product', function($prodQuery) use ($q) {
-                      $prodQuery->where('name', 'like', "%{$q}%");
-                  })
-                  ->orWhereHas('userProduct', function($userProdQuery) use ($q) {
-                      $userProdQuery->where('name', 'like', "%{$q}%");
-                  });
+                    ->orWhere('description', 'like', "%{$q}%");
             })
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->limit(3)
             ->get()
             ->map(function ($a) {
-                $img = $a->product ? $a->product->images->first() : ($a->userProduct ? $a->userProduct->images->first() : null);
+                $img = $a->images->first();
                 return [
                     'id' => $a->id,
                     'name' => $a->title,
                     'starting_bid' => $a->starting_bid,
                     'url' => route('auctions.show', $a->id),
-                    'image' => $img ? asset('storage/' . $img->image_path) : null,
+                    'image' => $img ? asset('storage/' . $img->path) : null,
                     'type' => 'auction',
-                    'status' => $a->status,
                 ];
             });
 
@@ -216,28 +209,18 @@ class SearchController extends Controller
 
         // Search Auction Listings
         if ($type === 'all' || $type === 'auction') {
-            $auctionQuery = Auction::with(['product.images', 'userProduct.images', 'category', 'seller', 'user'])
-                ->whereIn('status', ['pending', 'active', 'live'])
-                ->where(function($auctionQ) use ($query) {
-                    $auctionQ->where('title', 'like', "%{$query}%")
-                      ->orWhere('description', 'like', "%{$query}%")
-                      ->orWhereHas('product', function($prodQ) use ($query) {
-                          $prodQ->where('name', 'like', "%{$query}%")
-                            ->orWhere('brand', 'like', "%{$query}%");
-                      })
-                      ->orWhereHas('userProduct', function($userProdQ) use ($query) {
-                          $userProdQ->where('name', 'like', "%{$query}%")
-                            ->orWhere('brand', 'like', "%{$query}%");
-                      })
-                      ->orWhereHas('seller', function($sellerQ) use ($query) {
-                          $sellerQ->where('business_name', 'like', "%{$query}%");
-                      });
+            $auctionQuery = Auction::with(['images', 'category'])
+                ->where('status', 'live')
+                ->where(function ($q) use ($query) {
+                    $q->where('title', 'like', "%{$query}%")
+                        ->orWhere('description', 'like', "%{$query}%");
                 })
-                ->orderBy('created_at', 'desc')
+                ->orderByDesc('created_at')
                 ->limit(12)
                 ->get();
-            
             $results['auction'] = $auctionQuery;
+        } else {
+            $results['auction'] = collect();
         }
 
         // Count totals

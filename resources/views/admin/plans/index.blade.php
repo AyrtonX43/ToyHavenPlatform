@@ -27,7 +27,7 @@
                                     <td>₱{{ number_format($plan->price, 2) }}</td>
                                     <td>{{ $plan->interval }}</td>
                                     <td><span class="badge bg-{{ $plan->is_active ? 'success' : 'secondary' }}">{{ $plan->is_active ? 'Yes' : 'No' }}</span></td>
-                                    <td><a href="{{ route('admin.plans.edit', $plan) }}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+                                    <td><a href="{{ route(($planContext ?? null) === 'moderator' ? 'moderator.plans.edit' : 'admin.plans.edit', $plan) }}" class="btn btn-sm btn-outline-primary">Edit</a></td>
                                 </tr>
                             @endforeach
                         </tbody>

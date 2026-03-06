@@ -1,13 +1,15 @@
 <?php
 
 use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schedule;
 
+Schedule::command('auction:start-live')->everyMinute();
 Schedule::command('auction:end-expired')->everyMinute();
 Schedule::command('auction:check-payment-deadlines')->everyFiveMinutes();
-Schedule::command('auction:release-escrow')->hourly();
+Schedule::command('auction:notify-saved-live')->everyMinute();
+
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

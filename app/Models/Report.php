@@ -20,8 +20,6 @@ class Report extends Model
         'reporter_id',
         'reportable_type',
         'reportable_id',
-        'auction_id',
-        'auction_payment_id',
         'report_type',
         'reason',
         'description',
@@ -52,13 +50,4 @@ class Report extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    public function auction(): BelongsTo
-    {
-        return $this->belongsTo(Auction::class);
-    }
-
-    public function auctionPayment(): BelongsTo
-    {
-        return $this->belongsTo(AuctionPayment::class);
-    }
 }

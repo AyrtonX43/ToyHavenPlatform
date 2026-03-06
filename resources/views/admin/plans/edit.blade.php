@@ -9,7 +9,7 @@
             <div class="p-6 text-gray-900 dark:text-gray-100">
                 <h1 class="text-2xl font-bold mb-6">Edit Plan: {{ $plan->name }}</h1>
 
-                <form action="{{ route('admin.plans.update', $plan) }}" method="POST">
+                <form action="{{ route(($planContext ?? null) === 'moderator' ? 'moderator.plans.update' : 'admin.plans.update', $plan) }}" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="mb-3">
@@ -31,7 +31,7 @@
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Update</button>
-                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-secondary">Back</a>
+                    <a href="{{ route(($planContext ?? null) === 'moderator' ? 'moderator.plans.index' : 'admin.plans.index') }}" class="btn btn-outline-secondary">Back</a>
                 </form>
             </div>
         </div>
