@@ -102,9 +102,8 @@ class SubscriptionController extends Controller
             return $this->processPayPal($subscription);
         }
 
-        return view('membership.payment', [
-            'subscription' => $subscription,
-        ]);
+        // QRPH: generate and show QR code
+        return $this->processPayMongo($subscription);
     }
 
     /**
@@ -189,7 +188,20 @@ class SubscriptionController extends Controller
 
     protected function processPayPal(Subscription $subscription)
     {
-        $paypal = new PayPalService(config('paypal'));
+        try {
+            $config = config('paypal');
+            if (empty($config['sandbox']['client_id']) || empty($config['sandbox']['client_secret'])) {
+                return redirect()->route('membership.payment-selection', $subscription->plan->slug)
+                    ->with('error', 'PayPal is not configured. Please add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to .env');
+            }
+
+            $paypal = new PayPalService($config);
+        } catch (\Throwable $e) {
+            Log::error('PayPal init failed', ['error' => $e->getMessage()]);
+
+            return redirect()->route('membership.payment-selection', $subscription->plan->slug)
+                ->with('error', 'PayPal could not be initialized. Please try again or use QR Ph.');
+        }
 
         $returnUrl = route('membership.paypal.return');
         $cancelUrl = route('membership.paypal.cancel');
@@ -213,7 +225,14 @@ class SubscriptionController extends Controller
         try {
             $response = $paypal->createOrder($orderData);
 
-            if (isset($response['id']) && $response['status'] === 'CREATED') {
+            if (isset($response['error'])) {
+                Log::error('PayPal create order error', ['response' => $response, 'subscription' => $subscription->id]);
+
+                return redirect()->route('membership.payment-selection', $subscription->plan->slug)
+                    ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
+            }
+
+            if (is_array($response) && isset($response['id']) && ($response['status'] ?? '') === 'CREATED') {
                 foreach ($response['links'] ?? [] as $link) {
                     if (($link['rel'] ?? '') === 'approve') {
                         session(['paypal_subscription_id' => $subscription->id]);
@@ -223,7 +242,11 @@ class SubscriptionController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            Log::error('PayPal create order failed', ['error' => $e->getMessage(), 'subscription' => $subscription->id]);
+            Log::error('PayPal create order failed', [
+                'error' => $e->getMessage(),
+                'subscription' => $subscription->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
 
         return redirect()->route('membership.payment-selection', $subscription->plan->slug)

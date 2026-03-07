@@ -168,7 +168,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/payment-success/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentSuccess'])->name('payment-success');
         Route::get('/subscriptions/{subscription}/payments/{subscriptionPayment}/receipt', [\App\Http\Controllers\Membership\SubscriptionController::class, 'downloadReceipt'])->name('receipt');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
-        Route::post('/cancel-pending/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancelPending'])->name('cancel-pending');
+        Route::get('/cancel-pending/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancelPending'])->name('cancel-pending');
         Route::post('/process-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'processPayment'])->name('process-payment');
         Route::get('/check-payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'checkPaymentStatus'])->name('check-payment');
         Route::get('/upgrade/{targetPlanSlug}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade');
