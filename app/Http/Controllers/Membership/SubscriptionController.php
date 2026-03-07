@@ -200,7 +200,11 @@ class SubscriptionController extends Controller
                     ->with('error', 'PayPal is not configured. Add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to .env, then run: php artisan config:clear');
             }
 
-            $paypal = new PayPalService($config);
+            $paypal = new PayPalService;
+            $paypal->setApiCredentials($config);
+
+            // Required: get access token before any API call (per srmklive docs)
+            $paypal->getAccessToken();
         } catch (\Throwable $e) {
             Log::error('PayPal init failed', ['error' => $e->getMessage()]);
 
@@ -210,13 +214,15 @@ class SubscriptionController extends Controller
 
         $returnUrl = route('membership.paypal.return');
         $cancelUrl = route('membership.paypal.cancel');
+        $currency = config('paypal.currency', 'PHP');
+        $amount = number_format($subscription->plan->price, 2, '.', '');
 
         $orderData = [
             'intent' => 'CAPTURE',
             'purchase_units' => [[
                 'amount' => [
-                    'currency_code' => config('paypal.currency', 'PHP'),
-                    'value' => number_format($subscription->plan->price, 2, '.', ''),
+                    'currency_code' => $currency,
+                    'value' => $amount,
                 ],
                 'description' => $subscription->plan->name . ' Membership',
                 'custom_id' => (string) $subscription->id,
@@ -224,6 +230,8 @@ class SubscriptionController extends Controller
             'application_context' => [
                 'return_url' => $returnUrl . '?subscription_id=' . $subscription->id,
                 'cancel_url' => $cancelUrl . '?subscription_id=' . $subscription->id,
+                'brand_name' => config('app.name'),
+                'user_action' => 'PAY_NOW',
             ],
         ];
 
@@ -237,7 +245,15 @@ class SubscriptionController extends Controller
                     ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
             }
 
-            if (is_array($response) && isset($response['id']) && ($response['status'] ?? '') === 'CREATED') {
+            // Handle API error responses (e.g. validation, invalid credentials)
+            if (! is_array($response)) {
+                Log::error('PayPal create order invalid response', ['response' => $response, 'subscription' => $subscription->id]);
+
+                return redirect()->route('membership.payment-selection', $subscription->plan->slug)
+                    ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
+            }
+
+            if (isset($response['id']) && ($response['status'] ?? '') === 'CREATED') {
                 foreach ($response['links'] ?? [] as $link) {
                     if (($link['rel'] ?? '') === 'approve') {
                         session(['paypal_subscription_id' => $subscription->id]);
@@ -246,6 +262,9 @@ class SubscriptionController extends Controller
                     }
                 }
             }
+
+            // Log unexpected success response structure
+            Log::warning('PayPal create order missing approve link', ['response' => $response, 'subscription' => $subscription->id]);
         } catch (\Throwable $e) {
             Log::error('PayPal create order failed', [
                 'error' => $e->getMessage(),
@@ -255,7 +274,7 @@ class SubscriptionController extends Controller
         }
 
         return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-            ->with('error', 'PayPal payment could not be initiated. Please try again or choose QR Ph.');
+            ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
     }
 
     /**
@@ -276,7 +295,10 @@ class SubscriptionController extends Controller
         }
 
         try {
-            $paypal = new PayPalService(config('paypal'));
+            $config = config('paypal');
+            $paypal = new PayPalService;
+            $paypal->setApiCredentials($config);
+            $paypal->getAccessToken();
             $response = $paypal->capturePaymentOrder($token);
 
             $status = $response['status'] ?? null;
