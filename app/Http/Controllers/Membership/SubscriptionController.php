@@ -364,13 +364,25 @@ class SubscriptionController extends Controller
         ]);
 
         $orderId = $request->order_id;
+        $response = null;
 
         try {
             $config = config('paypal');
             $paypal = new PayPalService;
             $paypal->setApiCredentials($config);
             $paypal->getAccessToken();
-            $response = $paypal->capturePaymentOrder($orderId);
+
+            try {
+                $response = $paypal->capturePaymentOrder($orderId);
+            } catch (\Throwable $captureEx) {
+                $msg = $captureEx->getMessage();
+                if (stripos($msg, 'ORDER_ALREADY_CAPTURED') !== false || stripos($msg, 'already captured') !== false) {
+                    Log::info('PayPal order already captured, fetching order details', ['orderId' => $orderId]);
+                    $response = $paypal->showOrderDetails($orderId);
+                } else {
+                    throw $captureEx;
+                }
+            }
 
             Log::info('PayPal capture response', ['orderId' => $orderId, 'status' => $response['status'] ?? null, 'has_purchase_units' => isset($response['purchase_units'])]);
 
@@ -409,6 +421,14 @@ class SubscriptionController extends Controller
             $subscription = Subscription::find($subscriptionId);
             if (! $subscription || $subscription->user_id !== Auth::id()) {
                 return response()->json(['error' => 'Subscription not found'], 404);
+            }
+
+            if ($subscription->payments()->where('status', 'paid')->where('payment_reference', $orderId)->exists()) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('auctions.index'),
+                    'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
+                ]);
             }
 
             $amount = 0;
