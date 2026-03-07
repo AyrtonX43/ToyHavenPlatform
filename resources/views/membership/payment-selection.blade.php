@@ -157,7 +157,7 @@
 
 @if(!empty($paypal_client_id))
 @push('scripts')
-<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture&disable-funding=card,credit"></script>
+<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture"></script>
 <script>
 (function() {
     var planId = {{ $plan->id }};
@@ -179,7 +179,10 @@
                     plan_id: planId,
                     _token: csrfToken
                 })
-            }).then(function(r) { return r.json(); }).then(function(data) {
+            }).then(function(r) {
+                if (!r.ok) throw new Error('Could not create order');
+                return r.json();
+            }).then(function(data) {
                 if (data.orderId) return data.orderId;
                 throw new Error(data.error || 'Could not create order');
             });
@@ -197,7 +200,10 @@
                     order_id: data.orderID,
                     _token: csrfToken
                 })
-            }).then(function(r) { return r.json(); }).then(function(res) {
+            }).then(function(r) {
+                if (!r.ok) throw new Error('Capture failed');
+                return r.json();
+            }).then(function(res) {
                 if (res.success && res.redirect) {
                     window.location.href = res.redirect;
                 } else {
@@ -210,7 +216,8 @@
             });
         },
         onCancel: function() {},
-        onError: function() {
+        onError: function(err) {
+            console.error('PayPal error:', err);
             alert('Payment failed. Please try again.');
             window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
         }
