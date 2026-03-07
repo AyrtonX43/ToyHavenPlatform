@@ -15,7 +15,12 @@
             <h4 class="mb-0">{{ $plan->name }} - Terms & Conditions</h4>
         </div>
         <div class="card-body">
-            {!! $termsContent !!}
+            @php $termsContent = $plan->latestTerms()?->content; @endphp
+            @if($termsContent)
+                <div class="terms-content" style="white-space: pre-wrap;">{{ $termsContent }}</div>
+            @else
+                <p class="text-muted mb-0">No terms available. Please contact support.</p>
+            @endif
         </div>
     </div>
 </div>

@@ -178,14 +178,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/upgrade/{targetPlanSlug}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade');
     });
 
-    // Auction Seller Registration (VIP required; stub - full flow in later phase)
-    Route::prefix('auction')->name('auction.')->group(function () {
-        Route::get('/seller/register/{type}', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'show'])
-            ->where('type', 'individual|business')
-            ->middleware('vip.auction.seller') // type from route param
-            ->name('seller.register');
-    });
-
     // Seller Routes (sellers, admins, and business moderators)
     Route::prefix('seller')->name('seller.')->middleware(['seller.access', 'seller.approved'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->name('dashboard');
@@ -446,6 +438,9 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\PlanController::class, 'index'])->name('index');
             Route::get('/{plan}/edit', [\App\Http\Controllers\Admin\PlanController::class, 'edit'])->name('edit');
             Route::put('/{plan}', [\App\Http\Controllers\Admin\PlanController::class, 'update'])->name('update');
+            Route::get('/{plan}/terms', [\App\Http\Controllers\Admin\PlanTermsController::class, 'index'])->name('terms.index');
+            Route::get('/{plan}/terms/edit', [\App\Http\Controllers\Admin\PlanTermsController::class, 'edit'])->name('terms.edit');
+            Route::put('/{plan}/terms', [\App\Http\Controllers\Admin\PlanTermsController::class, 'update'])->name('terms.update');
         });
 
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {

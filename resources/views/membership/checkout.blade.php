@@ -17,8 +17,9 @@
         overflow-y: auto;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
-        padding: 1.5rem;
+        padding: 1.75rem;
         background: #f8fafc;
+        line-height: 1.65;
     }
     .terms-scroll::-webkit-scrollbar { width: 8px; }
     .terms-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
@@ -47,15 +48,20 @@
             <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
                 <div class="card-body p-4">
                     <div class="terms-scroll mb-4">
-                        {!! $termsContent !!}
+                        @php $termsContent = $plan->latestTerms()?->content; @endphp
+                        @if($termsContent)
+                            <div class="terms-content" style="white-space: pre-wrap;">{{ $termsContent }}</div>
+                        @else
+                            <p class="text-muted mb-0">No terms available. Please contact support.</p>
+                        @endif
                     </div>
                     <form action="{{ route('membership.accept-terms') }}" method="POST">
                         @csrf
                         <input type="hidden" name="plan_id" value="{{ $plan->id }}">
                         <div class="form-check mb-4 p-3 rounded-3" style="background: #f1f5f9;">
-                            <input class="form-check-input" type="checkbox" name="terms_accepted" id="termsAccepted" value="1" required style="width: 1.25em; height: 1.25em;" aria-describedby="termsAcceptedHelp">
-                            <label class="form-check-label fw-semibold ms-2" for="termsAccepted" id="termsAcceptedHelp">
-                                I have read and agree to the Terms &amp; Conditions
+                            <input class="form-check-input" type="checkbox" name="terms_accepted" id="termsAccepted" value="1" required style="width: 1.25em; height: 1.25em;">
+                            <label class="form-check-label fw-semibold ms-2" for="termsAccepted">
+                                I have read and agree to the Terms & Conditions
                             </label>
                         </div>
                         <div class="d-flex gap-2 flex-wrap">
