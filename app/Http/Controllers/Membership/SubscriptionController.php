@@ -372,6 +372,14 @@ class SubscriptionController extends Controller
             $paypal->getAccessToken();
             $response = $paypal->capturePaymentOrder($orderId);
 
+            Log::info('PayPal capture response', ['orderId' => $orderId, 'status' => $response['status'] ?? null, 'has_purchase_units' => isset($response['purchase_units'])]);
+
+            if (isset($response['error']) || isset($response['message'])) {
+                Log::error('PayPal capture API error', ['orderId' => $orderId, 'response' => $response]);
+                $errMsg = $response['message'] ?? $response['error']['message'] ?? $response['error'] ?? 'Payment capture failed';
+                return response()->json(['error' => is_string($errMsg) ? $errMsg : 'Payment capture failed'], 400);
+            }
+
             $status = $response['status'] ?? null;
             if ($status !== 'COMPLETED') {
                 return response()->json(['error' => 'Payment was not completed'], 400);
@@ -439,7 +447,12 @@ class SubscriptionController extends Controller
                 'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
             ]);
         } catch (\Throwable $e) {
-            Log::error('PayPal capture failed', ['error' => $e->getMessage(), 'orderId' => $orderId]);
+            Log::error('PayPal capture failed', [
+                'error' => $e->getMessage(),
+                'orderId' => $orderId,
+                'trace' => $e->getTraceAsString(),
+                'class' => get_class($e),
+            ]);
 
             return response()->json(['error' => 'Capture failed. Please try again.'], 500);
         }
