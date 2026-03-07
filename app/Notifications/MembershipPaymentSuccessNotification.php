@@ -3,15 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\SubscriptionPayment;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 
-class MembershipPaymentSuccessNotification extends Notification implements ShouldQueue
-{
-    use Queueable;
+class MembershipPaymentSuccessNotification extends Notification
 
     public function __construct(
         protected SubscriptionPayment $subscriptionPayment

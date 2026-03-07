@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SubscriptionPayment;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -29,11 +30,14 @@ class SubscriptionReceiptService
 
         Storage::disk('public')->put($path, $pdf->output());
 
-        $payment->update([
-            'receipt_number' => $receiptNumber,
-            'receipt_path' => $path,
-            'receipt_generated_at' => now(),
-        ]);
+        $update = ['receipt_path' => $path];
+        if (Schema::hasColumn('subscription_payments', 'receipt_number')) {
+            $update['receipt_number'] = $receiptNumber;
+        }
+        if (Schema::hasColumn('subscription_payments', 'receipt_generated_at')) {
+            $update['receipt_generated_at'] = now();
+        }
+        $payment->update($update);
 
         return $path;
     }

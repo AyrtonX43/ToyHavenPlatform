@@ -73,7 +73,7 @@
                             <p class="mb-0"><span class="badge bg-success">Current Plan</span></p>
                         </div>
                     </div>
-                    @if($lastPayment && $lastPayment->hasReceipt())
+                    @if($lastPayment)
                         <a href="{{ route('membership.receipt', [$subscription, $lastPayment]) }}" class="btn btn-outline-primary rounded-3" target="_blank">
                             <i class="bi bi-download me-2"></i>Download Receipt
                         </a>

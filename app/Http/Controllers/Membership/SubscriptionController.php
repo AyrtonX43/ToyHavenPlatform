@@ -649,12 +649,16 @@ class SubscriptionController extends Controller
 
             $subscriptionPayment = $subscription->payments()->where('status', 'paid')->latest()->first();
             if ($subscriptionPayment) {
+                $receiptService = app(\App\Services\SubscriptionReceiptService::class);
                 try {
-                    $receiptService = app(\App\Services\SubscriptionReceiptService::class);
                     $receiptService->generateReceipt($subscriptionPayment);
+                } catch (\Throwable $e) {
+                    Log::error('Receipt generation failed', ['error' => $e->getMessage(), 'payment_id' => $subscriptionPayment->id]);
+                }
+                try {
                     $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
                 } catch (\Throwable $e) {
-                    Log::warning('PayPal demo: receipt/notification failed', ['error' => $e->getMessage()]);
+                    Log::error('Membership notification failed', ['error' => $e->getMessage(), 'payment_id' => $subscriptionPayment->id]);
                 }
             }
 
@@ -721,6 +725,16 @@ class SubscriptionController extends Controller
         }
 
         $subscription->load('plan');
+
+        // Ensure receipt exists for latest paid payment (e.g. if generation failed during payment)
+        $lastPayment = $subscription->payments()->where('status', 'paid')->latest()->first();
+        if ($lastPayment && ! $lastPayment->hasReceipt()) {
+            try {
+                app(\App\Services\SubscriptionReceiptService::class)->generateReceipt($lastPayment);
+            } catch (\Throwable $e) {
+                Log::warning('Receipt generation on payment-success failed', ['error' => $e->getMessage()]);
+            }
+        }
 
         return view('membership.payment-success', [
             'subscription' => $subscription,
