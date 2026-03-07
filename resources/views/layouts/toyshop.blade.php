@@ -514,6 +514,11 @@
                             <i class="bi bi-arrow-left-right me-1"></i>Trading
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('auction.*') ? 'active' : '' }}" href="{{ auth()->check() && auth()->user()->hasActiveMembership() ? route('auction.index') : route('membership.index') }}">
+                            <i class="bi bi-hammer me-1"></i>Auction
+                        </a>
+                    </li>
                 </ul>
                 
                 <!-- Search Bar -->
