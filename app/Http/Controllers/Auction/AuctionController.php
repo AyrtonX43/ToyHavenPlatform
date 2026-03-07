@@ -3,46 +3,21 @@
 namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 class AuctionController extends Controller
 {
     /**
-     * Auction index (live listings). Requires active membership.
+     * Auction hub for members: active listings, shortcuts, etc.
      */
-    public function index(Request $request)
+    public function index()
     {
-        if (! $request->user()->hasActiveMembership()) {
+        $user = auth()->user();
+
+        if (! $user->hasActiveMembership()) {
             return redirect()->route('membership.index')
-                ->with('info', 'Join a membership plan to access live auctions.');
+                ->with('info', 'Auction access requires an active membership. Please subscribe to a plan to continue.');
         }
 
         return view('auction.index');
-    }
-
-    /**
-     * Become seller flow: VIP gets Individual/Business choice; Basic/Pro get upgrade prompt.
-     */
-    public function becomeSeller(Request $request)
-    {
-        if (! $request->user()->hasActiveMembership()) {
-            return redirect()->route('membership.index')
-                ->with('info', 'Join a membership plan to become an auction seller.');
-        }
-
-        $plan = $request->user()->currentPlan();
-        $canRegisterSeller = $plan && $plan->can_register_individual_seller;
-
-        if (! $canRegisterSeller) {
-            return view('auction.become-seller', [
-                'requiresUpgrade' => true,
-                'currentPlan' => $plan,
-            ]);
-        }
-
-        return view('auction.become-seller', [
-            'requiresUpgrade' => false,
-            'currentPlan' => $plan,
-        ]);
     }
 }

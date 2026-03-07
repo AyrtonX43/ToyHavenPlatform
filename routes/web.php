@@ -152,11 +152,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/', [\App\Http\Controllers\Toyshop\ReportController::class, 'create'])->name('store');
     });
 
-    // Auction Routes (members only; non-members redirected from index)
-    Route::prefix('auction')->name('auction.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
-        Route::get('/become-seller', [\App\Http\Controllers\Auction\AuctionController::class, 'becomeSeller'])->name('become-seller');
-    });
+    // Auction Hub (members only; non-members redirected to membership)
+    Route::get('/auction', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('auction.index');
 
     // Membership Routes
     Route::prefix('membership')->name('membership.')->group(function () {

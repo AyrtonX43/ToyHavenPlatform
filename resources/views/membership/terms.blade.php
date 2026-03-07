@@ -4,14 +4,36 @@
 
 @push('styles')
 <style>
-    .terms-content { line-height: 1.65; color: #334155; }
-    .terms-content .terms-section { margin-bottom: 1.5rem; }
-    .terms-content .terms-section:last-child { margin-bottom: 0; }
-    .terms-content h5 { font-size: 1rem; font-weight: 600; color: #0f172a; margin-bottom: 0.5rem; }
-    .terms-content h6 { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 0.4rem; }
-    .terms-content p { margin-bottom: 0.5rem; }
-    .terms-content ul, .terms-content ol { margin-bottom: 0.5rem; padding-left: 1.25rem; }
-    .terms-content li { margin-bottom: 0.25rem; }
+    .terms-content {
+        font-size: 0.95rem;
+        line-height: 1.7;
+        max-width: 72ch;
+    }
+    .terms-content .terms-intro {
+        margin-bottom: 1.75rem;
+        font-weight: 500;
+    }
+    .terms-content .terms-section {
+        margin-bottom: 1.75rem;
+    }
+    .terms-content .terms-h2,
+    .terms-content h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        margin-top: 1rem;
+        color: #0c4a6e;
+    }
+    .terms-content p {
+        margin-bottom: 0.75rem;
+    }
+    .terms-content ul {
+        margin: 0.5rem 0 1rem 1.25rem;
+        padding-left: 0;
+    }
+    .terms-content li {
+        margin-bottom: 0.4rem;
+    }
 </style>
 @endpush
 

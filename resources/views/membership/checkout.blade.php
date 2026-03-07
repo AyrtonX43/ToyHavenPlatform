@@ -13,7 +13,7 @@
         box-shadow: 0 8px 30px rgba(2, 132, 199, 0.2);
     }
     .terms-scroll {
-        max-height: 360px;
+        max-height: 520px;
         overflow-y: auto;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
@@ -21,16 +21,25 @@
         background: #f8fafc;
     }
     .terms-scroll::-webkit-scrollbar { width: 8px; }
+    .terms-content {
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+    .terms-content .terms-intro { margin-bottom: 1.5rem; font-weight: 500; }
+    .terms-content .terms-section { margin-bottom: 1.5rem; }
+    .terms-content .terms-h2,
+    .terms-content h5 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.6rem;
+        margin-top: 0.75rem;
+        color: #0c4a6e;
+    }
+    .terms-content p { margin-bottom: 0.6rem; }
+    .terms-content ul { margin: 0.5rem 0 1rem 1.25rem; padding-left: 0; }
+    .terms-content li { margin-bottom: 0.35rem; }
     .terms-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
     .terms-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-    .terms-content { line-height: 1.65; color: #334155; }
-    .terms-content .terms-section { margin-bottom: 1.5rem; }
-    .terms-content .terms-section:last-child { margin-bottom: 0; }
-    .terms-content h5 { font-size: 1rem; font-weight: 600; color: #0f172a; margin-bottom: 0.5rem; }
-    .terms-content h6 { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 0.4rem; }
-    .terms-content p { margin-bottom: 0.5rem; }
-    .terms-content ul, .terms-content ol { margin-bottom: 0.5rem; padding-left: 1.25rem; }
-    .terms-content li { margin-bottom: 0.25rem; }
 </style>
 @endpush
 

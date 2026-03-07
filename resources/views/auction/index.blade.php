@@ -1,34 +1,87 @@
 @extends('layouts.toyshop')
 
-@section('title', 'Live Auctions - ToyHaven')
+@section('title', 'Auction Hub - ToyHaven')
 
 @push('styles')
 <style>
-    .auction-header { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 2rem; }
+    .auction-hero {
+        background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 40%, #0284c7 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 24px 24px;
+        box-shadow: 0 12px 40px rgba(2, 132, 199, 0.2);
+    }
+    .auction-shortcut {
+        display: block;
+        padding: 1.25rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        text-decoration: none !important;
+        color: inherit;
+        transition: all 0.25s ease;
+    }
+    .auction-shortcut:hover {
+        border-color: #0284c7;
+        background: #f0f9ff;
+        color: inherit;
+    }
+    .auction-shortcut.coming-soon {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+    .auction-shortcut.coming-soon:hover {
+        border-color: #e2e8f0;
+        background: #f8fafc;
+    }
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 2px dashed #e2e8f0;
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="container py-4">
-    <div class="auction-header">
-        <h1 class="h3 fw-bold mb-2"><i class="bi bi-hammer me-2"></i>Live Auctions</h1>
-        <p class="text-muted mb-0">Browse active auctions, place bids, and discover collectibles.</p>
+<div class="auction-hero">
+    <div class="container text-center">
+        <h1 class="mb-2 fw-bold">
+            <i class="bi bi-hammer me-2"></i>Auction Hub
+        </h1>
+        <p class="mb-0 opacity-90">Welcome, {{ auth()->user()->name }}. Your membership gives you access to auctions.</p>
     </div>
+</div>
 
-    @auth
-    <div class="mb-4">
-        <a href="{{ route('auction.become-seller') }}" class="btn btn-primary">
-            <i class="bi bi-person-plus me-1"></i>Become a Seller
-        </a>
-    </div>
-    @endauth
-
-    {{-- Placeholder until auction listings are implemented --}}
-    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-hammer text-muted" style="font-size: 4rem;"></i>
-            <h4 class="mt-3 mb-2">No live auctions right now</h4>
-            <p class="text-muted mb-0">Check back soon for new auction listings, or become a seller to list your own.</p>
+<div class="container py-4 pb-5">
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <h4 class="mb-3"><i class="bi bi-list-ul me-2"></i>Active Listings</h4>
+            <div class="empty-state">
+                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                <p class="text-muted mb-0">No active auctions at the moment. Check back soon for new listings from sellers.</p>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <h4 class="mb-3"><i class="bi bi-link-45deg me-2"></i>Shortcuts</h4>
+            <div class="d-flex flex-column gap-2">
+                <a href="#" class="auction-shortcut coming-soon">
+                    <i class="bi bi-clock-history fs-4 me-2 text-primary"></i>
+                    <strong>Auction History</strong>
+                    <span class="badge bg-secondary ms-2">Coming Soon</span>
+                </a>
+                <a href="#" class="auction-shortcut coming-soon">
+                    <i class="bi bi-tag fs-4 me-2 text-primary"></i>
+                    <strong>My Bids</strong>
+                    <span class="badge bg-secondary ms-2">Coming Soon</span>
+                </a>
+                <a href="#" class="auction-shortcut coming-soon">
+                    <i class="bi bi-bookmark-star fs-4 me-2 text-primary"></i>
+                    <strong>Saved Auctions</strong>
+                    <span class="badge bg-secondary ms-2">Coming Soon</span>
+                </a>
+            </div>
         </div>
     </div>
 </div>
