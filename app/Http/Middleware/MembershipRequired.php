@@ -22,11 +22,9 @@ class MembershipRequired
         }
 
         if (! $request->user()->hasActiveMembership()) {
-            $route = $intent === 'auction' ? 'auctions.index' : 'membership.index';
-
             return redirect()
-                ->route($route, array_filter(['intent' => $intent]))
-                ->with('info', 'Join our membership to access auctions and place bids.');
+                ->route('membership.index', array_filter(['intent' => $intent]))
+                ->with('info', 'Join our membership to continue.');
         }
 
         return $next($request);

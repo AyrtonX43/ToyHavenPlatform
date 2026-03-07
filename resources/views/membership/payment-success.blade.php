@@ -81,25 +81,9 @@
                 </div>
             </div>
 
-            {{-- VIP: Create Auction Shop / Individual Seller --}}
-            @if(auth()->user()->hasPlan('vip'))
-                <div class="vip-cta-card card mb-4">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-2"><i class="bi bi-gem me-2"></i>VIP Member Benefits</h5>
-                        <p class="mb-3 opacity-90">As a VIP member, you can create a business auction shop or register as an individual seller to sell your collection at the auction.</p>
-                        <a href="{{ route('auctions.verification.index') }}" class="btn btn-light rounded-3 fw-semibold">
-                            <i class="bi bi-shop me-2"></i>Create Auction Shop / Individual Seller
-                        </a>
-                    </div>
-                </div>
-            @endif
-
             <div class="d-flex gap-2 justify-content-center flex-wrap">
                 <a href="{{ route('membership.manage') }}" class="btn btn-primary btn-lg rounded-3 px-4">
                     <i class="bi bi-gear me-2"></i>Manage Membership
-                </a>
-                <a href="{{ route('auctions.index') }}" class="btn btn-outline-primary btn-lg rounded-3 px-4">
-                    <i class="bi bi-hammer me-2"></i>Browse Auctions
                 </a>
             </div>
         </div>

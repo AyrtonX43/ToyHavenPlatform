@@ -156,7 +156,7 @@
         <h1 class="mb-3 fw-bold" style="font-size: 2.25rem;">
             <i class="bi bi-gem me-2"></i>ToyHaven Auctions Membership
         </h1>
-        <p class="mb-0 opacity-90 lead">Join to view and bid on auctions. Upgrade for analytics and auction seller registration.</p>
+        <p class="mb-0 opacity-90 lead">Join for exclusive benefits and upgrades. Perfect for collectors and enthusiasts.</p>
         <div class="step-badges mt-4">
             <span class="step-badge"><i class="bi bi-1-circle-fill"></i> Select Plan</span>
             <span class="step-badge"><i class="bi bi-2-circle"></i> Terms & Conditions</span>

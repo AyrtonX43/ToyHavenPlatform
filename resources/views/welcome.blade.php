@@ -429,14 +429,6 @@
                 <a href="{{ route('trading.index') }}" class="btn btn-primary w-100">Trade Now</a>
             </div>
         </div>
-        <div class="col-md-4">
-            <a href="{{ route('auctions.index') }}" class="card reveal text-decoration-none text-dark">
-                <div class="icon-wrap"><i class="bi bi-hammer"></i></div>
-                <h3>Auction</h3>
-                <p>Bid on rare and collectible items. Place your bids and win unique toys.</p>
-                <span class="btn btn-primary w-100">Bid Now</span>
-            </a>
-        </div>
     </div>
 
     <!-- All products (minimum 5) for guest homepage -->

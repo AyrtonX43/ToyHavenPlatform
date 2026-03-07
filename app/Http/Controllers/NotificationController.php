@@ -329,7 +329,7 @@ class NotificationController extends Controller
 
             case 'auction_won':
             case 'auction_outbid':
-                return isset($data['auction_id']) ? route('auctions.show', $data['auction_id']) : route('auctions.index');
+                return route('notifications.index');
             
             default:
                 return route('notifications.index');

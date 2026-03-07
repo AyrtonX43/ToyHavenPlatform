@@ -187,56 +187,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
     }
 
-    public function auctionSellerVerification()
-    {
-        return $this->hasOne(AuctionSellerVerification::class)->latestOfMany();
-    }
-
-    public function auctions()
-    {
-        return $this->hasMany(Auction::class);
-    }
-
-    public function auctionBids()
-    {
-        return $this->hasMany(AuctionBid::class);
-    }
-
-    public function wonAuctions()
-    {
-        return $this->hasMany(Auction::class, 'winner_id');
-    }
-
-    public function auctionOffenses()
-    {
-        return $this->hasMany(AuctionOffense::class);
-    }
-
-    public function hasApprovedAuctionVerification(): bool
-    {
-        return $this->auctionSellerVerification?->isApproved() ?? false;
-    }
-
-    public function canListAuctions(): bool
-    {
-        if ($this->isAdmin()) {
-            return true;
-        }
-        return $this->hasPlan('vip')
-            && $this->hasApprovedAuctionVerification();
-    }
-
     public function hasPlan(string $slug): bool
     {
         $plan = $this->currentPlan();
         return $plan && $plan->slug === $slug;
-    }
-
-    public function auctionOffenseCount(): int
-    {
-        return $this->auctionOffenses()
-            ->where('offense_type', 'payment_deadline_missed')
-            ->max('occurrence') ?? 0;
     }
 
     public function activeSubscription()
@@ -384,28 +338,4 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->last_seen_at && $this->last_seen_at->diffInSeconds(now(), false) < $withinSeconds;
     }
 
-    public function getAuctionAlias(): string
-    {
-        return 'Bidder';
-    }
-
-    public function isAuctionBanned(): bool
-    {
-        return $this->auction_banned_at !== null;
-    }
-
-    public function isAuctionSuspended(): bool
-    {
-        if ($this->auction_banned_at) {
-            return true;
-        }
-        if (! $this->auction_suspended_until) {
-            return false;
-        }
-        if ($this->auction_suspended_until->isPast()) {
-            $this->update(['auction_suspended_until' => null]);
-            return false;
-        }
-        return true;
-    }
 }

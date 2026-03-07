@@ -178,40 +178,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/upgrade/{targetPlanSlug}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade');
     });
 
-    // Auction Routes - Public browse
-    Route::prefix('auctions')->name('auctions.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
-        Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->middleware(['auth', 'membership:auction'])->name('my-bids');
-        Route::get('/history', [\App\Http\Controllers\Auction\AuctionHistoryController::class, 'index'])->middleware(['auth', 'membership:auction'])->name('history');
-        Route::get('/wins', [\App\Http\Controllers\Auction\WinnerWinsController::class, 'index'])->middleware(['auth', 'membership'])->name('wins.index');
-        Route::get('/wins/{auctionPayment}', [\App\Http\Controllers\Auction\WinnerWinsController::class, 'show'])->middleware(['auth', 'membership'])->name('wins.show');
-        Route::get('/saved', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'index'])->middleware(['auth', 'membership'])->name('saved.index');
-        Route::post('/saved/{auction}', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'store'])->middleware(['auth', 'membership'])->name('saved.store');
-        Route::delete('/saved/{auction}', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'destroy'])->middleware(['auth', 'membership'])->name('saved.destroy');
-        Route::get('/payment/{auctionPayment}', [\App\Http\Controllers\Auction\PaymentController::class, 'index'])->middleware(['auth', 'membership'])->name('payment.index');
-        Route::post('/payment/{auctionPayment}/paymongo', [\App\Http\Controllers\Auction\PaymentController::class, 'processPayMongo'])->middleware(['auth', 'membership'])->name('payment.paymongo');
-        Route::get('/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('show');
-        Route::get('/{auction}/live-room', [\App\Http\Controllers\Auction\AuctionController::class, 'liveRoom'])->name('live-room');
-        Route::post('/{auction}/bids', [\App\Http\Controllers\Auction\BidController::class, 'store'])->middleware(['auth', 'membership'])->name('bids.store');
-
-        Route::middleware('auth')->prefix('verification')->name('verification.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Auction\SellerVerificationController::class, 'index'])->name('index');
-            Route::get('/create', [\App\Http\Controllers\Auction\SellerVerificationController::class, 'create'])->name('create');
-            Route::post('/', [\App\Http\Controllers\Auction\SellerVerificationController::class, 'store'])->name('store');
-            Route::get('/status', [\App\Http\Controllers\Auction\SellerVerificationController::class, 'status'])->name('status');
-        });
-
-        Route::middleware(['auth', 'membership'])->prefix('seller')->name('seller.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'index'])->name('index');
-            Route::get('/create', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'create'])->name('create');
-            Route::post('/', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'store'])->name('store');
-            Route::get('/{auction}/edit', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'edit'])->name('edit');
-            Route::put('/{auction}', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'update'])->name('update');
-            Route::post('/{auction}/submit', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'submit'])->name('submit');
-            Route::delete('/{auction}', [\App\Http\Controllers\Auction\SellerAuctionController::class, 'destroy'])->name('destroy');
-        });
-    });
-
     // Seller Routes (sellers, admins, and business moderators)
     Route::prefix('seller')->name('seller.')->middleware(['seller.access', 'seller.approved'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->name('dashboard');
@@ -478,27 +444,6 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index'])->name('index');
         });
 
-        Route::prefix('auctions')->name('auctions.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\AuctionController::class, 'index'])->name('index');
-            Route::get('/{auction}', [\App\Http\Controllers\Admin\AuctionController::class, 'show'])->name('show');
-            Route::post('/{auction}/approve', [\App\Http\Controllers\Admin\AuctionController::class, 'approve'])->name('approve');
-            Route::post('/{auction}/reject', [\App\Http\Controllers\Admin\AuctionController::class, 'reject'])->name('reject');
-        });
-
-        Route::prefix('auction-payments')->name('auction-payments.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\AuctionPaymentAdminController::class, 'index'])->name('index');
-            Route::post('/{auctionPayment}/release', [\App\Http\Controllers\Admin\AuctionPaymentAdminController::class, 'release'])->name('release');
-            Route::post('/{auctionPayment}/refund', [\App\Http\Controllers\Admin\AuctionPaymentAdminController::class, 'refund'])->name('refund');
-        });
-
-        Route::prefix('auction-verifications')->name('auction-verifications.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\AuctionVerificationController::class, 'index'])->name('index');
-            Route::get('/{verification}', [\App\Http\Controllers\Admin\AuctionVerificationController::class, 'show'])->name('show');
-            Route::post('/{verification}/approve', [\App\Http\Controllers\Admin\AuctionVerificationController::class, 'approve'])->name('approve');
-            Route::post('/{verification}/reject', [\App\Http\Controllers\Admin\AuctionVerificationController::class, 'reject'])->name('reject');
-            Route::post('/{verification}/resubmission', [\App\Http\Controllers\Admin\AuctionVerificationController::class, 'requestResubmission'])->name('resubmission');
-        });
-
         Route::prefix('trades')->name('trades.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TradeController::class, 'index'])->name('index');
             Route::get('/listings', [\App\Http\Controllers\Admin\TradeController::class, 'listings'])->name('listings');
@@ -602,16 +547,6 @@ Route::prefix('moderator')->middleware(['moderator'])->name('moderator.')->group
         ->name('trades.index');
     Route::get('/trades/{id}', [\App\Http\Controllers\Moderator\TradeController::class, 'show'])
         ->name('trades.show');
-
-    // Auctions
-    Route::get('/auctions', [\App\Http\Controllers\Moderator\AuctionController::class, 'index'])
-        ->name('auctions.index');
-    Route::get('/auctions/{auction}', [\App\Http\Controllers\Moderator\AuctionController::class, 'show'])
-        ->name('auctions.show');
-    Route::post('/auctions/{auction}/approve', [\App\Http\Controllers\Moderator\AuctionController::class, 'approve'])
-        ->name('auctions.approve');
-    Route::post('/auctions/{auction}/reject', [\App\Http\Controllers\Moderator\AuctionController::class, 'reject'])
-        ->name('auctions.reject');
 
     // Trade Listings
     Route::get('/trade-listings', [\App\Http\Controllers\Moderator\TradeListingController::class, 'index'])

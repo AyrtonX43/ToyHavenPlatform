@@ -5,9 +5,6 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('auction:end-expired')->everyMinute();
-Schedule::command('auction:check-payment-deadlines')->everyFiveMinutes();
-
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

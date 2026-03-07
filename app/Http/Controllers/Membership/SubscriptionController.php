@@ -503,12 +503,12 @@ class SubscriptionController extends Controller
         $token = $request->query('token'); // PayPal order ID
 
         if (! $subscriptionId || ! $token) {
-            return redirect()->route('auctions.index')->with('error', 'Invalid PayPal return.');
+            return redirect()->route('membership.index')->with('error', 'Invalid PayPal return.');
         }
 
         $subscription = Subscription::find($subscriptionId);
         if (! $subscription || $subscription->user_id !== Auth::id()) {
-            return redirect()->route('auctions.index')->with('error', 'Subscription not found.');
+            return redirect()->route('membership.index')->with('error', 'Subscription not found.');
         }
 
         try {

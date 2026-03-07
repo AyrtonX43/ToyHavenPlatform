@@ -36,18 +36,6 @@
             </div>
         </div>
 
-        @if(auth()->user()->currentPlan()?->slug === 'vip')
-            <div class="card mb-4 border-primary">
-                <div class="card-body">
-                    <h5 class="text-primary mb-2"><i class="bi bi-gem me-2"></i>VIP Benefits</h5>
-                    <p class="mb-3">Create a business auction shop or register as an individual seller to sell your collection at the auction.</p>
-                    <a href="{{ route('auctions.verification.index') }}" class="btn btn-primary">
-                        <i class="bi bi-shop me-2"></i>Create Auction Shop / Individual Seller
-                    </a>
-                </div>
-            </div>
-        @endif
-
         <h5 class="mb-3">Upgrade</h5>
         <div class="row g-2 mb-4">
             @foreach($plans as $p)
@@ -62,7 +50,7 @@
         </div>
     @else
         <div class="alert alert-warning">
-            You don't have an active membership. <a href="{{ route('membership.index') }}">Subscribe now</a> to access auctions.
+            You don't have an active membership. <a href="{{ route('membership.index') }}">Subscribe now</a> to continue.
         </div>
     @endif
 

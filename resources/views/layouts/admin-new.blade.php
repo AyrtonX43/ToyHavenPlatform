@@ -706,12 +706,6 @@
                 <i class="bi bi-flag menu-icon"></i> Trade Reports
             </a>
             @endif
-            @if(Route::has('moderator.auctions.index'))
-            <a href="{{ route('moderator.auctions.index') }}"
-               class="sidebar-link {{ request()->routeIs('moderator.auctions.*') ? 'active' : '' }}">
-                <i class="bi bi-hammer menu-icon"></i> Auctions
-            </a>
-            @endif
             <hr class="text-white-50 my-2 mx-4">
             @endif
 
@@ -812,15 +806,15 @@
                 </li>
             </ul>
 
-            {{-- Auction & Membership --}}
-            <div class="sidebar-section-label">Auction & Membership</div>
-            <button class="sidebar-parent {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-payments.*') ? 'active-section' : '' }}"
+            {{-- Membership --}}
+            <div class="sidebar-section-label">Membership</div>
+            <button class="sidebar-parent {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
                     onclick="toggleMenu(this)"
-                    aria-expanded="{{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-payments.*') ? 'true' : 'false' }}">
-                <i class="bi bi-gem menu-icon"></i> Membership & Auctions
+                    aria-expanded="{{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
+                <i class="bi bi-gem menu-icon"></i> Membership
                 <i class="bi bi-chevron-right chevron"></i>
             </button>
-            <ul class="sidebar-children {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.auction-verifications.*') || request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-payments.*') ? 'open' : '' }}">
+            <ul class="sidebar-children {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
                 <li>
                     <a href="{{ route('admin.plans.index') }}" class="sidebar-link {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
                         <i class="bi bi-pencil-square menu-icon"></i> Plans
@@ -829,19 +823,6 @@
                 <li>
                     <a href="{{ route('admin.subscriptions.index') }}" class="sidebar-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
                         <i class="bi bi-people menu-icon"></i> Subscriptions
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.auctions.index') }}" class="sidebar-link {{ request()->routeIs('admin.auctions.*') || request()->routeIs('admin.auction-payments.*') ? 'active' : '' }}">
-                        <i class="bi bi-hammer menu-icon"></i> Auctions
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('admin.auction-payments.index') }}" class="sidebar-link {{ request()->routeIs('admin.auction-payments.*') ? 'active' : '' }}">
-                        <i class="bi bi-credit-card menu-icon"></i> Auction Payments
-                    </a>
-                    <a href="{{ route('admin.auction-verifications.index') }}" class="sidebar-link {{ request()->routeIs('admin.auction-verifications.*') ? 'active' : '' }}">
-                        <i class="bi bi-person-check menu-icon"></i> Auction Seller Verifications
                     </a>
                 </li>
             </ul>
