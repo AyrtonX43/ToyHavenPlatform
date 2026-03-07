@@ -163,10 +163,12 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/paypal/return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalReturn'])->name('paypal.return');
         Route::get('/paypal/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalCancel'])->name('paypal.cancel');
+        Route::post('/create-paypal-order/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'createPayPalOrder'])->name('create-paypal-order');
+        Route::post('/capture-paypal-order/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'capturePayPalOrder'])->name('capture-paypal-order');
         Route::get('/payment/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'payment'])->name('payment');
         Route::get('/payment-return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentReturn'])->name('payment-return');
-        Route::get('/redirect-to-auctions/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'redirectToAuctions'])->name('redirect-to-auctions');
         Route::get('/payment-success/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentSuccess'])->name('payment-success');
+        Route::get('/payment-done', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paymentDone'])->name('payment-done');
         Route::get('/subscriptions/{subscription}/payments/{subscriptionPayment}/receipt', [\App\Http\Controllers\Membership\SubscriptionController::class, 'downloadReceipt'])->name('receipt');
         Route::post('/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancel'])->name('cancel');
         Route::get('/cancel-pending/{subscription}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'cancelPending'])->name('cancel-pending');

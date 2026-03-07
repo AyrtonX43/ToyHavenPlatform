@@ -100,7 +100,7 @@
                     </form>
                 </div>
                 <div class="col-md-6">
-                    <form action="{{ route('membership.subscribe') }}" method="POST" class="h-100" target="_blank">
+                    <form action="{{ route('membership.subscribe') }}" method="POST" class="h-100">
                         @csrf
                         <input type="hidden" name="plan_id" value="{{ $plan->id }}">
                         <input type="hidden" name="terms_accepted" value="1">
@@ -113,8 +113,7 @@
                                     </div>
                                 </div>
                                 <h5 class="fw-bold mb-2">PayPal</h5>
-                                <p class="text-muted small mb-2">Pay securely with your PayPal account or linked card.</p>
-                                <p class="text-muted small mb-4"><i class="bi bi-box-arrow-up-right me-1"></i> Opens in new window — complete payment details on PayPal's secure form</p>
+                                <p class="text-muted small mb-4">Pay securely with your PayPal account or linked card.</p>
                                 <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
                                     <i class="bi bi-paypal me-1"></i> Pay with PayPal
                                 </button>

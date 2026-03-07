@@ -96,10 +96,10 @@ class SubscriptionController extends Controller
 
         $subscription->load('plan');
 
-        // PayPal: redirect directly to PayPal
+        // PayPal: show embedded payment form (no redirect)
         $method = session('membership_payment_method', 'qrph');
         if ($method === 'paypal') {
-            return $this->processPayPal($subscription);
+            return $this->showPayPalPaymentPage($subscription);
         }
 
         // QRPH: generate and show QR code
@@ -126,7 +126,7 @@ class SubscriptionController extends Controller
         }
 
         if ($paymentMethod === 'paypal') {
-            return $this->processPayPal($subscription);
+            return $this->showPayPalPaymentPage($subscription);
         }
 
         return back()->with('error', 'Invalid payment method.');
@@ -186,95 +186,160 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    protected function processPayPal(Subscription $subscription)
+    /**
+     * Show embedded PayPal payment page (no redirect - payment stays on site)
+     */
+    protected function showPayPalPaymentPage(Subscription $subscription)
     {
-        try {
-            $config = config('paypal');
-            $mode = $config['mode'] ?? 'sandbox';
-            $creds = $config[$mode] ?? $config['sandbox'] ?? [];
-            $clientId = $creds['client_id'] ?? '';
-            $clientSecret = $creds['client_secret'] ?? '';
+        $config = config('paypal');
+        $mode = $config['mode'] ?? 'sandbox';
+        $creds = $config[$mode] ?? $config['sandbox'] ?? [];
+        $clientId = $creds['client_id'] ?? '';
 
-            if (empty($clientId) || empty($clientSecret)) {
-                return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-                    ->with('error', 'PayPal is not configured. Add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to .env, then run: php artisan config:clear');
-            }
-
-            $paypal = new PayPalService;
-            $paypal->setApiCredentials($config);
-
-            // Required: get access token before any API call (per srmklive docs)
-            $paypal->getAccessToken();
-        } catch (\Throwable $e) {
-            Log::error('PayPal init failed', ['error' => $e->getMessage()]);
-
+        if (empty($clientId)) {
             return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-                ->with('error', 'PayPal could not be initialized. Please try again or use QR Ph.');
+                ->with('error', 'PayPal is not configured. Add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to .env, then run: php artisan config:clear');
         }
 
-        $returnUrl = route('membership.paypal.return');
-        $cancelUrl = route('membership.paypal.cancel');
-        $currency = config('paypal.currency', 'PHP');
-        $amount = number_format($subscription->plan->price, 2, '.', '');
+        return view('membership.payment-paypal', [
+            'subscription' => $subscription,
+            'paypal_client_id' => $clientId,
+            'paypal_mode' => $mode,
+        ]);
+    }
 
-        $orderData = [
-            'intent' => 'CAPTURE',
-            'purchase_units' => [[
-                'amount' => [
-                    'currency_code' => $currency,
-                    'value' => $amount,
-                ],
-                'description' => $subscription->plan->name . ' Membership',
-                'custom_id' => (string) $subscription->id,
-            ]],
-            'application_context' => [
-                'return_url' => $returnUrl . '?subscription_id=' . $subscription->id,
-                'cancel_url' => $cancelUrl . '?subscription_id=' . $subscription->id,
-                'brand_name' => config('app.name'),
-                'user_action' => 'PAY_NOW',
-            ],
-        ];
+    /**
+     * Create PayPal order (API for embedded buttons)
+     */
+    public function createPayPalOrder(Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($subscription->status === 'active') {
+            return response()->json(['error' => 'Already active'], 400);
+        }
 
         try {
+            $config = config('paypal');
+            $paypal = new PayPalService;
+            $paypal->setApiCredentials($config);
+            $paypal->getAccessToken();
+
+            $currency = config('paypal.currency', 'PHP');
+            $amount = number_format($subscription->plan->price, 2, '.', '');
+
+            $orderData = [
+                'intent' => 'CAPTURE',
+                'purchase_units' => [[
+                    'amount' => [
+                        'currency_code' => $currency,
+                        'value' => $amount,
+                    ],
+                    'description' => $subscription->plan->name . ' Membership',
+                    'custom_id' => (string) $subscription->id,
+                ]],
+                'application_context' => [
+                    'brand_name' => config('app.name'),
+                    'user_action' => 'PAY_NOW',
+                ],
+            ];
+
             $response = $paypal->createOrder($orderData);
 
-            if (isset($response['error'])) {
-                Log::error('PayPal create order error', ['response' => $response, 'subscription' => $subscription->id]);
+            if (isset($response['error']) || ! is_array($response) || empty($response['id'])) {
+                Log::error('PayPal create order error', ['response' => $response ?? 'null', 'subscription' => $subscription->id]);
 
-                return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-                    ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
+                return response()->json(['error' => 'Could not create order'], 400);
             }
 
-            // Handle API error responses (e.g. validation, invalid credentials)
-            if (! is_array($response)) {
-                Log::error('PayPal create order invalid response', ['response' => $response, 'subscription' => $subscription->id]);
+            return response()->json(['orderId' => $response['id']]);
+        } catch (\Throwable $e) {
+            Log::error('PayPal create order failed', ['error' => $e->getMessage(), 'subscription' => $subscription->id]);
 
-                return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-                    ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
+            return response()->json(['error' => 'Could not create order'], 500);
+        }
+    }
+
+    /**
+     * Capture PayPal order (API for embedded buttons - payment successful)
+     */
+    public function capturePayPalOrder(Request $request, Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'order_id' => 'required|string',
+        ]);
+
+        $orderId = $request->order_id;
+
+        try {
+            $config = config('paypal');
+            $paypal = new PayPalService;
+            $paypal->setApiCredentials($config);
+            $paypal->getAccessToken();
+            $response = $paypal->capturePaymentOrder($orderId);
+
+            $status = $response['status'] ?? null;
+            if ($status !== 'COMPLETED') {
+                Log::warning('PayPal capture not completed', ['response' => $response, 'subscription' => $subscription->id]);
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Payment was not completed.',
+                    'redirect' => route('membership.payment-selection', $subscription->plan->slug),
+                ]);
             }
 
-            if (isset($response['id']) && ($response['status'] ?? '') === 'CREATED') {
-                foreach ($response['links'] ?? [] as $link) {
-                    if (($link['rel'] ?? '') === 'approve') {
-                        session(['paypal_subscription_id' => $subscription->id]);
-
-                        return redirect()->away($link['href']);
-                    }
+            $amount = 0;
+            foreach ($response['purchase_units'] ?? [] as $unit) {
+                $payments = $unit['payments']['captures'] ?? [];
+                foreach ($payments as $cap) {
+                    $amount += (float) ($cap['amount']['value'] ?? 0);
                 }
             }
 
-            // Log unexpected success response structure
-            Log::warning('PayPal create order missing approve link', ['response' => $response, 'subscription' => $subscription->id]);
-        } catch (\Throwable $e) {
-            Log::error('PayPal create order failed', [
-                'error' => $e->getMessage(),
-                'subscription' => $subscription->id,
-                'trace' => $e->getTraceAsString(),
+            $subscription->update([
+                'status' => 'active',
+                'payment_method' => 'paypal',
+                'current_period_start' => now(),
+                'current_period_end' => ($subscription->plan?->interval ?? 'month') === 'year'
+                    ? now()->addYear()
+                    : now()->addMonth(),
             ]);
-        }
 
-        return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-            ->with('error', 'PayPal could not create the order. Please try again or use QR Ph.');
+            $subscriptionPayment = SubscriptionPayment::create([
+                'subscription_id' => $subscription->id,
+                'amount' => $amount ?: $subscription->plan->price,
+                'payment_reference' => $orderId,
+                'status' => 'paid',
+                'paid_at' => now(),
+                'payment_method' => 'paypal',
+            ]);
+
+            $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+            $receiptService->generateReceipt($subscriptionPayment);
+
+            $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+
+            return response()->json([
+                'success' => true,
+                'redirect' => route('membership.payment-done', ['subscription_id' => $subscription->id]),
+                'message' => 'Payment successful! Receipt sent to your email.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('PayPal capture failed', ['error' => $e->getMessage(), 'order_id' => $orderId, 'subscription' => $subscription->id]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Payment could not be completed.',
+                'redirect' => route('membership.payment-selection', $subscription->plan->slug),
+            ], 500);
+        }
     }
 
     /**
@@ -334,15 +399,15 @@ class SubscriptionController extends Controller
 
                 $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
 
-                return redirect()->route('auctions.index')
-                    ->with('success', 'Payment successful! You are now a member. Receipt and details have been sent to your email.');
+                return redirect()->route('membership.payment-success', $subscription)
+                    ->with('success', 'Payment successful! Your receipt has been sent to your email.');
             }
         } catch (\Throwable $e) {
             Log::error('PayPal capture failed', ['error' => $e->getMessage(), 'token' => $token]);
         }
 
         return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-            ->with('error', 'PayPal payment could not be completed. Please try again or choose another payment method.');
+            ->with('error', 'PayPal payment could not be completed. Please try again.');
     }
 
     /**
@@ -379,28 +444,31 @@ class SubscriptionController extends Controller
             return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
         }
 
-        if ($subscription->payments()->where('status', 'paid')->exists()) {
-            return redirect()->route('auctions.index')
-                ->with('success', 'Payment successful! You are now a member. Receipt and details have been sent to your email.');
-        }
-
         return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
     }
 
     /**
-     * Redirect to auctions with success message (used after QR Ph payment confirmation)
+     * Payment done - set flash and redirect to auctions (for embedded PayPal flow)
      */
-    public function redirectToAuctions(Subscription $subscription)
+    public function paymentDone(Request $request)
     {
-        if ($subscription->user_id !== Auth::id()) {
-            abort(403);
+        $subscriptionId = $request->query('subscription_id');
+        if (! $subscriptionId) {
+            return redirect()->route('auctions.index')->with('error', 'Invalid request.');
         }
-        if (! $subscription->payments()->where('status', 'paid')->exists()) {
-            return redirect()->route('membership.manage')->with('error', 'Payment not found.');
+
+        $subscription = Subscription::find($subscriptionId);
+        if (! $subscription || $subscription->user_id !== Auth::id()) {
+            return redirect()->route('auctions.index')->with('error', 'Subscription not found.');
+        }
+
+        if ($subscription->status !== 'active') {
+            return redirect()->route('membership.payment-selection', $subscription->plan->slug)
+                ->with('error', 'Payment was not completed. Please try again.');
         }
 
         return redirect()->route('auctions.index')
-            ->with('success', 'Payment successful! You are now a member. Receipt and details have been sent to your email.');
+            ->with('success', 'Payment successful! Your membership is active. Receipt has been sent to your email.');
     }
 
     /**
@@ -432,7 +500,7 @@ class SubscriptionController extends Controller
 
         return response()->json([
             'paid' => $paid,
-            'redirect' => $paid ? route('membership.redirect-to-auctions', $subscription) : null,
+            'redirect' => $paid ? route('membership.payment-success', $subscription) : null,
         ]);
     }
 
@@ -488,7 +556,7 @@ class SubscriptionController extends Controller
     /**
      * Cancel pending subscription (before first payment)
      */
-    public function cancelPending(Subscription $subscription)
+    public function cancelPending(Request $request, Subscription $subscription)
     {
         if ($subscription->user_id !== Auth::id()) {
             abort(403);
@@ -499,6 +567,11 @@ class SubscriptionController extends Controller
         }
 
         $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+
+        if ($request->query('return_to') === 'selection') {
+            return redirect()->route('membership.payment-selection', $subscription->plan->slug)
+                ->with('info', 'Payment cancelled. You can try again or choose another payment method.');
+        }
 
         return redirect()->route('auctions.index')->with('info', 'Subscription cancelled. You can select a plan when ready.');
     }
