@@ -120,7 +120,7 @@
                             <h5 class="fw-bold mb-2">PayPal</h5>
                             <p class="text-muted small mb-4">Enter your card details to pay for your membership securely.</p>
                             @if($paypal_demo_mode)
-                                <a href="{{ route('membership.paypal.checkout') }}?plan_id={{ $plan->id }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" onclick="openPayPalCheckout(this.href); return false;">
+                                <a href="{{ url('/membership/paypal/checkout') }}?plan_id={{ $plan->id }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" onclick="openPayPalCheckout(this.href); return false;">
                                     <i class="bi bi-paypal me-1"></i> Pay with PayPal
                                 </a>
                             @elseif(!empty($paypal_client_id))

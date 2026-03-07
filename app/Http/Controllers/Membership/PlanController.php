@@ -44,7 +44,7 @@ class PlanController extends Controller
                 ->with('payment_failed', true);
         }
 
-        $config = config('paypal');
+        $config = config('paypal', []);
         $paypalDemoMode = (bool) ($config['demo_mode'] ?? true);
         $mode = $config['mode'] ?? 'sandbox';
         $creds = $config[$mode] ?? $config['sandbox'] ?? [];

@@ -23,7 +23,7 @@ echo ""
 echo "============================================================"
 echo "On live server (via PuTTY/SSH), run:"
 echo ""
-echo '  cd /path/to/ToyHavenPlatform && git pull && php artisan migrate --force && php artisan config:cache'
+echo '  cd /path/to/ToyHavenPlatform && git pull && php artisan migrate --force && php artisan route:clear && php artisan config:cache'
 echo ""
 echo "Replace /path/to/ToyHavenPlatform with your actual project path."
 echo "============================================================"

@@ -47,8 +47,14 @@
             <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
                 <div class="card-body p-4">
                     <div class="terms-scroll mb-4">
-                        @php $termsContent = $plan->latestTerms()?->content; @endphp
-                        @if($termsContent)
+                        @php
+                            try {
+                                $termsContent = $plan->latestTerms()?->content;
+                            } catch (\Throwable $e) {
+                                $termsContent = null;
+                            }
+                        @endphp
+                        @if(!empty($termsContent))
                             <div class="terms-content">{!! $termsContent !!}</div>
                         @else
                             @include('membership.terms-content')
