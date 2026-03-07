@@ -106,36 +106,26 @@
                     </form>
                 </div>
                 <div class="col-md-6">
-                    <div class="payment-method-card card h-100 paypal border-0">
-                        <div class="card-body py-4 px-4">
-                            <div class="mb-3">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
-                                    <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                    <form action="{{ route('membership.subscribe') }}" method="POST" class="h-100" target="_self">
+                        @csrf
+                        <input type="hidden" name="plan_id" value="{{ $plan->id }}">
+                        <input type="hidden" name="terms_accepted" value="1">
+                        <input type="hidden" name="payment_method" value="paypal">
+                        <div class="payment-method-card card h-100 paypal border-0" onclick="this.closest('form').submit()">
+                            <div class="card-body text-center py-5 px-4">
+                                <div class="mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
                                 </div>
-                            </div>
-                            <h5 class="fw-bold mb-2">PayPal</h5>
-                            <p class="text-muted small mb-3">Enter your PayPal account details below to complete payment.</p>
-                            <form id="paypal-form" action="{{ route('membership.paypal.demo-pay') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="paypal_demo_name" class="form-control" placeholder="John Doe" value="{{ auth()->user()?->name }}" required>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
-                                    <input type="email" name="paypal_demo_email" class="form-control" placeholder="john@example.com" value="{{ auth()->user()?->email }}" required>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold">PayPal Email <span class="text-danger">*</span></label>
-                                    <input type="email" name="paypal_demo_payer_email" class="form-control" placeholder="paypal@example.com" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold mt-2" style="background: #003087;">
+                                <h5 class="fw-bold mb-2">PayPal</h5>
+                                <p class="text-muted small mb-4">You will be redirected to PayPal to complete payment securely.</p>
+                                <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
                                     <i class="bi bi-paypal me-1"></i> Pay with PayPal
                                 </button>
-                            </form>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -168,17 +158,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-// PayPal form validation
-(function() {
-    var form = document.getElementById('paypal-form');
-    if (form) {
-        form.addEventListener('submit', function() {
-            form.querySelector('button[type="submit"]').disabled = true;
-        });
-    }
-})();
-</script>
-@endpush
