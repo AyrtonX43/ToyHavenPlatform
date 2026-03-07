@@ -13,16 +13,42 @@
         box-shadow: 0 8px 30px rgba(2, 132, 199, 0.2);
     }
     .terms-scroll {
-        max-height: 360px;
+        max-height: 420px;
         overflow-y: auto;
+        overflow-x: hidden;
         border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 1.5rem;
-        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        background: #fff;
     }
     .terms-scroll::-webkit-scrollbar { width: 8px; }
-    .terms-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
+    .terms-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     .terms-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .terms-content {
+        text-align: left;
+        line-height: 1.7;
+        font-size: 0.95rem;
+        color: #334155;
+    }
+    .terms-content h5 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 1.25rem 0 0.5rem 0;
+        padding-bottom: 0.25rem;
+    }
+    .terms-content h5:first-child { margin-top: 0; }
+    .terms-content ul {
+        margin: 0 0 0 1.25rem;
+        padding: 0;
+        list-style: disc;
+    }
+    .terms-content li {
+        margin-bottom: 0.4rem;
+    }
+    .terms-content p {
+        margin: 0 0 0.75rem 0;
+    }
 </style>
 @endpush
 
