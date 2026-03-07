@@ -190,9 +190,14 @@ class SubscriptionController extends Controller
     {
         try {
             $config = config('paypal');
-            if (empty($config['sandbox']['client_id']) || empty($config['sandbox']['client_secret'])) {
+            $mode = $config['mode'] ?? 'sandbox';
+            $creds = $config[$mode] ?? $config['sandbox'] ?? [];
+            $clientId = $creds['client_id'] ?? '';
+            $clientSecret = $creds['client_secret'] ?? '';
+
+            if (empty($clientId) || empty($clientSecret)) {
                 return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-                    ->with('error', 'PayPal is not configured. Please add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to .env');
+                    ->with('error', 'PayPal is not configured. Add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to .env, then run: php artisan config:clear');
             }
 
             $paypal = new PayPalService($config);

@@ -44,8 +44,17 @@
                 <div class="card-body text-center py-5 px-4">
                     @if(!empty($qr_image))
                         <p class="text-muted mb-3">Scan this QR code with GCash, Maya, or your banking app</p>
-                        <div class="qr-display-box mb-4">
+                        <div id="qr-expiry-box" class="qr-display-box mb-4">
                             <img src="{{ $qr_image }}" alt="QR Ph" class="img-fluid" style="max-width: 260px;">
+                            <div id="qr-expiry-countdown" class="mt-3 text-muted small">
+                                <i class="bi bi-clock me-1"></i> QR expires in <strong id="qr-expiry-time">30:00</strong>
+                            </div>
+                        </div>
+                        <div id="qr-expired-message" class="alert alert-warning d-none mb-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i> This QR code has expired. Please get a new one to continue.
+                            <a href="{{ url()->current() }}" class="btn btn-sm btn-warning mt-2 d-inline-block">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Get New QR Code
+                            </a>
                         </div>
                         <div id="qr-polling" class="d-flex align-items-center justify-content-center gap-2 mb-3">
                             <div class="spinner-border spinner-border-sm text-success" role="status"></div>
@@ -109,6 +118,26 @@
                 }
             });
     }, 4000);
+
+    // QR Ph expires in 30 minutes - countdown
+    var expiresAt = Date.now() + 30 * 60 * 1000;
+    var expiryEl = document.getElementById('qr-expiry-time');
+    var expiryBox = document.getElementById('qr-expiry-box');
+    var expiredMsg = document.getElementById('qr-expired-message');
+    var pollingEl = document.getElementById('qr-polling');
+    function tick() {
+        var left = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+        var m = Math.floor(left / 60);
+        var s = left % 60;
+        if (expiryEl) expiryEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        if (left <= 0 && expiryBox && expiredMsg) {
+            expiryBox.classList.add('d-none');
+            expiredMsg.classList.remove('d-none');
+            if (pollingEl) pollingEl.classList.add('d-none');
+        }
+    }
+    tick();
+    setInterval(tick, 1000);
 })();
 </script>
 @endpush
