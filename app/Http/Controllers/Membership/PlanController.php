@@ -45,6 +45,7 @@ class PlanController extends Controller
         }
 
         $config = config('paypal');
+        $paypalDemoMode = (bool) ($config['demo_mode'] ?? true);
         $mode = $config['mode'] ?? 'sandbox';
         $creds = $config[$mode] ?? $config['sandbox'] ?? [];
         $paypalClientId = $creds['client_id'] ?? '';
@@ -52,6 +53,7 @@ class PlanController extends Controller
         return view('membership.payment-selection', [
             'plan' => $plan,
             'paypal_client_id' => $paypalClientId,
+            'paypal_demo_mode' => $paypalDemoMode,
         ]);
     }
 

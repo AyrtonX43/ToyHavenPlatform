@@ -115,7 +115,11 @@
                             </div>
                             <h5 class="fw-bold mb-2">PayPal</h5>
                             <p class="text-muted small mb-4">You'll be directed to PayPal to enter your payment details and complete the transaction.</p>
-                            @if(!empty($paypal_client_id))
+                            @if($paypal_demo_mode)
+                                <a href="{{ route('membership.paypal.demo-page') }}?plan_id={{ $plan->id }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" onclick="openPayPalDemo(this.href); return false;">
+                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal
+                                </a>
+                            @elseif(!empty($paypal_client_id))
                                 <div id="paypal-button-container" class="d-flex justify-content-center"></div>
                             @else
                                 <p class="text-muted small">PayPal is not available at the moment. Please use QR Ph or contact support.</p>
@@ -155,9 +159,18 @@
 </div>
 @endsection
 
-@if(!empty($paypal_client_id))
+@if($paypal_demo_mode)
 @push('scripts')
-<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture"></script>
+<script>
+function openPayPalDemo(url) {
+    var w = window.open(url, 'paypal_checkout', 'width=450,height=500,scrollbars=yes,resizable=yes');
+    if (w) w.focus();
+}
+</script>
+@endpush
+@elseif(!empty($paypal_client_id))
+@push('scripts')
+<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture&disable-funding=card,credit"></script>
 <script>
 (function() {
     var planId = {{ $plan->id }};
@@ -179,10 +192,7 @@
                     plan_id: planId,
                     _token: csrfToken
                 })
-            }).then(function(r) {
-                if (!r.ok) throw new Error('Could not create order');
-                return r.json();
-            }).then(function(data) {
+            }).then(function(r) { return r.json(); }).then(function(data) {
                 if (data.orderId) return data.orderId;
                 throw new Error(data.error || 'Could not create order');
             });
@@ -200,10 +210,7 @@
                     order_id: data.orderID,
                     _token: csrfToken
                 })
-            }).then(function(r) {
-                if (!r.ok) throw new Error('Capture failed');
-                return r.json();
-            }).then(function(res) {
+            }).then(function(r) { return r.json(); }).then(function(res) {
                 if (res.success && res.redirect) {
                     window.location.href = res.redirect;
                 } else {
@@ -216,8 +223,7 @@
             });
         },
         onCancel: function() {},
-        onError: function(err) {
-            console.error('PayPal error:', err);
+        onError: function() {
             alert('Payment failed. Please try again.');
             window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
         }

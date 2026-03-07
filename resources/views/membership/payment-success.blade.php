@@ -106,3 +106,17 @@
     </div>
 </div>
 @endsection
+
+@if(request('popup'))
+@push('scripts')
+<script>
+(function() {
+    if (window.opener) {
+        var url = window.location.href.replace(/[?&]popup=1/, '');
+        window.opener.location.href = url;
+        window.close();
+    }
+})();
+</script>
+@endpush
+@endif
