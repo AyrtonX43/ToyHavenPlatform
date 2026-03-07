@@ -85,11 +85,6 @@ class CheckoutController extends Controller
             return $item->product->price * $item->quantity;
         });
 
-        $membershipDiscount = 0;
-        $membershipDiscountPercent = 0;
-        $freeShippingMin = null;
-        $subtotalAfterDiscount = $subtotal - $membershipDiscount;
-
         // Shipping fee set to 0 - no logistics integrated yet
         $shippingFee = 0;
 
@@ -97,10 +92,10 @@ class CheckoutController extends Controller
         $defaultAddress = Auth::user()?->defaultAddress ?? Auth::user()?->addresses()->first();
 
         // VAT and price breakdown (using PriceCalculationService)
-        $priceBreakdown = $this->priceService->calculatePrice($subtotalAfterDiscount);
+        $priceBreakdown = $this->priceService->calculatePrice($subtotal);
         $vatAmount = $priceBreakdown['tax_amount'];
         $vatRate = $priceBreakdown['tax_rate'];
-        $totalWithVat = $subtotalAfterDiscount + $shippingFee + $priceBreakdown['admin_commission'] + $priceBreakdown['tax_amount'] + $priceBreakdown['transaction_fee'];
+        $totalWithVat = $subtotal + $shippingFee + $priceBreakdown['admin_commission'] + $priceBreakdown['tax_amount'] + $priceBreakdown['transaction_fee'];
 
         // Check PayMongo minimum amount (₱20)
         $minimumAmount = 20.00;
@@ -114,10 +109,6 @@ class CheckoutController extends Controller
             'cartItems',
             'itemsBySeller',
             'subtotal',
-            'subtotalAfterDiscount',
-            'membershipDiscount',
-            'membershipDiscountPercent',
-            'freeShippingMin',
             'shippingFee',
             'defaultAddress',
             'priceBreakdown',
@@ -188,10 +179,8 @@ class CheckoutController extends Controller
                 $sellerSubtotal = $sellerItems->sum(function ($item) {
                     return $item->product->price * $item->quantity;
                 });
-                $sellerDiscount = 0;
-                $baseAmount = $sellerSubtotal - $sellerDiscount;
 
-                $priceCalculation = $this->priceService->calculatePrice($baseAmount);
+                $priceCalculation = $this->priceService->calculatePrice($sellerSubtotal);
 
                 $estimatedDelivery = now()->addWeekdays(4);
 
@@ -199,8 +188,7 @@ class CheckoutController extends Controller
                     'order_number' => 'TH' . time() . rand(1000, 9999),
                     'user_id' => Auth::id(),
                     'seller_id' => $sellerId,
-                    'total_amount' => $baseAmount,
-                    'membership_discount_saved' => round($sellerDiscount, 2),
+                    'total_amount' => $sellerSubtotal,
                     'admin_commission' => $priceCalculation['admin_commission'],
                     'admin_commission_rate' => $priceCalculation['admin_commission_rate'],
                     'tax_amount' => $priceCalculation['tax_amount'],

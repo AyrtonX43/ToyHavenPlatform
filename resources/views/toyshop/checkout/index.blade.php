@@ -334,27 +334,14 @@
                         <span class="text-muted">Subtotal:</span>
                         <span class="fw-semibold">₱{{ number_format($subtotal, 2) }}</span>
                     </div>
-                    @if(isset($membershipDiscount) && $membershipDiscount > 0)
-                        <div class="summary-row text-success">
-                            <span class="text-muted">Membership discount ({{ $membershipDiscountPercent }}%):</span>
-                            <span class="fw-semibold">-₱{{ number_format($membershipDiscount, 2) }}</span>
-                        </div>
-                    @endif
                     <div class="summary-row">
                         <span class="text-muted">VAT ({{ $vatRate ?? 12 }}%):</span>
                         <span class="fw-semibold">₱{{ number_format($vatAmount ?? 0, 2) }}</span>
                     </div>
-                    @if(isset($freeShippingMin) && $subtotalAfterDiscount >= $freeShippingMin)
-                        <div class="summary-row text-success">
-                            <span class="text-muted">Shipping:</span>
-                            <span class="fw-semibold">Free (Member)</span>
-                        </div>
-                    @else
-                        <div class="summary-row">
-                            <span class="text-muted">Shipping:</span>
-                            <span class="fw-semibold">₱{{ number_format($shippingFee, 2) }}</span>
-                        </div>
-                    @endif
+                    <div class="summary-row">
+                        <span class="text-muted">Shipping:</span>
+                        <span class="fw-semibold">₱{{ number_format($shippingFee, 2) }}</span>
+                    </div>
                     <hr class="my-3">
                     <div class="summary-row">
                         <span class="fw-bold">Total:</span>
