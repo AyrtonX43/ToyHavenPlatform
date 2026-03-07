@@ -108,7 +108,7 @@
                                 </div>
                             </div>
                             <h5 class="fw-bold mb-2">PayPal</h5>
-                            <p class="text-muted small mb-4">Pay securely with your PayPal account or linked card. A PayPal popup will open—complete payment there (no address required).</p>
+                            <p class="text-muted small mb-4">Pay securely with your PayPal account. A PayPal popup will open—complete payment there (no address required).</p>
                             @if(!empty($paypal_client_id))
                                 <div id="paypal-button-container" class="d-flex justify-content-center"></div>
                             @else
@@ -131,7 +131,7 @@
 
 @if(!empty($paypal_client_id))
 @push('scripts')
-<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture"></script>
+<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture&disable-funding=card,credit"></script>
 <script>
 (function() {
     var planId = {{ $plan->id }};
