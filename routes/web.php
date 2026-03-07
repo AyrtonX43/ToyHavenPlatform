@@ -181,6 +181,11 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('index');
         Route::get('/my-bids', [\App\Http\Controllers\Auction\AuctionController::class, 'myBids'])->middleware(['auth', 'membership:auction'])->name('my-bids');
         Route::get('/history', [\App\Http\Controllers\Auction\AuctionHistoryController::class, 'index'])->middleware(['auth', 'membership:auction'])->name('history');
+        Route::get('/wins', [\App\Http\Controllers\Auction\WinnerWinsController::class, 'index'])->middleware(['auth', 'membership'])->name('wins.index');
+        Route::get('/wins/{auctionPayment}', [\App\Http\Controllers\Auction\WinnerWinsController::class, 'show'])->middleware(['auth', 'membership'])->name('wins.show');
+        Route::get('/saved', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'index'])->middleware(['auth', 'membership'])->name('saved.index');
+        Route::post('/saved/{auction}', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'store'])->middleware(['auth', 'membership'])->name('saved.store');
+        Route::delete('/saved/{auction}', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'destroy'])->middleware(['auth', 'membership'])->name('saved.destroy');
         Route::get('/payment/{auctionPayment}', [\App\Http\Controllers\Auction\PaymentController::class, 'index'])->middleware(['auth', 'membership'])->name('payment.index');
         Route::post('/payment/{auctionPayment}/paymongo', [\App\Http\Controllers\Auction\PaymentController::class, 'processPayMongo'])->middleware(['auth', 'membership'])->name('payment.paymongo');
         Route::get('/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('show');
