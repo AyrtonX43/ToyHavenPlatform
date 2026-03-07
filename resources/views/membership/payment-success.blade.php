@@ -18,8 +18,8 @@
                 </a>
             @endif
             <div class="d-flex gap-2 justify-content-center flex-wrap">
-                <a href="{{ route('membership.manage') }}" class="btn btn-primary btn-lg">Manage Membership</a>
-                <a href="{{ route('auctions.index') }}" class="btn btn-outline-primary btn-lg">Browse Auctions</a>
+                <a href="{{ route('auctions.index') }}" class="btn btn-primary btn-lg">Go to Auctions</a>
+                <a href="{{ route('membership.manage') }}" class="btn btn-outline-secondary btn-lg">Manage Membership</a>
             </div>
         </div>
     </div>

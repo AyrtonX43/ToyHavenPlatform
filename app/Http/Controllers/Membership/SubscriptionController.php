@@ -334,15 +334,15 @@ class SubscriptionController extends Controller
 
                 $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
 
-                return redirect()->route('membership.payment-success', $subscription)
-                    ->with('success', 'Payment successful! Your receipt has been sent to your email.');
+                return redirect()->route('auctions.index')
+                    ->with('success', 'Payment successful! You are now a member. Receipt and details have been sent to your email.');
             }
         } catch (\Throwable $e) {
             Log::error('PayPal capture failed', ['error' => $e->getMessage(), 'token' => $token]);
         }
 
         return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-            ->with('error', 'PayPal payment could not be completed. Please try again.');
+            ->with('error', 'PayPal payment could not be completed. Please try again or choose another payment method.');
     }
 
     /**
@@ -379,7 +379,28 @@ class SubscriptionController extends Controller
             return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
         }
 
+        if ($subscription->payments()->where('status', 'paid')->exists()) {
+            return redirect()->route('auctions.index')
+                ->with('success', 'Payment successful! You are now a member. Receipt and details have been sent to your email.');
+        }
+
         return redirect()->route('membership.payment-success', ['subscription' => $subscription->id]);
+    }
+
+    /**
+     * Redirect to auctions with success message (used after QR Ph payment confirmation)
+     */
+    public function redirectToAuctions(Subscription $subscription)
+    {
+        if ($subscription->user_id !== Auth::id()) {
+            abort(403);
+        }
+        if (! $subscription->payments()->where('status', 'paid')->exists()) {
+            return redirect()->route('membership.manage')->with('error', 'Payment not found.');
+        }
+
+        return redirect()->route('auctions.index')
+            ->with('success', 'Payment successful! You are now a member. Receipt and details have been sent to your email.');
     }
 
     /**
@@ -411,7 +432,7 @@ class SubscriptionController extends Controller
 
         return response()->json([
             'paid' => $paid,
-            'redirect' => $paid ? route('membership.payment-success', $subscription) : null,
+            'redirect' => $paid ? route('membership.redirect-to-auctions', $subscription) : null,
         ]);
     }
 
