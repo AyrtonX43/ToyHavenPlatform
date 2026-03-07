@@ -570,8 +570,8 @@ class SubscriptionController extends Controller
         $request->validate([
             'plan_id' => 'required|exists:plans,id',
             'paypal_demo_name' => 'required|string|max:255',
-            'paypal_demo_account' => 'required|string|size:4|regex:/^[0-9]{4}$/',
-            'paypal_demo_reference' => 'nullable|string|max:50',
+            'paypal_demo_email' => 'required|email',
+            'paypal_demo_payer_email' => 'required|email',
         ]);
 
         $plan = Plan::findOrFail($request->plan_id);
