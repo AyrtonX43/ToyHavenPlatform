@@ -106,36 +106,22 @@
                     </form>
                 </div>
                 <div class="col-md-6">
-                    <div class="payment-method-card card h-100 paypal border-0">
-                        <div class="card-body py-4 px-4">
-                            <div class="mb-3">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
-                                    <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                    <a href="{{ route('membership.paypal.demo-form', $plan->slug) }}" class="text-decoration-none">
+                        <div class="payment-method-card card h-100 paypal border-0">
+                            <div class="card-body text-center py-5 px-4">
+                                <div class="mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
                                 </div>
-                            </div>
-                            <h5 class="fw-bold mb-2">PayPal</h5>
-                            <p class="text-muted small mb-3">Enter your payment details below to proceed.</p>
-                            <form id="paypal-form" action="{{ route('membership.paypal.demo-pay') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Name on Account <span class="text-danger">*</span></label>
-                                    <input type="text" name="paypal_demo_name" class="form-control" placeholder="Cardholder or account holder name" value="{{ auth()->user()?->name }}" required>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Account Number <span class="text-danger">*</span></label>
-                                    <input type="text" name="paypal_demo_account" class="form-control" placeholder="Last 4 digits of account" maxlength="4" pattern="[0-9]{4}" required>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Payment Reference</label>
-                                    <input type="text" name="paypal_demo_reference" class="form-control" placeholder="Optional reference or memo" maxlength="50">
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold mt-2">
+                                <h5 class="fw-bold mb-2">PayPal</h5>
+                                <p class="text-muted small mb-4">Pay securely with your PayPal account. You will be directed to the payment form to complete your purchase.</p>
+                                <span class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
                                     <i class="bi bi-paypal me-1"></i> Pay with PayPal
-                                </button>
-                            </form>
+                                </span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
@@ -168,21 +154,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-(function() {
-    var form = document.getElementById('paypal-form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            var account = form.querySelector('input[name="paypal_demo_account"]').value;
-            if (account.length !== 4 || !/^\d{4}$/.test(account)) {
-                e.preventDefault();
-                alert('Please enter the last 4 digits of your account number.');
-                return false;
-            }
-        });
-    }
-})();
-</script>
-@endpush

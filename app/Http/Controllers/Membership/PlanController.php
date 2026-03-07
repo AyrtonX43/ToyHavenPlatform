@@ -50,6 +50,16 @@ class PlanController extends Controller
     }
 
     /**
+     * PayPal demo payment form (dedicated page)
+     */
+    public function paypalDemoForm(string $planSlug)
+    {
+        $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
+
+        return view('membership.paypal-demo', ['plan' => $plan]);
+    }
+
+    /**
      * Display terms & conditions for a plan (read-only)
      */
     public function terms(string $planSlug)

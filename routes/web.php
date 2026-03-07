@@ -163,6 +163,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/paypal/return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalReturn'])->name('paypal.return');
         Route::get('/paypal/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalCancel'])->name('paypal.cancel');
+        Route::get('/paypal/demo/{planSlug}', [\App\Http\Controllers\Membership\PlanController::class, 'paypalDemoForm'])->name('paypal.demo-form')->where('planSlug', '[a-z0-9\-]+');
         Route::post('/paypal/demo-pay', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalDemoPay'])->name('paypal.demo-pay');
         Route::post('/paypal/create-order', [\App\Http\Controllers\Membership\SubscriptionController::class, 'createPayPalOrder'])->name('paypal.create-order');
         Route::post('/paypal/capture-order', [\App\Http\Controllers\Membership\SubscriptionController::class, 'capturePayPalOrder'])->name('paypal.capture-order');
