@@ -114,21 +114,21 @@
                                 </div>
                             </div>
                             <h5 class="fw-bold mb-2">PayPal</h5>
-                            <p class="text-muted small mb-3">Pay securely with your PayPal account. Enter your payment details below to proceed.</p>
+                            <p class="text-muted small mb-3">Enter your payment details below to proceed.</p>
                             <form id="paypal-form" action="{{ route('membership.paypal.demo-pay') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="plan_id" value="{{ $plan->id }}">
                                 <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="paypal_demo_name" class="form-control" placeholder="Enter your full name" value="{{ auth()->user()?->name }}" required>
+                                    <label class="form-label small fw-semibold">Name on Account <span class="text-danger">*</span></label>
+                                    <input type="text" name="paypal_demo_name" class="form-control" placeholder="Cardholder or account holder name" value="{{ auth()->user()?->name }}" required>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label small fw-semibold">PayPal Email <span class="text-danger">*</span></label>
-                                    <input type="email" name="paypal_demo_email" class="form-control" placeholder="your@paypal.com" required>
+                                    <label class="form-label small fw-semibold">Account Number <span class="text-danger">*</span></label>
+                                    <input type="text" name="paypal_demo_account" class="form-control" placeholder="Last 4 digits of account" maxlength="4" pattern="[0-9]{4}" required>
                                 </div>
                                 <div class="mb-2">
-                                    <label class="form-label small fw-semibold">Confirm PayPal Email <span class="text-danger">*</span></label>
-                                    <input type="email" name="paypal_demo_email_confirm" class="form-control" placeholder="Confirm your PayPal email" required>
+                                    <label class="form-label small fw-semibold">Payment Reference</label>
+                                    <input type="text" name="paypal_demo_reference" class="form-control" placeholder="Optional reference or memo" maxlength="50">
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold mt-2">
                                     <i class="bi bi-paypal me-1"></i> Pay with PayPal
@@ -175,11 +175,10 @@
     var form = document.getElementById('paypal-form');
     if (form) {
         form.addEventListener('submit', function(e) {
-            var email = form.querySelector('input[name="paypal_demo_email"]').value;
-            var confirm = form.querySelector('input[name="paypal_demo_email_confirm"]').value;
-            if (email !== confirm) {
+            var account = form.querySelector('input[name="paypal_demo_account"]').value;
+            if (account.length !== 4 || !/^\d{4}$/.test(account)) {
                 e.preventDefault();
-                alert('PayPal email and confirmation do not match. Please check and try again.');
+                alert('Please enter the last 4 digits of your account number.');
                 return false;
             }
         });
