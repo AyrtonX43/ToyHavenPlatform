@@ -49,7 +49,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             {{-- Receipt Section --}}
-            <div class="receipt-card card border-0 mb-4">
+            <div id="receipt" class="receipt-card card border-0 mb-4">
                 <div class="card-header bg-light py-3">
                     <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Receipt</h5>
                 </div>
@@ -96,7 +96,7 @@
 <script>
 (function() {
     if (window.opener) {
-        var url = window.location.href.replace(/[?&]popup=1/, '');
+        var url = window.location.href.replace(/[?&]popup=1/, '').replace(/#.*/, '') + '#receipt';
         window.opener.location.href = url;
         window.close();
     }

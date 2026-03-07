@@ -61,14 +61,16 @@ class MembershipPaymentSuccessNotification extends Notification implements Shoul
     {
         $this->subscriptionPayment->load('subscription.plan');
 
+        $subscription = $this->subscriptionPayment->subscription;
+
         return [
             'type' => 'membership_payment_success',
             'subscription_payment_id' => $this->subscriptionPayment->id,
-            'plan_name' => $this->subscriptionPayment->subscription->plan->name,
+            'plan_name' => $subscription->plan->name,
             'amount' => $this->subscriptionPayment->amount,
-            'message' => 'Your ' . $this->subscriptionPayment->subscription->plan->name . ' membership payment of ₱' . number_format($this->subscriptionPayment->amount, 2) . ' was successful. Receipt sent via email.',
-            'action_url' => route('membership.manage'),
-            'action_text' => 'View Membership',
+            'message' => 'Your ' . $subscription->plan->name . ' membership payment of ₱' . number_format($this->subscriptionPayment->amount, 2) . ' was successful. Receipt sent via email.',
+            'action_url' => route('membership.payment-success', $subscription) . '#receipt',
+            'action_text' => 'View Receipt',
         ];
     }
 }
