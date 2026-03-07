@@ -9,6 +9,7 @@ use App\Models\SubscriptionPayment;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Srmklive\PayPal\Services\PayPal as PayPalService;
@@ -327,6 +328,7 @@ class SubscriptionController extends Controller
                     'brand_name' => config('app.name'),
                     'user_action' => 'PAY_NOW',
                     'shipping_preference' => 'NO_SHIPPING',
+                    'landing_page' => 'LOGIN',
                 ],
             ];
 
@@ -338,8 +340,11 @@ class SubscriptionController extends Controller
                 return response()->json(['error' => 'Could not create PayPal order'], 500);
             }
 
+            $orderId = $response['id'];
+            Cache::put('paypal_order_' . $orderId, $subscription->id, 3600);
+
             return response()->json([
-                'orderId' => $response['id'],
+                'orderId' => $orderId,
                 'subscription_id' => $subscription->id,
             ]);
         } catch (\Throwable $e) {
@@ -382,10 +387,16 @@ class SubscriptionController extends Controller
             }
 
             if (! $subscriptionId) {
-                Log::error('PayPal capture: no custom_id in order', ['orderId' => $orderId]);
+                $subscriptionId = Cache::get('paypal_order_' . $orderId);
+            }
+
+            if (! $subscriptionId) {
+                Log::error('PayPal capture: no subscription for order', ['orderId' => $orderId, 'response_keys' => array_keys($response ?? [])]);
 
                 return response()->json(['error' => 'Invalid order'], 400);
             }
+
+            Cache::forget('paypal_order_' . $orderId);
 
             $subscription = Subscription::find($subscriptionId);
             if (! $subscription || $subscription->user_id !== Auth::id()) {
