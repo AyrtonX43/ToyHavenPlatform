@@ -15,7 +15,7 @@
             <h4 class="mb-0">{{ $plan->name }} - Terms & Conditions</h4>
         </div>
         <div class="card-body">
-            @include('membership.terms-content')
+            {!! $termsContent !!}
         </div>
     </div>
 </div>

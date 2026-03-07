@@ -178,6 +178,14 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::get('/upgrade/{targetPlanSlug}', [\App\Http\Controllers\Membership\SubscriptionController::class, 'upgrade'])->name('upgrade');
     });
 
+    // Auction Seller Registration (VIP required; stub - full flow in later phase)
+    Route::prefix('auction')->name('auction.')->group(function () {
+        Route::get('/seller/register/{type}', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'show'])
+            ->where('type', 'individual|business')
+            ->middleware('vip.auction.seller') // type from route param
+            ->name('seller.register');
+    });
+
     // Seller Routes (sellers, admins, and business moderators)
     Route::prefix('seller')->name('seller.')->middleware(['seller.access', 'seller.approved'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->name('dashboard');

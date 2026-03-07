@@ -19,5 +19,5 @@ return [
     'notify_url' => env('PAYPAL_NOTIFY_URL', env('APP_URL') . '/webhooks/paypal'),
     'locale' => env('PAYPAL_LOCALE', 'en_US'),
     'validate_ssl' => env('PAYPAL_VALIDATE_SSL', env('APP_ENV') === 'production'),
-    'demo_mode' => env('PAYPAL_DEMO_MODE', true),
+    'demo_mode' => env('PAYPAL_DEMO_MODE', false),
 ];

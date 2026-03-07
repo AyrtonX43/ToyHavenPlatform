@@ -4,21 +4,48 @@
 
 @section('content')
 <div class="container py-5">
-    <h2 class="mb-4"><i class="bi bi-gem me-2"></i>Manage Membership</h2>
+    <h2 class="mb-4 fw-bold"><i class="bi bi-gem me-2"></i>Manage Membership</h2>
 
     @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm">
+            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     @endif
     @if(session('info'))
-        <div class="alert alert-info">{{ session('info') }}</div>
+        <div class="alert alert-info alert-dismissible fade show rounded-3 shadow-sm">
+            <i class="bi bi-info-circle me-2"></i>{{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     @endif
 
     @if($activeSubscription)
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
+        @if(auth()->user()->currentPlan()?->slug === 'vip')
+            <div class="card mb-4 border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%); color: white;">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-hammer me-2"></i>VIP: Auction Seller Registration</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">With VIP membership, you can register as an auction seller.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('auction.seller.register', 'individual') }}" class="btn btn-outline-primary rounded-3">
+                            <i class="bi bi-person-badge me-2"></i>Individual Auction Seller
+                        </a>
+                        <a href="{{ route('auction.seller.register', 'business') }}" class="btn btn-outline-primary rounded-3">
+                            <i class="bi bi-shop me-2"></i>Business Auction Seller
+                        </a>
+                    </div>
+                </div>
+            </div>
+        @endif
+        <div class="card mb-4 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
                 <h5 class="mb-0">Active Plan: {{ $activeSubscription->plan->name }}</h5>
             </div>
             <div class="card-body">

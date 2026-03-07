@@ -17,8 +17,10 @@
                     <th>Price</th>
                     <th>Interval</th>
                     <th>Analytics</th>
-                    <th>Individual Seller</th>
-                    <th>Business Seller</th>
+                    <th>Toyshop Individual</th>
+                    <th>Toyshop Business</th>
+                    <th>Auction Individual</th>
+                    <th>Auction Business</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -32,6 +34,8 @@
                         <td>{{ $plan->has_analytics_dashboard ? 'Yes' : 'No' }}</td>
                         <td>{{ $plan->can_register_individual_seller ? 'Yes' : 'No' }}</td>
                         <td>{{ $plan->can_register_business_seller ? 'Yes' : 'No' }}</td>
+                        <td>{{ $plan->can_register_individual_auction_seller ?? false ? 'Yes' : 'No' }}</td>
+                        <td>{{ $plan->can_register_business_auction_seller ?? false ? 'Yes' : 'No' }}</td>
                         <td>
                             <a href="{{ route('admin.plans.edit', $plan) }}" class="btn btn-sm btn-primary">Edit</a>
                         </td>

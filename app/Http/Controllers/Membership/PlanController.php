@@ -29,7 +29,9 @@ class PlanController extends Controller
     {
         $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
 
-        return view('membership.checkout', ['plan' => $plan]);
+        $termsContent = $plan->latestTerms()?->content ?? view('membership.terms-content')->render();
+
+        return view('membership.checkout', ['plan' => $plan, 'termsContent' => $termsContent]);
     }
 
     /**
@@ -45,7 +47,6 @@ class PlanController extends Controller
         }
 
         $config = config('paypal');
-        $paypalDemoMode = (bool) ($config['demo_mode'] ?? true);
         $mode = $config['mode'] ?? 'sandbox';
         $creds = $config[$mode] ?? $config['sandbox'] ?? [];
         $paypalClientId = $creds['client_id'] ?? '';
@@ -53,7 +54,6 @@ class PlanController extends Controller
         return view('membership.payment-selection', [
             'plan' => $plan,
             'paypal_client_id' => $paypalClientId,
-            'paypal_demo_mode' => $paypalDemoMode,
         ]);
     }
 
@@ -64,6 +64,8 @@ class PlanController extends Controller
     {
         $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
 
-        return view('membership.terms', ['plan' => $plan]);
+        $termsContent = $plan->latestTerms()?->content ?? view('membership.terms-content')->render();
+
+        return view('membership.terms', ['plan' => $plan, 'termsContent' => $termsContent]);
     }
 }

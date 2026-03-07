@@ -38,6 +38,14 @@
         box-shadow: 0 20px 50px rgba(2, 132, 199, 0.15);
         transform: translateY(-6px);
     }
+    .plan-card:focus-within {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25);
+    }
+    .plan-cta:focus-visible, .plan-cta:focus {
+        outline: 2px solid #0284c7;
+        outline-offset: 2px;
+    }
     .plan-card.featured {
         border-color: #0284c7;
         box-shadow: 0 12px 40px rgba(2, 132, 199, 0.2);
