@@ -32,11 +32,10 @@
         height: 100%;
         background: #fff;
         position: relative;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
     }
     .plan-card:hover {
         border-color: #0284c7;
-        box-shadow: 0 24px 56px rgba(2, 132, 199, 0.18);
+        box-shadow: 0 20px 50px rgba(2, 132, 199, 0.15);
         transform: translateY(-6px);
     }
     .plan-card.featured {
@@ -166,7 +165,7 @@
     </div>
 </div>
 
-<div class="container py-4 pb-5" style="max-width: 1200px;">
+<div class="container py-4 pb-5">
     @if(session('info'))
         <div class="alert alert-info alert-dismissible fade show rounded-3 shadow-sm">
             <i class="bi bi-info-circle me-2"></i>{{ session('info') }}

@@ -19,9 +19,9 @@ class PlanSeeder extends Seeder
                 'features' => ['View live auctions', 'Place bids', 'Basic support'],
                 'sort_order' => 1,
                 'is_active' => true,
-                'has_analytics_dashboard' => false,
                 'can_register_individual_seller' => false,
                 'can_register_business_seller' => false,
+                'has_analytics_dashboard' => false,
             ],
             [
                 'name' => 'Pro',
@@ -32,9 +32,9 @@ class PlanSeeder extends Seeder
                 'features' => ['Everything in Basic', 'Analytics dashboard', 'Spending reports', 'Priority support'],
                 'sort_order' => 2,
                 'is_active' => true,
-                'has_analytics_dashboard' => true,
                 'can_register_individual_seller' => false,
                 'can_register_business_seller' => false,
+                'has_analytics_dashboard' => true,
             ],
             [
                 'name' => 'VIP',
@@ -45,9 +45,9 @@ class PlanSeeder extends Seeder
                 'features' => ['Everything in Pro', 'Register as Individual seller', 'Register as Business seller', 'Seller analytics', 'Professional tools'],
                 'sort_order' => 3,
                 'is_active' => true,
-                'has_analytics_dashboard' => true,
                 'can_register_individual_seller' => true,
                 'can_register_business_seller' => true,
+                'has_analytics_dashboard' => true,
             ],
         ];
 

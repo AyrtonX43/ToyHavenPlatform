@@ -28,22 +28,25 @@
                 <div class="mb-3">
                     <label class="form-label">Features</label>
                     <textarea name="features" class="form-control" rows="6" placeholder="One feature per line">{{ old('features', $plan->features ? implode("\n", $plan->features) : '') }}</textarea>
-                    <div class="form-text">Enter one feature per line. These appear on the membership plan cards.</div>
+                    <small class="text-muted">Enter one feature per line.</small>
                     @error('features')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
-                <div class="mb-3">
+                <div class="mb-4">
                     <label class="form-label">Capabilities</label>
                     <div class="form-check">
-                        <input type="checkbox" name="has_analytics_dashboard" value="1" class="form-check-input" id="cap_analytics" {{ old('has_analytics_dashboard', $plan->has_analytics_dashboard) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="cap_analytics">Analytics dashboard</label>
+                        <input type="hidden" name="can_register_individual_seller" value="0">
+                        <input type="checkbox" name="can_register_individual_seller" id="can_individual" value="1" class="form-check-input" {{ old('can_register_individual_seller', $plan->can_register_individual_seller) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="can_individual">Can register as Individual seller</label>
                     </div>
                     <div class="form-check">
-                        <input type="checkbox" name="can_register_individual_seller" value="1" class="form-check-input" id="cap_individual" {{ old('can_register_individual_seller', $plan->can_register_individual_seller) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="cap_individual">Can register as Individual seller</label>
+                        <input type="hidden" name="can_register_business_seller" value="0">
+                        <input type="checkbox" name="can_register_business_seller" id="can_business" value="1" class="form-check-input" {{ old('can_register_business_seller', $plan->can_register_business_seller) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="can_business">Can register as Business store seller</label>
                     </div>
                     <div class="form-check">
-                        <input type="checkbox" name="can_register_business_seller" value="1" class="form-check-input" id="cap_business" {{ old('can_register_business_seller', $plan->can_register_business_seller) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="cap_business">Can register as Business store seller</label>
+                        <input type="hidden" name="has_analytics_dashboard" value="0">
+                        <input type="checkbox" name="has_analytics_dashboard" id="has_analytics" value="1" class="form-check-input" {{ old('has_analytics_dashboard', $plan->has_analytics_dashboard) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="has_analytics">Has analytics dashboard</label>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Update Plan</button>

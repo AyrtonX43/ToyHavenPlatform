@@ -34,7 +34,7 @@
                         <td>{{ $plan->can_register_business_seller ? 'Yes' : 'No' }}</td>
                         <td>
                             <a href="{{ route('admin.plans.edit', $plan) }}" class="btn btn-sm btn-primary">Edit</a>
-                            <a href="{{ route('admin.plans.terms.index', $plan) }}" class="btn btn-sm btn-outline-secondary">Manage Terms</a>
+                            <a href="{{ route('admin.plans.terms.edit', $plan) }}" class="btn btn-sm btn-outline-secondary">Terms</a>
                         </td>
                     </tr>
                 @endforeach

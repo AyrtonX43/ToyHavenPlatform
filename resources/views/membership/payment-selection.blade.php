@@ -30,9 +30,8 @@
     .plan-summary-box {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         border-radius: 16px;
-        padding: 1.5rem 1.75rem;
+        padding: 1.25rem 1.5rem;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
     }
 </style>
 @endpush
@@ -66,9 +65,12 @@
         </div>
     @endif
     @if(session('payment_failed'))
-        <div class="alert alert-warning alert-dismissible fade show rounded-3 shadow-sm">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <strong>Payment was unsuccessful.</strong> You can try again, choose another payment method, or cancel and return to plan selection.
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm">
+            <i class="bi bi-x-circle-fill me-2"></i><strong>Payment unsuccessful.</strong> You can try again, choose a different payment method below, or cancel.
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                <a href="{{ route('membership.checkout', $plan->slug) }}" class="btn btn-sm btn-outline-danger">Try again</a>
+                <a href="{{ route('membership.index') }}" class="btn btn-sm btn-outline-secondary">Cancel plan</a>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -115,22 +117,11 @@
                                     <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
                                 </div>
                             </div>
-                            <h5 class="fw-bold mb-2">
-                                PayPal
-                                @if($paypal_demo_mode)
-                                    <span class="badge bg-warning text-dark ms-1" title="Simulated payment - no real charge">Demo</span>
-                                @endif
-                            </h5>
-                            <p class="text-muted small mb-4">
-                                @if($paypal_demo_mode)
-                                    Simulated PayPal payment for testing. No real charge. Complete the demo form to activate membership.
-                                @else
-                                    You'll be directed to PayPal to enter your payment details and complete the transaction.
-                                @endif
-                            </p>
+                            <h5 class="fw-bold mb-2">PayPal @if($paypal_demo_mode)<span class="badge bg-info">Demo</span>@endif</h5>
+                            <p class="text-muted small mb-4">@if($paypal_demo_mode)Simulated payment (no real charge). Click to complete demo purchase.@else You'll be directed to PayPal to enter your payment details and complete the transaction.@endif</p>
                             @if($paypal_demo_mode)
                                 <a href="{{ route('membership.paypal.demo-page') }}?plan_id={{ $plan->id }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" onclick="openPayPalDemo(this.href); return false;">
-                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal
+                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal (Demo)
                                 </a>
                             @elseif(!empty($paypal_client_id))
                                 <div id="paypal-button-container" class="d-flex justify-content-center"></div>
@@ -159,7 +150,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-0">Are you sure? You will return to the membership plans page. You can select a plan and try again when ready.</p>
+                <p class="mb-0">Are you sure? You will return to the membership plans page and can select a plan again later.</p>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Keep Payment</button>

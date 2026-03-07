@@ -25,7 +25,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'seller.approved' => \App\Http\Middleware\CheckSellerApproved::class,
             'membership' => \App\Http\Middleware\MembershipRequired::class,
             'trade.not.suspended' => \App\Http\Middleware\TradeNotSuspended::class,
-            'vip.auction.seller' => \App\Http\Middleware\EnsureVipForAuctionSeller::class,
         ]);
         
         // Apply banned check to all web routes (after authentication)

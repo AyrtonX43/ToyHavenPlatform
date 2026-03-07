@@ -81,7 +81,7 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
                 <a href="{{ route('membership.manage') }}" class="btn btn-primary btn-lg rounded-3 px-4">
                     <i class="bi bi-gear me-2"></i>Manage Membership
                 </a>

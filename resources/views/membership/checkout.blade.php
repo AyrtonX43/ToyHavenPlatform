@@ -17,9 +17,8 @@
         overflow-y: auto;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
-        padding: 1.75rem;
+        padding: 1.5rem;
         background: #f8fafc;
-        line-height: 1.65;
     }
     .terms-scroll::-webkit-scrollbar { width: 8px; }
     .terms-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
@@ -50,9 +49,9 @@
                     <div class="terms-scroll mb-4">
                         @php $termsContent = $plan->latestTerms()?->content; @endphp
                         @if($termsContent)
-                            <div class="terms-content" style="white-space: pre-wrap;">{{ $termsContent }}</div>
+                            <div class="terms-content">{!! $termsContent !!}</div>
                         @else
-                            <p class="text-muted mb-0">No terms available. Please contact support.</p>
+                            @include('membership.terms-content')
                         @endif
                     </div>
                     <form action="{{ route('membership.accept-terms') }}" method="POST">

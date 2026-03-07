@@ -438,9 +438,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\PlanController::class, 'index'])->name('index');
             Route::get('/{plan}/edit', [\App\Http\Controllers\Admin\PlanController::class, 'edit'])->name('edit');
             Route::put('/{plan}', [\App\Http\Controllers\Admin\PlanController::class, 'update'])->name('update');
-            Route::get('/{plan}/terms', [\App\Http\Controllers\Admin\PlanTermsController::class, 'index'])->name('terms.index');
-            Route::get('/{plan}/terms/edit', [\App\Http\Controllers\Admin\PlanTermsController::class, 'edit'])->name('terms.edit');
-            Route::put('/{plan}/terms', [\App\Http\Controllers\Admin\PlanTermsController::class, 'update'])->name('terms.update');
+            Route::get('/{plan}/terms', [\App\Http\Controllers\Admin\PlanController::class, 'editTerms'])->name('terms.edit');
+            Route::put('/{plan}/terms', [\App\Http\Controllers\Admin\PlanController::class, 'updateTerms'])->name('terms.update');
         });
 
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {

@@ -10,16 +10,16 @@
             <li class="breadcrumb-item active">{{ $plan->name }} Terms</li>
         </ol>
     </nav>
-    <div class="card shadow-sm">
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0">{{ $plan->name }} - Terms & Conditions</h4>
         </div>
         <div class="card-body">
             @php $termsContent = $plan->latestTerms()?->content; @endphp
             @if($termsContent)
-                <div class="terms-content" style="white-space: pre-wrap;">{{ $termsContent }}</div>
+                <div class="terms-content">{!! $termsContent !!}</div>
             @else
-                <p class="text-muted mb-0">No terms available. Please contact support.</p>
+                @include('membership.terms-content')
             @endif
         </div>
     </div>
