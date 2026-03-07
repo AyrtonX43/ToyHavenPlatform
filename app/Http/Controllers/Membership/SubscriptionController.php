@@ -581,34 +581,71 @@ class SubscriptionController extends Controller
                 ->with('info', 'You already have an active membership.');
         }
 
-        $subscription = Subscription::create([
-            'user_id' => Auth::id(),
-            'plan_id' => $plan->id,
-            'status' => 'active',
-            'payment_method' => 'paypal',
-            'current_period_start' => now(),
-            'current_period_end' => ($plan->interval ?? 'month') === 'year'
-                ? now()->addYear()
-                : now()->addMonth(),
-        ]);
-
         $amount = (float) $plan->price;
-        $subscriptionPayment = SubscriptionPayment::create([
-            'subscription_id' => $subscription->id,
-            'amount' => $amount,
-            'status' => 'paid',
-            'paid_at' => now(),
-            'payment_reference' => 'DEMO-PAYPAL-' . uniqid(),
-            'payment_method' => 'paypal',
-        ]);
+        $reference = 'DEMO-PAYPAL-' . uniqid();
 
-        $receiptService = app(\App\Services\SubscriptionReceiptService::class);
-        $receiptService->generateReceipt($subscriptionPayment);
+        try {
+            $subscription = DB::transaction(function () use ($plan, $amount, $reference) {
+                $subscription = Subscription::create([
+                    'user_id' => Auth::id(),
+                    'plan_id' => $plan->id,
+                    'status' => 'pending',
+                    'current_period_start' => null,
+                    'current_period_end' => null,
+                ]);
 
-        $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+                $paymentData = [
+                    'subscription_id' => $subscription->id,
+                    'amount' => $amount,
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ];
+                if (Schema::hasColumn('subscription_payments', 'payment_reference')) {
+                    $paymentData['payment_reference'] = $reference;
+                }
+                if (Schema::hasColumn('subscription_payments', 'paymongo_payment_id') && ! isset($paymentData['payment_reference'])) {
+                    $paymentData['paymongo_payment_id'] = $reference;
+                }
+                if (Schema::hasColumn('subscription_payments', 'payment_method')) {
+                    $paymentData['payment_method'] = 'paypal';
+                }
 
-        return redirect()->route('membership.payment-success', $subscription)
-            ->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
+                SubscriptionPayment::create($paymentData);
+
+                $subscription->update([
+                    'status' => 'active',
+                    'payment_method' => 'paypal',
+                    'current_period_start' => now(),
+                    'current_period_end' => ($plan->interval ?? 'month') === 'year'
+                        ? now()->addYear()
+                        : now()->addMonth(),
+                ]);
+
+                return $subscription->fresh();
+            });
+
+            $subscriptionPayment = $subscription->payments()->where('status', 'paid')->latest()->first();
+            if ($subscriptionPayment) {
+                try {
+                    $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+                    $receiptService->generateReceipt($subscriptionPayment);
+                    $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+                } catch (\Throwable $e) {
+                    Log::warning('PayPal demo: receipt/notification failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            return redirect()->route('membership.payment-success', $subscription)
+                ->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
+        } catch (\Throwable $e) {
+            Log::error('PayPal demo payment failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('membership.payment-selection', $plan->slug)
+                ->with('error', 'Payment could not be processed. Please try again.');
+        }
     }
 
     /**
