@@ -96,6 +96,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if(!empty($currentPlan) && $currentPlan)
+        <div class="alert alert-light border rounded-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span><i class="bi bi-gem text-primary me-2"></i><strong>Your current plan:</strong> {{ $currentPlan->name }}</span>
+            <a href="{{ route('membership.manage') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+        </div>
+    @endif
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show rounded-3">
             <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}

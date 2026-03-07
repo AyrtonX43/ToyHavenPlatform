@@ -26,6 +26,7 @@ class AuctionController extends Controller
                 'canBid' => false,
                 'showPlansOnly' => true,
                 'plans' => $plans,
+                'currentPlan' => null,
             ]);
         }
 
@@ -51,6 +52,7 @@ class AuctionController extends Controller
             ->withQueryString();
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $currentPlan = auth()->user()?->currentPlan();
 
         return view('auctions.index', [
             'auctions' => $auctions,
@@ -58,6 +60,7 @@ class AuctionController extends Controller
             'canBid' => $canBid,
             'showPlansOnly' => false,
             'plans' => collect(),
+            'currentPlan' => $currentPlan,
         ]);
     }
 
