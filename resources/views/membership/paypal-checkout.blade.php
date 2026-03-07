@@ -5,196 +5,171 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Pay with PayPal - {{ config('app.name') }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=PayPal+Sans:opsz,wght@10..72,400;10..72,500;10..72,600;10..72,700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --paypal-blue: #003087;
-            --paypal-blue-light: #0070ba;
-            --paypal-yellow: #ffc439;
-            --paypal-yellow-hover: #f2bb38;
-        }
-        * { box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(180deg, #e8eef4 0%, #f0f4f8 100%);
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'PayPal Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f5f7fa;
             min-height: 100vh;
-            margin: 0;
-            padding: 1.5rem 0;
-        }
-        .paypal-checkout {
-            max-width: 400px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0, 48, 135, 0.12);
-            overflow: hidden;
-        }
-        .paypal-header {
-            background: var(--paypal-blue);
-            color: #fff;
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .paypal-header svg {
-            width: 28px;
-            height: 28px;
-        }
-        .paypal-header-title { font-weight: 600; font-size: 1.15rem; }
-        .paypal-body { padding: 1.5rem; }
-        .merchant-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .merchant-name { font-weight: 600; color: #1a1a1a; }
-        .amount-box {
-            background: #f7f9fc;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-        .amount-label { font-size: 0.8rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
-        .amount-value { font-size: 1.35rem; font-weight: 700; color: #1a1a1a; }
-        .form-group { margin-bottom: 1rem; }
-        .form-label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #333;
-            margin-bottom: 0.4rem;
-        }
-        .form-control {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            border: 1px solid #cbd6e0;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: var(--paypal-blue-light);
-            box-shadow: 0 0 0 3px rgba(0, 112, 186, 0.15);
-        }
-        .form-control::placeholder { color: #9ca3af; }
-        .row-fields { display: flex; gap: 0.75rem; }
-        .row-fields .form-group { flex: 1; }
-        .cvv-hint {
-            font-size: 0.75rem;
-            color: #6c757d;
-            margin-top: 0.25rem;
-        }
-        .btn-paypal {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            background: var(--paypal-yellow);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 0.5rem;
-        }
-        .btn-paypal:hover { background: var(--paypal-yellow-hover); color: #000; }
-        .btn-paypal:disabled { opacity: 0.7; cursor: not-allowed; }
-        .secure-footer {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1.25rem;
-            padding-top: 1rem;
-            border-top: 1px solid #eee;
+            padding: 24px;
         }
-        .secure-footer i { color: #22c55e; font-size: 1rem; }
-        .secure-footer span { font-size: 0.8rem; color: #6c757d; }
+        .paypal-card {
+            width: 100%;
+            max-width: 440px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .paypal-top {
+            background: #003087;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .paypal-logo {
+            width: 120px;
+            height: 32px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 33"><text x="0" y="24" fill="%23fff" font-family="Arial" font-weight="bold" font-size="22">PayPal</text></svg>') no-repeat;
+            background-size: contain;
+        }
+        .paypal-top span { color: #fff; font-size: 18px; font-weight: 600; }
+        .paypal-content { padding: 24px; }
+        .merchant { font-size: 14px; color: #6c757d; margin-bottom: 4px; }
+        .merchant strong { color: #1a1a1a; }
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 20px 0 24px 0;
+            border: 1px solid #e9ecef;
+        }
+        .order-summary .label { font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
+        .order-summary .amount { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+        }
+        .field input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .field input:focus {
+            outline: none;
+            border-color: #0070ba;
+            box-shadow: 0 0 0 3px rgba(0,112,186,0.2);
+        }
+        .field input::placeholder { color: #adb5bd; }
+        .field-row { display: flex; gap: 12px; }
+        .field-row .field { flex: 1; }
+        .cvv-hint { font-size: 11px; color: #6c757d; margin-top: 4px; }
+        .btn-pay {
+            width: 100%;
+            padding: 14px;
+            background: #ffc439;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .btn-pay:hover { background: #f5bd2e; }
+        .btn-pay:disabled { opacity: 0.7; cursor: not-allowed; }
+        .secure-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        .secure-row svg { width: 16px; height: 16px; }
+        .secure-row span { font-size: 12px; color: #6c757d; }
     </style>
 </head>
 <body>
-    <div class="paypal-checkout">
-        <div class="paypal-header">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .762-.657h5.782c2.974 0 5.077 1.306 5.567 4.185.244 1.442.117 2.645-.383 3.59-.994 1.887-2.875 2.83-5.416 2.83H9.48a.77.77 0 0 0-.762.657l-.599 3.556-.268 1.586a.64.64 0 0 0 .633.74h3.875c.526 0 .974-.383 1.06-.9l.269-1.586.067-.409.054-.314.268-1.586a1.08 1.08 0 0 1 1.06-.9h.67c2.974 0 5.077 1.306 5.567 4.185.242 1.442.114 2.645-.387 3.59-.992 1.887-2.873 2.83-5.414 2.83h-.719a.77.77 0 0 0-.762.657l-.599 3.556-.268 1.586a.64.64 0 0 0 .633.74h3.875c.526 0 .974-.383 1.06-.9l.268-1.586.067-.409.054-.314.268-1.586a1.08 1.08 0 0 1 1.06-.9h.67c4.034 0 6.726 2.084 7.203 5.493.222 1.632.023 2.985-.61 4.086-.99 1.73-2.806 2.595-5.416 2.595H14.2a.77.77 0 0 0-.762.657l-.599 3.556-.268 1.586a.641.641 0 0 0 .633.74h3.462a.641.641 0 0 0 .633-.74l.133-.786.268-1.586.067-.409a.77.77 0 0 1 .762-.657h.163c2.974 0 5.077 1.306 5.567 4.185.244 1.442.117 2.645-.383 3.59-.994 1.887-2.875 2.83-5.416 2.83h-2.655z"/></svg>
-            <span class="paypal-header-title">Pay with PayPal</span>
+    <div class="paypal-card">
+        <div class="paypal-top">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-0.5px;">PayPal</span>
+            <span style="opacity:0.9;font-size:14px;font-weight:400;">Pay with your debit or credit card</span>
         </div>
-        <div class="paypal-body">
-            <div class="merchant-row">
-                <span class="merchant-name">{{ config('app.name') }}</span>
-            </div>
-            <div class="amount-box">
-                <div class="amount-label">Amount due</div>
-                <div class="amount-value">{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }}</div>
+        <div class="paypal-content">
+            <div class="merchant">Paying <strong>{{ config('app.name') }}</strong></div>
+            <div class="order-summary">
+                <div class="label">Order total</div>
+                <div class="amount">{{ $plan->name }} — ₱{{ number_format($plan->price, 2) }} PHP</div>
             </div>
 
-            <form id="paypal-checkout-form" action="{{ url('/membership/paypal/checkout') }}" method="POST">
+            <form id="pay-form" action="{{ url('/membership/paypal/checkout') }}" method="POST">
                 @csrf
                 <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-
-                <div class="form-group">
-                    <label class="form-label" for="card_number">Card number</label>
-                    <input type="text" id="card_number" name="card_number" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" inputmode="numeric" required>
+                <div class="field">
+                    <label for="card_number">Card number</label>
+                    <input type="text" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" inputmode="numeric" required>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="card_name">Name on card</label>
-                    <input type="text" id="card_name" name="card_name" class="form-control" placeholder="As shown on card" autocomplete="cc-name" required>
+                <div class="field">
+                    <label for="card_name">Name on card</label>
+                    <input type="text" id="card_name" name="card_name" placeholder="Name as it appears on your card" autocomplete="cc-name" required>
                 </div>
-
-                <div class="row-fields">
-                    <div class="form-group">
-                        <label class="form-label" for="card_expiry">Expiry (MM/YY)</label>
-                        <input type="text" id="card_expiry" name="card_expiry" class="form-control" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric" required>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="card_expiry">Expiration date</label>
+                        <input type="text" id="card_expiry" name="card_expiry" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp" inputmode="numeric" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="card_cvv">CVV</label>
-                        <input type="password" id="card_cvv" name="card_cvv" class="form-control" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric" required>
-                        <span class="cvv-hint">3 or 4 digits on back of card</span>
+                    <div class="field">
+                        <label for="card_cvv">Security code (CVV)</label>
+                        <input type="password" id="card_cvv" name="card_cvv" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric" required>
+                        <div class="cvv-hint">3 or 4 digits on the back of your card</div>
                     </div>
                 </div>
-
-                <button type="submit" class="btn-paypal" id="pay-btn">
-                    Pay ₱{{ number_format($plan->price, 2) }}
-                </button>
+                <button type="submit" class="btn-pay" id="pay-btn">Pay Now</button>
             </form>
 
-            <div class="secure-footer">
-                <i class="bi bi-shield-lock-fill"></i>
-                <span>Secure payment</span>
+            <div class="secure-row">
+                <svg viewBox="0 0 24 24" fill="#22c55e"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                <span>PayPal protects your financial information</span>
             </div>
         </div>
     </div>
     <script>
-        (function() {
-            var form = document.getElementById('paypal-checkout-form');
-            var cardNumber = document.getElementById('card_number');
-            var cardExpiry = document.getElementById('card_expiry');
-
-            cardNumber.addEventListener('input', function() {
-                var v = this.value.replace(/\s/g, '').replace(/\D/g, '');
-                var match = v.match(/.{1,4}/g) || [];
-                this.value = match.join(' ');
-            });
-
-            cardExpiry.addEventListener('input', function() {
-                var v = this.value.replace(/\D/g, '');
-                if (v.length >= 2) {
-                    this.value = v.slice(0, 2) + '/' + v.slice(2, 4);
-                } else {
-                    this.value = v;
-                }
-            });
-
-            form.addEventListener('submit', function() {
-                document.getElementById('pay-btn').disabled = true;
-                document.getElementById('pay-btn').textContent = 'Processing...';
-            });
-        })();
+(function(){
+    var form = document.getElementById('pay-form');
+    var cardNum = document.getElementById('card_number');
+    var expiry = document.getElementById('card_expiry');
+    cardNum.oninput = function() {
+        var v = this.value.replace(/\s/g, '').replace(/\D/g, '');
+        this.value = (v.match(/.{1,4}/g) || []).join(' ');
+    };
+    expiry.oninput = function() {
+        var v = this.value.replace(/\D/g, '');
+        this.value = v.length >= 2 ? v.slice(0,2) + '/' + v.slice(2,4) : v;
+    };
+    form.onsubmit = function() {
+        document.getElementById('pay-btn').disabled = true;
+        document.getElementById('pay-btn').textContent = 'Processing...';
+    };
+})();
     </script>
 </body>
 </html>

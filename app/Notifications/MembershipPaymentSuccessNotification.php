@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class MembershipPaymentSuccessNotification extends Notification
-
+{
     public function __construct(
         protected SubscriptionPayment $subscriptionPayment
     ) {}
@@ -39,15 +39,19 @@ class MembershipPaymentSuccessNotification extends Notification
             ->line('Your receipt is attached to this email.')
             ->line('Thank you for being a ToyHaven member!');
 
-        if ($this->subscriptionPayment->hasReceipt()) {
-            $receiptPath = Storage::disk('public')->path($this->subscriptionPayment->receipt_path);
-            if (file_exists($receiptPath)) {
-                $receiptNumber = $this->subscriptionPayment->receipt_number ?? 'receipt';
-                $message->attach($receiptPath, [
-                    'as' => "Membership_Receipt_{$receiptNumber}.pdf",
-                    'mime' => 'application/pdf',
-                ]);
+        try {
+            if ($this->subscriptionPayment->hasReceipt()) {
+                $receiptPath = Storage::disk('public')->path($this->subscriptionPayment->receipt_path);
+                if (file_exists($receiptPath)) {
+                    $receiptNumber = $this->subscriptionPayment->receipt_number ?? 'receipt';
+                    $message->attach($receiptPath, [
+                        'as' => "Membership_Receipt_{$receiptNumber}.pdf",
+                        'mime' => 'application/pdf',
+                    ]);
+                }
             }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Membership email: could not attach receipt', ['error' => $e->getMessage()]);
         }
 
         return $message;
