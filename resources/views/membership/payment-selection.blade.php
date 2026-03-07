@@ -41,7 +41,7 @@
     <div class="container">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0 opacity-90">
-                <li class="breadcrumb-item"><a href="{{ route('auctions.index') }}" class="text-white-50">Auctions</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('membership.index') }}" class="text-white-50">Plans</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('membership.checkout', $plan->slug) }}" class="text-white-50">Terms</a></li>
                 <li class="breadcrumb-item active text-white">Payment</li>
             </ol>
@@ -91,7 +91,7 @@
                                     </div>
                                 </div>
                                 <h5 class="fw-bold mb-2">QR Ph</h5>
-                                <p class="text-muted small mb-4">Scan with GCash, Maya, or any Philippine banking app. Instant confirmation.</p>
+                                <p class="text-muted small mb-4">Scan with GCash, Maya, or any Philippine banking app. QR code expires in 30 minutes.</p>
                                 <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold">
                                     <i class="bi bi-qr-code me-1"></i> Pay with QR Ph
                                 </button>
@@ -108,11 +108,11 @@
                                 </div>
                             </div>
                             <h5 class="fw-bold mb-2">PayPal</h5>
-                            <p class="text-muted small mb-4">Pay securely with your PayPal account. A PayPal popup will open—complete payment there (no address required).</p>
+                            <p class="text-muted small mb-4">Pay securely with your PayPal account. Demo mode — you will be directed to PayPal sandbox to complete payment.</p>
                             @if(!empty($paypal_client_id))
                                 <div id="paypal-button-container" class="d-flex justify-content-center"></div>
                             @else
-                                <p class="text-warning small mb-0">PayPal is not configured.</p>
+                                <p class="text-warning small mb-0">PayPal is not configured. Use QR Ph or contact support.</p>
                             @endif
                         </div>
                     </div>
@@ -120,8 +120,28 @@
             </div>
 
             <div class="text-center mt-4">
-                <a href="{{ route('membership.checkout', $plan->slug) }}" class="btn btn-link text-muted text-decoration-none">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Terms & Conditions
+                <button type="button" class="btn btn-link text-danger text-decoration-none p-0" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <i class="bi bi-x-circle me-1"></i> Cancel and return to plan selection
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="cancelModalLabel">Cancel Payment?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure? You will return to the membership plan selection. No payment will be charged.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Keep Payment</button>
+                <a href="{{ route('membership.index') }}" class="btn btn-danger rounded-3">
+                    <i class="bi bi-x-circle me-1"></i> Yes, Cancel
                 </a>
             </div>
         </div>
@@ -171,12 +191,13 @@
                     order_id: data.orderID,
                     _token: csrfToken
                 })
-            }).then(function(r) { return r.json();             }).then(function(res) {
+            }).then(function(r) { return r.json(); }).then(function(res) {
                 if (res.success && res.redirect) {
                     var url = res.redirect + (res.message ? '?success=' + encodeURIComponent(res.message) : '');
                     window.location.href = url;
                 } else {
-                    throw new Error(res.error || 'Payment failed');
+                    alert(res.error || 'Payment failed. Please try again.');
+                    window.location.reload();
                 }
             });
         },
@@ -184,7 +205,8 @@
             console.log('PayPal payment cancelled');
         },
         onError: function(err) {
-            alert(err || 'PayPal error. Please try again or use QR Ph.');
+            alert(err?.message || 'PayPal error. Please try again or use QR Ph.');
+            window.location.reload();
         }
     }).render('#paypal-button-container');
 })();

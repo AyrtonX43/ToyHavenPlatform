@@ -426,11 +426,11 @@ class SubscriptionController extends Controller
 
             $refCol = Schema::hasColumn('subscription_payments', 'payment_reference') ? 'payment_reference' : 'paymongo_payment_id';
             if ($subscription->payments()->where('status', 'paid')->where($refCol, $orderId)->exists()) {
-                return response()->json([
-                    'success' => true,
-                    'redirect' => route('auctions.index'),
-                    'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
-                ]);
+            return response()->json([
+                'success' => true,
+                'redirect' => route('membership.payment-success', $subscription),
+                'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
+            ]);
             }
 
             $amount = 0;
@@ -479,7 +479,7 @@ class SubscriptionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirect' => route('auctions.index'),
+                'redirect' => route('membership.payment-success', $subscription),
                 'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active. Receipt has been sent to your email.',
             ]);
         } catch (\Throwable $e) {
@@ -551,7 +551,7 @@ class SubscriptionController extends Controller
 
                 $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
 
-                return redirect()->route('auctions.index')
+                return redirect()->route('membership.payment-success', $subscription)
                     ->with('success', 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active. Receipt has been sent to your email.');
             }
         } catch (\Throwable $e) {
@@ -559,7 +559,7 @@ class SubscriptionController extends Controller
         }
 
         return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-            ->with('error', 'PayPal payment could not be completed. Please try again.');
+            ->with('error', 'Payment failed. Please try again or choose another payment method.');
     }
 
     /**
@@ -576,7 +576,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        return redirect()->route('auctions.index')->with('info', 'Payment cancelled. You can select a plan when ready.');
+        return redirect()->route('membership.index')->with('info', 'Payment cancelled. You can select a plan when ready.');
     }
 
     /**
@@ -596,7 +596,7 @@ class SubscriptionController extends Controller
             return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
         }
 
-        return redirect()->route('auctions.index')->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
+        return redirect()->route('membership.payment-success', $subscription)->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
     }
 
     /**
@@ -628,7 +628,7 @@ class SubscriptionController extends Controller
 
         return response()->json([
             'paid' => $paid,
-            'redirect' => $paid ? route('auctions.index') : null,
+            'redirect' => $paid ? route('membership.payment-success', $subscription) : null,
         ]);
     }
 
@@ -696,7 +696,7 @@ class SubscriptionController extends Controller
 
         $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
-        return redirect()->route('auctions.index')->with('info', 'Subscription cancelled. You can select a plan when ready.');
+        return redirect()->route('membership.index')->with('info', 'Payment cancelled. You can select a plan when ready.');
     }
 
     /**

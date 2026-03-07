@@ -73,8 +73,8 @@
             </div>
 
             <div class="text-center">
-                <button type="button" class="btn btn-link text-danger text-decoration-none p-0" data-bs-toggle="modal" data-bs-target="#cancelModal">
-                    <i class="bi bi-x-circle me-1"></i> Cancel and return to membership plans
+                <button type="button" class="btn btn-link text-danger text-decoration-none p-0 fw-semibold" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <i class="bi bi-x-circle me-1"></i> Cancel payment and return to plan selection
                 </button>
             </div>
         </div>
@@ -89,7 +89,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-0">Are you sure? You will return to the membership plans page and can select a plan again later.</p>
+                <p class="mb-0">Are you sure? You will return to the membership plan selection. No payment will be charged.</p>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Keep Payment</button>

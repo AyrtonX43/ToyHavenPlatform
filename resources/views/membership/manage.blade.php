@@ -18,8 +18,13 @@
 
     @if($activeSubscription)
         <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Active Plan: {{ $activeSubscription->plan->name }}</h5>
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0">Current Plan: {{ $activeSubscription->plan->name }}</h5>
+                @if(auth()->user()->hasPlan('vip'))
+                    <a href="{{ route('auctions.verification.index') }}" class="btn btn-light btn-sm fw-semibold">
+                        <i class="bi bi-shop me-1"></i> Auction Seller
+                    </a>
+                @endif
             </div>
             <div class="card-body">
                 <p><strong>Period:</strong> {{ $activeSubscription->current_period_start?->format('M d, Y') }} – {{ $activeSubscription->current_period_end?->format('M d, Y') }}</p>
