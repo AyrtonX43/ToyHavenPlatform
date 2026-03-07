@@ -23,6 +23,14 @@
     .terms-scroll::-webkit-scrollbar { width: 8px; }
     .terms-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
     .terms-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .terms-content { line-height: 1.65; color: #334155; }
+    .terms-content .terms-section { margin-bottom: 1.5rem; }
+    .terms-content .terms-section:last-child { margin-bottom: 0; }
+    .terms-content h5 { font-size: 1rem; font-weight: 600; color: #0f172a; margin-bottom: 0.5rem; }
+    .terms-content h6 { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 0.4rem; }
+    .terms-content p { margin-bottom: 0.5rem; }
+    .terms-content ul, .terms-content ol { margin-bottom: 0.5rem; padding-left: 1.25rem; }
+    .terms-content li { margin-bottom: 0.25rem; }
 </style>
 @endpush
 

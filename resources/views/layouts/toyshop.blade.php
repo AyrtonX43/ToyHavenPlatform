@@ -515,8 +515,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('auction.*') ? 'active' : '' }}" href="{{ auth()->check() && auth()->user()->hasActiveMembership() ? route('auction.index') : route('membership.index') }}">
-                            <i class="bi bi-hammer me-1"></i>Auction
+                        <a class="nav-link {{ request()->routeIs('membership.*') ? 'active' : '' }}" href="{{ auth()->check() && auth()->user()->hasActiveMembership() ? route('membership.manage') : route('membership.index') }}">
+                            <i class="bi bi-gem me-1"></i>Auction
                         </a>
                     </li>
                 </ul>
