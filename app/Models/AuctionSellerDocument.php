@@ -8,13 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AuctionSellerDocument extends Model
 {
     protected $fillable = [
-        'verification_id',
+        'auction_seller_profile_id',
         'document_type',
         'document_path',
+        'status',
+        'rejection_reason',
     ];
 
-    public function verification(): BelongsTo
+    public function auctionSellerProfile(): BelongsTo
     {
-        return $this->belongsTo(AuctionSellerVerification::class, 'verification_id');
+        return $this->belongsTo(AuctionSellerProfile::class, 'auction_seller_profile_id');
     }
 }

@@ -1,15 +1,20 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Moderator;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuctionPayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuctionPaymentAdminController extends Controller
 {
     public function index(Request $request)
     {
+        if (! Auth::user()->hasAuctionPermission('auction_payments_moderate')) {
+            abort(403);
+        }
+
         $query = AuctionPayment::with(['auction', 'winner', 'seller']);
 
         if ($request->filled('status')) {
@@ -21,18 +26,26 @@ class AuctionPaymentAdminController extends Controller
 
         $payments = $query->orderByDesc('created_at')->paginate(20);
 
-        return view('admin.auction-payments.index', compact('payments'));
+        return view('admin.auction-payments.index', compact('payments'))->with('context', 'moderator');
     }
 
     public function show(AuctionPayment $auctionPayment)
     {
+        if (! Auth::user()->hasAuctionPermission('auction_payments_moderate')) {
+            abort(403);
+        }
+
         $auctionPayment->load(['auction.images', 'auction.category', 'winner', 'seller', 'trackingUpdates']);
 
-        return view('admin.auction-payments.show', compact('auctionPayment'));
+        return view('admin.auction-payments.show', compact('auctionPayment'))->with('context', 'moderator');
     }
 
     public function releaseEscrow(AuctionPayment $auctionPayment)
     {
+        if (! Auth::user()->hasAuctionPermission('auction_payments_moderate')) {
+            abort(403);
+        }
+
         if ($auctionPayment->escrow_status !== 'held') {
             return back()->with('error', 'Escrow is not in held status.');
         }

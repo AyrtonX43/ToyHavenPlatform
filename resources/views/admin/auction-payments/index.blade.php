@@ -1,52 +1,40 @@
 @extends('layouts.admin-new')
 
-@section('title', 'Auction Payments')
+@section('title', 'Auction Payments - Admin')
+@section('page-title', 'Auction Payments')
 
 @section('content')
-<div class="container-fluid py-4">
-    <h1 class="h3 mb-4">Auction Payments</h1>
-    @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-    @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
-
-    <div class="table-responsive">
-        <table class="table table-striped">
+<div class="card">
+    <div class="card-body">
+        <table class="table">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Auction</th>
                     <th>Winner</th>
                     <th>Amount</th>
-                    <th>Status</th>
-                    <th>Delivery</th>
+                    <th>Payment</th>
+                    <th>Escrow</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($payments as $p)
+                @forelse($payments as $p)
                     <tr>
-                        <td>{{ $p->auction->title ?? 'N/A' }}</td>
-                        <td>{{ $p->winner->name ?? 'N/A' }}</td>
-                        <td>₱{{ number_format($p->amount, 2) }}</td>
-                        <td><span class="badge bg-{{ $p->status === 'held' ? 'warning' : ($p->status === 'released' ? 'success' : 'secondary') }}">{{ $p->status }}</span></td>
-                        <td>{{ $p->delivery_status ?? '-' }}</td>
-                        <td>
-                            @if($p->canRelease())
-                                <form action="{{ route('admin.auction-payments.release', $p) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-success">Release</button>
-                                </form>
-                            @endif
-                            @if(in_array($p->status, ['pending', 'held']))
-                                <form action="{{ route('admin.auction-payments.refund', $p) }}" method="POST" class="d-inline" onsubmit="return confirm('Refund this payment?')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-danger">Refund</button>
-                                </form>
-                            @endif
-                        </td>
+                        <td>{{ $p->id }}</td>
+                        <td>{{ $p->auction?->title }}</td>
+                        <td>{{ $p->winner?->name }}</td>
+                        <td>₱{{ number_format($p->total_amount, 0) }}</td>
+                        <td><span class="badge bg-{{ $p->payment_status === 'paid' ? 'success' : 'warning' }}">{{ $p->payment_status }}</span></td>
+                        <td><span class="badge bg-secondary">{{ $p->escrow_status }}</span></td>
+                        <td><a href="{{ ($context ?? null) === 'moderator' ? route('moderator.auction-payments.show', $p) : route('admin.auction-payments.show', $p) }}" class="btn btn-sm btn-outline-primary">View</a></td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr><td colspan="7">No payments.</td></tr>
+                @endforelse
             </tbody>
         </table>
+        {{ $payments->links() }}
     </div>
-    {{ $payments->links() }}
 </div>
 @endsection

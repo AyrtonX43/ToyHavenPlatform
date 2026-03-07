@@ -9,61 +9,37 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Auction extends Model
 {
     protected $fillable = [
-        'user_id',
-        'seller_id',
-        'seller_type',
-        'product_id',
-        'user_product_id',
+        'auction_seller_profile_id',
         'category_id',
         'title',
         'description',
         'starting_bid',
+        'reserve_price',
         'bid_increment',
+        'allowed_bidder_plan_ids',
+        'status',
         'start_at',
         'end_at',
-        'status',
         'winner_id',
         'winning_amount',
         'bids_count',
-        'terms_accepted_at',
+        'views_count',
+        'rejection_reason',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'starting_bid' => 'decimal:2',
-            'bid_increment' => 'decimal:2',
-            'winning_amount' => 'decimal:2',
-            'start_at' => 'datetime',
-            'end_at' => 'datetime',
-            'terms_accepted_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'starting_bid' => 'decimal:2',
+        'reserve_price' => 'decimal:2',
+        'bid_increment' => 'decimal:2',
+        'winning_amount' => 'decimal:2',
+        'allowed_bidder_plan_ids' => 'array',
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+    ];
 
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_PENDING_APPROVAL = 'pending_approval';
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_ENDED = 'ended';
-    public const STATUS_CANCELLED = 'cancelled';
-
-    public function user(): BelongsTo
+    public function auctionSellerProfile(): BelongsTo
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function seller(): BelongsTo
-    {
-        return $this->belongsTo(Seller::class);
-    }
-
-    public function product(): BelongsTo
-    {
-        return $this->belongsTo(Product::class);
-    }
-
-    public function userProduct(): BelongsTo
-    {
-        return $this->belongsTo(UserProduct::class, 'user_product_id');
+        return $this->belongsTo(AuctionSellerProfile::class, 'auction_seller_profile_id');
     }
 
     public function category(): BelongsTo
@@ -76,75 +52,53 @@ class Auction extends Model
         return $this->belongsTo(User::class, 'winner_id');
     }
 
+    public function images(): HasMany
+    {
+        return $this->hasMany(AuctionImage::class)->orderBy('display_order');
+    }
+
     public function bids(): HasMany
     {
         return $this->hasMany(AuctionBid::class)->orderByDesc('amount');
     }
 
-    public function images(): HasMany
+    public function auctionPayment()
     {
-        return $this->hasMany(AuctionImage::class);
+        return $this->hasOne(AuctionPayment::class);
     }
 
-    public function auctionPayments(): HasMany
+    public function secondChances(): HasMany
     {
-        return $this->hasMany(AuctionPayment::class);
+        return $this->hasMany(AuctionSecondChance::class)->orderBy('queue_position');
     }
 
-    public function currentWinningBid(): ?AuctionBid
+    public function savedBy(): HasMany
     {
-        return $this->bids()->where('is_winning', true)->first();
+        return $this->hasMany(SavedAuction::class);
     }
 
-    public function currentPrice(): float
+    public function scopeLive($query)
     {
-        $winning = $this->currentWinningBid();
-        return $winning ? (float) $winning->amount : (float) $this->starting_bid;
+        return $query->where('status', 'live');
     }
 
-    public function nextMinBid(): float
+    public function scopeEnded($query)
     {
-        return $this->currentPrice() + (float) $this->bid_increment;
+        return $query->where('status', 'ended');
     }
 
-    public function isDraft(): bool
+    public function isLive(): bool
     {
-        return $this->status === self::STATUS_DRAFT;
-    }
-
-    public function isPendingApproval(): bool
-    {
-        return $this->status === self::STATUS_PENDING_APPROVAL;
-    }
-
-    public function isActive(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
+        return $this->status === 'live';
     }
 
     public function isEnded(): bool
     {
-        return $this->status === self::STATUS_ENDED;
+        return $this->status === 'ended';
     }
 
-    public function isCancelled(): bool
+    public function getSellerUser(): ?User
     {
-        return $this->status === self::STATUS_CANCELLED;
-    }
-
-    public function hasEnded(): bool
-    {
-        return $this->end_at && $this->end_at->isPast();
-    }
-
-    public function canBid(): bool
-    {
-        return $this->isActive() && ! $this->hasEnded();
-    }
-
-    public function primaryImage(): ?AuctionImage
-    {
-        return $this->images()->where('is_primary', true)->first()
-            ?? $this->images()->first();
+        return $this->auctionSellerProfile?->user;
     }
 }

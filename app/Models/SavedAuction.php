@@ -5,19 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class AuctionImage extends Model
+class SavedAuction extends Model
 {
     protected $fillable = [
+        'user_id',
         'auction_id',
-        'path',
-        'image_type',
-        'display_order',
-        'is_primary',
+        'notified_at',
     ];
 
     protected $casts = [
-        'is_primary' => 'boolean',
+        'notified_at' => 'datetime',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function auction(): BelongsTo
     {

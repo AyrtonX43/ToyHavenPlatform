@@ -16,32 +16,34 @@ class AuctionWonNotification extends Notification implements ShouldQueue
         public Auction $auction
     ) {}
 
-    public function via(object $notifiable): array
+    public function via($notifiable): array
     {
         return ['mail', 'database'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail($notifiable): MailMessage
     {
-        $payment = $this->auction->auctionPayments()->latest()->first();
-        $payUrl = $payment ? route('auctions.payment.index', $payment) : route('auctions.show', $this->auction);
+        $payment = $this->auction->auctionPayment;
+        $amount = $payment ? number_format($payment->total_amount, 2) : number_format($this->auction->winning_amount, 2);
+
         return (new MailMessage)
-            ->subject('You won: ' . $this->auction->title)
-            ->greeting('Congratulations ' . $notifiable->name . '!')
-            ->line('You won the auction for "' . $this->auction->title . '".')
-            ->line('Please pay within 24 hours to complete your purchase.')
-            ->action('Pay Now', $payUrl)
-            ->line('Thank you for bidding on ToyHaven Auctions!');
+            ->subject('You Won: ' . $this->auction->title)
+            ->greeting('Congratulations!')
+            ->line("You won the auction for **{$this->auction->title}**!")
+            ->line("Total amount due: **₱{$amount}**")
+            ->line('You have **24 hours** to complete payment. Failure to pay will result in auction suspension.')
+            ->action('Pay Now', url('/auctions/payment/' . ($payment?->id ?? '')))
+            ->line('Thank you for bidding on ToyHaven!');
     }
 
-    public function toArray(object $notifiable): array
+    public function toArray($notifiable): array
     {
-        $payment = $this->auction->auctionPayments()->latest()->first();
         return [
             'type' => 'auction_won',
-            'message' => 'You won: ' . $this->auction->title,
-            'action_url' => $payment ? route('auctions.payment.index', $payment) : route('auctions.show', $this->auction),
             'auction_id' => $this->auction->id,
+            'title' => $this->auction->title,
+            'amount' => (float) $this->auction->winning_amount,
+            'message' => "You won the auction for {$this->auction->title}! Pay within 24 hours.",
         ];
     }
 }
