@@ -117,11 +117,11 @@
                                     <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
                                 </div>
                             </div>
-                            <h5 class="fw-bold mb-2">PayPal @if($paypal_demo_mode)<span class="badge bg-info">Demo</span>@endif</h5>
-                            <p class="text-muted small mb-4">@if($paypal_demo_mode)Simulated payment (no real charge). Click to complete demo purchase.@else You'll be directed to PayPal to enter your payment details and complete the transaction.@endif</p>
+                            <h5 class="fw-bold mb-2">PayPal</h5>
+                            <p class="text-muted small mb-4">Enter your card details to pay for your membership securely.</p>
                             @if($paypal_demo_mode)
-                                <a href="{{ route('membership.paypal.demo-page') }}?plan_id={{ $plan->id }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" onclick="openPayPalDemo(this.href); return false;">
-                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal (Demo)
+                                <a href="{{ route('membership.paypal.checkout') }}?plan_id={{ $plan->id }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold" onclick="openPayPalCheckout(this.href); return false;">
+                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal
                                 </a>
                             @elseif(!empty($paypal_client_id))
                                 <div id="paypal-button-container" class="d-flex justify-content-center"></div>
@@ -166,8 +166,8 @@
 @if($paypal_demo_mode)
 @push('scripts')
 <script>
-function openPayPalDemo(url) {
-    var w = window.open(url, 'paypal_checkout', 'width=450,height=500,scrollbars=yes,resizable=yes');
+function openPayPalCheckout(url) {
+    var w = window.open(url, 'paypal_checkout', 'width=460,height=620,scrollbars=yes,resizable=yes');
     if (w) w.focus();
 }
 </script>

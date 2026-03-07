@@ -163,6 +163,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/subscribe', [\App\Http\Controllers\Membership\SubscriptionController::class, 'subscribe'])->name('subscribe');
         Route::get('/paypal/return', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalReturn'])->name('paypal.return');
         Route::get('/paypal/cancel', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalCancel'])->name('paypal.cancel');
+        Route::get('/paypal/checkout', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalCheckoutPage'])->name('paypal.checkout');
+        Route::post('/paypal/checkout', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalDemoPay'])->name('paypal.checkout.submit');
         Route::get('/paypal/demo', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalDemoPage'])->name('paypal.demo-page');
         Route::post('/paypal/demo-pay', [\App\Http\Controllers\Membership\SubscriptionController::class, 'paypalDemoPay'])->name('paypal.demo-pay');
         Route::post('/paypal/create-order', [\App\Http\Controllers\Membership\SubscriptionController::class, 'createPayPalOrder'])->name('paypal.create-order');

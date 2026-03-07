@@ -568,6 +568,19 @@ class SubscriptionController extends Controller
     /**
      * PayPal demo page - opens in popup, simulates PayPal checkout
      */
+    /**
+     * PayPal checkout page with card details form (same backend as demo; no "demo" in URL or UI)
+     */
+    public function paypalCheckoutPage(Request $request)
+    {
+        $planId = $request->query('plan_id');
+        $plan = Plan::where('id', $planId)->where('is_active', true)->firstOrFail();
+
+        return view('membership.paypal-checkout', [
+            'plan' => $plan,
+        ]);
+    }
+
     public function paypalDemoPage(Request $request)
     {
         $planId = $request->query('plan_id');
