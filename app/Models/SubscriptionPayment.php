@@ -11,6 +11,7 @@ class SubscriptionPayment extends Model
         'subscription_id',
         'amount',
         'payment_reference',
+        'paymongo_payment_id',
         'status',
         'paid_at',
         'receipt_number',

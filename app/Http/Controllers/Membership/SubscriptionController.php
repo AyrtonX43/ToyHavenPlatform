@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Srmklive\PayPal\Services\PayPal as PayPalService;
 
 class SubscriptionController extends Controller
@@ -375,11 +376,11 @@ class SubscriptionController extends Controller
             try {
                 $response = $paypal->capturePaymentOrder($orderId);
             } catch (\Throwable $captureEx) {
-                $msg = $captureEx->getMessage();
-                if (stripos($msg, 'ORDER_ALREADY_CAPTURED') !== false || stripos($msg, 'already captured') !== false) {
-                    Log::info('PayPal order already captured, fetching order details', ['orderId' => $orderId]);
+                Log::warning('PayPal capture threw, trying showOrderDetails', ['orderId' => $orderId, 'error' => $captureEx->getMessage()]);
+                try {
                     $response = $paypal->showOrderDetails($orderId);
-                } else {
+                } catch (\Throwable $showEx) {
+                    Log::error('PayPal showOrderDetails also failed', ['orderId' => $orderId, 'error' => $showEx->getMessage()]);
                     throw $captureEx;
                 }
             }
@@ -423,7 +424,8 @@ class SubscriptionController extends Controller
                 return response()->json(['error' => 'Subscription not found'], 404);
             }
 
-            if ($subscription->payments()->where('status', 'paid')->where('payment_reference', $orderId)->exists()) {
+            $refCol = Schema::hasColumn('subscription_payments', 'payment_reference') ? 'payment_reference' : 'paymongo_payment_id';
+            if ($subscription->payments()->where('status', 'paid')->where($refCol, $orderId)->exists()) {
                 return response()->json([
                     'success' => true,
                     'redirect' => route('auctions.index'),
@@ -437,34 +439,48 @@ class SubscriptionController extends Controller
                     $amount += (float) ($cap['amount']['value'] ?? 0);
                 }
             }
+            $amount = $amount ?: $subscription->plan->price;
 
-            $subscription->update([
-                'status' => 'active',
-                'payment_method' => 'paypal',
-                'current_period_start' => now(),
-                'current_period_end' => ($subscription->plan?->interval ?? 'month') === 'year'
-                    ? now()->addYear()
-                    : now()->addMonth(),
-            ]);
+            DB::transaction(function () use ($subscription, $orderId, $amount) {
+                $subscription->update([
+                    'status' => 'active',
+                    'payment_method' => 'paypal',
+                    'current_period_start' => now(),
+                    'current_period_end' => ($subscription->plan?->interval ?? 'month') === 'year'
+                        ? now()->addYear()
+                        : now()->addMonth(),
+                ]);
 
-            SubscriptionPayment::create([
-                'subscription_id' => $subscription->id,
-                'amount' => $amount ?: $subscription->plan->price,
-                'payment_reference' => $orderId,
-                'status' => 'paid',
-                'paid_at' => now(),
-                'payment_method' => 'paypal',
-            ]);
+                $paymentData = [
+                    'subscription_id' => $subscription->id,
+                    'amount' => $amount,
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ];
+                if (Schema::hasColumn('subscription_payments', 'payment_reference')) {
+                    $paymentData['payment_reference'] = $orderId;
+                }
+                if (Schema::hasColumn('subscription_payments', 'paymongo_payment_id') && ! isset($paymentData['payment_reference'])) {
+                    $paymentData['paymongo_payment_id'] = $orderId;
+                }
+                if (Schema::hasColumn('subscription_payments', 'payment_method')) {
+                    $paymentData['payment_method'] = 'paypal';
+                }
+
+                SubscriptionPayment::create($paymentData);
+            });
 
             $subscriptionPayment = $subscription->payments()->where('status', 'paid')->latest()->first();
-            $receiptService = app(\App\Services\SubscriptionReceiptService::class);
-            $receiptService->generateReceipt($subscriptionPayment);
-            $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+            if ($subscriptionPayment) {
+                $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+                $receiptService->generateReceipt($subscriptionPayment);
+                $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+            }
 
             return response()->json([
                 'success' => true,
                 'redirect' => route('auctions.index'),
-                'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
+                'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active. Receipt has been sent to your email.',
             ]);
         } catch (\Throwable $e) {
             Log::error('PayPal capture failed', [
