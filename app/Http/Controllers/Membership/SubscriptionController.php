@@ -280,7 +280,162 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * PayPal return (after user approves payment)
+     * API: Create PayPal order (for popup / Smart Buttons)
+     */
+    public function createPayPalOrder(Request $request)
+    {
+        $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+        ]);
+
+        $plan = Plan::findOrFail($request->plan_id);
+
+        if (Auth::user()->hasActiveMembership()) {
+            return response()->json(['error' => 'Already have active membership'], 400);
+        }
+
+        $subscription = Subscription::create([
+            'user_id' => Auth::id(),
+            'plan_id' => $plan->id,
+            'status' => 'pending',
+            'current_period_start' => null,
+            'current_period_end' => null,
+        ]);
+
+        try {
+            $config = config('paypal');
+            $creds = $config[$config['mode'] ?? 'sandbox'] ?? $config['sandbox'] ?? [];
+            if (empty($creds['client_id'] ?? '') || empty($creds['client_secret'] ?? '')) {
+                return response()->json(['error' => 'PayPal not configured'], 500);
+            }
+
+            $paypal = new PayPalService;
+            $paypal->setApiCredentials($config);
+            $paypal->getAccessToken();
+
+            $currency = config('paypal.currency', 'PHP');
+            $amount = number_format($subscription->plan->price, 2, '.', '');
+
+            $orderData = [
+                'intent' => 'CAPTURE',
+                'purchase_units' => [[
+                    'amount' => ['currency_code' => $currency, 'value' => $amount],
+                    'description' => $subscription->plan->name . ' Membership',
+                    'custom_id' => (string) $subscription->id,
+                ]],
+                'application_context' => [
+                    'brand_name' => config('app.name'),
+                    'user_action' => 'PAY_NOW',
+                    'shipping_preference' => 'NO_SHIPPING',
+                ],
+            ];
+
+            $response = $paypal->createOrder($orderData);
+
+            if (isset($response['error']) || ! is_array($response) || empty($response['id'])) {
+                Log::error('PayPal create order API error', ['response' => $response ?? []]);
+
+                return response()->json(['error' => 'Could not create PayPal order'], 500);
+            }
+
+            return response()->json([
+                'orderId' => $response['id'],
+                'subscription_id' => $subscription->id,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('PayPal create order failed', ['error' => $e->getMessage()]);
+
+            return response()->json(['error' => 'Payment failed. Please try again.'], 500);
+        }
+    }
+
+    /**
+     * API: Capture PayPal order (for popup / Smart Buttons)
+     */
+    public function capturePayPalOrder(Request $request)
+    {
+        $request->validate([
+            'order_id' => 'required|string',
+        ]);
+
+        $orderId = $request->order_id;
+
+        try {
+            $config = config('paypal');
+            $paypal = new PayPalService;
+            $paypal->setApiCredentials($config);
+            $paypal->getAccessToken();
+            $response = $paypal->capturePaymentOrder($orderId);
+
+            $status = $response['status'] ?? null;
+            if ($status !== 'COMPLETED') {
+                return response()->json(['error' => 'Payment was not completed'], 400);
+            }
+
+            $subscriptionId = null;
+            foreach ($response['purchase_units'] ?? [] as $unit) {
+                $cid = $unit['custom_id'] ?? null;
+                if ($cid) {
+                    $subscriptionId = (int) $cid;
+                    break;
+                }
+            }
+
+            if (! $subscriptionId) {
+                Log::error('PayPal capture: no custom_id in order', ['orderId' => $orderId]);
+
+                return response()->json(['error' => 'Invalid order'], 400);
+            }
+
+            $subscription = Subscription::find($subscriptionId);
+            if (! $subscription || $subscription->user_id !== Auth::id()) {
+                return response()->json(['error' => 'Subscription not found'], 404);
+            }
+
+            $amount = 0;
+            foreach ($response['purchase_units'] ?? [] as $unit) {
+                foreach ($unit['payments']['captures'] ?? [] as $cap) {
+                    $amount += (float) ($cap['amount']['value'] ?? 0);
+                }
+            }
+
+            $subscription->update([
+                'status' => 'active',
+                'payment_method' => 'paypal',
+                'current_period_start' => now(),
+                'current_period_end' => ($subscription->plan?->interval ?? 'month') === 'year'
+                    ? now()->addYear()
+                    : now()->addMonth(),
+            ]);
+
+            SubscriptionPayment::create([
+                'subscription_id' => $subscription->id,
+                'amount' => $amount ?: $subscription->plan->price,
+                'payment_reference' => $orderId,
+                'status' => 'paid',
+                'paid_at' => now(),
+                'payment_method' => 'paypal',
+            ]);
+
+            $subscriptionPayment = $subscription->payments()->where('status', 'paid')->latest()->first();
+            $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+            $receiptService->generateReceipt($subscriptionPayment);
+            $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+
+            return response()->json([
+                'success' => true,
+                'redirect' => route('auctions.index'),
+                'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('PayPal capture failed', ['error' => $e->getMessage(), 'orderId' => $orderId]);
+
+            return response()->json(['error' => 'Capture failed. Please try again.'], 500);
+        }
+    }
+
+    /**
+     * PayPal return (after user approves payment - redirect flow fallback)
      */
     public function paypalReturn(Request $request)
     {

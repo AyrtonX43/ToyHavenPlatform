@@ -90,9 +90,9 @@
 </div>
 
 <div class="container py-4">
-    @if(session('success'))
+    @if(session('success') || request('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-3">
-            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <i class="bi bi-check-circle me-2"></i>{{ session('success') ?? request('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif

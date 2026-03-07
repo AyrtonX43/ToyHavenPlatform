@@ -39,7 +39,15 @@ class PlanController extends Controller
     {
         $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
 
-        return view('membership.payment-selection', ['plan' => $plan]);
+        $config = config('paypal');
+        $mode = $config['mode'] ?? 'sandbox';
+        $creds = $config[$mode] ?? $config['sandbox'] ?? [];
+        $paypalClientId = $creds['client_id'] ?? '';
+
+        return view('membership.payment-selection', [
+            'plan' => $plan,
+            'paypal_client_id' => $paypalClientId,
+        ]);
     }
 
     /**

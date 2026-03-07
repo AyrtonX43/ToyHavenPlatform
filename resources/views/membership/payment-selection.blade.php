@@ -100,26 +100,22 @@
                     </form>
                 </div>
                 <div class="col-md-6">
-                    <form action="{{ route('membership.subscribe') }}" method="POST" class="h-100" target="_self">
-                        @csrf
-                        <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                        <input type="hidden" name="terms_accepted" value="1">
-                        <input type="hidden" name="payment_method" value="paypal">
-                        <div class="payment-method-card card h-100 paypal border-0" onclick="this.closest('form').submit()">
-                            <div class="card-body text-center py-5 px-4">
-                                <div class="mb-3">
-                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
-                                    </div>
+                    <div class="payment-method-card card h-100 paypal border-0">
+                        <div class="card-body text-center py-5 px-4">
+                            <div class="mb-3">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
                                 </div>
-                                <h5 class="fw-bold mb-2">PayPal</h5>
-                                <p class="text-muted small mb-4">Pay securely with your PayPal account or linked card. You will be redirected to PayPal to complete payment (no address required).</p>
-                                <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
-                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal
-                                </button>
                             </div>
+                            <h5 class="fw-bold mb-2">PayPal</h5>
+                            <p class="text-muted small mb-4">Pay securely with your PayPal account or linked card. A PayPal popup will open—complete payment there (no address required).</p>
+                            @if(!empty($paypal_client_id))
+                                <div id="paypal-button-container" class="d-flex justify-content-center"></div>
+                            @else
+                                <p class="text-warning small mb-0">PayPal is not configured.</p>
+                            @endif
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
 
@@ -132,3 +128,66 @@
     </div>
 </div>
 @endsection
+
+@if(!empty($paypal_client_id))
+@push('scripts')
+<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture"></script>
+<script>
+(function() {
+    var planId = {{ $plan->id }};
+    var createOrderUrl = @json(route('membership.paypal.create-order'));
+    var captureOrderUrl = @json(route('membership.paypal.capture-order'));
+    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @json(csrf_token());
+
+    paypal.Buttons({
+        createOrder: function() {
+            return fetch(createOrderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    plan_id: planId,
+                    _token: csrfToken
+                })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.orderId) return data.orderId;
+                throw new Error(data.error || 'Could not create order');
+            });
+        },
+        onApprove: function(data) {
+            return fetch(captureOrderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    order_id: data.orderID,
+                    _token: csrfToken
+                })
+            }).then(function(r) { return r.json();             }).then(function(res) {
+                if (res.success && res.redirect) {
+                    var url = res.redirect + (res.message ? '?success=' + encodeURIComponent(res.message) : '');
+                    window.location.href = url;
+                } else {
+                    throw new Error(res.error || 'Payment failed');
+                }
+            });
+        },
+        onCancel: function() {
+            console.log('PayPal payment cancelled');
+        },
+        onError: function(err) {
+            alert(err || 'PayPal error. Please try again or use QR Ph.');
+        }
+    }).render('#paypal-button-container');
+})();
+</script>
+@endpush
+@endif
