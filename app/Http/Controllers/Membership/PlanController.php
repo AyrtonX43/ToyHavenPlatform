@@ -44,19 +44,15 @@ class PlanController extends Controller
                 ->with('payment_failed', true);
         }
 
+        $config = config('paypal');
+        $mode = $config['mode'] ?? 'sandbox';
+        $creds = $config[$mode] ?? $config['sandbox'] ?? [];
+        $paypalClientId = $creds['client_id'] ?? '';
+
         return view('membership.payment-selection', [
             'plan' => $plan,
+            'paypal_client_id' => $paypalClientId,
         ]);
-    }
-
-    /**
-     * PayPal demo payment form (dedicated page)
-     */
-    public function paypalDemoForm(string $planSlug)
-    {
-        $plan = Plan::where('slug', $planSlug)->where('is_active', true)->firstOrFail();
-
-        return view('membership.paypal-demo', ['plan' => $plan]);
     }
 
     /**
