@@ -426,11 +426,11 @@ class SubscriptionController extends Controller
 
             $refCol = Schema::hasColumn('subscription_payments', 'payment_reference') ? 'payment_reference' : 'paymongo_payment_id';
             if ($subscription->payments()->where('status', 'paid')->where($refCol, $orderId)->exists()) {
-            return response()->json([
-                'success' => true,
-                'redirect' => route('membership.payment-success', $subscription),
-                'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
-            ]);
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('membership.payment-success', $subscription),
+                    'message' => 'Payment successful! Your ' . $subscription->plan->name . ' membership is now active.',
+                ]);
             }
 
             $amount = 0;
@@ -490,7 +490,7 @@ class SubscriptionController extends Controller
                 'class' => get_class($e),
             ]);
 
-            return response()->json(['error' => 'Capture failed. Please try again.'], 500);
+            return response()->json(['error' => 'Payment failed. Please try again.'], 400);
         }
     }
 
@@ -559,7 +559,55 @@ class SubscriptionController extends Controller
         }
 
         return redirect()->route('membership.payment-selection', $subscription->plan->slug)
-            ->with('error', 'Payment failed. Please try again or choose another payment method.');
+            ->with('payment_failed', true);
+    }
+
+    /**
+     * PayPal demo payment - simulated success for demo mode
+     */
+    public function paypalDemoPay(Request $request)
+    {
+        $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+            'paypal_demo_name' => 'required|string|max:255',
+            'paypal_demo_email' => 'required|email',
+        ]);
+
+        $plan = Plan::findOrFail($request->plan_id);
+
+        if (Auth::user()->hasActiveMembership()) {
+            return redirect()->route('membership.manage')
+                ->with('info', 'You already have an active membership.');
+        }
+
+        $subscription = Subscription::create([
+            'user_id' => Auth::id(),
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'payment_method' => 'paypal',
+            'current_period_start' => now(),
+            'current_period_end' => ($plan->interval ?? 'month') === 'year'
+                ? now()->addYear()
+                : now()->addMonth(),
+        ]);
+
+        $amount = (float) $plan->price;
+        $subscriptionPayment = SubscriptionPayment::create([
+            'subscription_id' => $subscription->id,
+            'amount' => $amount,
+            'status' => 'paid',
+            'paid_at' => now(),
+            'payment_reference' => 'DEMO-PAYPAL-' . uniqid(),
+            'payment_method' => 'paypal',
+        ]);
+
+        $receiptService = app(\App\Services\SubscriptionReceiptService::class);
+        $receiptService->generateReceipt($subscriptionPayment);
+
+        $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
+
+        return redirect()->route('membership.payment-success', $subscription)
+            ->with('success', 'Demo payment successful! Receipt has been sent to your email.');
     }
 
     /**
@@ -571,6 +619,7 @@ class SubscriptionController extends Controller
         if ($subscriptionId) {
             $subscription = Subscription::find($subscriptionId);
             if ($subscription && $subscription->user_id === Auth::id() && $subscription->status === 'pending') {
+                $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
                 return redirect()->route('membership.payment-selection', $subscription->plan->slug)
                     ->with('info', 'Payment was cancelled. You can try again or choose another payment method.');
             }
@@ -587,16 +636,17 @@ class SubscriptionController extends Controller
         $subscriptionId = $request->query('subscription_id');
 
         if (! $subscriptionId) {
-            return redirect()->route('membership.manage')->with('error', 'Invalid payment return.');
+            return redirect()->route('membership.index')->with('error', 'Invalid payment return.');
         }
 
         $subscription = Subscription::find($subscriptionId);
 
         if (! $subscription || $subscription->user_id !== Auth::id()) {
-            return redirect()->route('membership.manage')->with('error', 'Subscription not found.');
+            return redirect()->route('membership.index')->with('error', 'Subscription not found.');
         }
 
-        return redirect()->route('membership.payment-success', $subscription)->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
+        return redirect()->route('membership.payment-success', $subscription)
+            ->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
     }
 
     /**

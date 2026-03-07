@@ -18,13 +18,8 @@
 
     @if($activeSubscription)
         <div class="card mb-4">
-            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h5 class="mb-0">Current Plan: {{ $activeSubscription->plan->name }}</h5>
-                @if(auth()->user()->hasPlan('vip'))
-                    <a href="{{ route('auctions.verification.index') }}" class="btn btn-light btn-sm fw-semibold">
-                        <i class="bi bi-shop me-1"></i> Auction Seller
-                    </a>
-                @endif
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Active Plan: {{ $activeSubscription->plan->name }}</h5>
             </div>
             <div class="card-body">
                 <p><strong>Period:</strong> {{ $activeSubscription->current_period_start?->format('M d, Y') }} – {{ $activeSubscription->current_period_end?->format('M d, Y') }}</p>
@@ -40,6 +35,18 @@
                 </form>
             </div>
         </div>
+
+        @if(auth()->user()->currentPlan()?->slug === 'vip')
+            <div class="card mb-4 border-primary">
+                <div class="card-body">
+                    <h5 class="text-primary mb-2"><i class="bi bi-gem me-2"></i>VIP Benefits</h5>
+                    <p class="mb-3">Create a business auction shop or register as an individual seller to sell your collection at the auction.</p>
+                    <a href="{{ route('auctions.verification.index') }}" class="btn btn-primary">
+                        <i class="bi bi-shop me-2"></i>Create Auction Shop / Individual Seller
+                    </a>
+                </div>
+            </div>
+        @endif
 
         <h5 class="mb-3">Upgrade</h5>
         <div class="row g-2 mb-4">

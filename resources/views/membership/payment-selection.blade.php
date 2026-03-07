@@ -33,6 +33,7 @@
         padding: 1.25rem 1.5rem;
         border: 1px solid #e2e8f0;
     }
+    .demo-badge { font-size: 0.7rem; }
 </style>
 @endpush
 
@@ -41,7 +42,7 @@
     <div class="container">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0 opacity-90">
-                <li class="breadcrumb-item"><a href="{{ route('membership.index') }}" class="text-white-50">Plans</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('membership.index') }}" class="text-white-50">Membership</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('membership.checkout', $plan->slug) }}" class="text-white-50">Terms</a></li>
                 <li class="breadcrumb-item active text-white">Payment</li>
             </ol>
@@ -61,6 +62,12 @@
     @if(session('info'))
         <div class="alert alert-info alert-dismissible fade show rounded-3 shadow-sm">
             <i class="bi bi-info-circle me-2"></i>{{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('payment_failed'))
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm">
+            <i class="bi bi-x-circle-fill me-2"></i>Payment failed. Please try again.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -91,7 +98,7 @@
                                     </div>
                                 </div>
                                 <h5 class="fw-bold mb-2">QR Ph</h5>
-                                <p class="text-muted small mb-4">Scan with GCash, Maya, or any Philippine banking app. QR code expires in 30 minutes.</p>
+                                <p class="text-muted small mb-4">Scan with GCash, Maya, or any Philippine banking app. QR expires in 30 minutes.</p>
                                 <button type="submit" class="btn btn-success px-4 py-2 rounded-3 fw-semibold">
                                     <i class="bi bi-qr-code me-1"></i> Pay with QR Ph
                                 </button>
@@ -100,22 +107,50 @@
                     </form>
                 </div>
                 <div class="col-md-6">
-                    <div class="payment-method-card card h-100 paypal border-0">
-                        <div class="card-body text-center py-5 px-4">
-                            <div class="mb-3">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
-                                    <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                    @if($use_paypal_demo)
+                        <div class="payment-method-card card h-100 paypal border-0">
+                            <div class="card-body py-4 px-4">
+                                <div class="mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                    <span class="badge bg-warning text-dark demo-badge ms-2">Demo</span>
                                 </div>
+                                <h5 class="fw-bold mb-2">PayPal <small class="text-muted fw-normal">(Demo)</small></h5>
+                                <p class="text-muted small mb-3">Simulated PayPal payment. No real charges.</p>
+                                <form id="paypal-demo-form" action="{{ route('membership.paypal.demo-pay') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="plan_id" value="{{ $plan->id }}">
+                                    <div class="mb-2">
+                                        <input type="text" name="paypal_demo_name" class="form-control form-control-sm" placeholder="Full Name" value="{{ auth()->user()?->name }}" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <input type="email" name="paypal_demo_email" class="form-control form-control-sm" placeholder="Email" value="{{ auth()->user()?->email }}" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold">
+                                        <i class="bi bi-paypal me-1"></i> Complete Demo Payment
+                                    </button>
+                                </form>
                             </div>
-                            <h5 class="fw-bold mb-2">PayPal</h5>
-                            <p class="text-muted small mb-4">Pay securely with your PayPal account. Demo mode — you will be directed to PayPal sandbox to complete payment.</p>
-                            @if(!empty($paypal_client_id))
-                                <div id="paypal-button-container" class="d-flex justify-content-center"></div>
-                            @else
-                                <p class="text-warning small mb-0">PayPal is not configured. Use QR Ph or contact support.</p>
-                            @endif
                         </div>
-                    </div>
+                    @else
+                        <div class="payment-method-card card h-100 paypal border-0">
+                            <div class="card-body text-center py-5 px-4">
+                                <div class="mb-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                </div>
+                                <h5 class="fw-bold mb-2">PayPal</h5>
+                                <p class="text-muted small mb-4">Pay securely with your PayPal account. You'll be redirected to PayPal to complete payment.</p>
+                                @if(!empty($paypal_client_id))
+                                    <div id="paypal-button-container" class="d-flex justify-content-center"></div>
+                                @else
+                                    <p class="text-warning small mb-0">PayPal is not configured. Use QR Ph or contact support.</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -128,15 +163,15 @@
     </div>
 </div>
 
-<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+<div class="modal fade" id="cancelModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 border-0 shadow-lg">
             <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold" id="cancelModalLabel">Cancel Payment?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fw-bold">Cancel Payment?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-0">Are you sure? You will return to the membership plan selection. No payment will be charged.</p>
+                <p class="mb-0">Are you sure? You will return to the membership plans page and can select a plan again later.</p>
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Keep Payment</button>
@@ -149,7 +184,7 @@
 </div>
 @endsection
 
-@if(!empty($paypal_client_id))
+@if(!$use_paypal_demo && !empty($paypal_client_id))
 @push('scripts')
 <script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture&disable-funding=card,credit"></script>
 <script>
@@ -157,6 +192,7 @@
     var planId = {{ $plan->id }};
     var createOrderUrl = @json(route('membership.paypal.create-order'));
     var captureOrderUrl = @json(route('membership.paypal.capture-order'));
+    var successUrl = @json(route('membership.payment-success', ['subscription' => '__ID__']));
     var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @json(csrf_token());
 
     paypal.Buttons({
@@ -193,20 +229,22 @@
                 })
             }).then(function(r) { return r.json(); }).then(function(res) {
                 if (res.success && res.redirect) {
-                    var url = res.redirect + (res.message ? '?success=' + encodeURIComponent(res.message) : '');
-                    window.location.href = url;
+                    window.location.href = res.redirect;
                 } else {
                     alert(res.error || 'Payment failed. Please try again.');
-                    window.location.reload();
+                    window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
                 }
+            }).catch(function(err) {
+                alert('Payment failed. Please try again.');
+                window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
             });
         },
         onCancel: function() {
             console.log('PayPal payment cancelled');
         },
         onError: function(err) {
-            alert(err?.message || 'PayPal error. Please try again or use QR Ph.');
-            window.location.reload();
+            alert('Payment failed. Please try again.');
+            window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
         }
     }).render('#paypal-button-container');
 })();
