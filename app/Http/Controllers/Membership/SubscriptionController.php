@@ -771,13 +771,15 @@ class SubscriptionController extends Controller
             abort(404);
         }
 
-        if (! $subscriptionPayment->hasReceipt()) {
-            return redirect()->route('membership.manage')->with('error', 'Receipt not available.');
-        }
-
         $receiptService = app(\App\Services\SubscriptionReceiptService::class);
 
-        return $receiptService->downloadReceipt($subscriptionPayment);
+        try {
+            return $receiptService->downloadReceipt($subscriptionPayment);
+        } catch (\Throwable $e) {
+            Log::error('Receipt download failed', ['error' => $e->getMessage()]);
+
+            return redirect()->route('membership.manage')->with('error', 'Receipt could not be generated.');
+        }
     }
 
     /**
