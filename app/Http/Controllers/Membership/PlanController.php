@@ -44,20 +44,8 @@ class PlanController extends Controller
                 ->with('payment_failed', true);
         }
 
-        $config = config('paypal');
-        $usePaypalDemo = (bool) ($config['demo_mode'] ?? true);
-        $mode = $config['mode'] ?? 'sandbox';
-        $creds = $config[$mode] ?? $config['sandbox'] ?? [];
-        $paypalClientId = $creds['client_id'] ?? '';
-
-        if (!$usePaypalDemo && empty($paypalClientId)) {
-            $usePaypalDemo = true;
-        }
-
         return view('membership.payment-selection', [
             'plan' => $plan,
-            'paypal_client_id' => $paypalClientId,
-            'use_paypal_demo' => $usePaypalDemo,
         ]);
     }
 

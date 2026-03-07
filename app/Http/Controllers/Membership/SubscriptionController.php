@@ -571,6 +571,7 @@ class SubscriptionController extends Controller
             'plan_id' => 'required|exists:plans,id',
             'paypal_demo_name' => 'required|string|max:255',
             'paypal_demo_email' => 'required|email',
+            'paypal_demo_email_confirm' => 'required|email|same:paypal_demo_email',
         ]);
 
         $plan = Plan::findOrFail($request->plan_id);
@@ -607,7 +608,7 @@ class SubscriptionController extends Controller
         $subscription->user->notify(new \App\Notifications\MembershipPaymentSuccessNotification($subscriptionPayment));
 
         return redirect()->route('membership.payment-success', $subscription)
-            ->with('success', 'Demo payment successful! Receipt has been sent to your email.');
+            ->with('success', 'Payment successful! Your membership is now active. Receipt has been sent to your email.');
     }
 
     /**

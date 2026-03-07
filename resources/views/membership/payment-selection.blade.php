@@ -33,7 +33,6 @@
         padding: 1.25rem 1.5rem;
         border: 1px solid #e2e8f0;
     }
-    .demo-badge { font-size: 0.7rem; }
 </style>
 @endpush
 
@@ -107,50 +106,36 @@
                     </form>
                 </div>
                 <div class="col-md-6">
-                    @if($use_paypal_demo)
-                        <div class="payment-method-card card h-100 paypal border-0">
-                            <div class="card-body py-4 px-4">
-                                <div class="mb-3">
-                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
-                                    </div>
-                                    <span class="badge bg-warning text-dark demo-badge ms-2">Demo</span>
+                    <div class="payment-method-card card h-100 paypal border-0">
+                        <div class="card-body py-4 px-4">
+                            <div class="mb-3">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
                                 </div>
-                                <h5 class="fw-bold mb-2">PayPal <small class="text-muted fw-normal">(Demo)</small></h5>
-                                <p class="text-muted small mb-3">Simulated PayPal payment. No real charges.</p>
-                                <form id="paypal-demo-form" action="{{ route('membership.paypal.demo-pay') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                                    <div class="mb-2">
-                                        <input type="text" name="paypal_demo_name" class="form-control form-control-sm" placeholder="Full Name" value="{{ auth()->user()?->name }}" required>
-                                    </div>
-                                    <div class="mb-2">
-                                        <input type="email" name="paypal_demo_email" class="form-control form-control-sm" placeholder="Email" value="{{ auth()->user()?->email }}" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold">
-                                        <i class="bi bi-paypal me-1"></i> Complete Demo Payment
-                                    </button>
-                                </form>
                             </div>
-                        </div>
-                    @else
-                        <div class="payment-method-card card h-100 paypal border-0">
-                            <div class="card-body text-center py-5 px-4">
-                                <div class="mb-3">
-                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-paypal text-primary" style="font-size: 2.5rem;"></i>
-                                    </div>
+                            <h5 class="fw-bold mb-2">PayPal</h5>
+                            <p class="text-muted small mb-3">Pay securely with your PayPal account. Enter your payment details below to proceed.</p>
+                            <form id="paypal-form" action="{{ route('membership.paypal.demo-pay') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="plan_id" value="{{ $plan->id }}">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="paypal_demo_name" class="form-control" placeholder="Enter your full name" value="{{ auth()->user()?->name }}" required>
                                 </div>
-                                <h5 class="fw-bold mb-2">PayPal</h5>
-                                <p class="text-muted small mb-4">Pay securely with your PayPal account. You'll be redirected to PayPal to complete payment.</p>
-                                @if(!empty($paypal_client_id))
-                                    <div id="paypal-button-container" class="d-flex justify-content-center"></div>
-                                @else
-                                    <p class="text-warning small mb-0">PayPal is not configured. Use QR Ph or contact support.</p>
-                                @endif
-                            </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">PayPal Email <span class="text-danger">*</span></label>
+                                    <input type="email" name="paypal_demo_email" class="form-control" placeholder="your@paypal.com" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Confirm PayPal Email <span class="text-danger">*</span></label>
+                                    <input type="email" name="paypal_demo_email_confirm" class="form-control" placeholder="Confirm your PayPal email" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 rounded-3 fw-semibold mt-2">
+                                    <i class="bi bi-paypal me-1"></i> Pay with PayPal
+                                </button>
+                            </form>
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
 
@@ -184,70 +169,21 @@
 </div>
 @endsection
 
-@if(!$use_paypal_demo && !empty($paypal_client_id))
 @push('scripts')
-<script src="https://www.paypal.com/sdk/js?client-id={{ $paypal_client_id }}&components=buttons&currency=PHP&intent=capture&disable-funding=card,credit"></script>
 <script>
 (function() {
-    var planId = {{ $plan->id }};
-    var createOrderUrl = @json(route('membership.paypal.create-order'));
-    var captureOrderUrl = @json(route('membership.paypal.capture-order'));
-    var successUrl = @json(route('membership.payment-success', ['subscription' => '__ID__']));
-    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @json(csrf_token());
-
-    paypal.Buttons({
-        createOrder: function() {
-            return fetch(createOrderUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    plan_id: planId,
-                    _token: csrfToken
-                })
-            }).then(function(r) { return r.json(); }).then(function(data) {
-                if (data.orderId) return data.orderId;
-                throw new Error(data.error || 'Could not create order');
-            });
-        },
-        onApprove: function(data) {
-            return fetch(captureOrderUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    order_id: data.orderID,
-                    _token: csrfToken
-                })
-            }).then(function(r) { return r.json(); }).then(function(res) {
-                if (res.success && res.redirect) {
-                    window.location.href = res.redirect;
-                } else {
-                    alert(res.error || 'Payment failed. Please try again.');
-                    window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
-                }
-            }).catch(function(err) {
-                alert('Payment failed. Please try again.');
-                window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
-            });
-        },
-        onCancel: function() {
-            console.log('PayPal payment cancelled');
-        },
-        onError: function(err) {
-            alert('Payment failed. Please try again.');
-            window.location.href = @json(route('membership.payment-selection', $plan->slug)) + '?payment_failed=1';
-        }
-    }).render('#paypal-button-container');
+    var form = document.getElementById('paypal-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            var email = form.querySelector('input[name="paypal_demo_email"]').value;
+            var confirm = form.querySelector('input[name="paypal_demo_email_confirm"]').value;
+            if (email !== confirm) {
+                e.preventDefault();
+                alert('PayPal email and confirmation do not match. Please check and try again.');
+                return false;
+            }
+        });
+    }
 })();
 </script>
 @endpush
-@endif
