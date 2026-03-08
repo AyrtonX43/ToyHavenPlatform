@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuctionPayment;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class AuctionSellerDashboardController extends Controller
 {
@@ -22,12 +24,15 @@ class AuctionSellerDashboardController extends Controller
                 ->with('error', 'You must be an approved auction seller to access this dashboard.');
         }
 
-        $sales = AuctionPayment::whereHas('auction', fn ($q) => $q->where('user_id', $user->id))
+        $sales = Collection::make();
+        if (Schema::hasTable('auction_payments')) {
+            $sales = AuctionPayment::whereHas('auction', fn ($q) => $q->where('user_id', $user->id))
             ->whereIn('status', ['paid', 'held', 'released'])
             ->with(['auction', 'winner'])
             ->orderByDesc('created_at')
             ->limit(20)
             ->get();
+        }
 
         return view('auction.seller.dashboard', compact('sales'));
     }
