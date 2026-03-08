@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Auction extends Model
@@ -20,6 +21,7 @@ class Auction extends Model
         'starting_bid',
         'bid_increment',
         'duration_hours',
+        'scheduled_end_at',
         'start_at',
         'end_at',
         'status',
@@ -50,6 +52,7 @@ class Auction extends Model
             'reserve_price' => 'decimal:2',
             'start_at' => 'datetime',
             'end_at' => 'datetime',
+            'scheduled_end_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
         ];
     }
@@ -86,7 +89,7 @@ class Auction extends Model
 
     public function images()
     {
-        return $this->hasMany(AuctionImage::class)->orderByDesc('is_primary');
+        return $this->hasMany(AuctionImage::class)->orderBy('sort_order')->orderByDesc('is_primary');
     }
 
     public function savedBy()

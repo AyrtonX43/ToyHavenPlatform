@@ -40,6 +40,13 @@ class Category extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function auctions(): BelongsToMany
+    {
+        return $this->belongsToMany(Auction::class, 'auction_category')
+            ->withPivot('sort_order')
+            ->withTimestamps();
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_category_preferences', 'category_id', 'user_id')

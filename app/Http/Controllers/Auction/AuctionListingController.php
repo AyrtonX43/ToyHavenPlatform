@@ -66,19 +66,23 @@ class AuctionListingController extends Controller
             'starting_bid' => 'required|numeric|min:1',
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
-            'duration_hours' => 'required|integer|min:1|max:720',
-            'category_id' => 'nullable|exists:categories,id',
-            'images' => 'required|array|min:1',
+            'scheduled_end_at' => 'required|date|after:now',
+            'category_ids' => 'nullable|array|max:3',
+            'category_ids.*' => 'exists:categories,id',
+            'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            'primary_index' => 'nullable|integer|min:0',
         ], [
             'images.required' => 'At least one image is required.',
             'images.min' => 'At least one image is required.',
+            'images.max' => 'Maximum 10 images allowed.',
         ]);
 
         $verification = $user->approvedAuctionSellerVerifications()->first();
         $sellerType = $verification ? $verification->type : 'individual';
 
-        $durationHours = (int) $request->duration_hours;
+        $scheduledEndAt = \Carbon\Carbon::parse($request->scheduled_end_at);
+        $durationHours = (int) max(1, now()->diffInHours($scheduledEndAt, false));
 
         $auction = Auction::create([
             'user_id' => $user->id,
@@ -86,7 +90,7 @@ class AuctionListingController extends Controller
             'seller_type' => $sellerType,
             'product_id' => null,
             'user_product_id' => null,
-            'category_id' => $request->category_id ?: null,
+            'category_id' => $request->category_ids[0] ?? null,
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
@@ -94,19 +98,30 @@ class AuctionListingController extends Controller
             'reserve_price' => $request->filled('reserve_price') ? $request->reserve_price : null,
             'bid_increment' => $request->bid_increment,
             'duration_hours' => $durationHours,
+            'scheduled_end_at' => $scheduledEndAt,
             'start_at' => null,
             'end_at' => null,
             'status' => 'draft',
         ]);
 
+        $categoryIds = array_slice($request->category_ids ?? [], 0, 3);
+        if (! empty($categoryIds)) {
+            $auction->categories()->sync(
+                collect($categoryIds)->mapWithKeys(fn ($id, $i) => [$id => ['sort_order' => $i]])->toArray()
+            );
+        }
+
+        $primaryIndex = (int) ($request->primary_index ?? 0);
         $imageIndex = 0;
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
+            $files = $request->file('images');
+            foreach ($files as $idx => $image) {
                 $path = $image->store('auction_images/' . $auction->id, 'public');
                 AuctionImage::create([
                     'auction_id' => $auction->id,
                     'image_path' => $path,
-                    'is_primary' => $imageIndex === 0,
+                    'is_primary' => $idx === $primaryIndex,
+                    'sort_order' => $idx,
                 ]);
                 $imageIndex++;
             }
@@ -144,6 +159,7 @@ class AuctionListingController extends Controller
                 ->with('error', 'Only draft listings can be edited.');
         }
 
+        $listing->load('categories');
         $categories = Category::orderBy('name')->get();
 
         return view('auction.listings.edit', compact('listing', 'categories'));
@@ -161,6 +177,11 @@ class AuctionListingController extends Controller
                 ->with('error', 'Only draft listings can be edited.');
         }
 
+        $keepIds = array_filter(array_map('intval', explode(',', $request->keep_image_ids ?? '')));
+        $deleteIds = array_filter(array_map('intval', explode(',', $request->delete_image_ids ?? '')));
+        $newFilesCount = $request->hasFile('images') ? count($request->file('images')) : 0;
+        $totalAfterUpdate = count($keepIds) + $newFilesCount;
+
         $rules = [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
@@ -168,46 +189,73 @@ class AuctionListingController extends Controller
             'starting_bid' => 'required|numeric|min:1',
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
-            'duration_hours' => 'required|integer|min:1|max:720',
-            'category_id' => 'nullable|exists:categories,id',
+            'scheduled_end_at' => 'required|date|after:now',
+            'category_ids' => 'nullable|array|max:3',
+            'category_ids.*' => 'exists:categories,id',
+            'primary_index' => 'nullable|integer|min:0',
         ];
-        $hasImages = $listing->images()->exists();
-        if ($request->hasFile('images')) {
-            $rules['images'] = 'array|min:1';
-            $rules['images.*'] = 'image|mimes:jpeg,png,jpg,webp|max:5120';
-        } elseif (! $hasImages) {
+        if ($totalAfterUpdate < 1) {
             $rules['images'] = 'required|array|min:1';
+            $rules['images.*'] = 'image|mimes:jpeg,png,jpg,webp|max:5120';
+        } elseif ($request->hasFile('images')) {
+            $rules['images'] = 'array|max:10';
             $rules['images.*'] = 'image|mimes:jpeg,png,jpg,webp|max:5120';
         }
         $request->validate($rules, ['images.required' => 'At least one image is required.']);
 
+        if ($totalAfterUpdate > 10) {
+            return back()->withInput()->withErrors(['images' => 'Maximum 10 images allowed.']);
+        }
+
+        $scheduledEndAt = \Carbon\Carbon::parse($request->scheduled_end_at);
+        $durationHours = (int) max(1, now()->diffInHours($scheduledEndAt, false));
+
         $listing->update([
-            'category_id' => $request->category_id ?: null,
+            'category_id' => ($request->category_ids ?? [])[0] ?? null,
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
             'starting_bid' => $request->starting_bid,
             'reserve_price' => $request->filled('reserve_price') ? $request->reserve_price : null,
             'bid_increment' => $request->bid_increment,
-            'duration_hours' => (int) $request->duration_hours,
+            'duration_hours' => $durationHours,
+            'scheduled_end_at' => $scheduledEndAt,
             'rejection_reason' => null,
         ]);
 
-        if ($request->hasFile('images')) {
-            $existingCount = $listing->images()->count();
-            $imageIndex = 0;
-            foreach ($request->file('images') as $image) {
-                if ($existingCount + $imageIndex >= 5) {
-                    break;
-                }
-                $path = $image->store('auction_images/' . $listing->id, 'public');
-                AuctionImage::create([
-                    'auction_id' => $listing->id,
-                    'image_path' => $path,
-                    'is_primary' => $existingCount === 0 && $imageIndex === 0,
-                ]);
-                $imageIndex++;
+        $categoryIds = array_slice($request->category_ids ?? [], 0, 3);
+        $listing->categories()->sync(
+            collect($categoryIds)->mapWithKeys(fn ($id, $i) => [$id => ['sort_order' => $i]])->toArray()
+        );
+
+        foreach ($deleteIds as $imgId) {
+            $img = AuctionImage::where('auction_id', $listing->id)->find($imgId);
+            if ($img) {
+                Storage::disk('public')->delete($img->image_path);
+                $img->delete();
             }
+        }
+
+        $primaryIndex = (int) ($request->primary_index ?? 0);
+        $keptImages = collect();
+        if (! empty($keepIds)) {
+            $byId = AuctionImage::where('auction_id', $listing->id)->whereIn('id', $keepIds)->get()->keyBy('id');
+            $keptImages = collect($keepIds)->map(fn ($id) => $byId->get($id))->filter()->values();
+        }
+        $newFiles = $request->hasFile('images') ? $request->file('images') : [];
+        $sortOrder = 0;
+        foreach ($keptImages as $idx => $img) {
+            $img->update(['is_primary' => $idx === $primaryIndex, 'sort_order' => $sortOrder++]);
+        }
+        foreach ($newFiles as $idx => $file) {
+            $path = $file->store('auction_images/' . $listing->id, 'public');
+            $isPrimary = ($keptImages->count() + $idx) === $primaryIndex;
+            AuctionImage::create([
+                'auction_id' => $listing->id,
+                'image_path' => $path,
+                'is_primary' => $isPrimary,
+                'sort_order' => $sortOrder++,
+            ]);
         }
 
         return redirect()->route('auction.listings.index')
