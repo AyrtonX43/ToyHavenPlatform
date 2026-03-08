@@ -8,6 +8,8 @@ use App\Models\AuctionSellerVerification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class SellerRegistrationController extends Controller
@@ -44,30 +46,40 @@ class SellerRegistrationController extends Controller
             'bank_statement' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $verification = DB::transaction(function () use ($request, $user) {
-            $verification = AuctionSellerVerification::create([
+        try {
+            $verification = DB::transaction(function () use ($request, $user) {
+                $verification = AuctionSellerVerification::create([
+                    'user_id' => $user->id,
+                    'type' => 'individual',
+                    'verification_status' => 'pending',
+                ]);
+
+                $docs = [
+                    'government_id_1' => $request->file('government_id_1'),
+                    'government_id_2' => $request->file('government_id_2'),
+                    'facial_verification' => $request->file('facial_verification'),
+                    'bank_statement' => $request->file('bank_statement'),
+                ];
+                foreach ($docs as $type => $file) {
+                    $path = $file->store('auction_seller_documents/' . $verification->id, 'public');
+                    AuctionSellerDocument::create([
+                        'verification_id' => $verification->id,
+                        'document_type' => $type,
+                        'document_path' => $path,
+                    ]);
+                }
+
+                return $verification;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Auction seller individual registration failed', [
                 'user_id' => $user->id,
-                'type' => 'individual',
-                'verification_status' => 'pending',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            $docs = [
-                'government_id_1' => $request->file('government_id_1'),
-                'government_id_2' => $request->file('government_id_2'),
-                'facial_verification' => $request->file('facial_verification'),
-                'bank_statement' => $request->file('bank_statement'),
-            ];
-            foreach ($docs as $type => $file) {
-                $path = $file->store('auction_seller_documents/' . $verification->id, 'public');
-                AuctionSellerDocument::create([
-                    'verification_id' => $verification->id,
-                    'document_type' => $type,
-                    'document_path' => $path,
-                ]);
-            }
-
-            return $verification;
-        });
+            return back()->withInput()->with('error', 'Registration could not be completed. Please try again or contact support if the problem persists.');
+        }
 
         return redirect()->route('auction.index')
             ->with('success', 'Your individual auction seller registration has been submitted. You will receive an email and notification once an admin reviews your application.');
@@ -131,46 +143,63 @@ class SellerRegistrationController extends Controller
         ];
         $request->validate($rules);
 
+        $normalize = function_exists('normalizePhilippineText')
+            ? fn ($t) => normalizePhilippineText($t)
+            : fn ($t) => is_string($t) ? trim((string) $t) : $t;
         $businessInfo = [
-            'business_name' => normalizePhilippineText($request->business_name),
-            'description' => normalizePhilippineText($request->description),
+            'business_name' => $normalize($request->business_name),
+            'description' => $normalize($request->description),
             'phone' => $request->phone,
             'email' => $request->email,
-            'address' => normalizePhilippineText($request->address),
-            'region' => normalizePhilippineText($request->region),
-            'city' => normalizePhilippineText($request->city),
-            'barangay' => normalizePhilippineText($request->barangay),
-            'province' => normalizePhilippineText($request->province),
+            'address' => $normalize($request->address),
+            'region' => $normalize($request->region),
+            'city' => $normalize($request->city),
+            'barangay' => $normalize($request->barangay),
+            'province' => $normalize($request->province),
             'postal_code' => $request->postal_code,
         ];
 
-        $verification = DB::transaction(function () use ($request, $user, $businessInfo) {
-            $verification = AuctionSellerVerification::create([
+        $verificationData = [
+            'user_id' => $user->id,
+            'type' => 'business',
+            'verification_status' => 'pending',
+        ];
+        if (Schema::hasColumn('auction_seller_verifications', 'business_info')) {
+            $verificationData['business_info'] = $businessInfo;
+        }
+
+        try {
+            $verification = DB::transaction(function () use ($request, $user, $verificationData) {
+                $verification = AuctionSellerVerification::create($verificationData);
+
+                $docs = [
+                    'id' => $request->file('id_document'),
+                    'facial_verification' => $request->file('facial_verification'),
+                    'bank_statement' => $request->file('bank_document'),
+                    'business_permit' => $request->file('business_permit'),
+                    'bir_certificate' => $request->file('bir_certificate'),
+                    'product_sample' => $request->file('product_sample'),
+                ];
+                foreach ($docs as $type => $file) {
+                    $path = $file->store('auction_seller_documents/' . $verification->id, 'public');
+                    AuctionSellerDocument::create([
+                        'verification_id' => $verification->id,
+                        'document_type' => $type,
+                        'document_path' => $path,
+                    ]);
+                }
+
+                return $verification;
+            });
+        } catch (\Throwable $e) {
+            Log::error('Auction seller business registration failed', [
                 'user_id' => $user->id,
-                'type' => 'business',
-                'business_info' => $businessInfo,
-                'verification_status' => 'pending',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            $docs = [
-                'id' => $request->file('id_document'),
-                'facial_verification' => $request->file('facial_verification'),
-                'bank_statement' => $request->file('bank_document'),
-                'business_permit' => $request->file('business_permit'),
-                'bir_certificate' => $request->file('bir_certificate'),
-                'product_sample' => $request->file('product_sample'),
-            ];
-            foreach ($docs as $type => $file) {
-                $path = $file->store('auction_seller_documents/' . $verification->id, 'public');
-                AuctionSellerDocument::create([
-                    'verification_id' => $verification->id,
-                    'document_type' => $type,
-                    'document_path' => $path,
-                ]);
-            }
-
-            return $verification;
-        });
+            return back()->withInput()->with('error', 'Registration could not be completed. Please try again or contact support if the problem persists.');
+        }
 
         return redirect()->route('auction.index')
             ->with('success', 'Your business auction seller registration has been submitted. You will receive an email and notification once an admin reviews your application.');
