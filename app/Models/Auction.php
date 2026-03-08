@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Auction extends Model
@@ -16,12 +15,12 @@ class Auction extends Model
         'product_id',
         'user_product_id',
         'category_id',
+        'category_ids',
         'title',
         'description',
         'starting_bid',
         'bid_increment',
         'duration_hours',
-        'scheduled_end_at',
         'start_at',
         'end_at',
         'status',
@@ -46,13 +45,13 @@ class Auction extends Model
     protected function casts(): array
     {
         return [
+            'category_ids' => 'array',
             'starting_bid' => 'decimal:2',
             'bid_increment' => 'decimal:2',
             'winning_amount' => 'decimal:2',
             'reserve_price' => 'decimal:2',
             'start_at' => 'datetime',
             'end_at' => 'datetime',
-            'scheduled_end_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
         ];
     }
@@ -72,6 +71,20 @@ class Auction extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function categories()
+    {
+        $ids = $this->category_ids ?? [];
+        if (empty($ids) && $this->category_id) {
+            $ids = [$this->category_id];
+        }
+        if (empty($ids)) {
+            return collect([]);
+        }
+        $cats = Category::whereIn('id', $ids)->get();
+
+        return $cats->sortBy(fn ($c) => array_search($c->id, $ids))->values();
+    }
+
     public function winner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'winner_id');
@@ -89,7 +102,7 @@ class Auction extends Model
 
     public function images()
     {
-        return $this->hasMany(AuctionImage::class)->orderBy('sort_order')->orderByDesc('is_primary');
+        return $this->hasMany(AuctionImage::class)->orderBy('display_order');
     }
 
     public function savedBy()

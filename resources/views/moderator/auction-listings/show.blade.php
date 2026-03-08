@@ -39,8 +39,8 @@
                         <p class="mb-1"><strong>Reserve Price:</strong> ₱{{ number_format($listing->reserve_price, 2) }}</p>
                     @endif
                     <p class="mb-1"><strong>Bid Increment:</strong> ₱{{ number_format($listing->bid_increment, 2) }}</p>
-                    <p class="mb-1"><strong>End date (requested):</strong> {{ $listing->scheduled_end_at?->format('M d, Y H:i') ?? ($listing->duration_hours ? $listing->duration_hours . ' hours from approval' : 'N/A') }}</p>
-                    <p class="mb-1"><strong>Categories:</strong> {{ $listing->categories->pluck('name')->join(', ') ?: ($listing->category?->name ?? 'None') }}</p>
+                    <p class="mb-1"><strong>Duration:</strong> {{ $listing->duration_hours ?? 'N/A' }} hours</p>
+                    <p class="mb-1"><strong>Categories:</strong> {{ $listing->categories()->pluck('name')->join(', ') ?: ($listing->category?->name ?? 'None') }}</p>
                     @if($listing->start_at)
                         <p class="mb-1"><strong>Ends:</strong> {{ $listing->end_at?->format('M d, Y H:i') }}</p>
                     @endif

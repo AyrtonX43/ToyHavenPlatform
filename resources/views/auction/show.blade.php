@@ -69,7 +69,9 @@
 
                     <p class="text-muted small mb-2">
                         <span class="badge bg-light text-dark">{{ \App\Models\Auction::CONDITIONS[$auction->condition ?? 'good'] ?? 'Good' }}</span>
-                        Listed by {{ $auction->user?->name }} · {{ $auction->category?->name ?? 'Uncategorized' }}
+                        Listed by {{ $auction->user?->name }}
+                        @php $catNames = $auction->categories()->pluck('name'); @endphp
+                        · {{ $catNames->isNotEmpty() ? $catNames->join(', ') : ($auction->category?->name ?? 'Uncategorized') }}
                     </p>
                     @if($auction->description)
                         <div class="mb-0">{!! nl2br(e($auction->description)) !!}</div>

@@ -24,7 +24,7 @@ class AuctionListingController extends Controller
 
     public function show(Auction $listing)
     {
-        $listing->load(['user', 'category', 'categories']);
+        $listing->load(['user', 'category']);
 
         return view('admin.auction-listings.show', compact('listing'));
     }
@@ -41,10 +41,9 @@ class AuctionListingController extends Controller
             return back()->with('error', "Minimum watchers not met. Has {$watcherCount} watchers, requires {$minRequired}. Use the override option to approve anyway.");
         }
 
+        $durationHours = $listing->duration_hours ?? 24;
         $startAt = now();
-        $endAt = ($listing->scheduled_end_at && $listing->scheduled_end_at->isAfter($startAt))
-            ? $listing->scheduled_end_at
-            : now()->addHours($listing->duration_hours ?? 24);
+        $endAt = now()->addHours($durationHours);
 
         $listing->update([
             'status' => 'active',

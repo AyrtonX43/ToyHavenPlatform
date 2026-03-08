@@ -66,12 +66,11 @@ class AuctionListingController extends Controller
             'starting_bid' => 'required|numeric|min:1',
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
-            'scheduled_end_at' => 'required|date|after:now',
+            'duration_hours' => 'required|integer|min:1|max:720',
             'category_ids' => 'nullable|array|max:3',
             'category_ids.*' => 'exists:categories,id',
             'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
-            'primary_index' => 'nullable|integer|min:0',
         ], [
             'images.required' => 'At least one image is required.',
             'images.min' => 'At least one image is required.',
@@ -81,8 +80,10 @@ class AuctionListingController extends Controller
         $verification = $user->approvedAuctionSellerVerifications()->first();
         $sellerType = $verification ? $verification->type : 'individual';
 
-        $scheduledEndAt = \Carbon\Carbon::parse($request->scheduled_end_at);
-        $durationHours = (int) max(1, now()->diffInHours($scheduledEndAt, false));
+        $durationHours = (int) $request->duration_hours;
+        $categoryIds = $request->category_ids ?? [];
+        $categoryIds = array_slice(array_map('intval', $categoryIds), 0, 3);
+        $primaryCategoryId = $categoryIds[0] ?? null;
 
         $auction = Auction::create([
             'user_id' => $user->id,
@@ -90,7 +91,8 @@ class AuctionListingController extends Controller
             'seller_type' => $sellerType,
             'product_id' => null,
             'user_product_id' => null,
-            'category_id' => $request->category_ids[0] ?? null,
+            'category_id' => $primaryCategoryId,
+            'category_ids' => ! empty($categoryIds) ? $categoryIds : null,
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
@@ -98,30 +100,21 @@ class AuctionListingController extends Controller
             'reserve_price' => $request->filled('reserve_price') ? $request->reserve_price : null,
             'bid_increment' => $request->bid_increment,
             'duration_hours' => $durationHours,
-            'scheduled_end_at' => $scheduledEndAt,
             'start_at' => null,
             'end_at' => null,
             'status' => 'draft',
         ]);
 
-        $categoryIds = array_slice($request->category_ids ?? [], 0, 3);
-        if (! empty($categoryIds)) {
-            $auction->categories()->sync(
-                collect($categoryIds)->mapWithKeys(fn ($id, $i) => [$id => ['sort_order' => $i]])->toArray()
-            );
-        }
-
-        $primaryIndex = (int) ($request->primary_index ?? 0);
         $imageIndex = 0;
+        $primaryIndex = min(max(0, (int) $request->thumbnail_index), 9);
         if ($request->hasFile('images')) {
-            $files = $request->file('images');
-            foreach ($files as $idx => $image) {
+            foreach ($request->file('images') as $image) {
                 $path = $image->store('auction_images/' . $auction->id, 'public');
                 AuctionImage::create([
                     'auction_id' => $auction->id,
                     'image_path' => $path,
-                    'is_primary' => $idx === $primaryIndex,
-                    'sort_order' => $idx,
+                    'is_primary' => $imageIndex === $primaryIndex,
+                    'display_order' => $imageIndex,
                 ]);
                 $imageIndex++;
             }
@@ -159,7 +152,6 @@ class AuctionListingController extends Controller
                 ->with('error', 'Only draft listings can be edited.');
         }
 
-        $listing->load('categories');
         $categories = Category::orderBy('name')->get();
 
         return view('auction.listings.edit', compact('listing', 'categories'));
@@ -177,11 +169,6 @@ class AuctionListingController extends Controller
                 ->with('error', 'Only draft listings can be edited.');
         }
 
-        $keepIds = array_filter(array_map('intval', explode(',', $request->keep_image_ids ?? '')));
-        $deleteIds = array_filter(array_map('intval', explode(',', $request->delete_image_ids ?? '')));
-        $newFilesCount = $request->hasFile('images') ? count($request->file('images')) : 0;
-        $totalAfterUpdate = count($keepIds) + $newFilesCount;
-
         $rules = [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
@@ -189,73 +176,74 @@ class AuctionListingController extends Controller
             'starting_bid' => 'required|numeric|min:1',
             'reserve_price' => 'nullable|numeric|min:0',
             'bid_increment' => 'required|numeric|min:1',
-            'scheduled_end_at' => 'required|date|after:now',
+            'duration_hours' => 'required|integer|min:1|max:720',
             'category_ids' => 'nullable|array|max:3',
             'category_ids.*' => 'exists:categories,id',
-            'primary_index' => 'nullable|integer|min:0',
         ];
-        if ($totalAfterUpdate < 1) {
-            $rules['images'] = 'required|array|min:1';
+        $hasImages = $listing->images()->exists();
+        if ($request->hasFile('images')) {
+            $rules['images'] = 'array|min:0|max:10';
             $rules['images.*'] = 'image|mimes:jpeg,png,jpg,webp|max:5120';
-        } elseif ($request->hasFile('images')) {
-            $rules['images'] = 'array|max:10';
+        } elseif (! $hasImages) {
+            $rules['images'] = 'required|array|min:1|max:10';
             $rules['images.*'] = 'image|mimes:jpeg,png,jpg,webp|max:5120';
         }
-        $request->validate($rules, ['images.required' => 'At least one image is required.']);
+        $request->validate($rules, [
+            'images.required' => 'At least one image is required.',
+            'images.max' => 'Maximum 10 images allowed.',
+        ]);
 
-        if ($totalAfterUpdate > 10) {
-            return back()->withInput()->withErrors(['images' => 'Maximum 10 images allowed.']);
-        }
-
-        $scheduledEndAt = \Carbon\Carbon::parse($request->scheduled_end_at);
-        $durationHours = (int) max(1, now()->diffInHours($scheduledEndAt, false));
+        $categoryIds = $request->category_ids ?? [];
+        $categoryIds = array_slice(array_map('intval', $categoryIds), 0, 3);
+        $primaryCategoryId = $categoryIds[0] ?? null;
 
         $listing->update([
-            'category_id' => ($request->category_ids ?? [])[0] ?? null,
+            'category_id' => $primaryCategoryId,
+            'category_ids' => ! empty($categoryIds) ? $categoryIds : null,
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
             'starting_bid' => $request->starting_bid,
             'reserve_price' => $request->filled('reserve_price') ? $request->reserve_price : null,
             'bid_increment' => $request->bid_increment,
-            'duration_hours' => $durationHours,
-            'scheduled_end_at' => $scheduledEndAt,
+            'duration_hours' => (int) $request->duration_hours,
             'rejection_reason' => null,
         ]);
 
-        $categoryIds = array_slice($request->category_ids ?? [], 0, 3);
-        $listing->categories()->sync(
-            collect($categoryIds)->mapWithKeys(fn ($id, $i) => [$id => ['sort_order' => $i]])->toArray()
-        );
+        $orderIds = $request->image_order ? array_filter(array_map('intval', explode(',', $request->image_order))) : [];
+        $newFiles = $request->hasFile('images') ? $request->file('images') : [];
+        $thumbnailIdx = max(0, (int) $request->thumbnail_index);
 
-        foreach ($deleteIds as $imgId) {
-            $img = AuctionImage::where('auction_id', $listing->id)->find($imgId);
+        $existingImages = $listing->images()->orderBy('display_order')->orderByDesc('is_primary')->get()->keyBy('id');
+        if (empty($orderIds)) {
+            $orderIds = $existingImages->keys()->all();
+        }
+        $deleteIds = $existingImages->keys()->diff($orderIds)->all();
+        AuctionImage::whereIn('id', $deleteIds)->delete();
+
+        $displayOrder = 0;
+        $listing->images()->update(['is_primary' => false]);
+
+        foreach ($orderIds as $imgId) {
+            $img = $existingImages->get($imgId);
             if ($img) {
-                Storage::disk('public')->delete($img->image_path);
-                $img->delete();
+                $img->update(['display_order' => $displayOrder, 'is_primary' => $displayOrder === $thumbnailIdx]);
+                $displayOrder++;
             }
         }
-
-        $primaryIndex = (int) ($request->primary_index ?? 0);
-        $keptImages = collect();
-        if (! empty($keepIds)) {
-            $byId = AuctionImage::where('auction_id', $listing->id)->whereIn('id', $keepIds)->get()->keyBy('id');
-            $keptImages = collect($keepIds)->map(fn ($id) => $byId->get($id))->filter()->values();
-        }
-        $newFiles = $request->hasFile('images') ? $request->file('images') : [];
-        $sortOrder = 0;
-        foreach ($keptImages as $idx => $img) {
-            $img->update(['is_primary' => $idx === $primaryIndex, 'sort_order' => $sortOrder++]);
-        }
-        foreach ($newFiles as $idx => $file) {
+        foreach (array_slice($newFiles, 0, max(0, 10 - $displayOrder)) as $file) {
             $path = $file->store('auction_images/' . $listing->id, 'public');
-            $isPrimary = ($keptImages->count() + $idx) === $primaryIndex;
             AuctionImage::create([
                 'auction_id' => $listing->id,
                 'image_path' => $path,
-                'is_primary' => $isPrimary,
-                'sort_order' => $sortOrder++,
+                'is_primary' => $displayOrder === $thumbnailIdx,
+                'display_order' => $displayOrder,
             ]);
+            $displayOrder++;
+        }
+
+        if ($listing->images()->count() < 1) {
+            return back()->withInput()->withErrors(['images' => 'At least one image is required.']);
         }
 
         return redirect()->route('auction.listings.index')
