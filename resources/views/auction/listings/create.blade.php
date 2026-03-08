@@ -56,7 +56,6 @@
 }
 .duration-preset .preset-btn:hover { border-color: var(--auction-primary); background: #f0fdfa; }
 .duration-preset .preset-btn.active { border-color: var(--auction-primary); background: #ccfbf1; color: var(--auction-primary-hover); }
-#durationHours { max-width: 6rem; min-width: 4rem; }
 .image-zone {
   border: 2px dashed #cbd5e1;
   border-radius: 14px;
@@ -93,6 +92,7 @@
 #imageLightboxModal .modal-dialog { max-width: 95vw; }
 #imageLightboxModal .modal-content { background: transparent; border: none; }
 #imageLightboxModal .modal-body img { max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.duration-custom-group input#durationHours { max-width: 6rem; }
 </style>
 @endpush
 
@@ -188,13 +188,13 @@
                         <button type="button" class="preset-btn active" data-hours="336">2 weeks</button>
                         <button type="button" class="preset-btn" data-hours="720">30 days</button>
                     </div>
-                    <div class="input-group flex-nowrap">
+                    <div class="input-group duration-custom-group">
                         <span class="input-group-text rounded-start-3">Custom</span>
-                        <input type="number" name="duration_hours" id="durationHours" class="form-control rounded-0 @error('duration_hours') is-invalid @enderror"
-                            value="{{ min(720, max(1, (int)(old('duration_hours') ?: 336))) }}" required min="1" max="720" placeholder="336" inputmode="numeric" style="max-width:5.5rem;">
-                        <span class="input-group-text rounded-end-3">hours</span>
+                        <input type="number" name="duration_hours" id="durationHours" class="form-control rounded-end-3 @error('duration_hours') is-invalid @enderror"
+                            value="{{ old('duration_hours', 336) }}" required min="1" max="720" placeholder="336" inputmode="numeric" pattern="[0-9]*">
+                        <span class="input-group-text">hours</span>
                     </div>
-                    <small class="text-muted">1–720 hours (30 days max)</small>
+                    <small class="text-muted">1–720 hours (30 days max). No over 30 days.</small>
                     @error('duration_hours')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
@@ -274,15 +274,19 @@
       durationInput.value = btn.dataset.hours;
     });
   });
-  durationInput.addEventListener('input', function() {
-    var v = parseInt(this.value, 10);
-    if (!isNaN(v) && v > 720) this.value = 720;
-    if (!isNaN(v) && v < 1 && this.value !== '') this.value = 1;
+  function clampDuration() {
+    var v = parseInt(durationInput.value, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 720) v = 720;
+    durationInput.value = v;
     presets.forEach(function(b) {
-      if (parseInt(b.dataset.hours, 10) === v) b.classList.add('active');
-      else b.classList.remove('active');
+      b.classList.toggle('active', parseInt(b.dataset.hours, 10) === v);
     });
-  });
+  }
+  durationInput.addEventListener('input', clampDuration);
+  durationInput.addEventListener('change', clampDuration);
+  durationInput.addEventListener('blur', clampDuration);
+  clampDuration();
 
   var categorySelectedText = document.getElementById('categorySelectedText');
   var categoryOptions = document.querySelectorAll('#categoryModal .category-option');

@@ -80,7 +80,7 @@ class AuctionListingController extends Controller
         $verification = $user->approvedAuctionSellerVerifications()->first();
         $sellerType = $verification ? $verification->type : 'individual';
 
-        $durationHours = (int) $request->duration_hours;
+        $durationHours = min(720, max(1, (int) $request->duration_hours));
         $categoryIds = $request->category_ids ?? [];
         $categoryIds = array_slice(array_map('intval', $categoryIds), 0, 3);
         $primaryCategoryId = $categoryIds[0] ?? null;
@@ -206,7 +206,7 @@ class AuctionListingController extends Controller
             'starting_bid' => $request->starting_bid,
             'reserve_price' => $request->filled('reserve_price') ? $request->reserve_price : null,
             'bid_increment' => $request->bid_increment,
-            'duration_hours' => (int) $request->duration_hours,
+            'duration_hours' => min(720, max(1, (int) $request->duration_hours)),
             'rejection_reason' => null,
         ]);
 
