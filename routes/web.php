@@ -154,6 +154,10 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Auction Hub (members only; non-members redirected to membership)
     Route::get('/auction', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('auction.index');
+    Route::get('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showIndividualForm'])->name('auction.seller-registration.individual');
+    Route::post('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'storeIndividual'])->name('auction.seller-registration.individual.store');
+    Route::get('/auction/seller-registration/business', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showBusinessForm'])->name('auction.seller-registration.business');
+    Route::post('/auction/seller-registration/business', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'storeBusiness'])->name('auction.seller-registration.business.store');
 
     // Membership Routes
     Route::prefix('membership')->name('membership.')->group(function () {
@@ -445,6 +449,13 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::put('/{plan}', [\App\Http\Controllers\Admin\PlanController::class, 'update'])->name('update');
             Route::get('/{plan}/terms', [\App\Http\Controllers\Admin\PlanController::class, 'editTerms'])->name('terms.edit');
             Route::put('/{plan}/terms', [\App\Http\Controllers\Admin\PlanController::class, 'updateTerms'])->name('terms.update');
+        });
+
+        Route::prefix('auction-seller-verifications')->name('auction-seller-verifications.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'index'])->name('index');
+            Route::get('/{verification}', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'show'])->name('show');
+            Route::post('/{verification}/approve', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'approve'])->name('approve');
+            Route::post('/{verification}/reject', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'reject'])->name('reject');
         });
 
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {

@@ -808,13 +808,13 @@
 
             {{-- Membership --}}
             <div class="sidebar-section-label">Membership</div>
-            <button class="sidebar-parent {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'active-section' : '' }}"
+            <button class="sidebar-parent {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.auction-seller-verifications.*') ? 'active-section' : '' }}"
                     onclick="toggleMenu(this)"
-                    aria-expanded="{{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'true' : 'false' }}">
+                    aria-expanded="{{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.auction-seller-verifications.*') ? 'true' : 'false' }}">
                 <i class="bi bi-gem menu-icon"></i> Membership
                 <i class="bi bi-chevron-right chevron"></i>
             </button>
-            <ul class="sidebar-children {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') ? 'open' : '' }}">
+            <ul class="sidebar-children {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.subscriptions.*') || request()->routeIs('admin.auction-seller-verifications.*') ? 'open' : '' }}">
                 <li>
                     <a href="{{ route('admin.plans.index') }}" class="sidebar-link {{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
                         <i class="bi bi-pencil-square menu-icon"></i> Plans
@@ -823,6 +823,11 @@
                 <li>
                     <a href="{{ route('admin.subscriptions.index') }}" class="sidebar-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
                         <i class="bi bi-people menu-icon"></i> Subscriptions
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.auction-seller-verifications.index') }}" class="sidebar-link {{ request()->routeIs('admin.auction-seller-verifications.*') ? 'active' : '' }}">
+                        <i class="bi bi-hammer menu-icon"></i> Auction Seller Verifications
                     </a>
                 </li>
             </ul>

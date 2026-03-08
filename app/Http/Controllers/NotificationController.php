@@ -258,6 +258,8 @@ class NotificationController extends Controller
             'trade_listing_submitted' => 'bi-hourglass-split',
             'seller_approved' => 'bi-shield-check',
             'seller_rejected' => 'bi-x-circle',
+            'auction_seller_approved' => 'bi-shield-check',
+            'auction_seller_rejected' => 'bi-x-circle',
             'seller_suspended' => 'bi-exclamation-triangle',
             'account_banned' => 'bi-ban',
             'account_suspended' => 'bi-pause-circle',
@@ -282,6 +284,8 @@ class NotificationController extends Controller
             'trade_status_updated' => 'info',
             'seller_approved' => 'success',
             'seller_rejected' => 'danger',
+            'auction_seller_approved' => 'success',
+            'auction_seller_rejected' => 'danger',
             'seller_suspended' => 'warning',
             'account_banned' => 'danger',
             'account_suspended' => 'warning',
@@ -330,6 +334,10 @@ class NotificationController extends Controller
             case 'auction_won':
             case 'auction_outbid':
                 return route('notifications.index');
+
+            case 'auction_seller_approved':
+            case 'auction_seller_rejected':
+                return isset($data['action_url']) ? $data['action_url'] : route('auction.index');
             
             default:
                 return route('notifications.index');

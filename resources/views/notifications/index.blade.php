@@ -604,6 +604,8 @@
                         'document_rejected' => 'bi-file-earmark-x',
                         'business_page_revision_approved' => 'bi-check-circle',
                         'business_page_revision_rejected' => 'bi-x-circle',
+                        'auction_seller_approved' => 'bi-shield-check',
+                        'auction_seller_rejected' => 'bi-x-circle',
                     ];
                     
                     $colors = [
@@ -631,6 +633,8 @@
                         'document_rejected' => 'danger',
                         'business_page_revision_approved' => 'success',
                         'business_page_revision_rejected' => 'danger',
+                        'auction_seller_approved' => 'success',
+                        'auction_seller_rejected' => 'danger',
                     ];
                     
                     $icon = $icons[$type] ?? 'bi-bell';
@@ -1108,8 +1112,8 @@
     function buildNotificationItemHtml(n) {
         var data = n.data || {};
         var type = data.type || 'default';
-        var icons = { order_status: 'bi-box-seam', trade_offer_received: 'bi-arrow-left-right', trade_offer_rejected: 'bi-x-circle', trade_offer_accepted: 'bi-check-circle', trade_status_updated: 'bi-arrow-repeat', trade_listing_submitted: 'bi-hourglass-split', trade_listing_approved: 'bi-check-circle', trade_listing_rejected: 'bi-x-circle', seller_approved: 'bi-shield-check', seller_rejected: 'bi-x-circle', seller_suspended: 'bi-exclamation-triangle', account_banned: 'bi-ban', account_suspended: 'bi-pause-circle', profile_update: 'bi-person-check', auction_won: 'bi-trophy', auction_outbid: 'bi-hammer', order_shipped: 'bi-truck', order_delivered: 'bi-check-circle', payment_success: 'bi-credit-card-2-front', product_approved: 'bi-check-circle', product_rejected: 'bi-x-circle', document_rejected: 'bi-file-earmark-x', business_page_revision_approved: 'bi-check-circle', business_page_revision_rejected: 'bi-x-circle' };
-        var colors = { order_status: 'primary', trade_offer_received: 'info', trade_offer_rejected: 'danger', trade_offer_accepted: 'success', trade_status_updated: 'info', trade_listing_submitted: 'warning', trade_listing_approved: 'success', trade_listing_rejected: 'danger', seller_approved: 'success', seller_rejected: 'danger', seller_suspended: 'warning', account_banned: 'danger', account_suspended: 'warning', profile_update: 'primary', auction_won: 'success', auction_outbid: 'warning', order_shipped: 'info', order_delivered: 'success', payment_success: 'success', product_approved: 'success', product_rejected: 'danger', document_rejected: 'danger', business_page_revision_approved: 'success', business_page_revision_rejected: 'danger' };
+        var icons = { order_status: 'bi-box-seam', trade_offer_received: 'bi-arrow-left-right', trade_offer_rejected: 'bi-x-circle', trade_offer_accepted: 'bi-check-circle', trade_status_updated: 'bi-arrow-repeat', trade_listing_submitted: 'bi-hourglass-split', trade_listing_approved: 'bi-check-circle', trade_listing_rejected: 'bi-x-circle', seller_approved: 'bi-shield-check', seller_rejected: 'bi-x-circle', seller_suspended: 'bi-exclamation-triangle', account_banned: 'bi-ban', account_suspended: 'bi-pause-circle', profile_update: 'bi-person-check', auction_won: 'bi-trophy', auction_outbid: 'bi-hammer', auction_seller_approved: 'bi-shield-check', auction_seller_rejected: 'bi-x-circle', order_shipped: 'bi-truck', order_delivered: 'bi-check-circle', payment_success: 'bi-credit-card-2-front', product_approved: 'bi-check-circle', product_rejected: 'bi-x-circle', document_rejected: 'bi-file-earmark-x', business_page_revision_approved: 'bi-check-circle', business_page_revision_rejected: 'bi-x-circle' };
+        var colors = { order_status: 'primary', trade_offer_received: 'info', trade_offer_rejected: 'danger', trade_offer_accepted: 'success', trade_status_updated: 'info', trade_listing_submitted: 'warning', trade_listing_approved: 'success', trade_listing_rejected: 'danger', seller_approved: 'success', seller_rejected: 'danger', seller_suspended: 'warning', account_banned: 'danger', account_suspended: 'warning', profile_update: 'primary', auction_won: 'success', auction_outbid: 'warning', auction_seller_approved: 'success', auction_seller_rejected: 'danger', order_shipped: 'info', order_delivered: 'success', payment_success: 'success', product_approved: 'success', product_rejected: 'danger', document_rejected: 'danger', business_page_revision_approved: 'success', business_page_revision_rejected: 'danger' };
         var icon = icons[type] || 'bi-bell';
         var color = colors[type] || 'secondary';
         var title = data.title || data.message || 'New notification';

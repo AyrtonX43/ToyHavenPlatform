@@ -187,6 +187,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Subscription::class)->orderByDesc('created_at');
     }
 
+    public function auctionSellerVerifications()
+    {
+        return $this->hasMany(AuctionSellerVerification::class);
+    }
+
     public function hasPlan(string $slug): bool
     {
         $plan = $this->currentPlan();

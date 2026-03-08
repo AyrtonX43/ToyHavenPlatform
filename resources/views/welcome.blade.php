@@ -429,6 +429,18 @@
                 <a href="{{ route('trading.index') }}" class="btn btn-primary w-100">Trade Now</a>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card reveal">
+                <div class="icon-wrap"><i class="bi bi-hammer"></i></div>
+                <h3>Auction</h3>
+                <p>Bid on collectibles from verified sellers. Membership required to participate.</p>
+                @auth
+                    <a href="{{ route('auction.index') }}" class="btn btn-primary w-100">View Auctions</a>
+                @else
+                    <a href="{{ route('membership.index') }}" class="btn btn-primary w-100">Join to Bid</a>
+                @endauth
+            </div>
+        </div>
     </div>
 
     <!-- All products (minimum 5) for guest homepage -->
