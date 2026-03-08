@@ -38,15 +38,13 @@ class AuctionBidController extends Controller
         }
 
         $minBid = (float) ($auction->winning_amount ?? $auction->starting_bid) + (float) $auction->bid_increment;
-        $maxBid = 99999999.99;
         $request->validate([
-            'amount' => 'required|numeric|min:' . $minBid . '|max:' . $maxBid,
+            'amount' => 'required|numeric|min:' . $minBid,
         ], [
             'amount.min' => 'Your bid must be at least ₱' . number_format($minBid, 2) . '.',
-            'amount.max' => 'Bid cannot exceed ₱99,999,999.99.',
         ]);
 
-        $amount = min(99999999.99, max((float) $request->amount, $minBid));
+        $amount = (float) $request->amount;
 
         DB::transaction(function () use ($auction, $user, $amount) {
             $previousWinningBid = AuctionBid::where('auction_id', $auction->id)->where('is_winning', true)->first();
