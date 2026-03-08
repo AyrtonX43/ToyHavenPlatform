@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
+use Illuminate\Support\Facades\Schema;
 
 class AuctionController extends Controller
 {
@@ -50,9 +51,16 @@ class AuctionController extends Controller
                 ->with('error', 'This auction is not available for viewing.');
         }
 
-        $auction->load(['user', 'category', 'images', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(10)]);
+        $with = ['user', 'category', 'images'];
+        if (Schema::hasTable('auction_bids')) {
+            $with['bids'] = fn ($q) => $q->orderByDesc('amount')->limit(10);
+        }
+        $auction->load($with);
+        if (! $auction->relationLoaded('bids')) {
+            $auction->setRelation('bids', collect([]));
+        }
 
-        $isSaved = \Illuminate\Support\Facades\Schema::hasTable('saved_auctions') && \Illuminate\Support\Facades\DB::table('saved_auctions')
+        $isSaved = Schema::hasTable('saved_auctions') && \Illuminate\Support\Facades\DB::table('saved_auctions')
             ->where('user_id', $user->id)
             ->where('auction_id', $auction->id)
             ->exists();
