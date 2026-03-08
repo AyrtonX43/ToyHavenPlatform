@@ -40,7 +40,7 @@ class AuctionPaymentController extends Controller
         return view('auction.payment.success', compact('payment'));
     }
 
-    public function markShipped(AuctionPayment $payment)
+    public function markShipped(Request $request, AuctionPayment $payment)
     {
         $user = Auth::user();
         if ($payment->auction->user_id !== $user->id) {
@@ -51,6 +51,7 @@ class AuctionPaymentController extends Controller
         }
         $payment->update([
             'delivery_status' => 'shipped',
+            'tracking_number' => $request->filled('tracking_number') ? $request->tracking_number : null,
         ]);
         return back()->with('success', 'Marked as shipped.');
     }

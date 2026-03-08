@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Moderator;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
@@ -8,25 +8,37 @@ use Illuminate\Http\Request;
 
 class AuctionListingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (! auth()->user()->hasAuctionModeratePermission()) {
+                abort(403, 'You do not have permission to moderate auctions.');
+            }
+            return $next($request);
+        });
+    }
+
     public function index(Request $request)
     {
-        $query = Auction::with(['user', 'category'])->orderByDesc('updated_at');
+        $query = Auction::with(['user', 'category'])
+            ->whereIn('status', ['pending_approval', 'active', 'ended'])
+            ->orderByDesc('updated_at');
 
         $status = $request->query('status');
-        if ($status && in_array($status, ['draft', 'pending_approval', 'active', 'ended', 'cancelled'])) {
+        if ($status && in_array($status, ['pending_approval', 'active', 'ended'])) {
             $query->where('status', $status);
         }
 
         $listings = $query->paginate(20);
 
-        return view('admin.auction-listings.index', compact('listings'));
+        return view('moderator.auction-listings.index', compact('listings'));
     }
 
     public function show(Auction $listing)
     {
-        $listing->load(['user', 'category']);
+        $listing->load(['user', 'category', 'images']);
 
-        return view('admin.auction-listings.show', compact('listing'));
+        return view('moderator.auction-listings.show', compact('listing'));
     }
 
     public function approve(Request $request, Auction $listing)
@@ -53,19 +65,6 @@ class AuctionListingController extends Controller
         ]);
 
         return back()->with('success', 'Auction listing approved and is now live.');
-    }
-
-    public function updateMinWatchers(Request $request, Auction $listing)
-    {
-        $request->validate([
-            'min_watchers_to_approve' => 'nullable|integer|min:0|max:1000',
-        ]);
-
-        $listing->update([
-            'min_watchers_to_approve' => $request->filled('min_watchers_to_approve') ? (int) $request->min_watchers_to_approve : null,
-        ]);
-
-        return back()->with('success', 'Minimum watchers updated.');
     }
 
     public function reject(Request $request, Auction $listing)

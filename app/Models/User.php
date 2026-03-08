@@ -337,6 +337,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $assignment && $assignment->hasPermission($perm);
     }
 
+    public function hasAuctionModeratePermission(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+        $perms = $this->moderator_permissions ?? [];
+        return is_array($perms) && in_array('auctions_moderate', $perms, true);
+    }
+
     /**
      * Send the email verification notification.
      *

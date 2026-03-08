@@ -1,19 +1,17 @@
 @extends('layouts.admin-new')
-
-@section('title', 'Auction Listing #' . $listing->id)
-
+@section('title', 'Auction Listing #' . $listing->id . ' - Moderator')
 @section('content')
 <div class="container-fluid py-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('admin.auction-listings.index') }}">Auction Listings</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('moderator.auction-listings.index') }}">Auction Listings</a></li>
             <li class="breadcrumb-item active">#{{ $listing->id }}</li>
         </ol>
     </nav>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Auction Listing: {{ $listing->title }}</h1>
-        <a href="{{ route('admin.auction-listings.index') }}" class="btn btn-outline-secondary">Back to List</a>
+        <a href="{{ route('moderator.auction-listings.index') }}" class="btn btn-outline-secondary">Back to List</a>
     </div>
 
     @if(session('success'))
@@ -35,19 +33,15 @@
                     <p class="mb-1"><strong>Title:</strong> {{ $listing->title }}</p>
                     <p class="mb-1"><strong>Description:</strong></p>
                     <div class="bg-light p-3 rounded mb-3">{{ $listing->description ?: '(none)' }}</div>
-                    <p class="mb-1"><strong>Condition:</strong> {{ \App\Models\Auction::CONDITIONS[$listing->condition ?? 'good'] ?? $listing->condition ?? 'N/A' }}</p>
+                    <p class="mb-1"><strong>Condition:</strong> {{ \App\Models\Auction::CONDITIONS[$listing->condition ?? 'good'] ?? 'N/A' }}</p>
                     <p class="mb-1"><strong>Starting Bid:</strong> ₱{{ number_format($listing->starting_bid, 2) }}</p>
                     @if($listing->reserve_price)
-                        <p class="mb-1"><strong>Reserve Price:</strong> ₱{{ number_format($listing->reserve_price, 2) }} <span class="text-muted">(hidden from bidders)</span></p>
+                        <p class="mb-1"><strong>Reserve Price:</strong> ₱{{ number_format($listing->reserve_price, 2) }}</p>
                     @endif
                     <p class="mb-1"><strong>Bid Increment:</strong> ₱{{ number_format($listing->bid_increment, 2) }}</p>
                     <p class="mb-1"><strong>Duration:</strong> {{ $listing->duration_hours ?? 'N/A' }} hours</p>
                     <p class="mb-1"><strong>Category:</strong> {{ $listing->category?->name ?? 'None' }}</p>
-                    @if($listing->auction_outcome)
-                        <p class="mb-1"><strong>Outcome:</strong> <span class="badge bg-secondary">{{ $listing->auction_outcome }}</span></p>
-                    @endif
                     @if($listing->start_at)
-                        <p class="mb-1"><strong>Starts:</strong> {{ $listing->start_at->format('M d, Y H:i') }}</p>
                         <p class="mb-1"><strong>Ends:</strong> {{ $listing->end_at?->format('M d, Y H:i') }}</p>
                     @endif
                 </div>
@@ -59,25 +53,15 @@
                     <h5 class="card-title">Seller</h5>
                     <p class="mb-1"><strong>{{ $listing->user?->name }}</strong></p>
                     <p class="mb-1 text-muted">{{ $listing->user?->email }}</p>
-                    <p class="mb-0"><span class="badge bg-info">{{ ucfirst($listing->seller_type ?? 'individual') }} seller</span></p>
                 </div>
             </div>
 
+            @php $watcherCount = \Illuminate\Support\Facades\Schema::hasTable('saved_auctions') ? $listing->watchersCount() : 0; @endphp
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
                     <h5 class="card-title">Watchers</h5>
-                    @php $watcherCount = \Illuminate\Support\Facades\Schema::hasTable('saved_auctions') ? $listing->watchersCount() : 0; @endphp
-                    <p class="mb-2"><strong>Current watchers:</strong> {{ $watcherCount }}</p>
-                    @if($listing->status === 'pending_approval')
-                        <form action="{{ route('admin.auction-listings.min-watchers', $listing) }}" method="POST" class="mb-3">
-                            @csrf
-                            <label class="form-label small">Min watchers to approve (0 = none)</label>
-                            <div class="input-group input-group-sm">
-                                <input type="number" name="min_watchers_to_approve" class="form-control" value="{{ $listing->min_watchers_to_approve ?? 0 }}" min="0" max="1000" placeholder="0">
-                                <button type="submit" class="btn btn-outline-secondary">Set</button>
-                            </div>
-                        </form>
-                    @elseif($listing->min_watchers_to_approve)
+                    <p class="mb-2"><strong>Current:</strong> {{ $watcherCount }}</p>
+                    @if($listing->min_watchers_to_approve)
                         <p class="mb-0 small text-muted">Min required: {{ $listing->min_watchers_to_approve }}</p>
                     @endif
                 </div>
@@ -88,11 +72,9 @@
                     <h5 class="card-title">Status</h5>
                     @php
                         $badge = match($listing->status) {
-                            'draft' => 'secondary',
                             'pending_approval' => 'warning',
                             'active' => 'success',
                             'ended' => 'info',
-                            'cancelled' => 'danger',
                             default => 'secondary'
                         };
                     @endphp
@@ -102,7 +84,7 @@
                             $minReq = $listing->min_watchers_to_approve ?? 0;
                             $needsOverride = $minReq > 0 && $watcherCount < $minReq;
                         @endphp
-                        <form action="{{ route('admin.auction-listings.approve', $listing) }}" method="POST" class="mb-2">
+                        <form action="{{ route('moderator.auction-listings.approve', $listing) }}" method="POST" class="mb-2">
                             @csrf
                             @if($needsOverride)
                                 <div class="form-check mb-2">
@@ -123,19 +105,19 @@
     <div class="modal fade" id="rejectModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ route('admin.auction-listings.reject', $listing) }}" method="POST">
+                <form action="{{ route('moderator.auction-listings.reject', $listing) }}" method="POST">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title">Reject Listing</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <label class="form-label">Feedback (required) – tell the seller what to correct</label>
-                        <textarea name="feedback" class="form-control" rows="4" required placeholder="e.g. Please improve the description and add clearer images..."></textarea>
+                        <label class="form-label">Feedback (required)</label>
+                        <textarea name="feedback" class="form-control" rows="4" required></textarea>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Reject Listing</button>
+                        <button type="submit" class="btn btn-danger">Reject</button>
                     </div>
                 </form>
             </div>

@@ -27,9 +27,10 @@
                     </div>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ route('auction.listings.store') }}" method="POST">
+                    <form action="{{ route('auction.listings.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
+                        <h6 class="text-uppercase text-muted mb-3">Item Details</h6>
                         <div class="mb-4">
                             <label class="form-label">Title <span class="text-danger">*</span></label>
                             <input type="text" name="title" class="form-control @error('title') is-invalid @enderror"
@@ -45,6 +46,27 @@
                             @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
+                        <div class="mb-4">
+                            <label class="form-label">Item Condition <span class="text-danger">*</span></label>
+                            <select name="condition" class="form-select @error('condition') is-invalid @enderror" required>
+                                @foreach(\App\Models\Auction::CONDITIONS as $value => $label)
+                                    <option value="{{ $value }}" {{ old('condition', 'good') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('condition')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        <h6 class="text-uppercase text-muted mb-3 mt-4">Images</h6>
+                        <div class="mb-4">
+                            <label class="form-label">Item Images <span class="text-danger">*</span></label>
+                            <input type="file" name="images[]" class="form-control @error('images') is-invalid @enderror"
+                                accept="image/jpeg,image/png,image/jpg,image/webp" multiple required>
+                            <small class="text-muted">At least 1 image, max 5. JPEG, PNG, WebP. Max 5MB each.</small>
+                            @error('images')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('images.*')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        <h6 class="text-uppercase text-muted mb-3 mt-4">Pricing</h6>
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label class="form-label">Starting Bid (₱) <span class="text-danger">*</span></label>
@@ -53,21 +75,29 @@
                                 @error('starting_bid')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Reserve Price (₱) <small class="text-muted">Optional, hidden from bidders</small></label>
+                                <input type="number" name="reserve_price" class="form-control @error('reserve_price') is-invalid @enderror"
+                                    value="{{ old('reserve_price') }}" min="0" step="0.01" placeholder="Leave empty for no reserve">
+                                @error('reserve_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
                                 <label class="form-label">Bid Increment (₱) <span class="text-danger">*</span></label>
                                 <input type="number" name="bid_increment" class="form-control @error('bid_increment') is-invalid @enderror"
                                     value="{{ old('bid_increment', 10) }}" required min="1" step="0.01" placeholder="10">
                                 @error('bid_increment')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Duration (hours) <span class="text-danger">*</span></label>
+                                <input type="number" name="duration_hours" class="form-control @error('duration_hours') is-invalid @enderror"
+                                    value="{{ old('duration_hours', 24) }}" required min="1" max="720" placeholder="24">
+                                <small class="text-muted">1–720 hours</small>
+                                @error('duration_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label">Duration (hours) <span class="text-danger">*</span></label>
-                            <input type="number" name="duration_hours" class="form-control @error('duration_hours') is-invalid @enderror"
-                                value="{{ old('duration_hours', 24) }}" required min="1" max="720" placeholder="24">
-                            <small class="text-muted">Auction will run for this many hours (1-720)</small>
-                            @error('duration_hours')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-
+                        <h6 class="text-uppercase text-muted mb-3 mt-4">Category</h6>
                         <div class="mb-4">
                             <label class="form-label">Category</label>
                             <select name="category_id" class="form-select @error('category_id') is-invalid @enderror">

@@ -11,7 +11,17 @@
                     <i class="bi bi-check-circle text-success display-4 mb-3"></i>
                     <h3>Payment Successful</h3>
                     <p class="text-muted mb-4">You have paid for "{{ $payment->auction->title }}" (₱{{ number_format($payment->amount, 2) }}).</p>
-                    <p class="small text-muted">The seller will ship your item. You can confirm delivery once you receive it.</p>
+                    @if(in_array($payment->delivery_status, ['shipped']))
+                        <p class="small text-muted mb-2">The seller has marked your item as shipped. @if($payment->tracking_number) Tracking: {{ $payment->tracking_number }} @endif</p>
+                        <form action="{{ route('auction.payment.confirm-delivery', $payment) }}" method="POST" class="mb-3">
+                            @csrf
+                            <button type="submit" class="btn btn-success">I have received the item</button>
+                        </form>
+                    @elseif(in_array($payment->delivery_status, ['delivered', 'confirmed']))
+                        <p class="small text-success mb-2"><i class="bi bi-check-circle me-1"></i>You have confirmed delivery. Thank you!</p>
+                    @else
+                        <p class="small text-muted">The seller will ship your item. You can confirm delivery once you receive it.</p>
+                    @endif
 
                     @php $canReview = $payment->delivery_status === 'delivered' || $payment->delivery_status === 'confirmed'; @endphp
                     @if($canReview && !\App\Models\AuctionReview::where('auction_payment_id', $payment->id)->exists())

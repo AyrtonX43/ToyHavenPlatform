@@ -26,15 +26,54 @@
 
     <div class="row">
         <div class="col-lg-8">
+            @if($auction->isPendingApproval())
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-hourglass-split me-2"></i>This listing is pending approval. Save it to get notified when it goes live.
+                </div>
+            @endif
+
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
-                    <h1 class="h4 mb-3">{{ $auction->title }}</h1>
-                    @if($auction->description)
-                        <div class="mb-4">{!! nl2br(e($auction->description)) !!}</div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h1 class="h4 mb-0">{{ $auction->title }}</h1>
+                        @auth
+                            @if($auction->user_id !== auth()->id())
+                                @if($isSaved ?? false)
+                                    <form action="{{ route('auction.unsave', $auction) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-bookmark-fill me-1"></i>Saved</button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('auction.save', $auction) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-bookmark me-1"></i>Save</button>
+                                    </form>
+                                @endif
+                            @endif
+                        @endauth
+                    </div>
+
+                    @if($auction->images->count() > 0)
+                        <div class="mb-4">
+                            @php $primary = $auction->images->firstWhere('is_primary', true) ?? $auction->images->first(); @endphp
+                            <img src="{{ asset('storage/' . $primary->image_path) }}" alt="{{ $auction->title }}" class="img-fluid rounded mb-2" style="max-height:400px;object-fit:contain;">
+                            @if($auction->images->count() > 1)
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @foreach($auction->images->take(5) as $img)
+                                        <img src="{{ asset('storage/' . $img->image_path) }}" alt="" class="rounded" style="width:80px;height:80px;object-fit:cover;cursor:pointer;" onclick="document.querySelector('.img-fluid.rounded').src=this.src">
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                     @endif
-                    <p class="text-muted small mb-0">
+
+                    <p class="text-muted small mb-2">
+                        <span class="badge bg-light text-dark">{{ \App\Models\Auction::CONDITIONS[$auction->condition ?? 'good'] ?? 'Good' }}</span>
                         Listed by {{ $auction->user?->name }} · {{ $auction->category?->name ?? 'Uncategorized' }}
                     </p>
+                    @if($auction->description)
+                        <div class="mb-0">{!! nl2br(e($auction->description)) !!}</div>
+                    @endif
                 </div>
             </div>
 
@@ -92,10 +131,14 @@
                         @endif
                     @else
                         <p class="mb-2"><strong>Final price:</strong> ₱{{ number_format($auction->winning_amount ?? $auction->starting_bid, 2) }}</p>
-                        <p class="mb-0 text-muted">This auction has ended.</p>
-                        @if($auction->winner_id === auth()->id())
+                        @if($auction->auction_outcome === 'reserve_not_met')
+                            <p class="mb-2 text-warning">Reserve not met. No winner.</p>
+                        @elseif($auction->auction_outcome === 'no_bids')
+                            <p class="mb-2 text-muted">No bids were placed.</p>
+                        @elseif($auction->winner_id === auth()->id())
                             <p class="text-success mt-2 mb-0">Congratulations! You won this auction.</p>
                         @endif
+                        <p class="mb-0 text-muted">This auction has ended.</p>
                     @endif
                 </div>
             </div>

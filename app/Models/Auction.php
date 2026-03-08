@@ -28,6 +28,17 @@ class Auction extends Model
         'bids_count',
         'terms_accepted_at',
         'rejection_reason',
+        'condition',
+        'reserve_price',
+        'min_watchers_to_approve',
+        'auction_outcome',
+    ];
+
+    public const CONDITIONS = [
+        'new' => 'New',
+        'like_new' => 'Like New',
+        'good' => 'Good',
+        'fair' => 'Fair',
     ];
 
     protected function casts(): array
@@ -36,6 +47,7 @@ class Auction extends Model
             'starting_bid' => 'decimal:2',
             'bid_increment' => 'decimal:2',
             'winning_amount' => 'decimal:2',
+            'reserve_price' => 'decimal:2',
             'start_at' => 'datetime',
             'end_at' => 'datetime',
             'terms_accepted_at' => 'datetime',
@@ -70,6 +82,32 @@ class Auction extends Model
     public function bids()
     {
         return $this->hasMany(AuctionBid::class)->orderByDesc('amount');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(AuctionImage::class)->orderByDesc('is_primary');
+    }
+
+    public function savedBy()
+    {
+        return $this->belongsToMany(User::class, 'saved_auctions')->withTimestamps();
+    }
+
+    public function watchersCount(): int
+    {
+        return \Illuminate\Support\Facades\DB::table('saved_auctions')
+            ->where('auction_id', $this->id)
+            ->count();
+    }
+
+    public function meetsReserve(): bool
+    {
+        if ($this->reserve_price === null || $this->reserve_price <= 0) {
+            return true;
+        }
+
+        return $this->winning_amount !== null && (float) $this->winning_amount >= (float) $this->reserve_price;
     }
 
     public function scopeDraft($query)

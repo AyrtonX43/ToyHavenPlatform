@@ -65,6 +65,10 @@
                         <div class="col-md-6">
                             <a href="{{ route('auction.show', $a) }}" class="text-decoration-none text-dark">
                                 <div class="card h-100 shadow-sm border-0 overflow-hidden hover-shadow">
+                                    @php $primaryImg = $a->images->firstWhere('is_primary', true) ?? $a->images->first(); @endphp
+                                    @if($primaryImg)
+                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="" class="card-img-top" style="height:180px;object-fit:cover;">
+                                    @endif
                                     <div class="card-body">
                                         <h6 class="card-title">{{ Str::limit($a->title, 50) }}</h6>
                                         <p class="mb-1"><strong>Current bid:</strong> ₱{{ number_format($a->winning_amount ?? $a->starting_bid, 2) }}</p>
@@ -81,6 +85,30 @@
                 <div class="empty-state">
                     <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
                     <p class="text-muted mb-0">No active auctions at the moment. Check back soon for new listings from sellers.</p>
+                </div>
+            @endif
+
+            @if(isset($pendingListings) && $pendingListings->count() > 0)
+                <h5 class="mb-3 mt-4"><i class="bi bi-hourglass-split me-2"></i>Pending Approval</h5>
+                <p class="small text-muted mb-2">These listings are awaiting approval. Save them to get notified when they go live.</p>
+                <div class="row g-3">
+                    @foreach($pendingListings as $a)
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{{ route('auction.show', $a) }}" class="text-decoration-none text-dark">
+                                <div class="card h-100 shadow-sm border-0 overflow-hidden hover-shadow border-warning border-2">
+                                    @php $primaryImg = $a->images->firstWhere('is_primary', true) ?? $a->images->first(); @endphp
+                                    @if($primaryImg)
+                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="" class="card-img-top" style="height:120px;object-fit:cover;">
+                                    @endif
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ Str::limit($a->title, 40) }}</h6>
+                                        <p class="mb-0 small"><strong>Starting:</strong> ₱{{ number_format($a->starting_bid, 2) }}</p>
+                                        <span class="badge bg-warning text-dark mt-1">Pending</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
                 </div>
             @endif
         </div>

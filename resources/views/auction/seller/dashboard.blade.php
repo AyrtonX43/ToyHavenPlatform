@@ -67,6 +67,69 @@
         $isVip = $plan && (($plan->can_register_individual_seller ?? false) || ($plan->can_register_business_seller ?? false));
     @endphp
 
+    @if($sales->count() > 0)
+        <h4 class="mb-3"><i class="bi bi-truck me-2"></i>My Sales</h4>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Auction</th>
+                            <th>Winner</th>
+                            <th>Amount</th>
+                            <th>Delivery</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($sales as $p)
+                            <tr>
+                                <td>{{ Str::limit($p->auction?->title, 40) }}</td>
+                                <td>{{ $p->winner?->name }}</td>
+                                <td>₱{{ number_format($p->amount, 2) }}</td>
+                                <td>
+                                    @if($p->delivery_status === 'shipped' && $p->tracking_number)
+                                        <span class="text-muted small">Shipped ({{ $p->tracking_number }})</span>
+                                    @else
+                                        {{ $p->delivery_status ?? 'pending_shipment' }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(in_array($p->delivery_status, ['pending_shipment', null]) && in_array($p->status, ['paid', 'held']))
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#shippedModal{{ $p->id }}">Mark Shipped</button>
+                                        <div class="modal fade" id="shippedModal{{ $p->id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form action="{{ route('auction.payment.shipped', $p) }}" method="POST">
+                                                        @csrf
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Mark as Shipped</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <label class="form-label">Tracking Number (optional)</label>
+                                                            <input type="text" name="tracking_number" class="form-control" value="{{ old('tracking_number') }}" placeholder="e.g. 1234567890">
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Mark Shipped</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @elseif(in_array($p->delivery_status, ['shipped', 'delivered', 'confirmed']))
+                                        <span class="badge bg-success">Shipped</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <h4 class="mb-3"><i class="bi bi-tools me-2"></i>Business Tools</h4>
     <div class="row g-3 mb-4">
         <div class="col-md-6 col-lg-4">

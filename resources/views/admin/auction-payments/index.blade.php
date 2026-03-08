@@ -38,7 +38,7 @@
                             <td>{{ $p->winner?->name }}</td>
                             <td>₱{{ number_format($p->amount, 2) }}</td>
                             <td><span class="badge bg-{{ $p->status === 'released' ? 'success' : ($p->status === 'pending' ? 'warning' : 'info') }}">{{ ucfirst($p->status) }}</span></td>
-                            <td>{{ $p->delivery_status ?? '-' }}</td>
+                            <td>{{ $p->delivery_status ?? '-' }}{{ $p->tracking_number ? ' (' . $p->tracking_number . ')' : '' }}</td>
                             <td>
                                 @if(in_array($p->status, ['paid', 'held']) && in_array($p->delivery_status, ['delivered', 'confirmed']))
                                     <form action="{{ route('admin.auction-payments.release', $p) }}" method="POST" class="d-inline">

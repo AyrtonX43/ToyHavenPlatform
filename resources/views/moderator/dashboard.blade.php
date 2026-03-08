@@ -55,6 +55,19 @@
                             </div>
                         </a>
                     </div>
+                    @if(Route::has('moderator.auction-listings.index') && auth()->user()->hasAuctionModeratePermission())
+                    <div class="col-md-4">
+                        <a href="{{ route('moderator.auction-listings.index') }}" class="text-decoration-none">
+                            <div class="card border-primary h-100">
+                                <div class="card-body">
+                                    <i class="bi bi-hammer display-4 text-primary d-block mb-2"></i>
+                                    <h5 class="card-title">Auction Listings</h5>
+                                    <p class="card-text text-muted small mb-0">Review and approve auction listings.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

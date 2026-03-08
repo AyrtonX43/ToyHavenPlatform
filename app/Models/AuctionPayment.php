@@ -18,6 +18,7 @@ class AuctionPayment extends Model
         'payment_deadline',
         'receipt_path',
         'delivery_status',
+        'tracking_number',
         'confirmed_at',
         'is_second_chance',
     ];

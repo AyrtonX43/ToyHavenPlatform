@@ -19,12 +19,18 @@ class AuctionController extends Controller
                 ->with('info', 'Auction access requires an active membership. Please subscribe to a plan to continue.');
         }
 
-        $activeListings = Auction::with(['user', 'category'])
+        $activeListings = Auction::with(['user', 'category', 'images'])
             ->active()
             ->orderByDesc('end_at')
             ->paginate(12);
 
-        return view('auction.index', compact('activeListings'));
+        $pendingListings = Auction::with(['user', 'category', 'images'])
+            ->pendingApproval()
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get();
+
+        return view('auction.index', compact('activeListings', 'pendingListings'));
     }
 
     /**
@@ -39,13 +45,18 @@ class AuctionController extends Controller
                 ->with('info', 'Auction access requires an active membership.');
         }
 
-        if (! $auction->isActive() && ! $auction->isEnded()) {
+        if (! $auction->isActive() && ! $auction->isEnded() && ! $auction->isPendingApproval()) {
             return redirect()->route('auction.index')
                 ->with('error', 'This auction is not available for viewing.');
         }
 
-        $auction->load(['user', 'category', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(10)]);
+        $auction->load(['user', 'category', 'images', 'bids' => fn ($q) => $q->orderByDesc('amount')->limit(10)]);
 
-        return view('auction.show', compact('auction'));
+        $isSaved = \Illuminate\Support\Facades\Schema::hasTable('saved_auctions') && \Illuminate\Support\Facades\DB::table('saved_auctions')
+            ->where('user_id', $user->id)
+            ->where('auction_id', $auction->id)
+            ->exists();
+
+        return view('auction.show', compact('auction', 'isSaved'));
     }
 }

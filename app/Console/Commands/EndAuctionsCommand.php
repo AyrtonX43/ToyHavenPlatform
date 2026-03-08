@@ -20,9 +20,10 @@ class EndAuctionsCommand extends Command
             ->get();
 
         foreach ($ended as $auction) {
-            $auction->update(['status' => 'ended']);
+            $outcome = $auction->winner_id ? ($auction->meetsReserve() ? 'sold' : 'reserve_not_met') : 'no_bids';
+            $auction->update(['status' => 'ended', 'auction_outcome' => $outcome]);
 
-            if ($auction->winner_id) {
+            if ($auction->winner_id && $auction->meetsReserve()) {
                 $existing = AuctionPayment::where('auction_id', $auction->id)->where('winner_id', $auction->winner_id)->first();
                 if (! $existing) {
                     $deadline = now()->addHours(48);

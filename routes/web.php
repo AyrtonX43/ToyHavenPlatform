@@ -155,6 +155,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     // Auction Hub (members only; non-members redirected to membership)
     Route::get('/auction', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('auction.index');
     Route::get('/auction/item/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('auction.show')->where('auction', '[0-9]+');
+    Route::post('/auction/item/{auction}/save', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'save'])->name('auction.save');
+    Route::post('/auction/item/{auction}/unsave', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'unsave'])->name('auction.unsave');
     Route::post('/auction/item/{auction}/bid', [\App\Http\Controllers\Auction\AuctionBidController::class, 'store'])->name('auction.bid.store')->where('auction', '[0-9]+');
     Route::get('/auction/payment/{payment}', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'show'])->name('auction.payment.show');
     Route::get('/auction/payment/{payment}/success', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'success'])->name('auction.payment.success');
@@ -481,6 +483,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AuctionListingController::class, 'index'])->name('index');
             Route::get('/{listing}', [\App\Http\Controllers\Admin\AuctionListingController::class, 'show'])->name('show');
             Route::post('/{listing}/approve', [\App\Http\Controllers\Admin\AuctionListingController::class, 'approve'])->name('approve');
+            Route::post('/{listing}/min-watchers', [\App\Http\Controllers\Admin\AuctionListingController::class, 'updateMinWatchers'])->name('min-watchers');
             Route::post('/{listing}/reject', [\App\Http\Controllers\Admin\AuctionListingController::class, 'reject'])->name('reject');
         });
 
@@ -607,6 +610,16 @@ Route::prefix('moderator')->middleware(['moderator'])->name('moderator.')->group
         ->name('trade-users.suspend');
     Route::post('/trade-users/{id}/unsuspend', [\App\Http\Controllers\Moderator\TradeUserController::class, 'unsuspendFromTrade'])
         ->name('trade-users.unsuspend');
+
+    // Auction Listings (requires auctions_moderate permission)
+    Route::get('/auction-listings', [\App\Http\Controllers\Moderator\AuctionListingController::class, 'index'])
+        ->name('auction-listings.index');
+    Route::get('/auction-listings/{listing}', [\App\Http\Controllers\Moderator\AuctionListingController::class, 'show'])
+        ->name('auction-listings.show');
+    Route::post('/auction-listings/{listing}/approve', [\App\Http\Controllers\Moderator\AuctionListingController::class, 'approve'])
+        ->name('auction-listings.approve');
+    Route::post('/auction-listings/{listing}/reject', [\App\Http\Controllers\Moderator\AuctionListingController::class, 'reject'])
+        ->name('auction-listings.reject');
 
     // Trade Disputes
     Route::get('/trade-disputes', [\App\Http\Controllers\Moderator\TradeDisputeController::class, 'index'])
