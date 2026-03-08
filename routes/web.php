@@ -154,6 +154,9 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Auction Hub (members only; non-members redirected to membership)
     Route::get('/auction', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('auction.index');
+    Route::get('/auction/seller/dashboard', [\App\Http\Controllers\Auction\AuctionSellerDashboardController::class, 'index'])->name('auction.seller.dashboard');
+    Route::get('/auction/listings/create', [\App\Http\Controllers\Auction\AuctionListingController::class, 'create'])->name('auction.listings.create');
+    Route::post('/auction/listings', [\App\Http\Controllers\Auction\AuctionListingController::class, 'store'])->name('auction.listings.store');
     Route::get('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showIndividualForm'])->name('auction.seller-registration.individual');
     Route::post('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'storeIndividual'])->name('auction.seller-registration.individual.store');
     Route::get('/auction/seller-registration/business', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showBusinessForm'])->name('auction.seller-registration.business');

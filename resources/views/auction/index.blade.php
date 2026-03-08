@@ -64,33 +64,60 @@
             </div>
         </div>
         <div class="col-lg-4">
-            <h4 class="mb-3"><i class="bi bi-person-badge me-2"></i>Become a Seller</h4>
             @php
-                $plan = auth()->user()->currentPlan();
+                $user = auth()->user();
+                $plan = $user->currentPlan();
                 $isVip = $plan && (($plan->can_register_individual_seller ?? false) || ($plan->can_register_business_seller ?? false));
+                $hasBusiness = $user->hasApprovedBusinessAuctionSeller();
+                $hasIndividual = $user->hasApprovedIndividualAuctionSeller();
+                $isApprovedSeller = $hasIndividual || $hasBusiness;
             @endphp
-            @if($isVip)
+
+            @if($isApprovedSeller)
+                <h4 class="mb-3"><i class="bi bi-speedometer2 me-2"></i>Seller Tools</h4>
                 <div class="d-flex flex-column gap-2 mb-4">
-                    <a href="{{ route('auction.seller-registration.individual') }}" class="auction-shortcut">
-                        <i class="bi bi-person fs-4 me-2 text-primary"></i>
-                        <strong>Individual Seller</strong>
-                        <span class="d-block small text-muted mt-1">Register with ID and bank docs</span>
+                    <a href="{{ route('auction.seller.dashboard') }}" class="auction-shortcut">
+                        <i class="bi bi-grid fs-4 me-2 text-primary"></i>
+                        <strong>Seller Dashboard</strong>
+                        <span class="d-block small text-muted mt-1">Manage your auction business</span>
                     </a>
-                    <a href="{{ route('auction.seller-registration.business') }}" class="auction-shortcut">
-                        <i class="bi bi-shop fs-4 me-2 text-primary"></i>
-                        <strong>Business Seller</strong>
-                        <span class="d-block small text-muted mt-1">Register your business store</span>
-                    </a>
+                    @if($isVip)
+                        <a href="{{ route('auction.listings.create') }}" class="auction-shortcut">
+                            <i class="bi bi-plus-circle fs-4 me-2 text-primary"></i>
+                            <strong>Add Auction Listing</strong>
+                            <span class="d-block small text-muted mt-1">Create a new auction</span>
+                        </a>
+                    @endif
                 </div>
-            @else
-                <div class="card border-2 border-warning mb-4">
-                    <div class="card-body text-center py-4">
-                        <i class="bi bi-gem text-warning fs-1 mb-2"></i>
-                        <h6 class="mb-2">Upgrade to VIP</h6>
-                        <p class="small text-muted mb-3">Auction seller registration is available for VIP members only.</p>
-                        <a href="{{ route('membership.upgrade', 'vip') }}" class="btn btn-warning btn-sm">Upgrade to VIP</a>
+            @endif
+
+            @if(!$hasBusiness)
+                <h4 class="mb-3"><i class="bi bi-person-badge me-2"></i>Become a Seller</h4>
+                @if($isVip)
+                    <div class="d-flex flex-column gap-2 mb-4">
+                        @if(!$hasIndividual)
+                            <a href="{{ route('auction.seller-registration.individual') }}" class="auction-shortcut">
+                                <i class="bi bi-person fs-4 me-2 text-primary"></i>
+                                <strong>Individual Seller</strong>
+                                <span class="d-block small text-muted mt-1">Register with ID and bank docs</span>
+                            </a>
+                        @endif
+                        <a href="{{ route('auction.seller-registration.business') }}" class="auction-shortcut">
+                            <i class="bi bi-shop fs-4 me-2 text-primary"></i>
+                            <strong>Business Seller</strong>
+                            <span class="d-block small text-muted mt-1">Register your business store</span>
+                        </a>
                     </div>
-                </div>
+                @else
+                    <div class="card border-2 border-warning mb-4">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-gem text-warning fs-1 mb-2"></i>
+                            <h6 class="mb-2">Upgrade to VIP</h6>
+                            <p class="small text-muted mb-3">Auction seller registration is available for VIP members only.</p>
+                            <a href="{{ route('membership.upgrade', 'vip') }}" class="btn btn-warning btn-sm">Upgrade to VIP</a>
+                        </div>
+                    </div>
+                @endif
             @endif
 
             <h4 class="mb-3"><i class="bi bi-link-45deg me-2"></i>Shortcuts</h4>

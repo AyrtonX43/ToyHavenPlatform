@@ -192,6 +192,26 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(AuctionSellerVerification::class);
     }
 
+    public function approvedAuctionSellerVerifications()
+    {
+        return $this->auctionSellerVerifications()->where('verification_status', 'approved');
+    }
+
+    public function hasApprovedIndividualAuctionSeller(): bool
+    {
+        return $this->approvedAuctionSellerVerifications()->where('type', 'individual')->exists();
+    }
+
+    public function hasApprovedBusinessAuctionSeller(): bool
+    {
+        return $this->approvedAuctionSellerVerifications()->where('type', 'business')->exists();
+    }
+
+    public function hasAnyApprovedAuctionSeller(): bool
+    {
+        return $this->approvedAuctionSellerVerifications()->exists();
+    }
+
     public function hasPlan(string $slug): bool
     {
         $plan = $this->currentPlan();

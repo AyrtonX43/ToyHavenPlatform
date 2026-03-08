@@ -91,6 +91,9 @@ class SellerRegistrationController extends Controller
         if (! $user->hasActiveMembership()) {
             return redirect()->route('auction.index')->with('error', 'Membership required.');
         }
+        if ($user->hasApprovedBusinessAuctionSeller()) {
+            return redirect()->route('auction.index')->with('info', 'You are already registered as a business auction seller.');
+        }
         $plan = $user->currentPlan();
         if (! $plan || ! $plan->can_register_business_seller) {
             return redirect()->route('membership.upgrade', 'vip')->with('info', 'Business auction seller registration requires VIP membership.');
@@ -117,6 +120,9 @@ class SellerRegistrationController extends Controller
         $user = Auth::user();
         if (! $user->hasActiveMembership()) {
             return redirect()->route('auction.index')->with('error', 'Membership required.');
+        }
+        if ($user->hasApprovedBusinessAuctionSeller()) {
+            return redirect()->route('auction.index')->with('info', 'You are already registered as a business auction seller.');
         }
         $plan = $user->currentPlan();
         if (! $plan || ! $plan->can_register_business_seller) {
