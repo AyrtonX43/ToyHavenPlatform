@@ -88,13 +88,7 @@
                         <ul class="list-group list-group-flush">
                             @foreach($auction->bids as $bid)
                                 <li class="list-group-item d-flex justify-content-between px-0">
-                                    <span>
-                                        @if($bid->user_id === auth()->id())
-                                            Anonymous bid - you
-                                        @else
-                                            Bidder #{{ $bid->rank_at_bid }}
-                                        @endif
-                                    </span>
+                                    <span>{{ auth()->check() && $bid->user_id === auth()->id() ? 'You' : 'Bidder #' . ($bid->rank_at_bid ?? '—') }}</span>
                                     <span>₱{{ number_format($bid->amount, 2) }}</span>
                                 </li>
                             @endforeach
@@ -125,16 +119,10 @@
                             <form action="{{ route('auction.bid.store', $auction) }}" method="POST" class="mb-0">
                                 @csrf
                                 <input type="hidden" name="amount" value="{{ $auction->next_min_bid }}">
-                                <div class="mb-3">
-                                    <label class="form-label">Your bid</label>
-                                    <div class="form-control form-control-lg bg-light @error('amount') is-invalid @enderror" readonly style="pointer-events:none;">
-                                        ₱{{ number_format($auction->next_min_bid, 2) }}
-                                        <span class="text-muted small d-block mt-1">Minimum next bid (locked)</span>
-                                    </div>
-                                    @error('amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
+                                <p class="mb-3 text-muted small">Click below to place a bid at the minimum amount. No custom amount to prevent errors.</p>
+                                @error('amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                 <button type="submit" class="btn btn-primary btn-lg w-100">
-                                    <i class="bi bi-hammer me-1"></i>Place Bid ₱{{ number_format($auction->next_min_bid, 2) }}
+                                    <i class="bi bi-hammer me-1"></i>Place bid at ₱{{ number_format($auction->next_min_bid, 2) }}
                                 </button>
                             </form>
                         @else

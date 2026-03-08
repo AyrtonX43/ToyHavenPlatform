@@ -38,10 +38,12 @@ class AuctionBidController extends Controller
         }
 
         $minBid = (float) ($auction->winning_amount ?? $auction->starting_bid) + (float) $auction->bid_increment;
+        $maxBid = $minBid + 0.01; // Only allow minimum next bid (small tolerance for float)
         $request->validate([
-            'amount' => 'required|numeric|min:' . $minBid,
+            'amount' => 'required|numeric|min:' . $minBid . '|max:' . $maxBid,
         ], [
             'amount.min' => 'Your bid must be at least ₱' . number_format($minBid, 2) . '.',
+            'amount.max' => 'Please place only the minimum next bid (₱' . number_format($minBid, 2) . ').',
         ]);
 
         $amount = (float) $request->amount;
