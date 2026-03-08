@@ -8,8 +8,11 @@ use App\Models\AuctionImage;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class AuctionListingController extends Controller
 {
@@ -60,6 +63,15 @@ class AuctionListingController extends Controller
                 ->with('error', 'You must be an approved auction seller to create listings.');
         }
 
+        $request->merge([
+            'category_ids' => array_values(array_filter(
+                array_map('intval', (array) ($request->category_ids ?? [])),
+                function ($x) {
+                    return $x > 0;
+                }
+            )),
+        ]);
+
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
@@ -78,7 +90,8 @@ class AuctionListingController extends Controller
             'images.max' => 'Maximum 10 images allowed.',
         ]);
 
-        $verification = $user->approvedAuctionSellerVerifications()->first();
+        try {
+            $verification = $user->approvedAuctionSellerVerifications()->first();
         $sellerType = $verification ? $verification->type : 'individual';
 
         $durationHours = min(720, max(1, (int) $request->duration_hours));
@@ -107,6 +120,8 @@ class AuctionListingController extends Controller
         if (Schema::hasColumn('auctions', 'category_ids')) {
             $data['category_ids'] = ! empty($categoryIds) ? $categoryIds : null;
         }
+        $allowedColumns = Schema::getColumnListing('auctions');
+        $data = array_intersect_key($data, array_flip($allowedColumns));
         $auction = Auction::create($data);
 
         $imageIndex = 0;
@@ -128,8 +143,16 @@ class AuctionListingController extends Controller
             }
         }
 
-        return redirect()->route('auction.listings.index')
-            ->with('success', 'Auction listing created successfully. It is saved as a draft.');
+            return redirect()->route('auction.listings.index')
+                ->with('success', 'Auction listing created successfully. It is saved as a draft.');
+        } catch (Throwable $e) {
+            Log::error('Auction listing store failed: '.$e->getMessage(), [
+                'exception' => $e,
+                'user_id' => $user->id,
+            ]);
+
+            return back()->withInput()->with('error', 'Unable to create listing. Please try again or contact support.');
+        }
     }
 
     public function index()
