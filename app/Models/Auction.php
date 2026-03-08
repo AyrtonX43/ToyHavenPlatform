@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Auction extends Model
 {
@@ -102,7 +103,11 @@ class Auction extends Model
 
     public function images()
     {
-        return $this->hasMany(AuctionImage::class)->orderBy('display_order');
+        $query = $this->hasMany(AuctionImage::class);
+        if (Schema::hasTable('auction_images') && Schema::hasColumn('auction_images', 'display_order')) {
+            $query->orderBy('display_order');
+        }
+        return $query;
     }
 
     public function savedBy()

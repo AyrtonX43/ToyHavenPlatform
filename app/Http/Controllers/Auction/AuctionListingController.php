@@ -8,6 +8,7 @@ use App\Models\AuctionImage;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class AuctionListingController extends Controller
@@ -82,17 +83,16 @@ class AuctionListingController extends Controller
 
         $durationHours = min(720, max(1, (int) $request->duration_hours));
         $categoryIds = $request->category_ids ?? [];
-        $categoryIds = array_slice(array_map('intval', $categoryIds), 0, 3);
+        $categoryIds = array_slice(array_map('intval', array_filter($categoryIds)), 0, 3);
         $primaryCategoryId = $categoryIds[0] ?? null;
 
-        $auction = Auction::create([
+        $data = [
             'user_id' => $user->id,
             'seller_id' => null,
             'seller_type' => $sellerType,
             'product_id' => null,
             'user_product_id' => null,
             'category_id' => $primaryCategoryId,
-            'category_ids' => ! empty($categoryIds) ? $categoryIds : null,
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
@@ -103,19 +103,27 @@ class AuctionListingController extends Controller
             'start_at' => null,
             'end_at' => null,
             'status' => 'draft',
-        ]);
+        ];
+        if (Schema::hasColumn('auctions', 'category_ids')) {
+            $data['category_ids'] = ! empty($categoryIds) ? $categoryIds : null;
+        }
+        $auction = Auction::create($data);
 
         $imageIndex = 0;
         $primaryIndex = min(max(0, (int) $request->thumbnail_index), 9);
+        $hasDisplayOrder = Schema::hasTable('auction_images') && Schema::hasColumn('auction_images', 'display_order');
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('auction_images/' . $auction->id, 'public');
-                AuctionImage::create([
+                $imgData = [
                     'auction_id' => $auction->id,
                     'image_path' => $path,
                     'is_primary' => $imageIndex === $primaryIndex,
-                    'display_order' => $imageIndex,
-                ]);
+                ];
+                if ($hasDisplayOrder) {
+                    $imgData['display_order'] = $imageIndex;
+                }
+                AuctionImage::create($imgData);
                 $imageIndex++;
             }
         }
@@ -194,12 +202,11 @@ class AuctionListingController extends Controller
         ]);
 
         $categoryIds = $request->category_ids ?? [];
-        $categoryIds = array_slice(array_map('intval', $categoryIds), 0, 3);
+        $categoryIds = array_slice(array_map('intval', array_filter($categoryIds)), 0, 3);
         $primaryCategoryId = $categoryIds[0] ?? null;
 
-        $listing->update([
+        $updateData = [
             'category_id' => $primaryCategoryId,
-            'category_ids' => ! empty($categoryIds) ? $categoryIds : null,
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
@@ -208,13 +215,22 @@ class AuctionListingController extends Controller
             'bid_increment' => $request->bid_increment,
             'duration_hours' => min(720, max(1, (int) $request->duration_hours)),
             'rejection_reason' => null,
-        ]);
+        ];
+        if (Schema::hasColumn('auctions', 'category_ids')) {
+            $updateData['category_ids'] = ! empty($categoryIds) ? $categoryIds : null;
+        }
+        $listing->update($updateData);
 
         $orderIds = $request->image_order ? array_filter(array_map('intval', explode(',', $request->image_order))) : [];
         $newFiles = $request->hasFile('images') ? $request->file('images') : [];
         $thumbnailIdx = max(0, (int) $request->thumbnail_index);
 
-        $existingImages = $listing->images()->orderBy('display_order')->orderByDesc('is_primary')->get()->keyBy('id');
+        $imgQuery = $listing->images();
+        if (Schema::hasColumn('auction_images', 'display_order')) {
+            $imgQuery->orderBy('display_order');
+        }
+        $imgQuery->orderByDesc('is_primary');
+        $existingImages = $imgQuery->get()->keyBy('id');
         if (empty($orderIds)) {
             $orderIds = $existingImages->keys()->all();
         }
@@ -224,21 +240,25 @@ class AuctionListingController extends Controller
         $displayOrder = 0;
         $listing->images()->update(['is_primary' => false]);
 
+        $hasDisplayOrder = Schema::hasColumn('auction_images', 'display_order');
         foreach ($orderIds as $imgId) {
             $img = $existingImages->get($imgId);
             if ($img) {
-                $img->update(['display_order' => $displayOrder, 'is_primary' => $displayOrder === $thumbnailIdx]);
+                $upd = ['is_primary' => $displayOrder === $thumbnailIdx];
+                if ($hasDisplayOrder) {
+                    $upd['display_order'] = $displayOrder;
+                }
+                $img->update($upd);
                 $displayOrder++;
             }
         }
         foreach (array_slice($newFiles, 0, max(0, 10 - $displayOrder)) as $file) {
             $path = $file->store('auction_images/' . $listing->id, 'public');
-            AuctionImage::create([
-                'auction_id' => $listing->id,
-                'image_path' => $path,
-                'is_primary' => $displayOrder === $thumbnailIdx,
-                'display_order' => $displayOrder,
-            ]);
+            $imgData = ['auction_id' => $listing->id, 'image_path' => $path, 'is_primary' => $displayOrder === $thumbnailIdx];
+            if ($hasDisplayOrder) {
+                $imgData['display_order'] = $displayOrder;
+            }
+            AuctionImage::create($imgData);
             $displayOrder++;
         }
 
