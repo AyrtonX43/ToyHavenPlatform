@@ -70,8 +70,6 @@ class AuctionListingController extends Controller
         $sellerType = $verification ? $verification->type : 'individual';
 
         $durationHours = (int) $request->duration_hours;
-        $startAt = now();
-        $endAt = now()->addHours($durationHours);
 
         Auction::create([
             'user_id' => $user->id,
@@ -84,12 +82,103 @@ class AuctionListingController extends Controller
             'description' => $request->description,
             'starting_bid' => $request->starting_bid,
             'bid_increment' => $request->bid_increment,
-            'start_at' => $startAt,
-            'end_at' => $endAt,
+            'duration_hours' => $durationHours,
+            'start_at' => null,
+            'end_at' => null,
             'status' => 'draft',
         ]);
 
-        return redirect()->route('auction.seller.dashboard')
+        return redirect()->route('auction.listings.index')
             ->with('success', 'Auction listing created successfully. It is saved as a draft.');
+    }
+
+    public function index()
+    {
+        $user = Auth::user();
+
+        if (! $user->hasActiveMembership()) {
+            return redirect()->route('auction.index')
+                ->with('error', 'Membership required to manage auction listings.');
+        }
+
+        $listings = Auction::where('user_id', $user->id)
+            ->orderByDesc('updated_at')
+            ->paginate(15);
+
+        return view('auction.listings.index', compact('listings'));
+    }
+
+    public function edit(Auction $listing)
+    {
+        $user = Auth::user();
+
+        if ($listing->user_id !== $user->id) {
+            abort(403);
+        }
+        if (! $listing->isDraft()) {
+            return redirect()->route('auction.listings.index')
+                ->with('error', 'Only draft listings can be edited.');
+        }
+
+        $categories = Category::orderBy('name')->get();
+
+        return view('auction.listings.edit', compact('listing', 'categories'));
+    }
+
+    public function update(Request $request, Auction $listing)
+    {
+        $user = Auth::user();
+
+        if ($listing->user_id !== $user->id) {
+            abort(403);
+        }
+        if (! $listing->isDraft()) {
+            return redirect()->route('auction.listings.index')
+                ->with('error', 'Only draft listings can be edited.');
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            'starting_bid' => 'required|numeric|min:1',
+            'bid_increment' => 'required|numeric|min:1',
+            'duration_hours' => 'required|integer|min:1|max:720',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $listing->update([
+            'category_id' => $request->category_id ?: null,
+            'title' => $request->title,
+            'description' => $request->description,
+            'starting_bid' => $request->starting_bid,
+            'bid_increment' => $request->bid_increment,
+            'duration_hours' => (int) $request->duration_hours,
+            'rejection_reason' => null,
+        ]);
+
+        return redirect()->route('auction.listings.index')
+            ->with('success', 'Listing updated successfully.');
+    }
+
+    public function submitForApproval(Auction $listing)
+    {
+        $user = Auth::user();
+
+        if ($listing->user_id !== $user->id) {
+            abort(403);
+        }
+        if (! $listing->isDraft()) {
+            return redirect()->route('auction.listings.index')
+                ->with('error', 'Only draft listings can be submitted for approval.');
+        }
+
+        $listing->update([
+            'status' => 'pending_approval',
+            'terms_accepted_at' => now(),
+            'rejection_reason' => null,
+        ]);
+
+        return redirect()->route('auction.listings.index')
+            ->with('success', 'Listing submitted for approval. An admin or moderator will review it shortly.');
     }
 }

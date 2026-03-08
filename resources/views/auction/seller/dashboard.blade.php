@@ -86,11 +86,10 @@
             @endif
         </div>
         <div class="col-md-6 col-lg-4">
-            <a href="#" class="auction-shortcut coming-soon">
+            <a href="{{ route('auction.listings.index') }}" class="auction-shortcut">
                 <i class="bi bi-list-ul fs-4 me-2 text-primary"></i>
                 <strong>My Listings</strong>
-                <span class="badge bg-secondary ms-2">Coming Soon</span>
-                <span class="d-block small text-muted mt-1">View and manage your auctions</span>
+                <span class="d-block small text-muted mt-1">View and manage your auction listings</span>
             </a>
         </div>
         <div class="col-md-6 col-lg-4">

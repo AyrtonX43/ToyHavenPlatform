@@ -154,9 +154,20 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Auction Hub (members only; non-members redirected to membership)
     Route::get('/auction', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('auction.index');
+    Route::get('/auction/item/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('auction.show')->where('auction', '[0-9]+');
+    Route::post('/auction/item/{auction}/bid', [\App\Http\Controllers\Auction\AuctionBidController::class, 'store'])->name('auction.bid.store')->where('auction', '[0-9]+');
+    Route::get('/auction/payment/{payment}', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'show'])->name('auction.payment.show');
+    Route::get('/auction/payment/{payment}/success', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'success'])->name('auction.payment.success');
+    Route::post('/auction/payment/{payment}/shipped', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'markShipped'])->name('auction.payment.shipped');
+    Route::post('/auction/payment/{payment}/confirm-delivery', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'confirmDelivery'])->name('auction.payment.confirm-delivery');
+    Route::post('/auction/payment/{payment}/review', [\App\Http\Controllers\Auction\AuctionReviewController::class, 'store'])->name('auction.review.store');
     Route::get('/auction/seller/dashboard', [\App\Http\Controllers\Auction\AuctionSellerDashboardController::class, 'index'])->name('auction.seller.dashboard');
+    Route::get('/auction/listings', [\App\Http\Controllers\Auction\AuctionListingController::class, 'index'])->name('auction.listings.index');
     Route::get('/auction/listings/create', [\App\Http\Controllers\Auction\AuctionListingController::class, 'create'])->name('auction.listings.create');
     Route::post('/auction/listings', [\App\Http\Controllers\Auction\AuctionListingController::class, 'store'])->name('auction.listings.store');
+    Route::get('/auction/listings/{listing}/edit', [\App\Http\Controllers\Auction\AuctionListingController::class, 'edit'])->name('auction.listings.edit');
+    Route::put('/auction/listings/{listing}', [\App\Http\Controllers\Auction\AuctionListingController::class, 'update'])->name('auction.listings.update');
+    Route::post('/auction/listings/{listing}/submit-for-approval', [\App\Http\Controllers\Auction\AuctionListingController::class, 'submitForApproval'])->name('auction.listings.submit-for-approval');
     Route::get('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showIndividualForm'])->name('auction.seller-registration.individual');
     Route::post('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'storeIndividual'])->name('auction.seller-registration.individual.store');
     Route::get('/auction/seller-registration/business', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showBusinessForm'])->name('auction.seller-registration.business');
@@ -459,6 +470,18 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
             Route::get('/{verification}', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'show'])->name('show');
             Route::post('/{verification}/approve', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'approve'])->name('approve');
             Route::post('/{verification}/reject', [\App\Http\Controllers\Admin\AuctionSellerVerificationController::class, 'reject'])->name('reject');
+        });
+
+        Route::prefix('auction-payments')->name('auction-payments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AuctionPaymentController::class, 'index'])->name('index');
+            Route::post('/{payment}/release', [\App\Http\Controllers\Admin\AuctionPaymentController::class, 'release'])->name('release');
+        });
+
+        Route::prefix('auction-listings')->name('auction-listings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AuctionListingController::class, 'index'])->name('index');
+            Route::get('/{listing}', [\App\Http\Controllers\Admin\AuctionListingController::class, 'show'])->name('show');
+            Route::post('/{listing}/approve', [\App\Http\Controllers\Admin\AuctionListingController::class, 'approve'])->name('approve');
+            Route::post('/{listing}/reject', [\App\Http\Controllers\Admin\AuctionListingController::class, 'reject'])->name('reject');
         });
 
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {

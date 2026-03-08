@@ -41,6 +41,7 @@
         border-radius: 16px;
         border: 2px dashed #e2e8f0;
     }
+    .hover-shadow:hover { box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1); }
 </style>
 @endpush
 
@@ -58,10 +59,30 @@
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <h4 class="mb-3"><i class="bi bi-list-ul me-2"></i>Active Listings</h4>
-            <div class="empty-state">
-                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
-                <p class="text-muted mb-0">No active auctions at the moment. Check back soon for new listings from sellers.</p>
-            </div>
+            @if($activeListings->count() > 0)
+                <div class="row g-3">
+                    @foreach($activeListings as $a)
+                        <div class="col-md-6">
+                            <a href="{{ route('auction.show', $a) }}" class="text-decoration-none text-dark">
+                                <div class="card h-100 shadow-sm border-0 overflow-hidden hover-shadow">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ Str::limit($a->title, 50) }}</h6>
+                                        <p class="mb-1"><strong>Current bid:</strong> ₱{{ number_format($a->winning_amount ?? $a->starting_bid, 2) }}</p>
+                                        <p class="mb-1 small text-muted">{{ $a->bids_count }} bid(s)</p>
+                                        <p class="mb-0 small text-primary">Ends {{ $a->end_at?->diffForHumans() }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="mt-3">{{ $activeListings->links() }}</div>
+            @else
+                <div class="empty-state">
+                    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No active auctions at the moment. Check back soon for new listings from sellers.</p>
+                </div>
+            @endif
         </div>
         <div class="col-lg-4">
             @php
