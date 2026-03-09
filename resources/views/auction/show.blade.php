@@ -135,7 +135,23 @@
                         @elseif($auction->auction_outcome === 'no_bids')
                             <p class="mb-2 text-muted">No bids were placed.</p>
                         @elseif($auction->winner_id === auth()->id())
-                            <p class="text-success mt-2 mb-0">Congratulations! You won this auction.</p>
+                            <div class="mt-3 p-3 bg-success bg-opacity-10 border border-success rounded text-center">
+                                <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
+                                @if($auction->payment)
+                                    @if($auction->payment->isPending())
+                                        <p class="mb-3 small">Please complete your payment to proceed with the order.</p>
+                                        <a href="{{ route('auction.payment.show', $auction->payment) }}" class="btn btn-success w-100 fw-bold">
+                                            <i class="bi bi-credit-card me-1"></i> Proceed to Payment
+                                        </a>
+                                    @else
+                                        <a href="{{ route('auction.payment.success', $auction->payment) }}" class="btn btn-outline-success w-100 fw-bold mt-2">
+                                            <i class="bi bi-check-circle me-1"></i> View Order Status
+                                        </a>
+                                    @endif
+                                @else
+                                    <p class="mb-0 small text-muted">Processing payment details, please wait...</p>
+                                @endif
+                            </div>
                         @endif
                         <p class="mb-0 text-muted">This auction has ended.</p>
                     @endif
