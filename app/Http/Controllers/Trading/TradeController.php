@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Trading;
 use App\Http\Controllers\Controller;
 use App\Models\Trade;
 use App\Models\TradeDispute;
+use App\Notifications\TradeCancelRequestNotification;
 use App\Services\TradeMeetupService;
 use App\Services\TradeDisputeService;
 use Illuminate\Http\Request;
@@ -112,9 +113,11 @@ class TradeController extends Controller
             return back()->with('error', 'This trade cannot be cancelled.');
         }
 
+        $userRequested = ($trade->isInitiator(Auth::id()) && $trade->initiator_cancel_requested_at)
+            || ($trade->isParticipant(Auth::id()) && $trade->participant_cancel_requested_at);
         $trade->requestCancel(Auth::id());
 
-        if ($trade->bothRequestedCancel()) {
+        if ($trade->fresh()->bothRequestedCancel()) {
             $this->meetupService->cancel($trade);
             if ($trade->conversation) {
                 $trade->conversation->update(['is_locked' => true]);
@@ -123,7 +126,16 @@ class TradeController extends Controller
                 ->with('success', 'Trade cancelled. Both parties confirmed.');
         }
 
-        return back()->with('success', 'Cancel requested. Waiting for the other party to confirm cancel.');
+        if (!$userRequested) {
+            $otherUser = $trade->getOtherParty(Auth::id());
+            try {
+                $otherUser?->notify(new TradeCancelRequestNotification($trade->fresh()));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Trade cancel request notification failed: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Cancel requested. The other party has been notified. They have 24 hours to respond. If they accept or do not respond, the trade will be cancelled.');
     }
 
     public function disputeForm($id)

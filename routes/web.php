@@ -336,6 +336,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
         Route::post('/conversations/{conversation}/confirm-received', [\App\Http\Controllers\Trading\ConversationController::class, 'confirmReceived'])->name('conversations.confirm-received');
         Route::post('/conversations/{conversation}/submit-trade-proof', [\App\Http\Controllers\Trading\ConversationController::class, 'submitTradeProof'])->name('conversations.submit-trade-proof');
         Route::post('/conversations/{conversation}/cancel-trade', [\App\Http\Controllers\Trading\ConversationController::class, 'cancelTrade'])->name('conversations.cancel-trade');
+        Route::post('/conversations/{conversation}/confirm-cancel', [\App\Http\Controllers\Trading\ConversationController::class, 'confirmCancel'])->name('conversations.confirm-cancel');
         Route::post('/conversations/{conversation}/mark-received', [\App\Http\Controllers\Trading\ConversationController::class, 'markListingReceived'])->name('conversations.mark-received');
         Route::get('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'reportForm'])->name('conversations.report-form');
         Route::post('/conversations/{conversation}/report', [\App\Http\Controllers\Trading\ConversationController::class, 'report'])->name('conversations.report');

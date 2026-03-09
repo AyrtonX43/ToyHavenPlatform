@@ -11,6 +11,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('auctions:end')->everyMinute();
 Schedule::command('auctions:process-overdue-payments')->hourly();
+Schedule::command('trades:auto-cancel')->hourly();
 
 Artisan::command('mail:test {email : The email address to send the test to}', function (string $email): int {
     $this->info('Sending test email to ' . $email . '...');

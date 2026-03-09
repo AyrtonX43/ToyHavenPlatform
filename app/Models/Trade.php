@@ -138,6 +138,38 @@ class Trade extends Model
         return $this->initiator_cancel_requested_at && $this->participant_cancel_requested_at;
     }
 
+    /** Get the user who first requested cancellation (when only one has requested). */
+    public function getCancelRequester()
+    {
+        if ($this->initiator_cancel_requested_at && !$this->participant_cancel_requested_at) {
+            return $this->initiator;
+        }
+        if ($this->participant_cancel_requested_at && !$this->initiator_cancel_requested_at) {
+            return $this->participant;
+        }
+        return null;
+    }
+
+    /** Get when the cancel was first requested (for 24h auto-cancel). */
+    public function getCancelRequestedAt(): ?\DateTimeInterface
+    {
+        if ($this->initiator_cancel_requested_at && !$this->participant_cancel_requested_at) {
+            return $this->initiator_cancel_requested_at;
+        }
+        if ($this->participant_cancel_requested_at && !$this->initiator_cancel_requested_at) {
+            return $this->participant_cancel_requested_at;
+        }
+        return null;
+    }
+
+    /** Whether only one party has requested cancel (waiting for other to respond). */
+    public function hasPendingCancelRequest(): bool
+    {
+        $one = (bool) $this->initiator_cancel_requested_at;
+        $two = (bool) $this->participant_cancel_requested_at;
+        return $one !== $two;
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(TradeReview::class);

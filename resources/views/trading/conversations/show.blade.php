@@ -266,6 +266,13 @@
         $showPostAcceptActions = $isOfferAcceptedTrade && !in_array($trade->status, ['completed', 'cancelled']) && !$conversation->is_locked;
     @endphp
     @if($showPostAcceptActions)
+        @php
+            $userRequestedCancel = $trade && (
+                ($trade->isInitiator(auth()->id()) && $trade->initiator_cancel_requested_at) ||
+                ($trade->isParticipant(auth()->id()) && $trade->participant_cancel_requested_at)
+            );
+            $otherRequestedCancel = $trade && $trade->hasPendingCancelRequest() && !$userRequestedCancel;
+        @endphp
         <div class="deal-actions mb-2">
             <div class="fw-semibold mb-2 text-dark" style="font-size:0.95rem;">Trade actions</div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -277,10 +284,24 @@
                 @else
                     <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>You marked listing received</span>
                 @endif
-                <form method="POST" action="{{ route('trading.conversations.cancel-trade', $conversation) }}" class="d-inline" onsubmit="return confirm('Cancel this trade? The chat will end and the trade will be saved to Trade History as rejected. You can report with feedback for admin review.');">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-x-circle me-1"></i>Cancel transaction</button>
-                </form>
+                @if($otherRequestedCancel)
+                    <form method="POST" action="{{ route('trading.conversations.confirm-cancel', $conversation) }}" class="d-inline" onsubmit="return confirm('Accept the cancellation? The trade will be cancelled and both listings will return to active.');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3"><i class="bi bi-check-circle me-1"></i>Accept cancel</button>
+                    </form>
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass me-1"></i>The other party requested to cancel. You have 24 hours to respond.</span>
+                @elseif($userRequestedCancel)
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass me-1"></i>Cancel requested. Waiting for the other party (24h).</span>
+                    <form method="POST" action="{{ route('trading.conversations.cancel-trade', $conversation) }}" class="d-inline" onsubmit="return confirm('Re-request cancellation?');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3"><i class="bi bi-x-circle me-1"></i>Request cancel again</button>
+                    </form>
+                @else
+                    <form method="POST" action="{{ route('trading.conversations.cancel-trade', $conversation) }}" class="d-inline" onsubmit="return confirm('Request to cancel this trade? The other party will be notified and has 24 hours to respond. If they accept or do not respond, the trade will be cancelled and listings returned to active.');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-x-circle me-1"></i>Cancel transaction</button>
+                    </form>
+                @endif
                 <a href="{{ route('trading.conversations.report-form', $conversation) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3"><i class="bi bi-flag me-1"></i>Report user</a>
             </div>
         </div>

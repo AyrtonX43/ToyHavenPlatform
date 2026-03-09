@@ -17,6 +17,7 @@ use App\Models\TradeListing;
 use App\Models\TradeOffer;
 use App\Models\TradeProof;
 use App\Models\UserProduct;
+use App\Notifications\TradeCancelRequestNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -662,7 +663,7 @@ class ConversationController extends Controller
     }
 
     /**
-     * Cancel trade from chat. Posts system message, locks conversation, saves to Trade History as rejected.
+     * Request to cancel trade. Notifies the other user. If both agree or User 2 doesn't respond within 24h, trade is cancelled.
      */
     public function cancelTrade(Request $request, Conversation $conversation)
     {
@@ -679,29 +680,98 @@ class ConversationController extends Controller
         }
 
         $userName = Auth::user()->name;
+        $userRequested = ($trade->isInitiator($userId) && $trade->initiator_cancel_requested_at)
+            || ($trade->isParticipant($userId) && $trade->participant_cancel_requested_at);
 
         DB::beginTransaction();
         try {
-            $conversation->messages()->create([
-                'sender_id' => null,
-                'is_system' => true,
-                'system_type' => 'cancelled',
-                'message' => $userName . ' cancelled the trade transaction.',
-            ]);
-            $conversation->update(['last_message_at' => now(), 'is_locked' => true]);
+            $trade->requestCancel($userId);
 
-            $trade->update([
-                'status' => 'cancelled',
-                'cancelled_by_user_id' => $userId,
-            ]);
+            if ($trade->fresh()->bothRequestedCancel()) {
+                // Both parties agreed to cancel - execute immediately
+                $conversation->messages()->create([
+                    'sender_id' => null,
+                    'is_system' => true,
+                    'system_type' => 'cancelled',
+                    'message' => 'Both parties agreed to cancel the trade transaction.',
+                ]);
+                $conversation->update(['last_message_at' => now(), 'is_locked' => true]);
+                app(TradeMeetupService::class)->cancel($trade);
+                DB::commit();
+                return back()->with('success', 'Trade cancelled. Both parties confirmed. You can report this conversation with feedback for admin review.');
+            }
 
-            app(TradeMeetupService::class)->cancel($trade);
+            if (!$userRequested) {
+                // First time this user requested - notify the other party
+                $otherUser = $trade->getOtherParty($userId);
+                $conversation->messages()->create([
+                    'sender_id' => null,
+                    'is_system' => true,
+                    'system_type' => 'cancel_requested',
+                    'message' => $userName . ' requested to cancel the trade. The other party has 24 hours to respond. If no response, the trade will be auto-cancelled and listings will return to active.',
+                ]);
+                $conversation->update(['last_message_at' => now()]);
+
+                try {
+                    $otherUser?->notify(new TradeCancelRequestNotification($trade));
+                } catch (\Throwable $e) {
+                    Log::warning('Trade cancel request notification failed: ' . $e->getMessage());
+                }
+            }
+
             DB::commit();
-            return back()->with('success', 'Trade cancelled. You can report this conversation with feedback for admin review.');
+            return back()->with('success', 'Cancel requested. The other party has been notified. They have 24 hours to respond. If they accept or do not respond, the trade will be cancelled.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::warning('Cancel trade failed: ' . $e->getMessage());
             return back()->with('error', 'Failed to cancel. Please try again.');
+        }
+    }
+
+    /**
+     * Accept/confirm the cancellation request from the other party. Cancels the trade and keeps listings active.
+     */
+    public function confirmCancel(Request $request, Conversation $conversation)
+    {
+        $this->authorize('view', $conversation);
+
+        $trade = $conversation->trade;
+        if (!$trade || in_array($trade->status, ['completed', 'cancelled'])) {
+            return back()->with('error', 'This trade is no longer active.');
+        }
+
+        $userId = Auth::id();
+        if ($trade->initiator_id !== $userId && $trade->participant_id !== $userId) {
+            return back()->with('error', 'You are not part of this trade.');
+        }
+
+        if (!$trade->hasPendingCancelRequest()) {
+            return back()->with('info', 'No pending cancellation request.');
+        }
+
+        $requester = $trade->getCancelRequester();
+        if (!$requester || $requester->id === $userId) {
+            return back()->with('error', 'You can only accept a cancellation request from the other party.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $trade->requestCancel($userId);
+
+            $conversation->messages()->create([
+                'sender_id' => null,
+                'is_system' => true,
+                'system_type' => 'cancelled',
+                'message' => Auth::user()->name . ' accepted the cancellation request. Trade has been cancelled.',
+            ]);
+            $conversation->update(['last_message_at' => now(), 'is_locked' => true]);
+            app(TradeMeetupService::class)->cancel($trade);
+            DB::commit();
+            return back()->with('success', 'Trade cancelled. Both parties confirmed. Listings have been returned to active. You can report this conversation with feedback for admin review.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::warning('Confirm cancel failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to accept cancellation. Please try again.');
         }
     }
 
