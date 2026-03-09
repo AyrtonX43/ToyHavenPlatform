@@ -15,7 +15,8 @@ class EndAuctionsCommand extends Command
 
     public function handle(): int
     {
-        $ended = Auction::active()
+        $ended = Auction::where('status', 'active')
+            ->whereNotNull('end_at')
             ->where('end_at', '<=', now())
             ->get();
 

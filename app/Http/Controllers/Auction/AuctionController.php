@@ -46,7 +46,8 @@ class AuctionController extends Controller
                 ->with('info', 'Auction access requires an active membership.');
         }
 
-        if (! $auction->isActive() && ! $auction->isEnded() && ! $auction->isPendingApproval()) {
+        $canView = in_array($auction->status, ['active', 'ended', 'pending_approval']);
+        if (! $canView) {
             return redirect()->route('auction.index')
                 ->with('error', 'This auction is not available for viewing.');
         }

@@ -143,7 +143,10 @@ class Auction extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('end_at')->orWhere('end_at', '>', now());
+            });
     }
 
     public function scopeEnded($query)
@@ -163,7 +166,8 @@ class Auction extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === 'active'
+            && (! $this->end_at || $this->end_at->isFuture());
     }
 
     public function isEnded(): bool
