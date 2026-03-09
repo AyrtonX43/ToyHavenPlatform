@@ -175,6 +175,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::post('/auction/listings', [\App\Http\Controllers\Auction\AuctionListingController::class, 'store'])->name('auction.listings.store');
     Route::get('/auction/listings/{listing}/edit', [\App\Http\Controllers\Auction\AuctionListingController::class, 'edit'])->name('auction.listings.edit');
     Route::put('/auction/listings/{listing}', [\App\Http\Controllers\Auction\AuctionListingController::class, 'update'])->name('auction.listings.update');
+    Route::delete('/auction/listings/{listing}', [\App\Http\Controllers\Auction\AuctionListingController::class, 'destroy'])->name('auction.listings.destroy');
     Route::post('/auction/listings/{listing}/submit-for-approval', [\App\Http\Controllers\Auction\AuctionListingController::class, 'submitForApproval'])->name('auction.listings.submit-for-approval');
     Route::get('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'showIndividualForm'])->name('auction.seller-registration.individual');
     Route::post('/auction/seller-registration/individual', [\App\Http\Controllers\Auction\SellerRegistrationController::class, 'storeIndividual'])->name('auction.seller-registration.individual.store');

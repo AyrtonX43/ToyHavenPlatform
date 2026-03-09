@@ -140,26 +140,26 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Starting Bid (₱) <span class="text-danger">*</span></label>
                         <input type="number" name="starting_bid" class="form-control rounded-3 @error('starting_bid') is-invalid @enderror"
-                            value="{{ old('starting_bid', $listing->starting_bid) }}" required min="1" step="0.01">
+                            value="{{ old('starting_bid', $listing->starting_bid) }}" required min="1" step="0.01" {{ !$listing->isDraft() ? 'readonly' : '' }}>
                         @error('starting_bid')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Reserve Price (₱)</label>
                         <input type="number" name="reserve_price" class="form-control rounded-3 @error('reserve_price') is-invalid @enderror"
-                            value="{{ old('reserve_price', $listing->reserve_price) }}" min="0" step="0.01" placeholder="Optional">
+                            value="{{ old('reserve_price', $listing->reserve_price) }}" min="0" step="0.01" placeholder="Optional" {{ !$listing->isDraft() ? 'readonly' : '' }}>
                         @error('reserve_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Bid Increment (₱) <span class="text-danger">*</span></label>
                         <input type="number" name="bid_increment" class="form-control rounded-3 @error('bid_increment') is-invalid @enderror"
-                            value="{{ old('bid_increment', $listing->bid_increment) }}" required min="1" step="0.01">
+                            value="{{ old('bid_increment', $listing->bid_increment) }}" required min="1" step="0.01" {{ !$listing->isDraft() ? 'readonly' : '' }}>
                         @error('bid_increment')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
 
                 <div class="auction-section-label">Duration</div>
                 <div class="mb-4">
-                    <div class="duration-preset mb-3" id="durationPresets">
+                    <div class="duration-preset mb-3" id="durationPresets" style="{{ !$listing->isDraft() ? 'pointer-events: none; opacity: 0.7;' : '' }}">
                         <button type="button" class="preset-btn" data-hours="24">24 hrs</button>
                         <button type="button" class="preset-btn" data-hours="72">3 days</button>
                         <button type="button" class="preset-btn" data-hours="168">1 week</button>
@@ -169,7 +169,7 @@
                     <div class="input-group duration-custom-group">
                         <span class="input-group-text rounded-start-3">Custom</span>
                         <input type="number" name="duration_hours" id="durationHours" class="form-control rounded-end-3 @error('duration_hours') is-invalid @enderror"
-                            value="{{ old('duration_hours', $listing->duration_hours ?? 336) }}" required min="1" max="720" inputmode="numeric" pattern="[0-9]*">
+                            value="{{ old('duration_hours', $listing->duration_hours ?? 336) }}" required min="1" max="720" inputmode="numeric" pattern="[0-9]*" {{ !$listing->isDraft() ? 'readonly' : '' }}>
                         <span class="input-group-text">hours</span>
                     </div>
                     <small class="text-muted d-block mt-1">1–720 hours (30 days max). No over 30 days.</small>

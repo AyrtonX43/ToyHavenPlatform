@@ -178,9 +178,9 @@ class AuctionListingController extends Controller
         if ($listing->user_id !== $user->id) {
             abort(403);
         }
-        if (! $listing->isDraft()) {
+        if (! $listing->isDraft() && ! $listing->isActive()) {
             return redirect()->route('auction.listings.index')
-                ->with('error', 'Only draft listings can be edited.');
+                ->with('error', 'Only draft or active listings can be edited.');
         }
 
         $categories = Category::orderBy('name')->get();
@@ -195,22 +195,27 @@ class AuctionListingController extends Controller
         if ($listing->user_id !== $user->id) {
             abort(403);
         }
-        if (! $listing->isDraft()) {
+        if (! $listing->isDraft() && ! $listing->isActive()) {
             return redirect()->route('auction.listings.index')
-                ->with('error', 'Only draft listings can be edited.');
+                ->with('error', 'Only draft or active listings can be edited.');
         }
 
         $rules = [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
             'condition' => 'required|in:new,like_new,good,fair',
-            'starting_bid' => 'required|numeric|min:1',
-            'reserve_price' => 'nullable|numeric|min:0',
-            'bid_increment' => 'required|numeric|min:1',
-            'duration_hours' => 'required|integer|min:1|max:720',
             'category_ids' => 'nullable|array|max:3',
             'category_ids.*' => 'exists:categories,id',
         ];
+        
+        // Only allow changing pricing and duration if it's a draft
+        if ($listing->isDraft()) {
+            $rules['starting_bid'] = 'required|numeric|min:1';
+            $rules['reserve_price'] = 'nullable|numeric|min:0';
+            $rules['bid_increment'] = 'required|numeric|min:1';
+            $rules['duration_hours'] = 'required|integer|min:1|max:720';
+        }
+
         $hasImages = $listing->images()->exists();
         if ($request->hasFile('images')) {
             $rules['images'] = 'array|min:0|max:10';
@@ -233,12 +238,16 @@ class AuctionListingController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'condition' => $request->condition,
-            'starting_bid' => $request->starting_bid,
-            'reserve_price' => $request->filled('reserve_price') ? $request->reserve_price : null,
-            'bid_increment' => $request->bid_increment,
-            'duration_hours' => min(720, max(1, (int) $request->duration_hours)),
             'rejection_reason' => null,
         ];
+        
+        if ($listing->isDraft()) {
+            $updateData['starting_bid'] = $request->starting_bid;
+            $updateData['reserve_price'] = $request->filled('reserve_price') ? $request->reserve_price : null;
+            $updateData['bid_increment'] = $request->bid_increment;
+            $updateData['duration_hours'] = min(720, max(1, (int) $request->duration_hours));
+        }
+
         if (Schema::hasColumn('auctions', 'category_ids')) {
             $updateData['category_ids'] = ! empty($categoryIds) ? $categoryIds : null;
         }
@@ -291,6 +300,32 @@ class AuctionListingController extends Controller
 
         return redirect()->route('auction.listings.index')
             ->with('success', 'Listing updated successfully.');
+    }
+
+    public function destroy(Auction $listing)
+    {
+        $user = Auth::user();
+
+        if ($listing->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if (! $listing->isDraft()) {
+            return redirect()->route('auction.listings.index')
+                ->with('error', 'Only draft listings can be deleted.');
+        }
+
+        // Delete images from storage
+        foreach ($listing->images as $image) {
+            Storage::disk('public')->delete($image->image_path);
+        }
+        $listing->images()->delete();
+
+        // Delete the listing
+        $listing->delete();
+
+        return redirect()->route('auction.listings.index')
+            ->with('success', 'Draft listing deleted successfully.');
     }
 
     public function submitForApproval(Auction $listing)

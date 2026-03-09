@@ -73,10 +73,20 @@
                                     <a href="{{ route('auction.listings.edit', $l) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                     <form action="{{ route('auction.listings.submit-for-approval', $l) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-success">Submit for Approval</button>
+                                        <button type="submit" class="btn btn-sm btn-success">Submit</button>
+                                    </form>
+                                    <form action="{{ route('auction.listings.destroy', $l) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this draft listing?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
                                 @elseif($l->isActive() || $l->isEnded())
                                     <a href="{{ route('auction.show', $l) }}" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
+                                    @if($l->isActive())
+                                        <a href="{{ route('auction.listings.edit', $l) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    @endif
+                                @elseif($l->isPendingApproval())
+                                    <a href="{{ route('auction.show', $l) }}" class="btn btn-sm btn-outline-primary" target="_blank">Preview</a>
                                 @endif
                             </td>
                         </tr>
