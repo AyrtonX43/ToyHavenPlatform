@@ -154,6 +154,9 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
 
     // Auction Hub (members only; non-members redirected to membership)
     Route::get('/auction', [\App\Http\Controllers\Auction\AuctionController::class, 'index'])->name('auction.index');
+    Route::get('/auction/history', [\App\Http\Controllers\Auction\AuctionController::class, 'history'])->name('auction.history');
+    Route::get('/auction/bids', [\App\Http\Controllers\Auction\AuctionController::class, 'bids'])->name('auction.bids');
+    Route::get('/auction/saved', [\App\Http\Controllers\Auction\AuctionController::class, 'saved'])->name('auction.saved');
     Route::get('/auction/item/{auction}', [\App\Http\Controllers\Auction\AuctionController::class, 'show'])->name('auction.show')->where('auction', '[0-9]+');
     Route::post('/auction/item/{auction}/save', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'save'])->name('auction.save');
     Route::post('/auction/item/{auction}/unsave', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'unsave'])->name('auction.unsave');
@@ -166,6 +169,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::post('/auction/payment/{payment}/confirm-delivery', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'confirmDelivery'])->name('auction.payment.confirm-delivery');
     Route::post('/auction/payment/{payment}/review', [\App\Http\Controllers\Auction\AuctionReviewController::class, 'store'])->name('auction.review.store');
     Route::get('/auction/seller/dashboard', [\App\Http\Controllers\Auction\AuctionSellerDashboardController::class, 'index'])->name('auction.seller.dashboard');
+    Route::get('/auction/seller/stats', [\App\Http\Controllers\Auction\AuctionSellerDashboardController::class, 'stats'])->name('auction.seller.stats');
     Route::get('/auction/listings', [\App\Http\Controllers\Auction\AuctionListingController::class, 'index'])->name('auction.listings.index');
     Route::get('/auction/listings/create', [\App\Http\Controllers\Auction\AuctionListingController::class, 'create'])->name('auction.listings.create');
     Route::post('/auction/listings', [\App\Http\Controllers\Auction\AuctionListingController::class, 'store'])->name('auction.listings.store');

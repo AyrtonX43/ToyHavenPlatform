@@ -68,4 +68,61 @@ class AuctionController extends Controller
 
         return view('auction.show', compact('auction', 'isSaved'));
     }
+
+    public function history()
+    {
+        $user = auth()->user();
+
+        if (! $user->hasActiveMembership()) {
+            return redirect()->route('membership.index')
+                ->with('info', 'Auction access requires an active membership.');
+        }
+
+        $payments = \App\Models\AuctionPayment::with(['auction.images'])
+            ->where('winner_id', $user->id)
+            ->orderByDesc('created_at')
+            ->paginate(12);
+
+        return view('auction.history', compact('payments'));
+    }
+
+    public function bids()
+    {
+        $user = auth()->user();
+
+        if (! $user->hasActiveMembership()) {
+            return redirect()->route('membership.index')
+                ->with('info', 'Auction access requires an active membership.');
+        }
+
+        $auctions = Auction::whereHas('bids', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->with(['images', 'bids' => function ($q) use ($user) {
+                $q->where('user_id', $user->id)->orderByDesc('amount');
+            }])
+            ->orderByDesc('end_at')
+            ->paginate(12);
+
+        return view('auction.bids', compact('auctions'));
+    }
+
+    public function saved()
+    {
+        $user = auth()->user();
+
+        if (! $user->hasActiveMembership()) {
+            return redirect()->route('membership.index')
+                ->with('info', 'Auction access requires an active membership.');
+        }
+
+        $savedAuctions = Auction::whereHas('savedBy', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->with(['images'])
+            ->orderByDesc('end_at')
+            ->paginate(12);
+
+        return view('auction.saved', compact('savedAuctions'));
+    }
 }

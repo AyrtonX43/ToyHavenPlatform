@@ -171,20 +171,17 @@
 
             <h4 class="mb-3"><i class="bi bi-link-45deg me-2"></i>Shortcuts</h4>
             <div class="d-flex flex-column gap-2">
-                <a href="#" class="auction-shortcut coming-soon">
+                <a href="{{ route('auction.history') }}" class="auction-shortcut">
                     <i class="bi bi-clock-history fs-4 me-2 text-primary"></i>
                     <strong>Auction History</strong>
-                    <span class="badge bg-secondary ms-2">Coming Soon</span>
                 </a>
-                <a href="#" class="auction-shortcut coming-soon">
+                <a href="{{ route('auction.bids') }}" class="auction-shortcut">
                     <i class="bi bi-tag fs-4 me-2 text-primary"></i>
                     <strong>My Bids</strong>
-                    <span class="badge bg-secondary ms-2">Coming Soon</span>
                 </a>
-                <a href="#" class="auction-shortcut coming-soon">
+                <a href="{{ route('auction.saved') }}" class="auction-shortcut">
                     <i class="bi bi-bookmark-star fs-4 me-2 text-primary"></i>
                     <strong>Saved Auctions</strong>
-                    <span class="badge bg-secondary ms-2">Coming Soon</span>
                 </a>
             </div>
         </div>

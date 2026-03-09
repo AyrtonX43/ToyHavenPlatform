@@ -167,10 +167,9 @@
             </a>
         </div>
         <div class="col-md-6 col-lg-4">
-            <a href="#" class="auction-shortcut coming-soon">
+            <a href="{{ route('auction.seller.stats') }}" class="auction-shortcut">
                 <i class="bi bi-graph-up fs-4 me-2 text-primary"></i>
                 <strong>Seller Stats</strong>
-                <span class="badge bg-secondary ms-2">Coming Soon</span>
                 <span class="d-block small text-muted mt-1">View your auction analytics</span>
             </a>
         </div>
