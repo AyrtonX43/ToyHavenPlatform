@@ -28,7 +28,7 @@
                                 
                                 @php 
                                     $myHighestBid = $auction->bids->first(); 
-                                    $isWinning = $auction->winner_id === auth()->id() || ($auction->isActive() && $auction->winning_amount == $myHighestBid->amount);
+                                    $isWinning = $auction->winner_id === auth()->id() || ($auction->isActive() && $auction->winning_amount == ($myHighestBid->amount ?? -1));
                                 @endphp
                                 
                                 <p class="mb-1"><strong>Your Highest Bid:</strong> ₱{{ number_format($myHighestBid->amount ?? 0, 2) }}</p>

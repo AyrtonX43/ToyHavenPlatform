@@ -18,12 +18,12 @@
             @foreach($payments as $payment)
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0">
-                        @php $primaryImg = $payment->auction->images->firstWhere('is_primary', true) ?? $payment->auction->images->first(); @endphp
+                        @php $primaryImg = $payment->auction?->images->firstWhere('is_primary', true) ?? $payment->auction?->images->first(); @endphp
                         @if($primaryImg)
                             <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="" class="card-img-top" style="height:180px;object-fit:cover;">
                         @endif
                         <div class="card-body">
-                            <h6 class="card-title">{{ Str::limit($payment->auction->title, 50) }}</h6>
+                            <h6 class="card-title">{{ Str::limit($payment->auction?->title ?? 'Deleted Auction', 50) }}</h6>
                             <p class="mb-1"><strong>Winning Bid:</strong> ₱{{ number_format($payment->amount, 2) }}</p>
                             
                             <p class="mb-2">
