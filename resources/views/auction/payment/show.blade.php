@@ -29,9 +29,16 @@
                         @endif
                     </p>
 
-                    <div class="alert alert-info">
-                        <strong>Payment options coming soon.</strong> For now, please contact support to complete your payment.
-                    </div>
+                    @if(!empty($paypalClientId))
+                        <div class="mb-4">
+                            <p class="mb-2"><strong>Pay with PayPal:</strong></p>
+                            <div id="paypal-button-container"></div>
+                        </div>
+                    @else
+                        <div class="alert alert-info">
+                            <strong>Payment options coming soon.</strong> For now, please contact support to complete your payment.
+                        </div>
+                    @endif
 
                     <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary">Back to Auctions</a>
                 </div>
@@ -40,3 +47,69 @@
     </div>
 </div>
 @endsection
+
+@if(!empty($paypalClientId))
+@push('scripts')
+<script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&components=buttons&currency=PHP&intent=capture&disable-funding=card,credit"></script>
+<script>
+(function() {
+    var paymentId = {{ $payment->id }};
+    var createOrderUrl = @json(route('auction.payment.paypal.create-order'));
+    var captureOrderUrl = @json(route('auction.payment.paypal.capture-order'));
+    var csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @json(csrf_token());
+    var payUrl = @json(route('auction.payment.show', $payment));
+
+    paypal.Buttons({
+        createOrder: function() {
+            return fetch(createOrderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    payment_id: paymentId,
+                    _token: csrfToken
+                })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.orderId) return data.orderId;
+                throw new Error(data.error || 'Could not create order');
+            });
+        },
+        onApprove: function(data) {
+            return fetch(captureOrderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    order_id: data.orderID,
+                    _token: csrfToken
+                })
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                if (res.success && res.redirect) {
+                    window.location.href = res.redirect;
+                } else {
+                    alert(res.error || 'Payment failed. Please try again.');
+                    window.location.href = payUrl + '?payment_failed=1';
+                }
+            }).catch(function() {
+                alert('Payment failed. Please try again.');
+                window.location.href = payUrl + '?payment_failed=1';
+            });
+        },
+        onCancel: function() {},
+        onError: function() {
+            alert('Payment failed. Please try again.');
+            window.location.href = payUrl + '?payment_failed=1';
+        }
+    }).render('#paypal-button-container');
+})();
+</script>
+@endpush
+@endif

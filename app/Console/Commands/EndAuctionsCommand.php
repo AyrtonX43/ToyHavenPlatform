@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Auction;
 use App\Models\AuctionPayment;
 use App\Notifications\AuctionWonNotification;
+use App\Notifications\AuctionWonSellerNotification;
 use Illuminate\Console\Command;
 
 class EndAuctionsCommand extends Command
@@ -41,6 +42,11 @@ class EndAuctionsCommand extends Command
                         $auction->winner->notify(new AuctionWonNotification($auction, $payment));
                     } catch (\Exception $e) {
                         $this->error('Failed to notify winner: ' . $e->getMessage());
+                    }
+                    try {
+                        $auction->user?->notify(new AuctionWonSellerNotification($auction, $payment));
+                    } catch (\Exception $e) {
+                        $this->error('Failed to notify seller: ' . $e->getMessage());
                     }
                 }
             }

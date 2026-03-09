@@ -27,7 +27,7 @@ class AuctionSellerDashboardController extends Controller
         $sales = Collection::make();
         if (Schema::hasTable('auction_payments')) {
             $sales = AuctionPayment::whereHas('auction', fn ($q) => $q->where('user_id', $user->id))
-            ->whereIn('status', ['paid', 'held', 'released'])
+            ->whereIn('status', ['pending', 'paid', 'held', 'released'])
             ->with(['auction', 'winner'])
             ->orderByDesc('created_at')
             ->limit(20)

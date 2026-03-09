@@ -77,6 +77,7 @@
                             <th>Auction</th>
                             <th>Winner</th>
                             <th>Amount</th>
+                            <th>Status</th>
                             <th>Delivery</th>
                             <th>Actions</th>
                         </tr>
@@ -87,6 +88,16 @@
                                 <td>{{ Str::limit($p->auction?->title, 40) }}</td>
                                 <td>{{ $p->winner?->name }}</td>
                                 <td>₱{{ number_format($p->amount, 2) }}</td>
+                                <td>
+                                    @if($p->status === 'pending')
+                                        <span class="badge bg-warning text-dark">Awaiting payment</span>
+                                        @if($p->payment_deadline)
+                                            <br><span class="small text-muted">Deadline: {{ $p->payment_deadline->format('M d') }}</span>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-{{ $p->status === 'released' ? 'success' : 'info' }}">{{ ucfirst($p->status) }}</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($p->delivery_status === 'shipped' && $p->tracking_number)
                                         <span class="text-muted small">Shipped ({{ $p->tracking_number }})</span>

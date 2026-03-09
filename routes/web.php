@@ -159,6 +159,8 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::post('/auction/item/{auction}/unsave', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'unsave'])->name('auction.unsave');
     Route::post('/auction/item/{auction}/bid', [\App\Http\Controllers\Auction\AuctionBidController::class, 'store'])->name('auction.bid.store')->where('auction', '[0-9]+');
     Route::get('/auction/payment/{payment}', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'show'])->name('auction.payment.show');
+    Route::post('/auction/payment/paypal/create-order', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'createPayPalOrder'])->name('auction.payment.paypal.create-order');
+    Route::post('/auction/payment/paypal/capture-order', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'capturePayPalOrder'])->name('auction.payment.paypal.capture-order');
     Route::get('/auction/payment/{payment}/success', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'success'])->name('auction.payment.success');
     Route::post('/auction/payment/{payment}/shipped', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'markShipped'])->name('auction.payment.shipped');
     Route::post('/auction/payment/{payment}/confirm-delivery', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'confirmDelivery'])->name('auction.payment.confirm-delivery');
