@@ -44,8 +44,8 @@
         </div>
     @endif
 
-    {{-- Outbid toast --}}
-    <div x-show="outbidToast.show" x-transition class="toast-outbid" x-cloak>
+    {{-- Outbid / won toast (only show when we have a message to display) --}}
+    <div x-show="outbidToast.show && outbidToast.message" x-transition class="toast-outbid" x-cloak>
         <div class="alert alert-warning alert-dismissible shadow-lg mb-0">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <span x-text="outbidToast.message"></span>
@@ -159,8 +159,8 @@
         <div class="col-lg-4">
             <div class="auction-bid-panel sticky-top">
 
-                {{-- Active Auction State --}}
-                <template x-if="isLive">
+                {{-- Active Auction State (show when live OR when not yet ended - handles limbo state) --}}
+                <template x-if="isLive || !isEnded">
                     <div>
                         <p class="mb-2">
                             <strong>Current bid</strong>
@@ -183,7 +183,7 @@
                                 </div>
                                 <button
                                     @click="placeBid()"
-                                    :disabled="bidLoading || !isLive"
+                                    :disabled="bidLoading || !isLive || (countdownText === 'Auction ended')"
                                     class="btn btn-primary btn-lg w-100 auction-btn-primary rounded-pill"
                                 >
                                     <span x-show="!bidLoading">
@@ -391,7 +391,8 @@ function auctionLive() {
                 const data = await resp.json();
 
                 if (!resp.ok) {
-                    this.bidMessage = data.error || data.message || 'Bid failed.';
+                    const errMsg = data.error || data.message || (data.errors?.amount?.[0]) || 'Bid failed.';
+                    this.bidMessage = typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg);
                     this.bidSuccess = false;
                     return;
                 }
@@ -480,13 +481,15 @@ function auctionLive() {
         },
 
         handleUserOutbid(e) {
-            this.outbidToast.message = e.message;
+            const msg = e?.message || e?.data?.message || 'You\'ve been outbid on this auction.';
+            this.outbidToast.message = msg;
             this.outbidToast.show = true;
             setTimeout(() => { this.outbidToast.show = false; }, 8000);
         },
 
         handleUserWon(e) {
-            this.outbidToast.message = e.message;
+            const msg = e?.message || e?.data?.message || 'Congratulations! You won this auction!';
+            this.outbidToast.message = msg;
             this.outbidToast.show = true;
             if (e.payment_link) {
                 setTimeout(() => { window.location.href = e.payment_link; }, 3000);
