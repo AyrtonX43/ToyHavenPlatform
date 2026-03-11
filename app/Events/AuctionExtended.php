@@ -33,7 +33,7 @@ class AuctionExtended implements ShouldBroadcastNow
     {
         return [
             'auction_id' => $this->auction->id,
-            'end_at' => $this->auction->end_at->toIso8601String(),
+            'end_at' => $this->auction->end_at?->toIso8601String(),
             'message' => 'Time extended! Anti-snipe protection activated.',
         ];
     }

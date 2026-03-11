@@ -175,13 +175,13 @@ class Auction extends Model
         return $this->status === 'ended';
     }
 
-    public function getCurrentBidAttribute(): ?float
+    public function getCurrentBidAttribute(): float
     {
-        return $this->winning_amount ?? (float) $this->starting_bid;
+        return $this->winning_amount !== null ? (float) $this->winning_amount : (float) $this->starting_bid;
     }
 
     public function getNextMinBidAttribute(): float
     {
-        return (float) $this->current_bid + (float) $this->bid_increment;
+        return round((float) $this->current_bid + (float) $this->bid_increment, 2);
     }
 }

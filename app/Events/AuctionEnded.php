@@ -33,7 +33,10 @@ class AuctionEnded implements ShouldBroadcastNow
     {
         $winnerAlias = null;
         if ($this->auction->winner_id) {
-            $winnerBid = $this->auction->bids()->where('user_id', $this->auction->winner_id)->first();
+            $winnerBid = \App\Models\AuctionBid::where('auction_id', $this->auction->id)
+                ->where('user_id', $this->auction->winner_id)
+                ->where('is_winning', true)
+                ->first();
             $winnerAlias = $winnerBid ? 'Bidder #' . $winnerBid->rank_at_bid : 'Winner';
         }
 

@@ -403,11 +403,15 @@ class AuctionPaymentController extends Controller
     public function markShipped(Request $request, AuctionPayment $payment)
     {
         $user = Auth::user();
+        $payment->load('auction');
         if ($payment->auction->user_id !== $user->id) {
             abort(403);
         }
         if (! $payment->isPaid()) {
             return back()->with('error', 'Payment must be completed first.');
+        }
+        if ($payment->isShipped()) {
+            return back()->with('info', 'This item has already been marked as shipped.');
         }
 
         $request->validate([
@@ -430,6 +434,11 @@ class AuctionPaymentController extends Controller
         if ($payment->winner_id !== $user->id) {
             abort(403);
         }
+
+        if ($payment->delivery_status !== 'shipped') {
+            return back()->with('error', 'This item has not been shipped yet.');
+        }
+
         $payment->update([
             'delivery_status' => 'delivered',
             'confirmed_at' => now(),

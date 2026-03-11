@@ -16,8 +16,9 @@ import Pusher from 'pusher-js';
 
     if (!window.Echo) {
         window.Echo = new Echo({
-            broadcaster: 'reverb',
+            broadcaster: 'pusher',
             key: config.echoKey,
+            cluster: 'mt1',
             wsHost: config.wsHost || window.location.hostname,
             wsPort: config.wsPort || 8080,
             wssPort: config.wssPort || 443,

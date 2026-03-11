@@ -63,11 +63,10 @@ class AuctionBidController extends Controller
                 : back()->with('error', 'Please wait a few seconds before bidding again.');
         }
 
-        $minBid = (float) ($auction->winning_amount ?? $auction->starting_bid) + (float) $auction->bid_increment;
-        $maxBid = $minBid + 0.01;
+        $minBid = round((float) ($auction->winning_amount ?? $auction->starting_bid) + (float) $auction->bid_increment, 2);
 
         $request->validate([
-            'amount' => 'required|numeric|min:' . $minBid . '|max:' . $maxBid,
+            'amount' => ['required', 'numeric', 'min:' . $minBid, 'max:' . $minBid],
         ], [
             'amount.min' => 'Your bid must be at least ₱' . number_format($minBid, 2) . '.',
             'amount.max' => 'Please place only the minimum next bid (₱' . number_format($minBid, 2) . ').',
@@ -118,17 +117,22 @@ class AuctionBidController extends Controller
 
             $auction->refresh();
 
-            if ($auction->end_at && $auction->end_at->diffInSeconds(now(), false) >= -self::ANTI_SNIPE_THRESHOLD_SECONDS) {
-                $newEndAt = $auction->end_at->addMinutes(self::ANTI_SNIPE_EXTENSION_MINUTES);
-                $auction->update(['end_at' => $newEndAt]);
-                $auction->refresh();
-                $antiSnipeTriggered = true;
+            if ($auction->end_at) {
+                $secondsLeft = now()->diffInSeconds($auction->end_at, false);
+                if ($secondsLeft >= 0 && $secondsLeft <= self::ANTI_SNIPE_THRESHOLD_SECONDS) {
+                    $newEndAt = $auction->end_at->copy()->addMinutes(self::ANTI_SNIPE_EXTENSION_MINUTES);
+                    $auction->update(['end_at' => $newEndAt]);
+                    $auction->refresh();
+                    $antiSnipeTriggered = true;
+                }
             }
         });
 
         Cache::put($cooldownKey, true, self::BID_COOLDOWN_SECONDS);
 
         $auction->refresh();
+
+        $endAtIso = $auction->end_at?->toIso8601String() ?? '';
 
         try {
             broadcast(new BidPlaced(
@@ -137,7 +141,7 @@ class AuctionBidController extends Controller
                 bidderAlias: $bidderAlias,
                 bidCount: $auction->bids_count,
                 nextMinBid: $auction->next_min_bid,
-                endAt: $auction->end_at->toIso8601String(),
+                endAt: $endAtIso,
             ))->toOthers();
         } catch (\Exception $e) {
             Log::error('Failed to broadcast BidPlaced: ' . $e->getMessage());
@@ -162,7 +166,7 @@ class AuctionBidController extends Controller
                     'bid_count' => $auction->bids_count,
                     'next_min_bid' => $auction->next_min_bid,
                     'next_min_bid_formatted' => '₱' . number_format($auction->next_min_bid, 2),
-                    'end_at' => $auction->end_at->toIso8601String(),
+                    'end_at' => $endAtIso,
                     'anti_snipe' => $antiSnipeTriggered,
                 ],
             ]);

@@ -34,11 +34,13 @@ class UserWonAuction implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        $amount = $this->auction->winning_amount ? (float) $this->auction->winning_amount : 0;
+
         return [
             'auction_id' => $this->auction->id,
             'auction_title' => $this->auction->title,
-            'winning_amount' => (float) $this->auction->winning_amount,
-            'winning_amount_formatted' => '₱' . number_format($this->auction->winning_amount, 2),
+            'winning_amount' => $amount,
+            'winning_amount_formatted' => '₱' . number_format($amount, 2),
             'payment_link' => $this->payment
                 ? route('auction.payment.show', $this->payment)
                 : null,

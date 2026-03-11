@@ -213,7 +213,7 @@
                         </template>
 
                         @auth
-                            <template x-if="winnerId === {{ auth()->id() }}">
+                            <template x-if="winnerId === {{ (int) auth()->id() }}">
                                 <div class="mt-3 p-4 rounded-3 text-center winner-reveal" style="background:#ccfbf1;border:1px solid #0d9488;">
                                     <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
                                     @if($auction->payment)
@@ -234,7 +234,7 @@
                             </template>
                         @endauth
 
-                        <template x-if="winnerAlias && winnerId !== {{ auth()->id() ?? 0 }}">
+                        <template x-if="winnerAlias && winnerId !== {{ auth()->id() ? (int) auth()->id() : 'null' }}">
                             <div class="mt-3 p-3 rounded-3 text-center bg-light">
                                 <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias"></span></p>
                                 <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>

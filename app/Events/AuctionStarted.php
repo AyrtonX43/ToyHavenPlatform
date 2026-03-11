@@ -35,7 +35,7 @@ class AuctionStarted implements ShouldBroadcastNow
             'auction_id' => $this->auction->id,
             'title' => $this->auction->title,
             'starting_bid' => (float) $this->auction->starting_bid,
-            'end_at' => $this->auction->end_at->toIso8601String(),
+            'end_at' => $this->auction->end_at?->toIso8601String(),
         ];
     }
 }

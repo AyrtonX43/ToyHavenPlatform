@@ -96,7 +96,7 @@ class EndAuctionsCommand extends Command
 
         $losingBidderIds = AuctionBid::where('auction_id', $auction->id)
             ->where('user_id', '!=', $auction->winner_id)
-            ->distinct('user_id')
+            ->groupBy('user_id')
             ->pluck('user_id');
 
         foreach ($losingBidderIds as $userId) {
