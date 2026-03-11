@@ -37,7 +37,7 @@ class AuctionEnded implements ShouldBroadcastNow
                 ->where('user_id', $this->auction->winner_id)
                 ->where('is_winning', true)
                 ->first();
-            $winnerAlias = $winnerBid ? 'Bidder #' . $winnerBid->rank_at_bid : 'Winner';
+            $winnerAlias = $winnerBid?->bidder_alias ?: 'Winner';
         }
 
         return [

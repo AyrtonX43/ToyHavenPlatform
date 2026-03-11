@@ -259,7 +259,7 @@
     $reverbScheme = config('reverb.apps.apps.0.options.scheme', config('broadcasting.connections.reverb.options.scheme', 'https'));
 
     $initialBids = $auction->bids->map(fn($b) => [
-        'alias' => auth()->check() && $b->user_id === auth()->id() ? 'You' : 'Bidder #' . ($b->rank_at_bid ?? '-'),
+        'alias' => auth()->check() && $b->user_id === auth()->id() ? 'You' : ($b->bidder_alias ?: 'Anonymous'),
         'amount_formatted' => '₱' . number_format($b->amount, 2),
         'isNew' => false,
     ])->values()->toArray();

@@ -108,13 +108,14 @@ class AuctionBidController extends Controller
 
             $rank = AuctionBid::where('auction_id', $auction->id)->max('rank_at_bid') ?? 0;
             $rank++;
-            $bidderAlias = 'Bidder #' . $rank;
+            $bidderAlias = AuctionBid::resolveAlias($auction->id, $user->id);
 
             AuctionBid::create([
                 'auction_id' => $auction->id,
                 'user_id' => $user->id,
                 'amount' => $amount,
                 'rank_at_bid' => $rank,
+                'bidder_alias' => $bidderAlias,
                 'is_winning' => true,
             ]);
 

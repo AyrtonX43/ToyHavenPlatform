@@ -26,6 +26,25 @@
 </div>
 
 <div class="container py-4 pb-5">
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show">
+            {{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <h4 class="mb-3"><i class="bi bi-list-ul me-2"></i>Active Listings</h4>
@@ -99,6 +118,7 @@
                 $hasBusiness = $user->hasApprovedBusinessAuctionSeller();
                 $hasIndividual = $user->hasApprovedIndividualAuctionSeller();
                 $isApprovedSeller = $hasIndividual || $hasBusiness;
+                $pendingVerifications = $user->auctionSellerVerifications()->where('verification_status', 'pending')->get();
             @endphp
 
             @if($isApprovedSeller)
@@ -106,8 +126,18 @@
                 <div class="d-flex flex-column gap-2 mb-4">
                     <a href="{{ route('auction.seller.dashboard') }}" class="auction-shortcut">
                         <i class="bi bi-grid fs-4 me-2 text-primary"></i>
-                        <strong>Seller Dashboard</strong>
-                        <span class="d-block small text-muted mt-1">Manage your auction business</span>
+                        <div>
+                            <strong>Seller Dashboard</strong>
+                            <span class="d-block small text-muted mt-1">
+                                @if($hasBusiness && $hasIndividual)
+                                    Business & Individual Seller
+                                @elseif($hasBusiness)
+                                    Business Seller
+                                @else
+                                    Individual Seller
+                                @endif
+                            </span>
+                        </div>
                     </a>
                     @if($isVip)
                         <a href="{{ route('auction.listings.create') }}" class="auction-shortcut">
@@ -119,32 +149,60 @@
                 </div>
             @endif
 
-            @if(!$hasBusiness)
-                <h4 class="mb-3"><i class="bi bi-person-badge me-2"></i>Become a Seller</h4>
-                @if($isVip)
-                    <div class="d-flex flex-column gap-2 mb-4">
-                        @if(!$hasIndividual)
-                            <a href="{{ route('auction.seller-registration.individual') }}" class="auction-shortcut">
-                                <i class="bi bi-person fs-4 me-2 text-primary"></i>
-                                <strong>Individual Seller</strong>
-                                <span class="d-block small text-muted mt-1">Register with ID and bank docs</span>
-                            </a>
-                        @endif
-                        <a href="{{ route('auction.seller-registration.business') }}" class="auction-shortcut">
-                            <i class="bi bi-shop fs-4 me-2 text-primary"></i>
-                            <strong>Business Seller</strong>
-                            <span class="d-block small text-muted mt-1">Register your business store</span>
-                        </a>
+            @if($pendingVerifications->count() > 0)
+                <div class="card border-2 border-info mb-4">
+                    <div class="card-body py-3">
+                        <h6 class="mb-2"><i class="bi bi-hourglass-split text-info me-2"></i>Pending Verification</h6>
+                        @foreach($pendingVerifications as $pv)
+                            <p class="mb-1 small">
+                                <span class="badge bg-info text-dark">{{ ucfirst($pv->type) }} Seller</span>
+                                <span class="text-muted ms-1">Application submitted {{ $pv->created_at->diffForHumans() }}. Under review.</span>
+                            </p>
+                        @endforeach
                     </div>
-                @else
-                    <div class="card border-2 border-warning mb-4">
-                        <div class="card-body text-center py-4">
-                            <i class="bi bi-gem text-warning fs-1 mb-2"></i>
-                            <h6 class="mb-2">Upgrade to VIP</h6>
-                            <p class="small text-muted mb-3">Auction seller registration is available for VIP members only.</p>
-                            <a href="{{ route('membership.upgrade', 'vip') }}" class="btn btn-warning btn-sm">Upgrade to VIP</a>
+                </div>
+            @endif
+
+            @if(!$hasBusiness || !$hasIndividual)
+                @php
+                    $pendingTypes = $pendingVerifications->pluck('type')->toArray();
+                    $showIndividualReg = !$hasIndividual && !in_array('individual', $pendingTypes);
+                    $showBusinessReg = !$hasBusiness && !in_array('business', $pendingTypes);
+                @endphp
+
+                @if($showIndividualReg || $showBusinessReg)
+                    <h4 class="mb-3"><i class="bi bi-person-badge me-2"></i>Become a Seller</h4>
+                    @if($isVip)
+                        <div class="d-flex flex-column gap-2 mb-4">
+                            @if($showIndividualReg)
+                                <a href="{{ route('auction.seller-registration.individual') }}" class="auction-shortcut">
+                                    <i class="bi bi-person fs-4 me-2 text-primary"></i>
+                                    <div>
+                                        <strong>Individual Seller</strong>
+                                        <span class="d-block small text-muted mt-1">Register with 2 IDs, selfie, and bank statement</span>
+                                    </div>
+                                </a>
+                            @endif
+                            @if($showBusinessReg)
+                                <a href="{{ route('auction.seller-registration.business') }}" class="auction-shortcut">
+                                    <i class="bi bi-shop fs-4 me-2 text-success"></i>
+                                    <div>
+                                        <strong>Business Seller</strong>
+                                        <span class="d-block small text-muted mt-1">Register with business permit, BIR, and docs</span>
+                                    </div>
+                                </a>
+                            @endif
                         </div>
-                    </div>
+                    @else
+                        <div class="card border-2 border-warning mb-4">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-gem text-warning fs-1 mb-2"></i>
+                                <h6 class="mb-2">Upgrade to VIP</h6>
+                                <p class="small text-muted mb-3">Auction seller registration is available for VIP members only.</p>
+                                <a href="{{ route('membership.upgrade', 'vip') }}" class="btn btn-warning btn-sm">Upgrade to VIP</a>
+                            </div>
+                        </div>
+                    @endif
                 @endif
             @endif
 

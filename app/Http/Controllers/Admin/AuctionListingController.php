@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AuctionStarted;
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AuctionListingController extends Controller
 {
@@ -51,6 +53,15 @@ class AuctionListingController extends Controller
             'end_at' => $endAt,
             'rejection_reason' => null,
         ]);
+
+        try {
+            broadcast(new AuctionStarted($listing));
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast AuctionStarted on approval', [
+                'auction_id' => $listing->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return back()->with('success', 'Auction listing approved and is now live.');
     }
