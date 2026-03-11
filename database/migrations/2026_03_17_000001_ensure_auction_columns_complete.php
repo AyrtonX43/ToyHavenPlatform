@@ -51,10 +51,17 @@ return new class extends Migration
             });
         }
 
-        if (Schema::hasTable('auction_payments') && ! Schema::hasColumn('auction_payments', 'tracking_number')) {
-            Schema::table('auction_payments', function (Blueprint $table) {
-                $table->string('tracking_number')->nullable()->after('delivery_status');
-            });
+        if (Schema::hasTable('auction_payments')) {
+            if (! Schema::hasColumn('auction_payments', 'tracking_number')) {
+                Schema::table('auction_payments', function (Blueprint $table) {
+                    $table->string('tracking_number')->nullable()->after('delivery_status');
+                });
+            }
+            if (! Schema::hasColumn('auction_payments', 'shipped_at')) {
+                Schema::table('auction_payments', function (Blueprint $table) {
+                    $table->timestamp('shipped_at')->nullable();
+                });
+            }
         }
 
         if (Schema::hasTable('auction_reviews') && ! Schema::hasColumn('auction_reviews', 'photos')) {

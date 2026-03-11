@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Srmklive\PayPal\Services\PayPal as PayPalService;
 
 class AuctionPaymentController extends Controller
@@ -414,6 +415,10 @@ class AuctionPaymentController extends Controller
     {
         $user = Auth::user();
         $payment->load('auction');
+
+        if (! $payment->auction) {
+            return back()->with('error', 'Auction not found.');
+        }
         if ($payment->auction->user_id !== $user->id) {
             abort(403);
         }
@@ -429,13 +434,24 @@ class AuctionPaymentController extends Controller
             'carrier' => 'nullable|string|max:100',
         ]);
 
-        $payment->update([
-            'delivery_status' => 'shipped',
-            'tracking_number' => $request->filled('tracking_number') ? $request->tracking_number : null,
-            'shipped_at' => now(),
-        ]);
+        try {
+            $data = ['delivery_status' => 'shipped'];
+            if (Schema::hasColumn('auction_payments', 'tracking_number')) {
+                $data['tracking_number'] = $request->filled('tracking_number') ? $request->tracking_number : null;
+            }
+            if (Schema::hasColumn('auction_payments', 'shipped_at')) {
+                $data['shipped_at'] = now();
+            }
+            $payment->update($data);
 
-        return back()->with('success', 'Marked as shipped.');
+            return back()->with('success', 'Marked as shipped.');
+        } catch (\Throwable $e) {
+            Log::error('Auction markShipped failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Could not update. Please try again or contact support.');
+        }
     }
 
     public function confirmDelivery(AuctionPayment $payment)
