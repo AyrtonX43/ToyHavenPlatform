@@ -7,7 +7,8 @@ use App\Models\AuctionPayment;
 use App\Models\AuctionReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 
 class AuctionReviewController extends Controller
 {
@@ -23,6 +24,10 @@ class AuctionReviewController extends Controller
             return back()->with('error', 'You must confirm delivery before leaving a review.');
         }
 
+        if (! Schema::hasTable('auction_reviews')) {
+            return back()->with('error', 'Reviews are not available at this time.');
+        }
+
         if (AuctionReview::where('auction_payment_id', $payment->id)->exists()) {
             return back()->with('error', 'You have already reviewed this auction.');
         }
@@ -35,23 +40,49 @@ class AuctionReviewController extends Controller
         ]);
 
         $photoPaths = [];
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $photo) {
-                $photoPaths[] = $photo->store('auction_reviews/' . $payment->id, 'public');
+        if ($request->hasFile('photos') && Schema::hasColumn('auction_reviews', 'photos')) {
+            try {
+                foreach ($request->file('photos') as $photo) {
+                    $path = $photo->store('auction_reviews/' . $payment->id, 'public');
+                    if ($path) {
+                        $photoPaths[] = $path;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Auction review photo upload failed', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
             }
         }
 
-        AuctionReview::create([
-            'auction_payment_id' => $payment->id,
-            'winner_id' => $user->id,
-            'auction_id' => $payment->auction_id,
-            'seller_user_id' => $payment->auction->user_id,
-            'rating' => $request->rating,
-            'feedback' => $request->feedback,
-            'photos' => ! empty($photoPaths) ? $photoPaths : null,
-            'delivery_confirmed_at' => $payment->confirmed_at ?? now(),
-        ]);
+        try {
+            $payment->load('auction');
+            $sellerUserId = $payment->auction?->user_id ?? 0;
+            if (! $sellerUserId) {
+                return back()->with('error', 'Could not determine seller.');
+            }
 
-        return back()->with('success', 'Thank you for your review!');
+            $data = [
+                'auction_payment_id' => $payment->id,
+                'winner_id' => $user->id,
+                'auction_id' => $payment->auction_id,
+                'seller_user_id' => $sellerUserId,
+                'rating' => $request->rating,
+                'feedback' => $request->feedback ?: null,
+                'delivery_confirmed_at' => $payment->confirmed_at ?? now(),
+            ];
+            if (Schema::hasColumn('auction_reviews', 'photos')) {
+                $data['photos'] = ! empty($photoPaths) ? $photoPaths : null;
+            }
+
+            AuctionReview::create($data);
+
+            return back()->with('success', 'Thank you for your review!');
+        } catch (\Throwable $e) {
+            Log::error('Auction review store failed', [
+                'payment_id' => $payment->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Could not save your review. Please try again.');
+        }
     }
 }
