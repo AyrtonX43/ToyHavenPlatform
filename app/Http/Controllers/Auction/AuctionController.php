@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auction;
+use App\Models\AuctionPayment;
 use Illuminate\Support\Facades\Schema;
 
 class AuctionController extends Controller
@@ -52,13 +53,30 @@ class AuctionController extends Controller
                 ->with('error', 'This auction is not available for viewing.');
         }
 
-        $with = ['user', 'category', 'images'];
+        $with = ['user', 'category', 'images', 'payment'];
         if (Schema::hasTable('auction_bids')) {
             $with['bids'] = fn ($q) => $q->orderByDesc('amount')->limit(10);
         }
         $auction->load($with);
         if (! $auction->relationLoaded('bids')) {
             $auction->setRelation('bids', collect([]));
+        }
+
+        // Ensure payment exists for winner when auction ended (e.g. if scheduler didn't run)
+        if ($auction->status === 'ended'
+            && $auction->winner_id === $user->id
+            && $auction->meetsReserve()
+            && Schema::hasTable('auction_payments')
+            && ! $auction->payment) {
+            $payment = AuctionPayment::create([
+                'auction_id' => $auction->id,
+                'winner_id' => $auction->winner_id,
+                'amount' => $auction->winning_amount,
+                'status' => 'pending',
+                'payment_deadline' => now()->addHours(48),
+                'is_second_chance' => false,
+            ]);
+            $auction->setRelation('payment', $payment);
         }
 
         $isSaved = Schema::hasTable('saved_auctions') && \Illuminate\Support\Facades\DB::table('saved_auctions')
