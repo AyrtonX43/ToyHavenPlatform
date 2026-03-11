@@ -3,45 +3,10 @@
 @section('title', 'Auction Hub - ToyHaven')
 
 @push('styles')
+<link href="{{ asset('css/auction.css') }}" rel="stylesheet">
 <style>
-    .auction-hero {
-        background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 40%, #0284c7 100%);
-        color: white;
-        padding: 3rem 0;
-        margin-bottom: 2rem;
-        border-radius: 0 0 24px 24px;
-        box-shadow: 0 12px 40px rgba(2, 132, 199, 0.2);
-    }
-    .auction-shortcut {
-        display: block;
-        padding: 1.25rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 16px;
-        text-decoration: none !important;
-        color: inherit;
-        transition: all 0.25s ease;
-    }
-    .auction-shortcut:hover {
-        border-color: #0284c7;
-        background: #f0f9ff;
-        color: inherit;
-    }
-    .auction-shortcut.coming-soon {
-        opacity: 0.7;
-        cursor: not-allowed;
-    }
-    .auction-shortcut.coming-soon:hover {
-        border-color: #e2e8f0;
-        background: #f8fafc;
-    }
-    .empty-state {
-        padding: 3rem 2rem;
-        text-align: center;
-        background: #f8fafc;
-        border-radius: 16px;
-        border: 2px dashed #e2e8f0;
-    }
-    .hover-shadow:hover { box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1); }
+    .auction-listing-card { transition: transform 0.2s ease; }
+    .auction-listing-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15); }
 </style>
 @endpush
 
@@ -64,13 +29,13 @@
                     @foreach($activeListings as $a)
                         <div class="col-md-6">
                             <a href="{{ route('auction.show', $a) }}" class="text-decoration-none text-dark">
-                                <div class="card h-100 shadow-sm border-0 overflow-hidden hover-shadow">
+                                <div class="card h-100 auction-card auction-listing-card border-0">
                                     @php $primaryImg = $a->images->firstWhere('is_primary', true) ?? $a->images->first(); @endphp
                                     @if($primaryImg)
-                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="" class="card-img-top" style="height:180px;object-fit:cover;">
+                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="{{ Str::limit($a->title, 50) }}" class="card-img-top auction-card-img">
                                     @endif
-                                    <div class="card-body">
-                                        <h6 class="card-title">{{ Str::limit($a->title, 50) }}</h6>
+                                    <div class="card-body auction-card-body">
+                                        <h6 class="card-title fw-semibold">{{ Str::limit($a->title, 50) }}</h6>
                                         <p class="mb-1"><strong>Current bid:</strong> ₱{{ number_format($a->winning_amount ?? $a->starting_bid, 2) }}</p>
                                         <p class="mb-1 small text-muted">{{ $a->bids_count }} bid(s)</p>
                                         <p class="mb-0 small text-primary">Ends {{ $a->end_at?->diffForHumans() }}</p>
@@ -82,7 +47,7 @@
                 </div>
                 <div class="mt-3">{{ $activeListings->links() }}</div>
             @else
-                <div class="empty-state">
+                <div class="auction-empty">
                     <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
                     <p class="text-muted mb-0">No active auctions at the moment. Check back soon for new listings from sellers.</p>
                 </div>
@@ -95,12 +60,12 @@
                     @foreach($pendingListings as $a)
                         <div class="col-md-6 col-lg-4">
                             <a href="{{ route('auction.show', $a) }}" class="text-decoration-none text-dark">
-                                <div class="card h-100 shadow-sm border-0 overflow-hidden hover-shadow border-warning border-2">
+                                <div class="card h-100 auction-card border-0 border-2 border-warning">
                                     @php $primaryImg = $a->images->firstWhere('is_primary', true) ?? $a->images->first(); @endphp
                                     @if($primaryImg)
-                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="" class="card-img-top" style="height:120px;object-fit:cover;">
+                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="{{ Str::limit($a->title, 40) }}" class="card-img-top auction-card-img" style="height:140px;">
                                     @endif
-                                    <div class="card-body">
+                                    <div class="card-body auction-card-body">
                                         <h6 class="card-title">{{ Str::limit($a->title, 40) }}</h6>
                                         <p class="mb-0 small"><strong>Starting:</strong> ₱{{ number_format($a->starting_bid, 2) }}</p>
                                         <span class="badge bg-warning text-dark mt-1">Pending</span>

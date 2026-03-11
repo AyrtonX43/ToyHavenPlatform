@@ -1,0 +1,143 @@
+/**
+ * Auction Hub - Shared Styles
+ * Modern, professional, clean design system
+ */
+:root {
+    --auction-primary: #0284c7;
+    --auction-primary-hover: #0369a1;
+    --auction-success: #0d9488;
+    --auction-success-bg: #ccfbf1;
+    --auction-surface: #ffffff;
+    --auction-border: #e2e8f0;
+    --auction-text: #0f172a;
+    --auction-muted: #64748b;
+    --auction-radius: 16px;
+    --auction-radius-sm: 12px;
+    --auction-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --auction-shadow-hover: 0 10px 30px rgba(2, 132, 199, 0.15);
+}
+
+/* Hero sections */
+.auction-hero {
+    background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 40%, #0284c7 100%);
+    color: white;
+    padding: 2.5rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 var(--auction-radius) var(--auction-radius);
+    box-shadow: 0 12px 40px rgba(2, 132, 199, 0.2);
+}
+
+.auction-hero h1 { font-weight: 700; letter-spacing: -0.02em; }
+.auction-hero p { opacity: 0.92; }
+
+/* Cards */
+.auction-card {
+    background: var(--auction-surface);
+    border-radius: var(--auction-radius);
+    box-shadow: var(--auction-shadow);
+    border: 1px solid var(--auction-border);
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.auction-card:hover {
+    box-shadow: var(--auction-shadow-hover);
+}
+
+.auction-card-img {
+    height: 200px;
+    object-fit: cover;
+    background: #f1f5f9;
+}
+
+.auction-card-body { padding: 1.25rem; }
+
+/* Shortcuts / Link tiles */
+.auction-shortcut {
+    display: block;
+    padding: 1.25rem 1.5rem;
+    border: 2px solid var(--auction-border);
+    border-radius: var(--auction-radius-sm);
+    text-decoration: none !important;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.auction-shortcut:hover {
+    border-color: var(--auction-primary);
+    background: #f0f9ff;
+    color: inherit;
+}
+
+.auction-shortcut.coming-soon {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.auction-shortcut.coming-soon:hover {
+    border-color: var(--auction-border);
+    background: #f8fafc;
+}
+
+/* Empty states */
+.auction-empty {
+    padding: 3rem 2rem;
+    text-align: center;
+    background: #f8fafc;
+    border-radius: var(--auction-radius);
+    border: 2px dashed #e2e8f0;
+}
+
+/* Badges */
+.auction-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35em 0.75em;
+    border-radius: 8px;
+}
+
+/* Bid panel */
+.auction-bid-panel {
+    background: var(--auction-surface);
+    border-radius: var(--auction-radius);
+    box-shadow: var(--auction-shadow);
+    border: 1px solid var(--auction-border);
+    padding: 1.5rem;
+}
+
+.auction-bid-panel .amount { font-size: 1.75rem; font-weight: 700; color: var(--auction-primary); }
+
+/* Payment page */
+.auction-payment-card {
+    border-radius: var(--auction-radius);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.auction-payment-header {
+    background: linear-gradient(135deg, var(--auction-success) 0%, #0f766e 100%);
+    color: white;
+    padding: 1.5rem 1.75rem;
+}
+
+/* Section headings */
+.auction-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--auction-text);
+    margin-bottom: 1rem;
+}
+
+/* Buttons */
+.auction-btn-primary {
+    background: var(--auction-primary);
+    border-color: var(--auction-primary);
+    border-radius: var(--auction-radius-sm);
+    padding: 0.6rem 1.25rem;
+    font-weight: 600;
+}
+
+.auction-btn-primary:hover {
+    background: var(--auction-primary-hover);
+    border-color: var(--auction-primary-hover);
+}

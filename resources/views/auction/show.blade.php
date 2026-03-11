@@ -2,6 +2,10 @@
 
 @section('title', $auction->title . ' - ToyHaven Auction')
 
+@push('styles')
+<link href="{{ asset('css/auction.css') }}" rel="stylesheet">
+@endpush
+
 @section('content')
 <div class="container py-4">
     <nav aria-label="breadcrumb">
@@ -32,8 +36,8 @@
                 </div>
             @endif
 
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body">
+            <div class="card auction-card border-0 mb-4">
+                <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h1 class="h4 mb-0">{{ $auction->title }}</h1>
                         @auth
@@ -56,11 +60,11 @@
                     @if($auction->images->count() > 0)
                         <div class="mb-4">
                             @php $primary = $auction->images->firstWhere('is_primary', true) ?? $auction->images->first(); @endphp
-                            <img src="{{ asset('storage/' . $primary->image_path) }}" alt="{{ $auction->title }}" class="img-fluid rounded mb-2" style="max-height:400px;object-fit:contain;">
+                            <img src="{{ asset('storage/' . $primary->image_path) }}" alt="{{ $auction->title }}" class="img-fluid rounded-3 mb-3" id="auction-main-img" style="max-height:420px;object-fit:contain;background:#f8fafc;">
                             @if($auction->images->count() > 1)
                                 <div class="d-flex gap-2 flex-wrap">
                                     @foreach($auction->images->take(5) as $img)
-                                        <img src="{{ asset('storage/' . $img->image_path) }}" alt="" class="rounded" style="width:80px;height:80px;object-fit:cover;cursor:pointer;" onclick="document.querySelector('.img-fluid.rounded').src=this.src">
+                                        <img src="{{ asset('storage/' . $img->image_path) }}" alt="" class="rounded-2" style="width:72px;height:72px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:border-color .2s;" onmouseover="this.style.borderColor='#0284c7'" onmouseout="this.style.borderColor='transparent'" onclick="document.getElementById('auction-main-img').src=this.src">
                                     @endforeach
                                 </div>
                             @endif
@@ -79,9 +83,9 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Bid History</h5>
+            <div class="card auction-card border-0 mb-4">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="mb-0 fw-semibold">Bid History</h5>
                 </div>
                 <div class="card-body">
                     @if($auction->bids->count() > 0)
@@ -101,12 +105,11 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card shadow-sm border-0 mb-4 sticky-top">
-                <div class="card-body">
+            <div class="auction-bid-panel sticky-top">
                     @if($auction->isActive())
                         <p class="mb-2">
-                            <strong>Current bid:</strong>
-                            <span class="fs-4 text-primary">₱{{ number_format($auction->winning_amount ?? $auction->starting_bid, 2) }}</span>
+                            <strong>Current bid</strong>
+                            <span class="amount d-block">₱{{ number_format($auction->winning_amount ?? $auction->starting_bid, 2) }}</span>
                         </p>
                         <p class="mb-2 text-muted small">Minimum next bid: ₱{{ number_format($auction->next_min_bid, 2) }}</p>
                         <p class="mb-3">
@@ -121,7 +124,7 @@
                                 <input type="hidden" name="amount" value="{{ $auction->next_min_bid }}">
                                 <p class="mb-3 text-muted small">Click below to place a bid at the minimum amount. No custom amount to prevent errors.</p>
                                 @error('amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <button type="submit" class="btn btn-primary btn-lg w-100 auction-btn-primary rounded-pill">
                                     <i class="bi bi-hammer me-1"></i>Place bid at ₱{{ number_format($auction->next_min_bid, 2) }}
                                 </button>
                             </form>
@@ -135,7 +138,7 @@
                         @elseif($auction->auction_outcome === 'no_bids')
                             <p class="mb-2 text-muted">No bids were placed.</p>
                         @elseif($auction->winner_id === auth()->id())
-                            <div class="mt-3 p-3 bg-success bg-opacity-10 border border-success rounded text-center">
+                            <div class="mt-3 p-4 rounded-3 text-center" style="background:#ccfbf1;border:1px solid #0d9488;">
                                 <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
                                 @if($auction->payment)
                                     @if($auction->payment->isPending())
@@ -153,14 +156,13 @@
                                 @endif
                             </div>
                         @endif
-                        <p class="mb-0 text-muted">This auction has ended.</p>
+                        <p class="mb-0 text-muted mt-2">This auction has ended.</p>
                     @endif
-                </div>
             </div>
         </div>
     </div>
 
-    <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary">
+    <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary rounded-pill">
         <i class="bi bi-arrow-left me-1"></i>Back to Auctions
     </a>
 </div>

@@ -2,10 +2,14 @@
 
 @section('title', 'Pay for ' . $payment->auction->title . ' - ToyHaven')
 
+@push('styles')
+<link href="{{ asset('css/auction.css') }}" rel="stylesheet">
+@endpush
+
 @section('content')
 <div class="container py-4">
     <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
+        <ol class="breadcrumb mb-4">
             <li class="breadcrumb-item"><a href="{{ route('auction.index') }}">Auction</a></li>
             <li class="breadcrumb-item"><a href="{{ route('auction.show', $payment->auction) }}">{{ Str::limit($payment->auction->title, 30) }}</a></li>
             <li class="breadcrumb-item active">Payment</li>
@@ -13,34 +17,40 @@
     </nav>
 
     <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-success text-white py-3">
-                    <h4 class="mb-0"><i class="bi bi-trophy me-2"></i>You Won: {{ $payment->auction->title }}</h4>
+        <div class="col-lg-7">
+            <div class="auction-payment-card">
+                <div class="auction-payment-header">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-trophy-fill me-2"></i>You Won: {{ Str::limit($payment->auction->title, 60) }}</h4>
                 </div>
-                <div class="card-body p-4">
-                    <p class="mb-2"><strong>Amount to pay:</strong></p>
-                    <p class="fs-2 text-primary mb-3">₱{{ number_format($payment->amount, 2) }}</p>
-                    <p class="mb-4 text-muted">
-                        <i class="bi bi-clock me-1"></i>
-                        Payment deadline: {{ $payment->payment_deadline?->format('M d, Y H:i') }}
-                        @if($payment->isOverdue())
-                            <span class="text-danger">(Overdue)</span>
-                        @endif
-                    </p>
+                <div class="card-body p-4 p-lg-5">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+                        <div>
+                            <p class="text-muted small mb-1">Amount to pay</p>
+                            <p class="fs-2 fw-bold mb-0" style="color:#0d9488;">₱{{ number_format($payment->amount, 2) }}</p>
+                        </div>
+                        <div class="text-end">
+                            <p class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>Payment deadline</p>
+                            <p class="mb-0 fw-semibold {{ $payment->isOverdue() ? 'text-danger' : '' }}">
+                                {{ $payment->payment_deadline?->format('M d, Y H:i') }}
+                                @if($payment->isOverdue())
+                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                @endif
+                            </p>
+                        </div>
+                    </div>
 
                     @if(!empty($paypalClientId))
-                        <div class="mb-4">
-                            <p class="mb-2"><strong>Pay with PayPal:</strong></p>
+                        <div class="mb-4 py-3 px-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                            <p class="mb-3 fw-semibold">Pay securely with PayPal</p>
                             <div id="paypal-button-container"></div>
                         </div>
                     @else
-                        <div class="alert alert-info">
+                        <div class="alert alert-info border-0 rounded-3">
                             <strong>Payment options coming soon.</strong> For now, please contact support to complete your payment.
                         </div>
                     @endif
 
-                    <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary">Back to Auctions</a>
+                    <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary rounded-pill">Back to Auctions</a>
                 </div>
             </div>
         </div>

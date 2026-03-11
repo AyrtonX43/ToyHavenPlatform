@@ -2,23 +2,30 @@
 
 @section('title', 'Saved Auctions - ToyHaven')
 
+@push('styles')
+<link href="{{ asset('css/auction.css') }}" rel="stylesheet">
+<style>
+    .auction-saved-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15); }
+</style>
+@endpush
+
 @section('content')
 <div class="container py-4 pb-5">
     <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
+        <ol class="breadcrumb mb-4">
             <li class="breadcrumb-item"><a href="{{ route('auction.index') }}">Auction Hub</a></li>
             <li class="breadcrumb-item active">Saved Auctions</li>
         </ol>
     </nav>
 
-    <h2 class="mb-4"><i class="bi bi-bookmark-star me-2"></i>Saved Auctions</h2>
+    <h2 class="mb-4 fw-bold"><i class="bi bi-bookmark-star me-2"></i>Saved Auctions</h2>
 
     @if($savedAuctions->count() > 0)
         <div class="row g-4">
             @foreach($savedAuctions as $auction)
                 <div class="col-md-6 col-lg-4">
                     <a href="{{ route('auction.show', $auction) }}" class="text-decoration-none text-dark">
-                        <div class="card h-100 shadow-sm border-0 hover-shadow position-relative">
+                        <div class="card h-100 auction-card auction-saved-card border-0 position-relative">
                             @php $primaryImg = $auction->images->firstWhere('is_primary', true) ?? $auction->images->first(); @endphp
                             @if($primaryImg)
                                 <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="" class="card-img-top" style="height:180px;object-fit:cover;">
@@ -38,7 +45,7 @@
                             
                             <form action="{{ route('auction.unsave', $auction) }}" method="POST" class="position-absolute top-0 end-0 m-2">
                                 @csrf
-                                <button type="submit" class="btn btn-sm btn-light rounded-circle shadow-sm" title="Remove from saved">
+                                <button type="submit" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width:36px;height:36px;" title="Remove from saved">
                                     <i class="bi bi-bookmark-fill text-primary"></i>
                                 </button>
                             </form>
@@ -49,10 +56,10 @@
         </div>
         <div class="mt-4">{{ $savedAuctions->links() }}</div>
     @else
-        <div class="text-center py-5 bg-light rounded border border-dashed">
+        <div class="auction-empty">
             <i class="bi bi-bookmark fs-1 text-muted mb-3 d-block"></i>
             <p class="text-muted mb-0">You haven't saved any auctions yet.</p>
-            <a href="{{ route('auction.index') }}" class="btn btn-primary mt-3">Browse Auctions</a>
+            <a href="{{ route('auction.index') }}" class="btn btn-primary mt-3 rounded-pill px-4">Browse Auctions</a>
         </div>
     @endif
 </div>
