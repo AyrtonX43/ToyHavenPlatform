@@ -7,6 +7,11 @@
 <style>
     .auction-listing-card { transition: transform 0.2s ease; }
     .auction-listing-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15); }
+    .live-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .65rem; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: .5px; }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; animation: livePulse 1.5s infinite; }
+    @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+    .card-countdown { font-size: .8rem; font-weight: 600; }
+    .card-countdown.urgent { color: #ef4444; }
 </style>
 @endpush
 
@@ -32,13 +37,22 @@
                                 <div class="card h-100 auction-card auction-listing-card border-0">
                                     @php $primaryImg = $a->images->firstWhere('is_primary', true) ?? $a->images->first(); @endphp
                                     @if($primaryImg)
-                                        <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="{{ Str::limit($a->title, 50) }}" class="card-img-top auction-card-img">
+                                        <div class="position-relative">
+                                            <img src="{{ asset('storage/' . $primaryImg->image_path) }}" alt="{{ Str::limit($a->title, 50) }}" class="card-img-top auction-card-img">
+                                            @if($a->isActive())
+                                                <span class="position-absolute top-0 start-0 m-2 px-2 py-1 rounded-pill bg-white shadow-sm live-badge">
+                                                    <span class="live-dot"></span> LIVE
+                                                </span>
+                                            @endif
+                                        </div>
                                     @endif
                                     <div class="card-body auction-card-body">
                                         <h6 class="card-title fw-semibold">{{ Str::limit($a->title, 50) }}</h6>
                                         <p class="mb-1"><strong>Current bid:</strong> ₱{{ number_format($a->winning_amount ?? $a->starting_bid, 2) }}</p>
-                                        <p class="mb-1 small text-muted">{{ $a->bids_count }} bid(s)</p>
-                                        <p class="mb-0 small text-primary">Ends {{ $a->end_at?->diffForHumans() }}</p>
+                                        <p class="mb-1 small text-muted">{{ $a->bids_count }} bid{{ $a->bids_count !== 1 ? 's' : '' }}</p>
+                                        @if($a->end_at)
+                                            <p class="mb-0 card-countdown" x-data="auctionCardTimer('{{ $a->end_at->toIso8601String() }}')" x-text="text" :class="{ 'urgent': urgent }"></p>
+                                        @endif
                                     </div>
                                 </div>
                             </a>
@@ -153,3 +167,42 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function auctionCardTimer(endAtIso) {
+    return {
+        text: '',
+        urgent: false,
+        interval: null,
+        init() {
+            this.update();
+            this.interval = setInterval(() => this.update(), 1000);
+        },
+        update() {
+            const diff = new Date(endAtIso).getTime() - Date.now();
+            if (diff <= 0) {
+                this.text = 'Ended';
+                this.urgent = false;
+                if (this.interval) clearInterval(this.interval);
+                return;
+            }
+            this.urgent = diff <= 300000;
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            let parts = [];
+            if (d > 0) parts.push(d + 'd');
+            if (h > 0) parts.push(h + 'h');
+            parts.push(m + 'm');
+            parts.push(s + 's');
+            this.text = 'Ends in ' + parts.join(' ');
+        },
+        destroy() {
+            if (this.interval) clearInterval(this.interval);
+        }
+    };
+}
+</script>
+@endpush

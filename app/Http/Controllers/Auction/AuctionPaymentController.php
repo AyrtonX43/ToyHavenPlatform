@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auction;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuctionPayment;
+use App\Notifications\PaymentReceivedSellerNotification;
+use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -25,7 +27,7 @@ class AuctionPaymentController extends Controller
                 ->with('info', 'This payment has already been completed.');
         }
 
-        $payment->load(['auction', 'winner']);
+        $payment->load(['auction.images', 'winner']);
 
         $config = config('paypal', []);
         $mode = $config['mode'] ?? 'sandbox';
@@ -33,8 +35,20 @@ class AuctionPaymentController extends Controller
         $paypalClientId = $creds['client_id'] ?? env('PAYPAL_SANDBOX_CLIENT_ID') ?: env('PAYPAL_CLIENT_ID', '');
         $paypalDemoMode = (bool) ($config['demo_mode'] ?? true);
 
-        return view('auction.payment.show', compact('payment', 'paypalClientId', 'paypalDemoMode'));
+        $paymongoService = app(PayMongoService::class);
+        $paymongoEnabled = $paymongoService->isConfigured();
+        $paymongoPublicKey = config('services.paymongo.public_key', '');
+
+        return view('auction.payment.show', compact(
+            'payment',
+            'paypalClientId',
+            'paypalDemoMode',
+            'paymongoEnabled',
+            'paymongoPublicKey',
+        ));
     }
+
+    // ─── PayPal ───
 
     public function createPayPalOrder(Request $request)
     {
@@ -168,6 +182,8 @@ class AuctionPaymentController extends Controller
                 'paid_at' => now(),
             ]);
 
+            $this->notifySellerOfPayment($payment);
+
             return response()->json([
                 'success' => true,
                 'redirect' => route('auction.payment.success', $payment),
@@ -179,6 +195,198 @@ class AuctionPaymentController extends Controller
         }
     }
 
+    // ─── PayMongo ───
+
+    public function createPayMongoIntent(Request $request)
+    {
+        $request->validate([
+            'payment_id' => 'required|exists:auction_payments,id',
+            'payment_type' => 'required|in:card,qrph',
+        ]);
+
+        $payment = AuctionPayment::findOrFail($request->payment_id);
+
+        if ($payment->winner_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (! $payment->isPending()) {
+            return response()->json(['error' => 'Payment already completed'], 400);
+        }
+
+        $paymongo = app(PayMongoService::class);
+        if (! $paymongo->isConfigured()) {
+            return response()->json(['error' => 'PayMongo is not configured'], 500);
+        }
+
+        $payment->load('auction');
+
+        $intent = $paymongo->createPaymentIntent(
+            amount: (float) $payment->amount,
+            currency: 'PHP',
+            metadata: [
+                'auction_payment_id' => $payment->id,
+                'auction_id' => $payment->auction_id,
+                'auction_title' => $payment->auction->title ?? '',
+            ],
+        );
+
+        if (! $intent) {
+            return response()->json(['error' => 'Could not create payment intent'], 500);
+        }
+
+        $payment->update(['payment_reference' => $intent['id']]);
+
+        return response()->json([
+            'client_key' => $intent['attributes']['client_key'] ?? null,
+            'payment_intent_id' => $intent['id'],
+        ]);
+    }
+
+    public function processPayMongoPayment(Request $request)
+    {
+        $request->validate([
+            'payment_id' => 'required|exists:auction_payments,id',
+            'payment_intent_id' => 'required|string',
+            'payment_method_id' => 'required|string',
+        ]);
+
+        $payment = AuctionPayment::findOrFail($request->payment_id);
+
+        if ($payment->winner_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($payment->isPaid()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('auction.payment.success', $payment),
+            ]);
+        }
+
+        $paymongo = app(PayMongoService::class);
+        $returnUrl = route('auction.payment.paymongo.return', $payment);
+
+        $result = $paymongo->attachPaymentMethod(
+            $request->payment_intent_id,
+            $request->payment_method_id,
+            $returnUrl,
+        );
+
+        if (! $result) {
+            return response()->json(['error' => 'Payment processing failed'], 400);
+        }
+
+        $status = $result['attributes']['status'] ?? '';
+        $nextAction = $result['attributes']['next_action'] ?? null;
+
+        if ($status === 'succeeded') {
+            $payment->update([
+                'status' => 'held',
+                'payment_method' => 'paymongo',
+                'payment_reference' => $request->payment_intent_id,
+                'paid_at' => now(),
+            ]);
+
+            $this->notifySellerOfPayment($payment);
+
+            return response()->json([
+                'success' => true,
+                'redirect' => route('auction.payment.success', $payment),
+            ]);
+        }
+
+        if ($status === 'awaiting_next_action' && $nextAction) {
+            $redirectUrl = $nextAction['redirect']['url'] ?? null;
+            if ($redirectUrl) {
+                return response()->json([
+                    'requires_action' => true,
+                    'redirect_url' => $redirectUrl,
+                ]);
+            }
+        }
+
+        return response()->json(['error' => 'Unexpected payment status: ' . $status], 400);
+    }
+
+    public function paymongoReturn(AuctionPayment $payment)
+    {
+        $user = Auth::user();
+        if ($payment->winner_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($payment->isPaid()) {
+            return redirect()->route('auction.payment.success', $payment)
+                ->with('success', 'Payment completed!');
+        }
+
+        $intentId = $payment->payment_reference;
+        if ($intentId) {
+            $paymongo = app(PayMongoService::class);
+            $intent = $paymongo->getPaymentIntent($intentId);
+            $status = $intent['attributes']['status'] ?? '';
+
+            if ($status === 'succeeded') {
+                $payment->update([
+                    'status' => 'held',
+                    'payment_method' => 'paymongo',
+                    'paid_at' => now(),
+                ]);
+                $this->notifySellerOfPayment($payment);
+                return redirect()->route('auction.payment.success', $payment)
+                    ->with('success', 'Payment completed!');
+            }
+        }
+
+        return redirect()->route('auction.payment.show', $payment)
+            ->with('error', 'Payment was not completed. Please try again.');
+    }
+
+    public function checkPayMongoStatus(Request $request)
+    {
+        $request->validate(['payment_id' => 'required|exists:auction_payments,id']);
+
+        $payment = AuctionPayment::findOrFail($request->payment_id);
+
+        if ($payment->winner_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($payment->isPaid()) {
+            return response()->json([
+                'status' => 'paid',
+                'redirect' => route('auction.payment.success', $payment),
+            ]);
+        }
+
+        $intentId = $payment->payment_reference;
+        if (! $intentId) {
+            return response()->json(['status' => 'pending']);
+        }
+
+        $paymongo = app(PayMongoService::class);
+        $intent = $paymongo->getPaymentIntent($intentId);
+        $status = $intent['attributes']['status'] ?? 'unknown';
+
+        if ($status === 'succeeded') {
+            $payment->update([
+                'status' => 'held',
+                'payment_method' => 'paymongo',
+                'paid_at' => now(),
+            ]);
+            $this->notifySellerOfPayment($payment);
+            return response()->json([
+                'status' => 'paid',
+                'redirect' => route('auction.payment.success', $payment),
+            ]);
+        }
+
+        return response()->json(['status' => $status]);
+    }
+
+    // ─── Success & Fulfillment ───
+
     public function success(AuctionPayment $payment)
     {
         $user = Auth::user();
@@ -187,7 +395,7 @@ class AuctionPaymentController extends Controller
             abort(403);
         }
 
-        $payment->load(['auction']);
+        $payment->load(['auction.images', 'auction.user']);
 
         return view('auction.payment.success', compact('payment'));
     }
@@ -201,10 +409,18 @@ class AuctionPaymentController extends Controller
         if (! $payment->isPaid()) {
             return back()->with('error', 'Payment must be completed first.');
         }
+
+        $request->validate([
+            'tracking_number' => 'nullable|string|max:100',
+            'carrier' => 'nullable|string|max:100',
+        ]);
+
         $payment->update([
             'delivery_status' => 'shipped',
             'tracking_number' => $request->filled('tracking_number') ? $request->tracking_number : null,
+            'shipped_at' => now(),
         ]);
+
         return back()->with('success', 'Marked as shipped.');
     }
 
@@ -219,5 +435,39 @@ class AuctionPaymentController extends Controller
             'confirmed_at' => now(),
         ]);
         return back()->with('success', 'Delivery confirmed. Thank you!');
+    }
+
+    private function notifySellerOfPayment(AuctionPayment $payment): void
+    {
+        try {
+            $payment->load('auction.user');
+            $seller = $payment->auction->user;
+            if ($seller) {
+                $seller->notify(new PaymentReceivedSellerNotification($payment->auction, $payment));
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to notify seller of payment', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function downloadReceipt(AuctionPayment $payment)
+    {
+        $user = Auth::user();
+        if ($payment->winner_id !== $user->id && $payment->auction->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if (! $payment->isPaid()) {
+            return back()->with('error', 'Receipt is only available after payment.');
+        }
+
+        $payment->load(['auction.images', 'winner', 'auction.user']);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('auction.payment.receipt-pdf', compact('payment'));
+
+        return $pdf->download('auction-receipt-' . $payment->id . '.pdf');
     }
 }

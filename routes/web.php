@@ -164,7 +164,12 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::get('/auction/payment/{payment}', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'show'])->name('auction.payment.show');
     Route::post('/auction/payment/paypal/create-order', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'createPayPalOrder'])->name('auction.payment.paypal.create-order');
     Route::post('/auction/payment/paypal/capture-order', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'capturePayPalOrder'])->name('auction.payment.paypal.capture-order');
+    Route::post('/auction/payment/paymongo/create-intent', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'createPayMongoIntent'])->name('auction.payment.paymongo.create-intent');
+    Route::post('/auction/payment/paymongo/process', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'processPayMongoPayment'])->name('auction.payment.paymongo.process');
+    Route::get('/auction/payment/{payment}/paymongo/return', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'paymongoReturn'])->name('auction.payment.paymongo.return');
+    Route::post('/auction/payment/paymongo/check-status', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'checkPayMongoStatus'])->name('auction.payment.paymongo.check-status');
     Route::get('/auction/payment/{payment}/success', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'success'])->name('auction.payment.success');
+    Route::get('/auction/payment/{payment}/receipt', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'downloadReceipt'])->name('auction.payment.receipt');
     Route::post('/auction/payment/{payment}/shipped', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'markShipped'])->name('auction.payment.shipped');
     Route::post('/auction/payment/{payment}/confirm-delivery', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'confirmDelivery'])->name('auction.payment.confirm-delivery');
     Route::post('/auction/payment/{payment}/review', [\App\Http\Controllers\Auction\AuctionReviewController::class, 'store'])->name('auction.review.store');
