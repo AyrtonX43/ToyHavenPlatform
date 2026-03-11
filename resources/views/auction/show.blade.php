@@ -18,7 +18,7 @@
     @keyframes bidSlideIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
     .winner-reveal { animation: winnerPop .5s ease; }
     @keyframes winnerPop { 0% { opacity: 0; transform: scale(.8); } 60% { transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
-    .toast-outbid { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; }
+    .toast-notification { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 420px; }
 </style>
 @endpush
 
@@ -44,12 +44,12 @@
         </div>
     @endif
 
-    {{-- Outbid / won toast (only show when we have a message to display) --}}
-    <div x-show="outbidToast.show && outbidToast.message" x-transition class="toast-outbid" x-cloak>
-        <div class="alert alert-warning alert-dismissible shadow-lg mb-0">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span x-text="outbidToast.message"></span>
-            <button type="button" class="btn-close" @click="outbidToast.show = false"></button>
+    {{-- Toast notification --}}
+    <div x-show="toast.show" x-transition.opacity.duration.300ms class="toast-notification" x-cloak>
+        <div :class="'alert alert-' + toast.type + ' alert-dismissible shadow-lg mb-0'">
+            <i :class="toast.type === 'success' ? 'bi bi-trophy-fill me-2' : 'bi bi-exclamation-triangle-fill me-2'"></i>
+            <span x-text="toast.message"></span>
+            <button type="button" class="btn-close" @click="toast.show = false"></button>
         </div>
     </div>
 
@@ -75,11 +75,9 @@
                         <div>
                             <h1 class="h4 mb-1">{{ $auction->title }}</h1>
                             <div class="d-flex align-items-center gap-3">
-                                <template x-if="isLive">
-                                    <span class="auction-live-badge text-danger">
-                                        <span class="auction-live-dot"></span> LIVE
-                                    </span>
-                                </template>
+                                <span x-show="canBid" class="auction-live-badge text-danger" x-cloak>
+                                    <span class="auction-live-dot"></span> LIVE
+                                </span>
                                 <span class="viewer-badge" x-show="viewerCount > 0" x-cloak>
                                     <i class="bi bi-eye me-1"></i><span x-text="viewerCount"></span> watching
                                 </span>
@@ -136,13 +134,11 @@
                 </div>
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush" id="bid-history-list">
-                        <template x-for="(bid, index) in bidHistory" :key="index">
+                        <template x-for="(bid, index) in bidHistory" :key="'bid-' + index">
                             <li class="list-group-item d-flex justify-content-between px-4 py-2 bid-entry-animate">
                                 <span>
                                     <span x-text="bid.alias"></span>
-                                    <template x-if="bid.isNew">
-                                        <span class="badge bg-success ms-1" style="font-size:.65rem;">NEW</span>
-                                    </template>
+                                    <span x-show="bid.isNew" class="badge bg-success ms-1" style="font-size:.65rem;">NEW</span>
                                 </span>
                                 <span class="fw-semibold" x-text="bid.amount_formatted"></span>
                             </li>
@@ -159,97 +155,96 @@
         <div class="col-lg-4">
             <div class="auction-bid-panel sticky-top">
 
-                {{-- Active Auction State (show when live OR when not yet ended - handles limbo state) --}}
-                <template x-if="isLive || !isEnded">
-                    <div>
-                        <p class="mb-2">
-                            <strong>Current bid</strong>
-                            <span class="amount d-block" :class="{ 'bid-flash': bidFlash }" x-text="currentBidFormatted"></span>
-                        </p>
-                        <p class="mb-2 text-muted small">
-                            Minimum next bid: <span x-text="nextMinBidFormatted"></span>
-                        </p>
-                        <p class="mb-3" :class="{ 'countdown-urgent': isUrgent }">
-                            <i class="bi bi-clock me-1"></i>
-                            <span x-text="countdownText"></span>
-                        </p>
+                {{-- Current bid info (always visible) --}}
+                <div x-show="!isEnded">
+                    <p class="mb-2">
+                        <strong>Current bid</strong>
+                        <span class="amount d-block" :class="{ 'bid-flash': bidFlash }" x-text="currentBidFormatted"></span>
+                    </p>
+                    <p class="mb-2 text-muted small">
+                        Minimum next bid: <span x-text="nextMinBidFormatted"></span>
+                    </p>
+                    <p class="mb-3" :class="{ 'countdown-urgent': isUrgent }">
+                        <i class="bi bi-clock me-1"></i>
+                        <span x-text="countdownText"></span>
+                    </p>
 
-                        @auth
-                            @if($auction->user_id !== auth()->id())
-                                <div x-show="bidMessage" x-transition class="mb-2" x-cloak>
-                                    <div :class="'alert alert-' + (bidSuccess ? 'success' : 'danger') + ' py-2 px-3 small mb-0'">
-                                        <span x-text="bidMessage"></span>
-                                    </div>
+                    @auth
+                        @if($auction->user_id !== auth()->id())
+                            <div x-show="bidMessage" x-transition class="mb-2" x-cloak>
+                                <div :class="'alert alert-' + (bidSuccess ? 'success' : 'danger') + ' py-2 px-3 small mb-0'">
+                                    <span x-text="bidMessage"></span>
                                 </div>
-                                <button
-                                    @click="placeBid()"
-                                    :disabled="bidLoading || !isLive || (countdownText === 'Auction ended')"
-                                    class="btn btn-primary btn-lg w-100 auction-btn-primary rounded-pill"
-                                >
-                                    <span x-show="!bidLoading">
-                                        <i class="bi bi-hammer me-1"></i>Place bid at <span x-text="nextMinBidFormatted"></span>
-                                    </span>
-                                    <span x-show="bidLoading" x-cloak>
-                                        <span class="spinner-border spinner-border-sm me-1"></span> Placing bid...
-                                    </span>
-                                </button>
-                            @else
-                                <p class="text-muted mb-0">This is your listing. You cannot bid on it.</p>
-                            @endif
-                        @endauth
-                    </div>
-                </template>
+                            </div>
+                            <button
+                                @click="placeBid()"
+                                :disabled="bidLoading || !canBid"
+                                class="btn btn-primary btn-lg w-100 auction-btn-primary rounded-pill"
+                            >
+                                <span x-show="!bidLoading">
+                                    <i class="bi bi-hammer me-1"></i>Place bid at <span x-text="nextMinBidFormatted"></span>
+                                </span>
+                                <span x-show="bidLoading" x-cloak>
+                                    <span class="spinner-border spinner-border-sm me-1"></span> Placing bid...
+                                </span>
+                            </button>
+                        @else
+                            <p class="text-muted mb-0">This is your listing. You cannot bid on it.</p>
+                        @endif
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-primary btn-lg w-100 rounded-pill">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login to Bid
+                        </a>
+                    @endauth
+                </div>
 
                 {{-- Ended Auction State --}}
-                <template x-if="isEnded">
-                    <div>
-                        <p class="mb-2"><strong>Final price:</strong> <span x-text="currentBidFormatted"></span></p>
+                <div x-show="isEnded" x-cloak>
+                    <p class="mb-2"><strong>Final price:</strong> <span class="amount d-block" x-text="currentBidFormatted"></span></p>
 
-                        <template x-if="auctionOutcome === 'reserve_not_met'">
-                            <p class="mb-2 text-warning">Reserve not met. No winner.</p>
-                        </template>
-                        <template x-if="auctionOutcome === 'no_bids'">
-                            <p class="mb-2 text-muted">No bids were placed.</p>
-                        </template>
-
-                        @auth
-                            <template x-if="winnerId === {{ (int) auth()->id() }}">
-                                <div class="mt-3 p-4 rounded-3 text-center winner-reveal" style="background:#ccfbf1;border:1px solid #0d9488;">
-                                    <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
-                                    @if($auction->payment)
-                                        @if($auction->payment->isPending())
-                                            <p class="mb-3 small">Please complete your payment to proceed with the order.</p>
-                                            <a href="{{ route('auction.payment.show', $auction->payment) }}" class="btn btn-success w-100 fw-bold">
-                                                <i class="bi bi-credit-card me-1"></i> Proceed to Payment
-                                            </a>
-                                        @else
-                                            <a href="{{ route('auction.payment.success', $auction->payment) }}" class="btn btn-outline-success w-100 fw-bold mt-2">
-                                                <i class="bi bi-check-circle me-1"></i> View Order Status
-                                            </a>
-                                        @endif
-                                    @else
-                                        <p class="mb-0 small text-muted">Processing payment details, please wait...</p>
-                                    @endif
-                                </div>
-                            </template>
-                        @endauth
-
-                        <template x-if="winnerAlias && winnerId !== {{ auth()->id() ? (int) auth()->id() : 'null' }}">
-                            <div class="mt-3 p-3 rounded-3 text-center bg-light">
-                                <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias"></span></p>
-                                <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>
-                            </div>
-                        </template>
-
-                        <p class="mb-0 text-muted mt-2">This auction has ended.</p>
+                    <div x-show="auctionOutcome === 'reserve_not_met'" class="mb-2">
+                        <p class="text-warning mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Reserve not met. No winner.</p>
                     </div>
-                </template>
+                    <div x-show="auctionOutcome === 'no_bids'" class="mb-2">
+                        <p class="text-muted mb-0">No bids were placed.</p>
+                    </div>
+
+                    @auth
+                        @php $isWinner = $auction->winner_id === auth()->id(); @endphp
+                        @if($isWinner)
+                            <div class="mt-3 p-4 rounded-3 text-center winner-reveal" style="background:#ccfbf1;border:1px solid #0d9488;">
+                                <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
+                                @if($auction->payment)
+                                    @if($auction->payment->isPending())
+                                        <p class="mb-3 small">Please complete your payment to proceed with the order.</p>
+                                        <a href="{{ route('auction.payment.show', $auction->payment) }}" class="btn btn-success w-100 fw-bold">
+                                            <i class="bi bi-credit-card me-1"></i> Proceed to Payment
+                                        </a>
+                                    @else
+                                        <a href="{{ route('auction.payment.success', $auction->payment) }}" class="btn btn-outline-success w-100 fw-bold mt-2">
+                                            <i class="bi bi-check-circle me-1"></i> View Order Status
+                                        </a>
+                                    @endif
+                                @else
+                                    <p class="mb-0 small text-muted">Processing payment details, please wait...</p>
+                                @endif
+                            </div>
+                        @endif
+
+                        <div x-show="winnerAlias && winnerId !== {{ (int) auth()->id() }}" class="mt-3 p-3 rounded-3 text-center bg-light" x-cloak>
+                            <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias"></span></p>
+                            <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>
+                        </div>
+                    @endauth
+
+                    <p class="mb-0 text-muted mt-2"><i class="bi bi-flag me-1"></i>This auction has ended.</p>
+                </div>
 
             </div>
         </div>
     </div>
 
-    <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary rounded-pill">
+    <a href="{{ route('auction.index') }}" class="btn btn-outline-secondary rounded-pill mt-3">
         <i class="bi bi-arrow-left me-1"></i>Back to Auctions
     </a>
 </div>
@@ -268,6 +263,8 @@
         'amount_formatted' => '₱' . number_format($b->amount, 2),
         'isNew' => false,
     ])->values()->toArray();
+
+    $serverIsActive = $auction->status === 'active' && $auction->end_at && $auction->end_at->isFuture();
 @endphp
 
 <script>
@@ -291,13 +288,13 @@
 <script>
 function auctionLive() {
     return {
-        isLive: @json($auction->isActive()),
-        isEnded: @json($auction->isEnded()),
-        currentBid: {{ (float)($auction->winning_amount ?? $auction->starting_bid) }},
-        currentBidFormatted: '₱{{ number_format($auction->winning_amount ?? $auction->starting_bid, 2) }}',
-        nextMinBid: {{ (float)$auction->next_min_bid }},
-        nextMinBidFormatted: '₱{{ number_format($auction->next_min_bid, 2) }}',
-        bidCount: {{ (int)$auction->bids_count }},
+        canBid: @json($serverIsActive),
+        isEnded: @json($auction->status === 'ended'),
+        currentBid: {{ (float) $auction->current_bid }},
+        currentBidFormatted: @json('₱' . number_format($auction->current_bid, 2)),
+        nextMinBid: {{ (float) $auction->next_min_bid }},
+        nextMinBidFormatted: @json('₱' . number_format($auction->next_min_bid, 2)),
+        bidCount: {{ (int) ($auction->bids_count ?? 0) }},
         endAt: @json($auction->end_at?->toIso8601String()),
         countdownText: '',
         isUrgent: false,
@@ -311,15 +308,12 @@ function auctionLive() {
         auctionOutcome: @json($auction->auction_outcome),
         winnerId: {{ $auction->winner_id ?? 'null' }},
         winnerAlias: null,
-        outbidToast: { show: false, message: '' },
+        toast: { show: false, message: '', type: 'warning' },
         _countdownInterval: null,
 
         init() {
-            if (this.isLive) {
-                this.startCountdown();
-            }
+            this.startCountdown();
 
-            // Wire up Echo callbacks
             window.auctionOnBidPlaced = (e) => this.handleBidPlaced(e);
             window.auctionOnExtended = (e) => this.handleExtended(e);
             window.auctionOnEnded = (e) => this.handleEnded(e);
@@ -332,6 +326,7 @@ function auctionLive() {
         },
 
         startCountdown() {
+            if (this._countdownInterval) clearInterval(this._countdownInterval);
             this.updateCountdown();
             this._countdownInterval = setInterval(() => this.updateCountdown(), 1000);
         },
@@ -342,11 +337,11 @@ function auctionLive() {
                 return;
             }
             const end = new Date(this.endAt).getTime();
-            const now = Date.now();
-            const diff = end - now;
+            const diff = end - Date.now();
 
             if (diff <= 0) {
                 this.countdownText = 'Auction ended';
+                this.canBid = false;
                 this.isUrgent = false;
                 if (this._countdownInterval) clearInterval(this._countdownInterval);
                 return;
@@ -371,8 +366,14 @@ function auctionLive() {
             return '₱' + parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         },
 
+        showToast(message, type = 'warning', duration = 8000) {
+            if (!message) return;
+            this.toast = { show: true, message, type };
+            setTimeout(() => { this.toast.show = false; }, duration);
+        },
+
         async placeBid() {
-            if (this.bidLoading) return;
+            if (this.bidLoading || !this.canBid) return;
             this.bidLoading = true;
             this.bidMessage = '';
 
@@ -391,8 +392,12 @@ function auctionLive() {
                 const data = await resp.json();
 
                 if (!resp.ok) {
-                    const errMsg = data.error || data.message || (data.errors?.amount?.[0]) || 'Bid failed.';
-                    this.bidMessage = typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg);
+                    let errMsg = data.error || data.message || 'Bid failed.';
+                    if (data.errors) {
+                        const firstErr = Object.values(data.errors)[0];
+                        errMsg = Array.isArray(firstErr) ? firstErr[0] : firstErr;
+                    }
+                    this.bidMessage = String(errMsg);
                     this.bidSuccess = false;
                     return;
                 }
@@ -400,14 +405,16 @@ function auctionLive() {
                 this.bidMessage = data.message || 'Bid placed!';
                 this.bidSuccess = true;
 
-                // Update local state from our own bid response
                 if (data.bid) {
-                    this.currentBid = data.bid.amount;
+                    this.currentBid = parseFloat(data.bid.amount);
                     this.currentBidFormatted = data.bid.amount_formatted;
-                    this.nextMinBid = data.bid.next_min_bid;
+                    this.nextMinBid = parseFloat(data.bid.next_min_bid);
                     this.nextMinBidFormatted = data.bid.next_min_bid_formatted;
                     this.bidCount = data.bid.bid_count;
-                    this.endAt = data.bid.end_at;
+                    if (data.bid.end_at) {
+                        this.endAt = data.bid.end_at;
+                        this.startCountdown();
+                    }
 
                     this.bidHistory.unshift({
                         alias: 'You',
@@ -438,12 +445,15 @@ function auctionLive() {
         },
 
         handleBidPlaced(e) {
-            this.currentBid = e.amount;
+            this.currentBid = parseFloat(e.amount);
             this.currentBidFormatted = e.amount_formatted;
-            this.nextMinBid = e.next_min_bid;
+            this.nextMinBid = parseFloat(e.next_min_bid);
             this.nextMinBidFormatted = e.next_min_bid_formatted;
             this.bidCount = e.bid_count;
-            this.endAt = e.end_at;
+            if (e.end_at) {
+                this.endAt = e.end_at;
+                this.startCountdown();
+            }
 
             this.bidHistory.unshift({
                 alias: e.bidder_alias,
@@ -455,13 +465,17 @@ function auctionLive() {
         },
 
         handleExtended(e) {
-            this.endAt = e.end_at;
+            if (e.end_at) {
+                this.endAt = e.end_at;
+                this.canBid = true;
+                this.startCountdown();
+            }
             this.snipeAlert = true;
             setTimeout(() => { this.snipeAlert = false; }, 5000);
         },
 
         handleEnded(e) {
-            this.isLive = false;
+            this.canBid = false;
             this.isEnded = true;
             this.auctionOutcome = e.outcome;
             this.winnerId = e.winner_id;
@@ -474,25 +488,22 @@ function auctionLive() {
         },
 
         handleStarted(e) {
-            this.isLive = true;
+            this.canBid = true;
             this.isEnded = false;
-            this.endAt = e.end_at;
+            if (e.end_at) {
+                this.endAt = e.end_at;
+            }
             this.startCountdown();
         },
 
         handleUserOutbid(e) {
-            const msg = e?.message || e?.data?.message || 'You\'ve been outbid on this auction.';
-            this.outbidToast.message = msg;
-            this.outbidToast.show = true;
-            setTimeout(() => { this.outbidToast.show = false; }, 8000);
+            this.showToast(e.message || "You've been outbid on this auction!", 'warning');
         },
 
         handleUserWon(e) {
-            const msg = e?.message || e?.data?.message || 'Congratulations! You won this auction!';
-            this.outbidToast.message = msg;
-            this.outbidToast.show = true;
+            this.showToast(e.message || 'Congratulations! You won this auction!', 'success', 10000);
             if (e.payment_link) {
-                setTimeout(() => { window.location.href = e.payment_link; }, 3000);
+                setTimeout(() => { window.location.href = e.payment_link; }, 4000);
             }
         },
     };

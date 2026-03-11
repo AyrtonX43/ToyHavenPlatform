@@ -63,16 +63,25 @@ class AuctionBidController extends Controller
                 : back()->with('error', 'Please wait a few seconds before bidding again.');
         }
 
-        $minBid = round((float) ($auction->winning_amount ?? $auction->starting_bid) + (float) $auction->bid_increment, 2);
+        $currentBid = $auction->winning_amount !== null ? (float) $auction->winning_amount : (float) $auction->starting_bid;
+        $minBid = round($currentBid + (float) $auction->bid_increment, 2);
+        $submittedAmount = round((float) $request->input('amount', 0), 2);
 
-        $request->validate([
-            'amount' => ['required', 'numeric', 'min:' . $minBid, 'max:' . $minBid],
-        ], [
-            'amount.min' => 'Your bid must be at least ₱' . number_format($minBid, 2) . '.',
-            'amount.max' => 'Please place only the minimum next bid (₱' . number_format($minBid, 2) . ').',
-        ]);
+        if ($submittedAmount < $minBid) {
+            $msg = 'Your bid must be at least ₱' . number_format($minBid, 2) . '.';
+            return $isAjax
+                ? response()->json(['error' => $msg], 422)
+                : back()->with('error', $msg);
+        }
 
-        $amount = (float) $request->amount;
+        if ($submittedAmount > $minBid) {
+            $msg = 'Please place only the minimum next bid (₱' . number_format($minBid, 2) . ').';
+            return $isAjax
+                ? response()->json(['error' => $msg], 422)
+                : back()->with('error', $msg);
+        }
+
+        $amount = $minBid;
         $bidderAlias = '';
         $antiSnipeTriggered = false;
 
