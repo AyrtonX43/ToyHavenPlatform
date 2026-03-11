@@ -20,6 +20,12 @@ class SellerRegistrationController extends Controller
         if (! $user->hasActiveMembership()) {
             return redirect()->route('auction.index')->with('error', 'Membership required.');
         }
+        if ($user->hasApprovedBusinessAuctionSeller()) {
+            return redirect()->route('auction.seller.dashboard')->with('info', 'You are already registered as a business seller. Individual registration is not needed.');
+        }
+        if ($user->hasApprovedIndividualAuctionSeller()) {
+            return redirect()->route('auction.seller.dashboard')->with('info', 'You are already registered as an individual seller.');
+        }
         $plan = $user->currentPlan();
         if (! $plan || ! $plan->can_register_individual_seller) {
             return redirect()->route('membership.upgrade', 'vip')->with('info', 'Individual auction seller registration requires VIP membership.');
@@ -33,6 +39,12 @@ class SellerRegistrationController extends Controller
         $user = Auth::user();
         if (! $user->hasActiveMembership()) {
             return redirect()->route('auction.index')->with('error', 'Membership required.');
+        }
+        if ($user->hasApprovedBusinessAuctionSeller()) {
+            return redirect()->route('auction.seller.dashboard')->with('info', 'You are already registered as a business seller.');
+        }
+        if ($user->hasApprovedIndividualAuctionSeller()) {
+            return redirect()->route('auction.seller.dashboard')->with('info', 'You are already registered as an individual seller.');
         }
         $plan = $user->currentPlan();
         if (! $plan || ! $plan->can_register_individual_seller) {

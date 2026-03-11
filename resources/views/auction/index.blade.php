@@ -163,46 +163,46 @@
                 </div>
             @endif
 
-            @if(!$hasBusiness || !$hasIndividual)
-                @php
-                    $pendingTypes = $pendingVerifications->pluck('type')->toArray();
-                    $showIndividualReg = !$hasIndividual && !in_array('individual', $pendingTypes);
-                    $showBusinessReg = !$hasBusiness && !in_array('business', $pendingTypes);
-                @endphp
+            @php
+                $pendingTypes = $pendingVerifications->pluck('type')->toArray();
+                $showIndividualReg = !$hasIndividual && !$hasBusiness && !in_array('individual', $pendingTypes);
+                $showBusinessReg = !$hasBusiness && !in_array('business', $pendingTypes);
+            @endphp
 
-                @if($showIndividualReg || $showBusinessReg)
-                    <h4 class="mb-3"><i class="bi bi-person-badge me-2"></i>Become a Seller</h4>
-                    @if($isVip)
-                        <div class="d-flex flex-column gap-2 mb-4">
-                            @if($showIndividualReg)
-                                <a href="{{ route('auction.seller-registration.individual') }}" class="auction-shortcut">
-                                    <i class="bi bi-person fs-4 me-2 text-primary"></i>
-                                    <div>
-                                        <strong>Individual Seller</strong>
-                                        <span class="d-block small text-muted mt-1">Register with 2 IDs, selfie, and bank statement</span>
-                                    </div>
-                                </a>
-                            @endif
-                            @if($showBusinessReg)
-                                <a href="{{ route('auction.seller-registration.business') }}" class="auction-shortcut">
-                                    <i class="bi bi-shop fs-4 me-2 text-success"></i>
-                                    <div>
-                                        <strong>Business Seller</strong>
-                                        <span class="d-block small text-muted mt-1">Register with business permit, BIR, and docs</span>
-                                    </div>
-                                </a>
-                            @endif
+            @if($showIndividualReg || $showBusinessReg)
+                <h4 class="mb-3"><i class="bi bi-person-badge me-2"></i>
+                    {{ $hasIndividual ? 'Upgrade Seller Account' : 'Become a Seller' }}
+                </h4>
+                @if($isVip)
+                    <div class="d-flex flex-column gap-2 mb-4">
+                        @if($showIndividualReg)
+                            <a href="{{ route('auction.seller-registration.individual') }}" class="auction-shortcut">
+                                <i class="bi bi-person fs-4 me-2 text-primary"></i>
+                                <div>
+                                    <strong>Individual Seller</strong>
+                                    <span class="d-block small text-muted mt-1">Register with 2 IDs, selfie, and bank statement</span>
+                                </div>
+                            </a>
+                        @endif
+                        @if($showBusinessReg)
+                            <a href="{{ route('auction.seller-registration.business') }}" class="auction-shortcut">
+                                <i class="bi bi-shop fs-4 me-2 text-success"></i>
+                                <div>
+                                    <strong>Business Seller</strong>
+                                    <span class="d-block small text-muted mt-1">Register with business permit, BIR, and docs</span>
+                                </div>
+                            </a>
+                        @endif
+                    </div>
+                @else
+                    <div class="card border-2 border-warning mb-4">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-gem text-warning fs-1 mb-2"></i>
+                            <h6 class="mb-2">Upgrade to VIP</h6>
+                            <p class="small text-muted mb-3">Auction seller registration is available for VIP members only.</p>
+                            <a href="{{ route('membership.upgrade', 'vip') }}" class="btn btn-warning btn-sm">Upgrade to VIP</a>
                         </div>
-                    @else
-                        <div class="card border-2 border-warning mb-4">
-                            <div class="card-body text-center py-4">
-                                <i class="bi bi-gem text-warning fs-1 mb-2"></i>
-                                <h6 class="mb-2">Upgrade to VIP</h6>
-                                <p class="small text-muted mb-3">Auction seller registration is available for VIP members only.</p>
-                                <a href="{{ route('membership.upgrade', 'vip') }}" class="btn btn-warning btn-sm">Upgrade to VIP</a>
-                            </div>
-                        </div>
-                    @endif
+                    </div>
                 @endif
             @endif
 
