@@ -161,6 +161,7 @@ Route::middleware(['auth', 'redirect.admin.from.customer'])->group(function () {
     Route::post('/auction/item/{auction}/save', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'save'])->name('auction.save');
     Route::post('/auction/item/{auction}/unsave', [\App\Http\Controllers\Auction\SavedAuctionController::class, 'unsave'])->name('auction.unsave');
     Route::post('/auction/item/{auction}/bid', [\App\Http\Controllers\Auction\AuctionBidController::class, 'store'])->name('auction.bid.store')->where('auction', '[0-9]+');
+    Route::post('/auction/item/{auction}/check-end', [\App\Http\Controllers\Auction\AuctionController::class, 'checkEnd'])->name('auction.check-end')->where('auction', '[0-9]+');
     Route::get('/auction/payment/{payment}', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'show'])->name('auction.payment.show');
     Route::post('/auction/payment/paypal/create-order', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'createPayPalOrder'])->name('auction.payment.paypal.create-order');
     Route::post('/auction/payment/paypal/capture-order', [\App\Http\Controllers\Auction\AuctionPaymentController::class, 'capturePayPalOrder'])->name('auction.payment.paypal.capture-order');

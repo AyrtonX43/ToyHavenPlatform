@@ -7,6 +7,7 @@ use App\Models\AuctionPayment;
 use App\Models\AuctionReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class AuctionReviewController extends Controller
 {
@@ -29,7 +30,16 @@ class AuctionReviewController extends Controller
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'feedback' => 'nullable|string|max:2000',
+            'photos' => 'nullable|array|max:5',
+            'photos.*' => 'image|mimes:jpeg,png,jpg,webp|max:3072',
         ]);
+
+        $photoPaths = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photo) {
+                $photoPaths[] = $photo->store('auction_reviews/' . $payment->id, 'public');
+            }
+        }
 
         AuctionReview::create([
             'auction_payment_id' => $payment->id,
@@ -38,6 +48,7 @@ class AuctionReviewController extends Controller
             'seller_user_id' => $payment->auction->user_id,
             'rating' => $request->rating,
             'feedback' => $request->feedback,
+            'photos' => ! empty($photoPaths) ? $photoPaths : null,
             'delivery_confirmed_at' => $payment->confirmed_at ?? now(),
         ]);
 

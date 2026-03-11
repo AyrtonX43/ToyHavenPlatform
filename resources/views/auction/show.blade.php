@@ -283,7 +283,7 @@
                         @endauth
                     @endif
 
-                    {{-- Real-time winner notification (when auction ends via WebSocket while user is on the page) --}}
+                    {{-- Dynamic winner notification (when auction ends via countdown/WebSocket while on page) --}}
                     @auth
                         <div x-show="paymentLink && winnerId === {{ (int) auth()->id() }}" x-cloak style="display:none;background:#ccfbf1;border:1px solid #0d9488;" class="mt-3 p-4 rounded-3 text-center winner-reveal">
                             <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
@@ -292,7 +292,29 @@
                                 <i class="bi bi-credit-card me-1"></i> Proceed to Payment
                             </a>
                         </div>
+
+                        {{-- Dynamic: winner but no payment link yet (loading) --}}
+                        <div x-show="!paymentLink && winnerId === {{ (int) auth()->id() }} && auctionOutcome === 'sold'" x-cloak style="display:none;background:#ccfbf1;border:1px solid #0d9488;" class="mt-3 p-4 rounded-3 text-center winner-reveal">
+                            <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
+                            <p class="mb-2 small text-muted">Preparing your payment link...</p>
+                            <button class="btn btn-outline-primary w-100 rounded-pill mt-1" @click="window.location.reload()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh Page
+                            </button>
+                        </div>
+
+                        {{-- Dynamic: someone else won --}}
+                        <div x-show="winnerId && winnerId !== {{ (int) auth()->id() }} && auctionOutcome === 'sold'" x-cloak style="display:none;" class="mt-3 p-3 rounded-3 text-center bg-light">
+                            <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias || 'a bidder'">a bidder</span></p>
+                            <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>
+                        </div>
                     @endauth
+
+                    @guest
+                        <div x-show="winnerId && auctionOutcome === 'sold'" x-cloak style="display:none;" class="mt-3 p-3 rounded-3 text-center bg-light">
+                            <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>This auction was won by a bidder.</p>
+                            <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>
+                        </div>
+                    @endguest
 
                     <p class="mb-0 text-muted mt-2"><i class="bi bi-flag me-1"></i>This auction has ended.</p>
                 </div>
@@ -368,6 +390,7 @@ function auctionLive() {
         paymentLink: null,
         toast: { show: false, message: '', type: 'warning' },
         _countdownInterval: null,
+        _endingInProgress: false,
 
         init() {
             this.startCountdown();
@@ -402,6 +425,10 @@ function auctionLive() {
                 this.canBid = false;
                 this.isUrgent = false;
                 if (this._countdownInterval) clearInterval(this._countdownInterval);
+                if (!this.isEnded && !this._endingInProgress) {
+                    this._endingInProgress = true;
+                    this.triggerCheckEnd();
+                }
                 return;
             }
 
@@ -542,11 +569,15 @@ function auctionLive() {
         handleEnded(e) {
             this.canBid = false;
             this.isEnded = true;
+            this._endingInProgress = false;
             this.auctionOutcome = e.outcome;
             this.winnerId = e.winner_id;
             this.winnerAlias = e.winner_alias;
             if (e.final_price_formatted) {
                 this.currentBidFormatted = e.final_price_formatted;
+            }
+            if (e.payment_link) {
+                this.paymentLink = e.payment_link;
             }
             if (this._countdownInterval) clearInterval(this._countdownInterval);
             this.countdownText = 'Auction ended';
@@ -569,6 +600,33 @@ function auctionLive() {
             this.showToast(e.message || 'Congratulations! You won this auction!', 'success', 15000);
             if (e.payment_link) {
                 this.paymentLink = e.payment_link;
+            }
+        },
+
+        async triggerCheckEnd() {
+            try {
+                const resp = await fetch(`/auction/item/{{ $auction->id }}/check-end`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await resp.json();
+                if (data.ended) {
+                    this.isEnded = true;
+                    this.canBid = false;
+                    this.auctionOutcome = data.outcome;
+                    this.winnerId = data.winner_id;
+                    if (data.payment_link) {
+                        this.paymentLink = data.payment_link;
+                    }
+                    this.countdownText = 'Auction ended';
+                }
+            } catch (err) {
+                setTimeout(() => window.location.reload(), 3000);
             }
         },
     };

@@ -56,6 +56,12 @@ return new class extends Migration
                 $table->string('tracking_number')->nullable()->after('delivery_status');
             });
         }
+
+        if (Schema::hasTable('auction_reviews') && ! Schema::hasColumn('auction_reviews', 'photos')) {
+            Schema::table('auction_reviews', function (Blueprint $table) {
+                $table->json('photos')->nullable()->after('feedback');
+            });
+        }
     }
 
     public function down(): void {}

@@ -109,14 +109,18 @@
                     @endif
 
                     {{-- Review --}}
-                    @php $canReview = in_array($payment->delivery_status, ['delivered', 'confirmed']); @endphp
-                    @if($canReview && !\App\Models\AuctionReview::where('auction_payment_id', $payment->id)->exists())
+                    @php
+                        $canReview = in_array($payment->delivery_status, ['delivered', 'confirmed']);
+                        $existingReview = \App\Models\AuctionReview::where('auction_payment_id', $payment->id)->first();
+                    @endphp
+                    @if($canReview && !$existingReview)
                         <hr class="my-4">
-                        <h6 class="fw-semibold mb-3"><i class="bi bi-star me-2"></i>Leave a Review</h6>
-                        <form action="{{ route('auction.review.store', $payment) }}" method="POST">
+                        <h6 class="fw-semibold mb-3"><i class="bi bi-star me-2"></i>Rate the Seller</h6>
+                        <p class="text-muted small mb-3">Share your experience with this purchase. Your feedback helps other buyers.</p>
+                        <form action="{{ route('auction.review.store', $payment) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="mb-3">
-                                <label class="form-label">Rating</label>
+                                <label class="form-label fw-semibold">Rating</label>
                                 <select name="rating" class="form-select" required>
                                     @for($i = 5; $i >= 1; $i--)
                                         <option value="{{ $i }}">{{ str_repeat('★', $i) . str_repeat('☆', 5 - $i) }} ({{ $i }})</option>
@@ -124,11 +128,37 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Feedback (optional)</label>
-                                <textarea name="feedback" class="form-control" rows="3" maxlength="2000" placeholder="Share your experience..."></textarea>
+                                <label class="form-label fw-semibold">Feedback <span class="text-muted fw-normal">(optional)</span></label>
+                                <textarea name="feedback" class="form-control" rows="3" maxlength="2000" placeholder="How was the item condition? Was shipping fast? Share your thoughts..."></textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary rounded-pill px-4">Submit Review</button>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Photos <span class="text-muted fw-normal">(optional, max 5)</span></label>
+                                <input type="file" name="photos[]" class="form-control" multiple accept="image/jpeg,image/png,image/jpg,image/webp">
+                                <div class="form-text">Upload photos of the item you received. Max 3MB each.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="bi bi-star me-1"></i>Submit Review
+                            </button>
                         </form>
+                    @elseif($existingReview)
+                        <hr class="my-4">
+                        <h6 class="fw-semibold mb-3"><i class="bi bi-star-fill text-warning me-2"></i>Your Review</h6>
+                        <div class="p-3 rounded-3 bg-light">
+                            <div class="mb-2">
+                                <span class="text-warning">{{ str_repeat('★', $existingReview->rating) }}{{ str_repeat('☆', 5 - $existingReview->rating) }}</span>
+                                <span class="text-muted small ms-2">{{ $existingReview->created_at->format('M d, Y') }}</span>
+                            </div>
+                            @if($existingReview->feedback)
+                                <p class="mb-2">{{ $existingReview->feedback }}</p>
+                            @endif
+                            @if($existingReview->photos && count($existingReview->photos) > 0)
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @foreach($existingReview->photos as $photo)
+                                        <img src="{{ asset('storage/' . $photo) }}" alt="Review photo" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                     @endif
 
                     {{-- Buttons --}}

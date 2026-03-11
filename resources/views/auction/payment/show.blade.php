@@ -72,6 +72,17 @@
                         @endif
                     </div>
 
+                    {{-- Escrow Notice --}}
+                    <div class="p-3 rounded-3 mb-4" style="background:#eff6ff;border:1px solid #bfdbfe;">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-shield-check text-primary fs-5 flex-shrink-0 mt-1"></i>
+                            <div>
+                                <p class="mb-1 fw-semibold small text-primary">Buyer Protection - Escrow Payment</p>
+                                <p class="mb-0 text-muted small">Your payment is held securely by ToyHaven until you confirm receipt of the item. The seller will ship the item, and once you confirm delivery, the funds are released to the seller after a 3-day holding period.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Payment Method Selection --}}
                     <h6 class="fw-semibold mb-3">Choose payment method</h6>
                     <div class="row g-3 mb-4">

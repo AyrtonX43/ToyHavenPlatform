@@ -14,12 +14,14 @@ class AuctionReview extends Model
         'seller_user_id',
         'rating',
         'feedback',
+        'photos',
         'delivery_confirmed_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'photos' => 'array',
             'delivery_confirmed_at' => 'datetime',
         ];
     }
