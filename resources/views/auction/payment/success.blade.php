@@ -36,7 +36,13 @@
                         <div class="col-sm-6">
                             <div class="p-3 rounded-3 bg-light">
                                 <span class="text-muted small d-block">Payment method</span>
-                                <span class="fw-semibold text-capitalize">{{ $payment->payment_method ?? 'N/A' }}</span>
+                                <span class="fw-semibold">
+                                    @if($payment->payment_method === 'paypal') PayPal
+                                    @elseif($payment->payment_method === 'paymongo_qrph') GCash / Maya (QRPH)
+                                    @elseif($payment->payment_method === 'paymongo') PayMongo
+                                    @else {{ ucfirst($payment->payment_method ?? 'N/A') }}
+                                    @endif
+                                </span>
                             </div>
                         </div>
                         <div class="col-sm-6">
@@ -111,7 +117,12 @@
                     {{-- Review --}}
                     @php
                         $canReview = in_array($payment->delivery_status, ['delivered', 'confirmed']);
-                        $existingReview = \App\Models\AuctionReview::where('auction_payment_id', $payment->id)->first();
+                        $existingReview = null;
+                        try {
+                            if (\Illuminate\Support\Facades\Schema::hasTable('auction_reviews')) {
+                                $existingReview = \App\Models\AuctionReview::where('auction_payment_id', $payment->id)->first();
+                            }
+                        } catch (\Throwable $e) {}
                     @endphp
                     @if($canReview && !$existingReview)
                         <hr class="my-4">
@@ -151,7 +162,7 @@
                             @if($existingReview->feedback)
                                 <p class="mb-2">{{ $existingReview->feedback }}</p>
                             @endif
-                            @if($existingReview->photos && count($existingReview->photos) > 0)
+                            @if(!empty($existingReview->photos) && is_array($existingReview->photos) && count($existingReview->photos) > 0)
                                 <div class="d-flex gap-2 flex-wrap">
                                     @foreach($existingReview->photos as $photo)
                                         <img src="{{ asset('storage/' . $photo) }}" alt="Review photo" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">

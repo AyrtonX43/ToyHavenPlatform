@@ -19,7 +19,15 @@ class AuctionWonNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['database'];
+
+        try {
+            if (config('mail.default') && config('mail.default') !== 'log') {
+                $channels[] = 'mail';
+            }
+        } catch (\Throwable $e) {}
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage

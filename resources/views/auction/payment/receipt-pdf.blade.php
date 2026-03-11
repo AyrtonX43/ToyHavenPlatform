@@ -37,7 +37,7 @@
                 <table class="info-table">
                     <tr><td class="label">Receipt #</td><td><strong>AUC-{{ str_pad($payment->id, 6, '0', STR_PAD_LEFT) }}</strong></td></tr>
                     <tr><td class="label">Date Paid</td><td>{{ $payment->paid_at?->format('F d, Y g:i A') ?? 'N/A' }}</td></tr>
-                    <tr><td class="label">Payment Method</td><td style="text-transform:capitalize;">{{ $payment->payment_method ?? 'N/A' }}</td></tr>
+                    <tr><td class="label">Payment Method</td><td>@if($payment->payment_method === 'paypal')PayPal @elseif($payment->payment_method === 'paymongo_qrph')GCash / Maya (QRPH) @else{{ ucfirst($payment->payment_method ?? 'N/A') }}@endif</td></tr>
                     <tr><td class="label">Reference ID</td><td style="font-size:11px;word-break:break-all;">{{ $payment->payment_reference ?? 'N/A' }}</td></tr>
                     <tr>
                         <td class="label">Payment Status</td>

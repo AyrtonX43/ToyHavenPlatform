@@ -182,15 +182,25 @@ class AuctionPaymentController extends Controller
                 'paid_at' => now(),
             ]);
 
+            $redirectUrl = route('auction.payment.success', $payment);
+
             $this->notifySellerOfPayment($payment);
 
             return response()->json([
                 'success' => true,
-                'redirect' => route('auction.payment.success', $payment),
+                'redirect' => $redirectUrl,
                 'message' => 'Payment successful! The seller will ship your item soon.',
             ]);
         } catch (\Throwable $e) {
             Log::error('Auction PayPal capture failed', ['error' => $e->getMessage(), 'orderId' => $orderId]);
+
+            if (isset($payment) && $payment->isPaid()) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => route('auction.payment.success', $payment),
+                ]);
+            }
+
             return response()->json(['error' => 'Payment failed. Please try again.'], 400);
         }
     }
@@ -283,7 +293,7 @@ class AuctionPaymentController extends Controller
         if ($status === 'succeeded') {
             $payment->update([
                 'status' => 'held',
-                'payment_method' => 'paymongo',
+                'payment_method' => 'paymongo_qrph',
                 'payment_reference' => $request->payment_intent_id,
                 'paid_at' => now(),
             ]);
@@ -330,7 +340,7 @@ class AuctionPaymentController extends Controller
             if ($status === 'succeeded') {
                 $payment->update([
                     'status' => 'held',
-                    'payment_method' => 'paymongo',
+                    'payment_method' => 'paymongo_qrph',
                     'paid_at' => now(),
                 ]);
                 $this->notifySellerOfPayment($payment);
@@ -372,7 +382,7 @@ class AuctionPaymentController extends Controller
         if ($status === 'succeeded') {
             $payment->update([
                 'status' => 'held',
-                'payment_method' => 'paymongo',
+                'payment_method' => 'paymongo_qrph',
                 'paid_at' => now(),
             ]);
             $this->notifySellerOfPayment($payment);
@@ -395,7 +405,7 @@ class AuctionPaymentController extends Controller
             abort(403);
         }
 
-        $payment->load(['auction.images', 'auction.user']);
+        $payment->load(['auction.images', 'auction.user', 'winner']);
 
         return view('auction.payment.success', compact('payment'));
     }
@@ -454,7 +464,7 @@ class AuctionPaymentController extends Controller
             if ($seller) {
                 $seller->notify(new PaymentReceivedSellerNotification($payment->auction, $payment));
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Failed to notify seller of payment', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),

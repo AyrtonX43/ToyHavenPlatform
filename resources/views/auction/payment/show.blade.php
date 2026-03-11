@@ -104,7 +104,7 @@
                                     <input type="radio" name="payment_method" value="paypal" x-model="method">
                                     <div>
                                         <i class="bi bi-paypal fs-4 text-primary"></i>
-                                        <span class="fw-semibold d-block">PayPal @if($paypalDemoMode ?? false)<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem;vertical-align:middle;">SANDBOX</span>@endif</span>
+                                        <span class="fw-semibold d-block">PayPal</span>
                                         <span class="text-muted small">Pay with PayPal account</span>
                                     </div>
                                 </label>
