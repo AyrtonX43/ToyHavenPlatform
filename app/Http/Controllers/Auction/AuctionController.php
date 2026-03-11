@@ -53,7 +53,7 @@ class AuctionController extends Controller
                 ->with('error', 'This auction is not available for viewing.');
         }
 
-        $with = ['user', 'category', 'images', 'payment'];
+        $with = ['user', 'category', 'images'];
         if (Schema::hasTable('auction_bids')) {
             $with['bids'] = fn ($q) => $q->orderByDesc('amount')->limit(10);
         }
@@ -62,22 +62,26 @@ class AuctionController extends Controller
             $auction->setRelation('bids', collect([]));
         }
 
-        // Ensure payment exists for winner when auction ended (e.g. if scheduler didn't run)
-        if ($auction->status === 'ended'
-            && $auction->winner_id === $user->id
-            && $auction->meetsReserve()
-            && Schema::hasTable('auction_payments')
-            && ! $auction->payment) {
-            $payment = AuctionPayment::create([
-                'auction_id' => $auction->id,
-                'winner_id' => $auction->winner_id,
-                'amount' => $auction->winning_amount,
-                'status' => 'pending',
-                'payment_deadline' => now()->addHours(48),
-                'is_second_chance' => false,
-            ]);
-            $auction->setRelation('payment', $payment);
+        $winnerPayment = null;
+        if ($auction->status === 'ended' && $auction->winner_id && Schema::hasTable('auction_payments')) {
+            $winnerPayment = AuctionPayment::where('auction_id', $auction->id)
+                ->where('winner_id', $auction->winner_id)
+                ->whereIn('status', ['pending', 'paid', 'held', 'released'])
+                ->latest()
+                ->first();
+
+            if (! $winnerPayment && $auction->winner_id === $user->id && $auction->meetsReserve()) {
+                $winnerPayment = AuctionPayment::create([
+                    'auction_id' => $auction->id,
+                    'winner_id' => $auction->winner_id,
+                    'amount' => $auction->winning_amount,
+                    'status' => 'pending',
+                    'payment_deadline' => now()->addHours(48),
+                    'is_second_chance' => false,
+                ]);
+            }
         }
+        $auction->setRelation('payment', $winnerPayment);
 
         $isSaved = Schema::hasTable('saved_auctions') && \Illuminate\Support\Facades\DB::table('saved_auctions')
             ->where('user_id', $user->id)

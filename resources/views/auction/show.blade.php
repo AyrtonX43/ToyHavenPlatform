@@ -210,32 +210,99 @@
                     </div>
 
                     @auth
-                        @php $isWinner = $auction->winner_id === auth()->id(); @endphp
-                        @if($isWinner)
-                            <div class="mt-3 p-4 rounded-3 text-center winner-reveal" style="background:#ccfbf1;border:1px solid #0d9488;">
-                                <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
-                                @if($auction->payment)
-                                    @if($auction->payment->isPending())
-                                        <p class="mb-3 small">Please complete your payment to proceed with the order.</p>
-                                        <a href="{{ route('auction.payment.show', $auction->payment) }}" class="btn btn-success w-100 fw-bold">
-                                            <i class="bi bi-credit-card me-1"></i> Proceed to Payment
-                                        </a>
+                        @php
+                            $bladePaymentLink = null;
+                            $bladePaymentIsPending = false;
+                            $bladeIsWinner = $auction->status === 'ended' && $auction->winner_id === auth()->id();
+                            if ($bladeIsWinner && $auction->payment) {
+                                $bladePaymentIsPending = $auction->payment->isPending();
+                                $bladePaymentLink = $bladePaymentIsPending
+                                    ? route('auction.payment.show', $auction->payment)
+                                    : route('auction.payment.success', $auction->payment);
+                            }
+                        @endphp
+
+                        {{-- Current user is the winner (uses Alpine winnerId for real-time accuracy) --}}
+                        <div x-show="winnerId === {{ (int) auth()->id() }} && auctionOutcome === 'sold'" x-cloak class="mt-3 p-4 rounded-3 text-center winner-reveal" style="background:#ccfbf1;border:1px solid #0d9488;">
+                            <h5 class="text-success mb-2"><i class="bi bi-trophy-fill me-2"></i>Congratulations! You won this auction.</h5>
+
+                            {{-- Payment link from real-time event --}}
+                            <template x-if="paymentLink">
+                                <div>
+                                    <p class="mb-3 small">Please complete your payment to proceed with the order.</p>
+                                    <a :href="paymentLink" class="btn btn-success w-100 fw-bold">
+                                        <i class="bi bi-credit-card me-1"></i> Proceed to Payment
+                                    </a>
+                                </div>
+                            </template>
+
+                            {{-- Server-rendered payment link (when paymentLink is not set from WebSocket) --}}
+                            <template x-if="!paymentLink">
+                                <div>
+                                    @if($bladePaymentLink)
+                                        @if($bladePaymentIsPending)
+                                            <p class="mb-3 small">Please complete your payment to proceed with the order.</p>
+                                            <a href="{{ $bladePaymentLink }}" class="btn btn-success w-100 fw-bold">
+                                                <i class="bi bi-credit-card me-1"></i> Proceed to Payment
+                                            </a>
+                                        @else
+                                            <a href="{{ $bladePaymentLink }}" class="btn btn-outline-success w-100 fw-bold mt-2">
+                                                <i class="bi bi-check-circle me-1"></i> View Order Status
+                                            </a>
+                                        @endif
                                     @else
-                                        <a href="{{ route('auction.payment.success', $auction->payment) }}" class="btn btn-outline-success w-100 fw-bold mt-2">
-                                            <i class="bi bi-check-circle me-1"></i> View Order Status
-                                        </a>
+                                        <p class="mb-2 small text-muted">Preparing payment details...</p>
+                                        <button class="btn btn-outline-primary w-100 rounded-pill mt-1" @click="window.location.reload()">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh Page
+                                        </button>
                                     @endif
-                                @else
-                                    <p class="mb-0 small text-muted">Processing payment details, please wait...</p>
-                                @endif
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Other user won (non-seller view) --}}
+                        @if($auction->user_id !== auth()->id())
+                            <div x-show="winnerId && winnerId !== {{ (int) auth()->id() }} && auctionOutcome === 'sold'" class="mt-3 p-3 rounded-3 text-center bg-light" x-cloak>
+                                <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias || 'a bidder'"></span></p>
+                                <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>
                             </div>
                         @endif
 
-                        <div x-show="winnerAlias && winnerId !== {{ (int) auth()->id() }}" class="mt-3 p-3 rounded-3 text-center bg-light" x-cloak>
-                            <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias"></span></p>
+                        {{-- Seller's view of their ended auction --}}
+                        @if($auction->user_id === auth()->id())
+                            <div x-show="auctionOutcome === 'sold'" class="mt-3 p-3 rounded-3" style="background:#eff6ff;border:1px solid #3b82f6;" x-cloak>
+                                <p class="mb-1 fw-semibold text-primary"><i class="bi bi-cash-coin me-1"></i>Your Auction Sold!</p>
+                                <p class="mb-1 small">Won by <strong x-text="winnerAlias || 'a bidder'"></strong> at <span x-text="currentBidFormatted"></span></p>
+                                @if($auction->payment)
+                                    @if($auction->payment->isPending())
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Awaiting buyer payment</span>
+                                    @elseif(in_array($auction->payment->status, ['paid', 'held']))
+                                        @if(!in_array($auction->payment->delivery_status, ['shipped', 'delivered', 'confirmed']))
+                                            <span class="badge bg-danger"><i class="bi bi-truck me-1"></i>Ready to ship</span>
+                                        @elseif($auction->payment->delivery_status === 'shipped')
+                                            <span class="badge bg-info"><i class="bi bi-truck me-1"></i>Shipped</span>
+                                        @else
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Delivered</span>
+                                        @endif
+                                    @elseif($auction->payment->status === 'released')
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Payment released</span>
+                                    @endif
+                                @endif
+                                <div class="mt-2">
+                                    <a href="{{ route('auction.seller.dashboard') }}" class="btn btn-sm btn-primary rounded-pill">
+                                        <i class="bi bi-speedometer2 me-1"></i>Seller Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
+                    @endauth
+
+                    @guest
+                        <div x-show="winnerId && auctionOutcome === 'sold'" class="mt-3 p-3 rounded-3 text-center bg-light" x-cloak>
+                            <p class="mb-1 fw-semibold"><i class="bi bi-trophy me-1"></i>Won by <span x-text="winnerAlias || 'a bidder'"></span></p>
                             <p class="mb-0 text-muted small">at <span x-text="currentBidFormatted"></span></p>
                         </div>
-                    @endauth
+                    @endguest
 
                     <p class="mb-0 text-muted mt-2"><i class="bi bi-flag me-1"></i>This auction has ended.</p>
                 </div>
@@ -308,6 +375,7 @@ function auctionLive() {
         auctionOutcome: @json($auction->auction_outcome),
         winnerId: {{ $auction->winner_id ?? 'null' }},
         winnerAlias: null,
+        paymentLink: null,
         toast: { show: false, message: '', type: 'warning' },
         _countdownInterval: null,
 
@@ -501,9 +569,9 @@ function auctionLive() {
         },
 
         handleUserWon(e) {
-            this.showToast(e.message || 'Congratulations! You won this auction!', 'success', 10000);
+            this.showToast(e.message || 'Congratulations! You won this auction!', 'success', 15000);
             if (e.payment_link) {
-                setTimeout(() => { window.location.href = e.payment_link; }, 4000);
+                this.paymentLink = e.payment_link;
             }
         },
     };

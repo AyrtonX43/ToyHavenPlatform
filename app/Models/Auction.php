@@ -93,7 +93,12 @@ class Auction extends Model
 
     public function payment()
     {
-        return $this->hasOne(AuctionPayment::class);
+        return $this->hasOne(AuctionPayment::class)->latestOfMany();
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(AuctionPayment::class);
     }
 
     public function bids()

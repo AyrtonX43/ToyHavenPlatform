@@ -11,6 +11,13 @@
     .stat-card { border-radius: 14px; border: none; transition: transform .2s; }
     .stat-card:hover { transform: translateY(-2px); }
     .stat-card .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .sale-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+    .outcome-sold { color: #059669; }
+    .outcome-no-bids { color: #64748b; }
+    .outcome-reserve { color: #d97706; }
+    .ended-card { border-radius: 12px; border: 1px solid #e2e8f0; transition: transform .15s; }
+    .ended-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+    .ended-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; }
 </style>
 @endpush
 
@@ -65,10 +72,16 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    @if(session('info'))
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
     {{-- Quick Stats --}}
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-2">
             <div class="card stat-card shadow-sm h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-broadcast"></i></div>
@@ -79,18 +92,18 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-2">
             <div class="card stat-card shadow-sm h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-hourglass-split"></i></div>
                     <div>
-                        <div class="text-muted small">Pending Approval</div>
+                        <div class="text-muted small">Pending</div>
                         <div class="fs-4 fw-bold">{{ $quickStats['pending_approval'] }}</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-2">
             <div class="card stat-card shadow-sm h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-flag-fill"></i></div>
@@ -101,13 +114,35 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info"><i class="bi bi-currency-dollar"></i></div>
+                    <div>
+                        <div class="text-muted small">Awaiting Pay</div>
+                        <div class="fs-4 fw-bold">{{ $quickStats['awaiting_payment'] }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
             <div class="card stat-card shadow-sm h-100">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-truck"></i></div>
                     <div>
-                        <div class="text-muted small">Needs Shipping</div>
+                        <div class="text-muted small">Ship</div>
                         <div class="fs-4 fw-bold">{{ $quickStats['pending_shipment'] }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle"></i></div>
+                    <div>
+                        <div class="text-muted small">Sold</div>
+                        <div class="fs-4 fw-bold">{{ $quickStats['total_sold'] }}</div>
                     </div>
                 </div>
             </div>
@@ -119,7 +154,7 @@
         $isVip = $plan && (($plan->can_register_individual_seller ?? false) || ($plan->can_register_business_seller ?? false));
     @endphp
 
-    {{-- Business Tools --}}
+    {{-- Seller Tools --}}
     <h4 class="mb-3 fw-bold"><i class="bi bi-tools me-2"></i>Seller Tools</h4>
     <div class="row g-3 mb-4">
         <div class="col-md-6 col-lg-4">
@@ -163,14 +198,15 @@
         @endif
     </div>
 
-    {{-- Sales Table --}}
+    {{-- Sales / Payments Table --}}
     @if($sales->count() > 0)
-        <h4 class="mb-3 fw-bold"><i class="bi bi-receipt me-2"></i>Recent Sales</h4>
+        <h4 class="mb-3 fw-bold"><i class="bi bi-receipt me-2"></i>Sales & Payments</h4>
         <div class="card auction-card border-0 mb-4">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
+                            <th style="width:60px;"></th>
                             <th>Auction</th>
                             <th>Winner</th>
                             <th>Amount</th>
@@ -181,40 +217,60 @@
                     </thead>
                     <tbody>
                         @foreach($sales as $p)
+                            @php $saleImg = $p->auction?->images?->firstWhere('is_primary', true) ?? $p->auction?->images?->first(); @endphp
                             <tr>
                                 <td>
-                                    <a href="{{ route('auction.show', $p->auction_id) }}" class="text-decoration-none">
-                                        {{ Str::limit($p->auction?->title, 35) }}
-                                    </a>
+                                    @if($saleImg)
+                                        <img src="{{ asset('storage/' . $saleImg->image_path) }}" alt="" class="sale-thumb">
+                                    @else
+                                        <div class="sale-thumb bg-light d-flex align-items-center justify-content-center"><i class="bi bi-image text-muted"></i></div>
+                                    @endif
                                 </td>
-                                <td>{{ $p->winner?->name ?? 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ route('auction.show', $p->auction_id) }}" class="text-decoration-none fw-semibold">
+                                        {{ Str::limit($p->auction?->title, 30) }}
+                                    </a>
+                                    @if($p->is_second_chance)
+                                        <br><span class="badge bg-secondary" style="font-size:.65rem;">2nd Chance</span>
+                                    @endif
+                                </td>
+                                <td class="small">{{ $p->winner?->name ?? 'N/A' }}</td>
                                 <td class="fw-semibold">₱{{ number_format($p->amount, 2) }}</td>
                                 <td>
                                     @if($p->status === 'pending')
                                         <span class="badge bg-warning text-dark">Awaiting Payment</span>
                                         @if($p->payment_deadline)
                                             <br><span class="small text-muted">Due: {{ $p->payment_deadline->format('M d, g:i A') }}</span>
+                                            @if($p->isOverdue())
+                                                <br><span class="badge bg-danger mt-1" style="font-size:.65rem;">OVERDUE</span>
+                                            @endif
                                         @endif
                                     @elseif($p->status === 'held')
-                                        <span class="badge bg-info">Held in Escrow</span>
+                                        <span class="badge bg-info">In Escrow</span>
                                     @elseif($p->status === 'released')
                                         <span class="badge bg-success">Released</span>
                                     @elseif($p->status === 'paid')
                                         <span class="badge bg-primary">Paid</span>
+                                    @elseif($p->status === 'refunded')
+                                        <span class="badge bg-danger">Payment Failed</span>
                                     @else
                                         <span class="badge bg-secondary">{{ ucfirst($p->status) }}</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($p->delivery_status === 'shipped')
+                                    @if($p->status === 'refunded')
+                                        <span class="text-danger small"><i class="bi bi-x-circle me-1"></i>Cancelled</span>
+                                    @elseif($p->delivery_status === 'shipped')
                                         <span class="text-info small"><i class="bi bi-truck me-1"></i>Shipped</span>
                                         @if($p->tracking_number)
                                             <br><span class="small text-muted">{{ $p->tracking_number }}</span>
                                         @endif
                                     @elseif(in_array($p->delivery_status, ['delivered', 'confirmed']))
                                         <span class="text-success small"><i class="bi bi-check-circle me-1"></i>Delivered</span>
+                                    @elseif(in_array($p->status, ['paid', 'held']))
+                                        <span class="text-warning small"><i class="bi bi-box-seam me-1"></i>Ready to Ship</span>
                                     @else
-                                        <span class="text-muted small">Pending shipment</span>
+                                        <span class="text-muted small">Waiting</span>
                                     @endif
                                 </td>
                                 <td>
@@ -237,6 +293,7 @@
                                                         </div>
                                                         <div class="modal-body pt-2">
                                                             <p class="text-muted small mb-3">Item: {{ Str::limit($p->auction?->title, 50) }}</p>
+                                                            <p class="small mb-3">Buyer: <strong>{{ $p->winner?->name ?? 'N/A' }}</strong></p>
                                                             <label class="form-label">Tracking Number <span class="text-muted">(optional)</span></label>
                                                             <input type="text" name="tracking_number" class="form-control rounded-pill" placeholder="e.g. 1234567890">
                                                         </div>
@@ -250,10 +307,14 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    @elseif(in_array($p->delivery_status ?? '', ['shipped', 'delivered', 'confirmed']))
-                                        <span class="badge bg-success rounded-pill"><i class="bi bi-check me-1"></i>Shipped</span>
+                                    @elseif(in_array($p->delivery_status ?? '', ['shipped']))
+                                        <span class="badge bg-info rounded-pill"><i class="bi bi-truck me-1"></i>In Transit</span>
+                                    @elseif(in_array($p->delivery_status ?? '', ['delivered', 'confirmed']))
+                                        <span class="badge bg-success rounded-pill"><i class="bi bi-check me-1"></i>Complete</span>
                                     @elseif($p->status === 'pending')
                                         <span class="text-muted small">Waiting for payment</span>
+                                    @elseif($p->status === 'refunded')
+                                        <span class="text-muted small">-</span>
                                     @endif
                                 </td>
                             </tr>
@@ -262,13 +323,93 @@
                 </table>
             </div>
         </div>
-    @else
-        <div class="card border-0 mb-4">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
-                <p class="text-muted mb-0">No sales yet. Create a listing and start selling!</p>
-            </div>
+    @endif
+
+    {{-- Ended Auctions Overview --}}
+    @if($endedAuctions->count() > 0)
+        <h4 class="mb-3 fw-bold"><i class="bi bi-flag me-2"></i>Ended Auctions</h4>
+        <div class="row g-3 mb-4">
+            @foreach($endedAuctions as $ea)
+                @php
+                    $eaImg = $ea->images->firstWhere('is_primary', true) ?? $ea->images->first();
+                    $eaOutcome = $ea->auction_outcome;
+                    $eaPayment = $ea->payment;
+                    $hasWinner = $ea->winner_id && $eaOutcome === 'sold';
+                @endphp
+                <div class="col-md-6 col-xl-4">
+                    <div class="card ended-card h-100">
+                        <div class="card-body d-flex gap-3">
+                            @if($eaImg)
+                                <img src="{{ asset('storage/' . $eaImg->image_path) }}" alt="" class="ended-thumb flex-shrink-0">
+                            @else
+                                <div class="ended-thumb bg-light d-flex align-items-center justify-content-center flex-shrink-0"><i class="bi bi-image text-muted fs-4"></i></div>
+                            @endif
+                            <div class="flex-grow-1 min-w-0">
+                                <h6 class="fw-bold mb-1 text-truncate">{{ $ea->title }}</h6>
+                                <p class="small text-muted mb-1">Ended {{ $ea->end_at?->diffForHumans() }}</p>
+
+                                @if($eaOutcome === 'sold' && $hasWinner)
+                                    <span class="outcome-sold small fw-semibold"><i class="bi bi-check-circle me-1"></i>Sold &mdash; ₱{{ number_format($ea->winning_amount, 2) }}</span>
+                                    <p class="small text-muted mb-1">Winner: {{ $ea->winner?->name ?? 'N/A' }}</p>
+
+                                    @if($eaPayment)
+                                        @if($eaPayment->status === 'pending')
+                                            <span class="badge bg-warning text-dark" style="font-size:.7rem;">
+                                                <i class="bi bi-clock me-1"></i>Awaiting Payment
+                                                @if($eaPayment->isOverdue())
+                                                    &mdash; OVERDUE
+                                                @endif
+                                            </span>
+                                        @elseif($eaPayment->status === 'held')
+                                            <span class="badge bg-info" style="font-size:.7rem;"><i class="bi bi-lock me-1"></i>In Escrow</span>
+                                            @if(!in_array($eaPayment->delivery_status, ['shipped', 'delivered', 'confirmed']))
+                                                <span class="badge bg-danger" style="font-size:.7rem;"><i class="bi bi-truck me-1"></i>Needs Shipping</span>
+                                            @elseif($eaPayment->delivery_status === 'shipped')
+                                                <span class="badge bg-info" style="font-size:.7rem;"><i class="bi bi-truck me-1"></i>Shipped</span>
+                                            @else
+                                                <span class="badge bg-success" style="font-size:.7rem;"><i class="bi bi-check me-1"></i>Delivered</span>
+                                            @endif
+                                        @elseif($eaPayment->status === 'released')
+                                            <span class="badge bg-success" style="font-size:.7rem;"><i class="bi bi-check-circle me-1"></i>Complete</span>
+                                        @elseif($eaPayment->status === 'paid')
+                                            <span class="badge bg-primary" style="font-size:.7rem;"><i class="bi bi-credit-card me-1"></i>Paid</span>
+                                        @elseif($eaPayment->status === 'refunded')
+                                            <span class="badge bg-danger" style="font-size:.7rem;"><i class="bi bi-x-circle me-1"></i>Payment Failed</span>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-secondary" style="font-size:.7rem;">Payment pending creation</span>
+                                    @endif
+                                @elseif($eaOutcome === 'reserve_not_met')
+                                    <span class="outcome-reserve small fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Reserve Not Met</span>
+                                    @if($ea->winning_amount)
+                                        <p class="small text-muted mb-0">Highest bid: ₱{{ number_format($ea->winning_amount, 2) }}</p>
+                                    @endif
+                                @elseif($eaOutcome === 'no_bids')
+                                    <span class="outcome-no-bids small fw-semibold"><i class="bi bi-dash-circle me-1"></i>No Bids</span>
+                                @else
+                                    <span class="small text-muted">{{ ucfirst(str_replace('_', ' ', $eaOutcome ?? 'ended')) }}</span>
+                                @endif
+
+                                <div class="mt-2">
+                                    <a href="{{ route('auction.show', $ea) }}" class="btn btn-sm btn-outline-primary rounded-pill" style="font-size:.75rem;">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
+    @else
+        @if($sales->count() === 0)
+            <div class="card border-0 mb-4">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                    <p class="text-muted mb-0">No sales or ended auctions yet. Create a listing and start selling!</p>
+                </div>
+            </div>
+        @endif
     @endif
 
     <a href="{{ route('auction.index') }}" class="btn btn-outline-primary rounded-pill">

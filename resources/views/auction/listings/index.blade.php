@@ -119,7 +119,7 @@
 
                             @if($l->winning_amount && ($l->isActive() || $l->isEnded()))
                                 <p class="mb-2 small">
-                                    <strong>Current bid:</strong>
+                                    <strong>{{ $l->isEnded() ? 'Final price:' : 'Current bid:' }}</strong>
                                     <span class="text-success fw-bold">₱{{ number_format($l->winning_amount, 2) }}</span>
                                 </p>
                             @endif
@@ -128,6 +128,37 @@
                                 <p class="mb-2 small text-muted" x-data="listingTimer('{{ $l->end_at->toIso8601String() }}')" x-text="text" :class="{ 'text-danger fw-semibold': urgent }"></p>
                             @elseif($l->isEnded())
                                 <p class="mb-2 small text-muted"><i class="bi bi-flag me-1"></i>Ended {{ $l->end_at?->diffForHumans() }}</p>
+
+                                @if($l->auction_outcome === 'sold' && $l->winner)
+                                    <p class="mb-1 small"><i class="bi bi-trophy text-success me-1"></i>Winner: <strong>{{ $l->winner->name }}</strong></p>
+                                    @if($l->payment)
+                                        @if($l->payment->status === 'pending')
+                                            <span class="badge bg-warning text-dark" style="font-size:.7rem;">
+                                                <i class="bi bi-clock me-1"></i>Awaiting Payment
+                                                @if($l->payment->isOverdue()) &mdash; OVERDUE @endif
+                                            </span>
+                                        @elseif($l->payment->status === 'held')
+                                            <span class="badge bg-info" style="font-size:.7rem;"><i class="bi bi-lock me-1"></i>Escrow</span>
+                                            @if(!in_array($l->payment->delivery_status, ['shipped', 'delivered', 'confirmed']))
+                                                <span class="badge bg-danger" style="font-size:.7rem;"><i class="bi bi-truck me-1"></i>Ship Now</span>
+                                            @elseif($l->payment->delivery_status === 'shipped')
+                                                <span class="badge bg-info" style="font-size:.7rem;"><i class="bi bi-truck me-1"></i>Shipped</span>
+                                            @else
+                                                <span class="badge bg-success" style="font-size:.7rem;"><i class="bi bi-check me-1"></i>Delivered</span>
+                                            @endif
+                                        @elseif($l->payment->status === 'released')
+                                            <span class="badge bg-success" style="font-size:.7rem;"><i class="bi bi-check-circle me-1"></i>Complete</span>
+                                        @elseif($l->payment->status === 'paid')
+                                            <span class="badge bg-primary" style="font-size:.7rem;"><i class="bi bi-credit-card me-1"></i>Paid</span>
+                                        @elseif($l->payment->status === 'refunded')
+                                            <span class="badge bg-danger" style="font-size:.7rem;"><i class="bi bi-x-circle me-1"></i>Failed</span>
+                                        @endif
+                                    @endif
+                                @elseif($l->auction_outcome === 'reserve_not_met')
+                                    <p class="mb-1 small text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Reserve not met</p>
+                                @elseif($l->auction_outcome === 'no_bids')
+                                    <p class="mb-1 small text-muted"><i class="bi bi-dash-circle me-1"></i>No bids placed</p>
+                                @endif
                             @endif
 
                             <div class="d-flex flex-wrap gap-2 mb-2">

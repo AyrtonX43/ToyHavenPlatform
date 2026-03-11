@@ -38,18 +38,27 @@ class AuctionSellerDashboardController extends Controller
         $sales = Collection::make();
         if (Schema::hasTable('auction_payments')) {
             $sales = AuctionPayment::whereHas('auction', fn ($q) => $q->where('user_id', $user->id))
-                ->whereIn('status', ['pending', 'paid', 'held', 'released'])
-                ->with(['auction', 'winner'])
+                ->whereIn('status', ['pending', 'paid', 'held', 'released', 'refunded'])
+                ->with(['auction.images', 'winner'])
                 ->orderByDesc('created_at')
-                ->limit(20)
+                ->limit(30)
                 ->get();
         }
+
+        $endedAuctions = Auction::where('user_id', $user->id)
+            ->ended()
+            ->with(['images', 'winner', 'payment'])
+            ->orderByDesc('end_at')
+            ->limit(20)
+            ->get();
 
         $quickStats = [
             'active' => Auction::where('user_id', $user->id)->active()->count(),
             'pending_approval' => Auction::where('user_id', $user->id)->pendingApproval()->count(),
             'ended' => Auction::where('user_id', $user->id)->ended()->count(),
             'pending_shipment' => 0,
+            'awaiting_payment' => 0,
+            'total_sold' => 0,
         ];
 
         if (Schema::hasTable('auction_payments')) {
@@ -60,10 +69,18 @@ class AuctionSellerDashboardController extends Controller
                       ->orWhere('delivery_status', 'pending_shipment');
                 })
                 ->count();
+
+            $quickStats['awaiting_payment'] = AuctionPayment::whereHas('auction', fn ($q) => $q->where('user_id', $user->id))
+                ->where('status', 'pending')
+                ->count();
+
+            $quickStats['total_sold'] = AuctionPayment::whereHas('auction', fn ($q) => $q->where('user_id', $user->id))
+                ->whereIn('status', ['paid', 'held', 'released'])
+                ->count();
         }
 
         return view('auction.seller.dashboard', compact(
-            'sales', 'isIndividualSeller', 'isBusinessSeller',
+            'sales', 'endedAuctions', 'isIndividualSeller', 'isBusinessSeller',
             'businessVerification', 'quickStats'
         ));
     }

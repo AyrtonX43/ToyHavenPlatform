@@ -165,7 +165,7 @@ class AuctionListingController extends Controller
         }
 
         $listings = Auction::where('user_id', $user->id)
-            ->with(['images', 'category'])
+            ->with(['images', 'category', 'winner', 'payment'])
             ->orderByDesc('updated_at')
             ->paginate(15);
 
