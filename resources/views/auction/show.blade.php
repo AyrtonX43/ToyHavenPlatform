@@ -447,10 +447,17 @@ function auctionLive() {
                     body: JSON.stringify({ amount: this.nextMinBid }),
                 });
 
-                const data = await resp.json();
+                let data;
+                try {
+                    data = await resp.json();
+                } catch (parseErr) {
+                    this.bidMessage = 'Server error. Please refresh the page and try again.';
+                    this.bidSuccess = false;
+                    return;
+                }
 
                 if (!resp.ok) {
-                    let errMsg = data.error || data.message || 'Bid failed.';
+                    let errMsg = data.error || data.message || 'Bid failed. Please try again.';
                     if (data.errors) {
                         const firstErr = Object.values(data.errors)[0];
                         errMsg = Array.isArray(firstErr) ? firstErr[0] : firstErr;

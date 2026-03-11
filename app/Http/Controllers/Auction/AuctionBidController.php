@@ -44,16 +44,20 @@ class AuctionBidController extends Controller
                 : back()->with('error', 'You cannot bid on your own listing.');
         }
 
-        if ($user->auction_suspended_until && $user->auction_suspended_until->isFuture()) {
-            return $isAjax
-                ? response()->json(['error' => 'Your auction access is suspended.'], 403)
-                : back()->with('error', 'Your auction access is suspended.');
-        }
+        try {
+            if ($user->auction_suspended_until && $user->auction_suspended_until->isFuture()) {
+                return $isAjax
+                    ? response()->json(['error' => 'Your auction access is suspended.'], 403)
+                    : back()->with('error', 'Your auction access is suspended.');
+            }
 
-        if ($user->auction_banned_at) {
-            return $isAjax
-                ? response()->json(['error' => 'You are banned from auction bidding.'], 403)
-                : back()->with('error', 'You are banned from auction bidding.');
+            if ($user->auction_banned_at) {
+                return $isAjax
+                    ? response()->json(['error' => 'You are banned from auction bidding.'], 403)
+                    : back()->with('error', 'You are banned from auction bidding.');
+            }
+        } catch (\Exception $e) {
+            Log::warning('User auction suspension check failed (columns may be missing): ' . $e->getMessage());
         }
 
         $cooldownKey = "auction_bid_cooldown:{$auction->id}:{$user->id}";
@@ -84,59 +88,86 @@ class AuctionBidController extends Controller
         $amount = $minBid;
         $bidderAlias = '';
         $antiSnipeTriggered = false;
+        $hasBidderAliasCol = \Illuminate\Support\Facades\Schema::hasColumn('auction_bids', 'bidder_alias');
 
-        DB::transaction(function () use ($auction, $user, $amount, &$bidderAlias, &$antiSnipeTriggered) {
-            $previousWinningBid = AuctionBid::where('auction_id', $auction->id)
-                ->where('is_winning', true)
-                ->first();
+        try {
+            DB::transaction(function () use ($auction, $user, $amount, &$bidderAlias, &$antiSnipeTriggered, $hasBidderAliasCol) {
+                $previousWinningBid = AuctionBid::where('auction_id', $auction->id)
+                    ->where('is_winning', true)
+                    ->first();
 
-            if ($previousWinningBid && $previousWinningBid->user_id !== $user->id) {
-                try {
-                    $previousWinningBid->user->notify(new AuctionOutbidNotification($auction, $amount));
-                } catch (\Exception $e) {
-                    Log::error('Failed to send outbid notification: ' . $e->getMessage());
+                if ($previousWinningBid && $previousWinningBid->user_id !== $user->id) {
+                    try {
+                        $previousWinningBid->user->notify(new AuctionOutbidNotification($auction, $amount));
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send outbid notification: ' . $e->getMessage());
+                    }
+
+                    try {
+                        broadcast(new UserOutbid($previousWinningBid->user_id, $auction, $amount));
+                    } catch (\Exception $e) {
+                        Log::error('Failed to broadcast outbid event: ' . $e->getMessage());
+                    }
                 }
 
-                try {
-                    broadcast(new UserOutbid($previousWinningBid->user_id, $auction, $amount));
-                } catch (\Exception $e) {
-                    Log::error('Failed to broadcast outbid event: ' . $e->getMessage());
+                AuctionBid::where('auction_id', $auction->id)->update(['is_winning' => false]);
+
+                $rank = AuctionBid::where('auction_id', $auction->id)->max('rank_at_bid') ?? 0;
+                $rank++;
+
+                if ($hasBidderAliasCol) {
+                    $bidderAlias = AuctionBid::resolveAlias($auction->id, $user->id);
+                } else {
+                    $bidderAlias = 'Bidder' . $rank;
                 }
-            }
 
-            AuctionBid::where('auction_id', $auction->id)->update(['is_winning' => false]);
+                $bidData = [
+                    'auction_id' => $auction->id,
+                    'user_id' => $user->id,
+                    'amount' => $amount,
+                    'rank_at_bid' => $rank,
+                    'is_winning' => true,
+                ];
+                if ($hasBidderAliasCol) {
+                    $bidData['bidder_alias'] = $bidderAlias;
+                }
+                AuctionBid::create($bidData);
 
-            $rank = AuctionBid::where('auction_id', $auction->id)->max('rank_at_bid') ?? 0;
-            $rank++;
-            $bidderAlias = AuctionBid::resolveAlias($auction->id, $user->id);
+                $auction->update([
+                    'winner_id' => $user->id,
+                    'winning_amount' => $amount,
+                    'bids_count' => $auction->bids_count + 1,
+                ]);
 
-            AuctionBid::create([
+                $auction->refresh();
+
+                if ($auction->end_at) {
+                    $secondsLeft = now()->diffInSeconds($auction->end_at, false);
+                    if ($secondsLeft >= 0 && $secondsLeft <= self::ANTI_SNIPE_THRESHOLD_SECONDS) {
+                        $newEndAt = $auction->end_at->copy()->addMinutes(self::ANTI_SNIPE_EXTENSION_MINUTES);
+                        $auction->update(['end_at' => $newEndAt]);
+                        $auction->refresh();
+                        $antiSnipeTriggered = true;
+                    }
+                }
+            });
+        } catch (\Throwable $e) {
+            Log::error('Bid placement failed', [
                 'auction_id' => $auction->id,
                 'user_id' => $user->id,
                 'amount' => $amount,
-                'rank_at_bid' => $rank,
-                'bidder_alias' => $bidderAlias,
-                'is_winning' => true,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            $auction->update([
-                'winner_id' => $user->id,
-                'winning_amount' => $amount,
-                'bids_count' => $auction->bids_count + 1,
-            ]);
+            $errorMsg = app()->hasDebugModeEnabled()
+                ? 'Bid failed: ' . $e->getMessage()
+                : 'An error occurred while placing your bid. Please try again.';
 
-            $auction->refresh();
-
-            if ($auction->end_at) {
-                $secondsLeft = now()->diffInSeconds($auction->end_at, false);
-                if ($secondsLeft >= 0 && $secondsLeft <= self::ANTI_SNIPE_THRESHOLD_SECONDS) {
-                    $newEndAt = $auction->end_at->copy()->addMinutes(self::ANTI_SNIPE_EXTENSION_MINUTES);
-                    $auction->update(['end_at' => $newEndAt]);
-                    $auction->refresh();
-                    $antiSnipeTriggered = true;
-                }
-            }
-        });
+            return $isAjax
+                ? response()->json(['error' => $errorMsg], 500)
+                : back()->with('error', $errorMsg);
+        }
 
         Cache::put($cooldownKey, true, self::BID_COOLDOWN_SECONDS);
 
