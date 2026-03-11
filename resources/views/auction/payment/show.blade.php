@@ -86,36 +86,26 @@
                     {{-- Payment Method Selection --}}
                     <h6 class="fw-semibold mb-3">Choose payment method</h6>
                     <div class="row g-3 mb-4">
-                        @if(!empty($paypalClientId))
-                            <div class="col-sm-6">
-                                <label class="payment-method-option d-flex align-items-center gap-3 w-100 mb-0" :class="{ 'active': method === 'paypal' }" @click="method = 'paypal'">
-                                    <input type="radio" name="payment_method" value="paypal" x-model="method">
-                                    <div>
-                                        <i class="bi bi-paypal fs-4 text-primary"></i>
-                                        <span class="fw-semibold d-block">PayPal</span>
-                                        <span class="text-muted small">Pay with PayPal account</span>
-                                    </div>
-                                </label>
-                            </div>
-                        @endif
                         @if($paymongoEnabled ?? false)
                             <div class="col-sm-6">
                                 <label class="payment-method-option d-flex align-items-center gap-3 w-100 mb-0" :class="{ 'active': method === 'qrph' }" @click="method = 'qrph'">
                                     <input type="radio" name="payment_method" value="qrph" x-model="method">
                                     <div>
                                         <i class="bi bi-qr-code fs-4 text-success"></i>
-                                        <span class="fw-semibold d-block">GCash / Maya</span>
+                                        <span class="fw-semibold d-block">GCash / Maya (QRPH)</span>
                                         <span class="text-muted small">Scan QR code to pay</span>
                                     </div>
                                 </label>
                             </div>
+                        @endif
+                        @if(!empty($paypalClientId))
                             <div class="col-sm-6">
-                                <label class="payment-method-option d-flex align-items-center gap-3 w-100 mb-0" :class="{ 'active': method === 'card' }" @click="method = 'card'">
-                                    <input type="radio" name="payment_method" value="card" x-model="method">
+                                <label class="payment-method-option d-flex align-items-center gap-3 w-100 mb-0" :class="{ 'active': method === 'paypal' }" @click="method = 'paypal'">
+                                    <input type="radio" name="payment_method" value="paypal" x-model="method">
                                     <div>
-                                        <i class="bi bi-credit-card fs-4 text-warning"></i>
-                                        <span class="fw-semibold d-block">Credit / Debit Card</span>
-                                        <span class="text-muted small">Visa, Mastercard via PayMongo</span>
+                                        <i class="bi bi-paypal fs-4 text-primary"></i>
+                                        <span class="fw-semibold d-block">PayPal @if($paypalDemoMode ?? false)<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem;vertical-align:middle;">SANDBOX</span>@endif</span>
+                                        <span class="text-muted small">Pay with PayPal account</span>
                                     </div>
                                 </label>
                             </div>
@@ -135,10 +125,10 @@
                         <div id="paypal-button-container" class="mb-3"></div>
                     </div>
 
-                    {{-- PayMongo QR/Card --}}
-                    <div x-show="method === 'qrph' || method === 'card'" x-cloak>
-                        <button @click="startPayMongo()" :disabled="paymongoLoading" class="btn btn-primary btn-lg w-100 rounded-pill">
-                            <span x-show="!paymongoLoading"><i class="bi bi-shield-lock me-1"></i>Pay ₱{{ number_format($payment->amount, 2) }}</span>
+                    {{-- PayMongo QRPH --}}
+                    <div x-show="method === 'qrph'" x-cloak>
+                        <button @click="startPayMongo()" :disabled="paymongoLoading" class="btn btn-success btn-lg w-100 rounded-pill">
+                            <span x-show="!paymongoLoading"><i class="bi bi-qr-code me-1"></i>Pay ₱{{ number_format($payment->amount, 2) }} via QRPH</span>
                             <span x-show="paymongoLoading" x-cloak><span class="spinner-border spinner-border-sm me-1"></span> Processing...</span>
                         </button>
                     </div>
@@ -180,7 +170,7 @@ function deadlineTimer(endIso) {
 
 function auctionPayment() {
     return {
-        method: @json(!empty($paypalClientId) ? 'paypal' : ($paymongoEnabled ? 'qrph' : '')),
+        method: @json(($paymongoEnabled ?? false) ? 'qrph' : (!empty($paypalClientId) ? 'paypal' : '')),
         errorMsg: '',
         successMsg: '',
         paymongoLoading: false,
@@ -239,7 +229,7 @@ function auctionPayment() {
                 const intentRes = await fetch(@json(route('auction.payment.paymongo.create-intent')), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ payment_id: {{ $payment->id }}, payment_type: this.method }),
+                    body: JSON.stringify({ payment_id: {{ $payment->id }}, payment_type: 'qrph' }),
                 });
                 const intentData = await intentRes.json();
                 if (!intentRes.ok) { this.errorMsg = intentData.error || 'Failed to create payment.'; return; }
@@ -286,7 +276,7 @@ function auctionPayment() {
                     body: JSON.stringify({
                         data: {
                             attributes: {
-                                type: this.method === 'card' ? 'card' : 'qrph',
+                                type: 'qrph',
                                 billing: { name: user.name, email: user.email },
                             },
                         },

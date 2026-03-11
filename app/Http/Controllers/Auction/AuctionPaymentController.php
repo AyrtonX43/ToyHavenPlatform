@@ -201,7 +201,7 @@ class AuctionPaymentController extends Controller
     {
         $request->validate([
             'payment_id' => 'required|exists:auction_payments,id',
-            'payment_type' => 'required|in:card,qrph',
+            'payment_type' => 'required|in:qrph',
         ]);
 
         $payment = AuctionPayment::findOrFail($request->payment_id);

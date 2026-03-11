@@ -48,10 +48,7 @@ class PayMongoService
                     'data' => [
                         'attributes' => [
                             'amount' => $amountCentavos,
-                            'payment_method_allowed' => ['card', 'qrph'],
-                            'payment_method_options' => [
-                                'card' => ['request_three_d_secure' => 'any'],
-                            ],
+                            'payment_method_allowed' => ['qrph'],
                             'currency' => $currency,
                             'capture_type' => 'automatic',
                             'metadata' => $metadata,
