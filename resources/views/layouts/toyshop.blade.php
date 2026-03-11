@@ -17,6 +17,7 @@
     <link href="{{ asset('css/toyshop-animations.css') }}" rel="stylesheet">
     @stack('styles')
     <style>
+        [x-cloak] { display: none !important; }
         /* Stable full-width layout: fill viewport, never overflow */
         html {
             box-sizing: border-box;
@@ -1452,6 +1453,7 @@
     })();
     </script>
     @endauth
+    @vite('resources/js/app.js')
     @stack('scripts')
 </body>
 </html>
